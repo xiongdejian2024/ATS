@@ -1,13 +1,13 @@
 <template>
   <a-space wrap class="workspace-toolbar">
-    <a-tree-select v-model:value="filter.module_id" :tree-data="tree" allow-clear tree-default-expand-all placeholder="全部计划模块" style="width:200px" @change="changed" />
+    <template v-if="!compact"><a-tree-select v-model:value="filter.module_id" :tree-data="tree" allow-clear tree-default-expand-all placeholder="全部计划模块" style="width:200px" @change="changed" />
     <a-button @click="editModule()">新建模块</a-button>
     <a-button v-if="filter.module_id" @click="editModule(modules.find(m => m.id === filter.module_id))">编辑模块</a-button>
-    <a-popconfirm v-if="filter.module_id" title="删除模块？模块内计划保留。" @confirm="removeModule"><a-button danger>删除模块</a-button></a-popconfirm>
+    <a-popconfirm v-if="filter.module_id" title="删除模块？模块内计划保留。" @confirm="removeModule()"><a-button danger>删除模块</a-button></a-popconfirm></template>
     <a-checkbox v-model:checked="filter.followed" @change="changed">我关注的</a-checkbox>
     <a-checkbox v-model:checked="filter.archived" @change="changed">已归档</a-checkbox>
     <a-input-search v-model:value="filter.tag" placeholder="按标签精确筛选" style="width:160px" @search="changed" />
-    <a-button :disabled="!selectedIds.length" @click="batchOpen = true">批量管理（{{ selectedIds.length }}）</a-button>
+    <a-button v-if="selectedIds.length" @click="batchOpen = true">批量管理（{{ selectedIds.length }}）</a-button>
   </a-space>
   <a-modal v-model:open="moduleOpen" title="计划模块" @ok="saveModule">
     <a-form layout="vertical">
@@ -29,7 +29,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { planWorkspaceApi, type PlanModule } from '@/api/planWorkspace'
-const props = defineProps<{projectId:string; selectedIds:string[]; groups:{id:string;name:string}[]}>()
+const props = defineProps<{projectId:string; selectedIds:string[]; groups:{id:string;name:string}[];compact?:boolean}>()
 const emit = defineEmits<{filter:[value:{module_id?:string;followed:boolean;archived:boolean;tag?:string}];saved:[]}>()
 const modules = ref<PlanModule[]>([])
 const filter = reactive({ module_id:undefined as string|undefined, followed:false, archived:false, tag:'' })
@@ -38,10 +38,11 @@ const tree = computed(() => { const build = (parent?:string):any[] => modules.va
 async function load() { if (!props.projectId) return; try { modules.value = await planWorkspaceApi.modules(props.projectId) } catch(error) { console.error('读取计划模块失败',error); message.error('读取计划模块失败') } }
 watch(() => props.projectId, () => { filter.module_id=undefined; void load() }, {immediate:true})
 const moduleOpen=ref(false), moduleId=ref(''), moduleForm=reactive({name:'',parentId:undefined as string|undefined})
-function editModule(module?:PlanModule) { moduleId.value=module?.id || ''; moduleForm.name=module?.name || ''; moduleForm.parentId=module?.parentId; moduleOpen.value=true }
-async function saveModule() { try { if(moduleId.value) await planWorkspaceApi.updateModule(moduleId.value,moduleForm); else await planWorkspaceApi.createModule(props.projectId,moduleForm); moduleOpen.value=false; await load(); message.success('模块已保存') } catch(error) {console.error('保存计划模块失败',error);message.error('保存失败，请检查名称及父级')} }
-async function removeModule() { try { await planWorkspaceApi.deleteModule(filter.module_id!); filter.module_id=undefined; await load(); changed() } catch(error) {console.error('删除计划模块失败',error);message.error('删除失败，请先处理子模块')} }
+function editModule(module?:PlanModule, parentId?:string) { moduleId.value=module?.id || ''; moduleForm.name=module?.name || ''; moduleForm.parentId=module?.parentId || parentId; moduleOpen.value=true }
+async function saveModule() { try { if(moduleId.value) await planWorkspaceApi.updateModule(moduleId.value,moduleForm); else await planWorkspaceApi.createModule(props.projectId,moduleForm); moduleOpen.value=false; await load(); emit('saved'); message.success('模块已保存') } catch(error) {console.error('保存计划模块失败',error);message.error('保存失败，请检查名称及父级')} }
+async function removeModule(id = filter.module_id) { if(!id)return; try { await planWorkspaceApi.deleteModule(id); filter.module_id=undefined; await load(); changed(); emit('saved') } catch(error) {console.error('删除计划模块失败',error);message.error('删除失败，请先处理子模块')} }
 const batchOpen=ref(false),batchAction=ref('moduleId'),batchModule=ref<string>(),batchGroup=ref<string>(),batchTags=ref<string[]>([]),batchArchived=ref(true)
 async function saveBatch() { const values:Record<string,unknown>={moduleId:batchModule.value || null,groupId:batchGroup.value || null,tags:batchTags.value,archived:batchArchived.value}; try { await planWorkspaceApi.batch(props.projectId,props.selectedIds,{[batchAction.value]:values[batchAction.value]}); batchOpen.value=false; emit('saved'); message.success('计划已批量更新') } catch(error) {console.error('批量更新计划失败',error);message.error('批量更新失败，执行中的计划不能归档')} }
+defineExpose({editModule,removeModule})
 </script>
 <style scoped>.workspace-toolbar{padding:12px 0}</style>

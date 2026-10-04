@@ -14,6 +14,7 @@ export const testPlanApi = {
       endDate?: string
       ownerId?: string
       module_id?: string
+      include_descendants?: boolean
       archived?: boolean
       followed?: boolean
       tag?: string

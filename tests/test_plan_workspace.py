@@ -107,3 +107,31 @@ async def test_all_suite_endpoints_enforce_project_access(workspace_http):
             response=await client.post(path,json={})
             assert response.status_code==403,(path,response.text)
         assert (await client.delete('/test-plans/suites/suite-0')).status_code==403
+
+
+@pytest.mark.asyncio
+async def test_navigation_module_filter_includes_descendants_and_group_location(workspace_http):
+    """左树模块范围与组成员位置一致，仍保留旧的精确模块过滤语义。"""
+    from models.plan_orchestration import PlanGroup
+    from models.plan_workspace import PlanGroupWorkspace
+    db,app,identity=workspace_http
+    db.add(PlanModule(id='parent',project_id='project',name='父模块'))
+    db.flush()
+    db.add(PlanModule(id='child',project_id='project',name='子模块',parent_id='parent'))
+    db.add(PlanGroup(id='group',project_id='project',name='计划组'))
+    db.flush()
+    db.add(PlanGroupWorkspace(group_id='group',module_id='child'))
+    db.add(PlanSettings(plan_id='plan',group_id='group'))
+    # 组内计划自身模块为空，导航应遵循组所在模块。
+    db.add(PlanWorkspace(plan_id='plan',module_id=None))
+    db.commit()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
+        params={'project_id':'project','module_id':'parent','include_descendants':True}
+        response=await client.get('/test-plans',params=params)
+        assert response.status_code==200,response.text
+        assert response.json()['data']['total']==1
+        params['group_id']='group'
+        assert (await client.get('/test-plans',params=params)).json()['data']['total']==1
+        assert (await client.get('/test-plans',params={'project_id':'project','module_id':'parent'})).json()['data']['total']==0
+        params['module_id']='outside'
+        assert (await client.get('/test-plans',params=params)).json()['data']['total']==0

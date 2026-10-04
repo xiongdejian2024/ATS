@@ -29,6 +29,7 @@ class TestPlanService:
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         module_id: Optional[str] = None,
+        include_descendants: bool = False,
         archived: Optional[bool] = False,
         followed_by: Optional[str] = None,
         tag: Optional[str] = None,
@@ -104,7 +105,24 @@ class TestPlanService:
         if archived is not None:
             query = query.filter(PlanWorkspace.archived.is_(True)) if archived else query.filter(or_(PlanWorkspace.archived.is_(False), PlanWorkspace.plan_id.is_(None)))
         if module_id:
-            query = query.filter(PlanWorkspace.module_id.is_(None)) if module_id == "__ungrouped__" else query.filter(PlanWorkspace.module_id == module_id)
+            if include_descendants:
+                from sqlalchemy import case
+                from models.plan_workspace import PlanModule, PlanGroupWorkspace
+                from models.plan_orchestration import PlanSettings
+                if not group_id:
+                    query = query.outerjoin(PlanSettings, PlanSettings.plan_id == TestPlan.id)
+                query = query.outerjoin(PlanGroupWorkspace, PlanGroupWorkspace.group_id == PlanSettings.group_id)
+                effective_module = case((PlanSettings.group_id.is_not(None), PlanGroupWorkspace.module_id), else_=PlanWorkspace.module_id)
+                descendants = {module_id}
+                modules = db.query(PlanModule).filter_by(project_id=project_id_str).all()
+                while True:
+                    next_ids = {m.id for m in modules if m.parent_id in descendants} - descendants
+                    if not next_ids:
+                        break
+                    descendants.update(next_ids)
+                query = query.filter(effective_module.is_(None)) if module_id == "__ungrouped__" else query.filter(effective_module.in_(descendants))
+            else:
+                query = query.filter(PlanWorkspace.module_id.is_(None)) if module_id == "__ungrouped__" else query.filter(PlanWorkspace.module_id == module_id)
         if followed_by:
             query = query.filter(TestPlan.id.in_(db.query(PlanFollow.plan_id).filter_by(user_id=followed_by)))
         if tag:
@@ -632,4 +650,3 @@ class TestPlanService:
                     plan.status = "overdue"
                     db.commit()
                     db.refresh(plan)
-

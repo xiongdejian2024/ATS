@@ -1,41 +1,12 @@
 <template>
   <div class="test-plans-container">
-    <a-page-header
-      title="测试计划"
-      sub-title="分组组织测试范围，按策略执行并保留独立批次报告"
-    >
-      <template #extra>
-        <a-space>
-          <a-button type="primary" @click="createPlan" :disabled="!projectId">
-            <template #icon><PlusOutlined /></template>
-            新建计划
-          </a-button>
-          <a-button @click="refreshPlans">
-            <template #icon><ReloadOutlined /></template>
-            刷新
-          </a-button>
-        </a-space>
-      </template>
-    </a-page-header>
-
-    <!-- 固定顶部工具栏和筛选区域 -->
-    <div class="fixed-header">
-      <div class="content-wrapper">
-        <a-space wrap class="plan-groups">
-          <a-select v-model:value="groupFilter" style="min-width: 200px" placeholder="全部计划组" allow-clear @change="handleFilterChange">
-            <a-select-option value="__ungrouped__">未分组</a-select-option>
-            <a-select-option v-for="group in planGroups" :key="group.id" :value="group.id">{{ group.name }}（{{ group.planCount }}）</a-select-option>
-          </a-select>
-          <a-button :disabled="!projectId" @click="openGroup()">新建计划组</a-button>
-          <a-button v-if="selectedGroup" @click="openGroup(selectedGroup)">编辑计划组</a-button>
-          <a-button v-if="selectedGroup" @click="cloneGroup">完整复制计划组</a-button>
-          <a-checkbox v-model:checked="archivedGroups" @change="groupFilter=undefined; loadPlans()">已归档组</a-checkbox>
-          <a-popconfirm v-if="selectedGroup" title="删除分组？组内计划将保留并移至未分组。" @confirm="deleteGroup"><a-button danger>删除分组</a-button></a-popconfirm>
-        </a-space>
-        <PlanGroupExecution :group-id="selectedGroup?.id" :group-name="selectedGroup?.name" :project-id="projectId || ''" :run-id="typeof route.query.groupRunId === 'string' ? route.query.groupRunId : undefined" />
-        <PlanWorkspaceToolbar :project-id="projectId || ''" :selected-ids="selectedPlanIds" :groups="planGroups" @filter="applyWorkspaceFilter" @saved="selectedPlanIds = []; loadPlans()" />
-        <!-- 筛选和搜索区域 -->
-        <a-card class="filter-card" size="small">
+    <PlanNavigator :project-id="projectId" :modules="groupModules" :groups="planGroups" :plans="navigationPlans" :selected-key="navigationKey" @select="selectNavigation" @create-plan="createPlan" @create-group="openGroup()" @module-action="moduleAction" @group-action="groupAction" />
+    <section class="plan-workspace">
+      <header class="plan-workspace-header"><strong>{{ navigationTitle }} <span>({{ pagination.total }})</span></strong><a-space><a-input-search v-model:value="searchValue" placeholder="搜索计划名称或编号" style="width:187px" allow-clear @search="handleSearch" @change="handleSearchChange" /><a-button @click="filtersOpen=!filtersOpen">筛选</a-button><a-button aria-label="刷新计划" @click="refreshPlans"><ReloadOutlined /></a-button></a-space></header>
+      <PlanWorkspaceToolbar ref="workspaceToolbar" compact :project-id="projectId || ''" :selected-ids="selectedPlanIds" :groups="planGroups" @filter="applyWorkspaceFilter" @saved="selectedPlanIds=[];loadPlans()" />
+      <div v-if="selectedGroup" class="selected-group-tools"><PlanGroupExecution :group-id="selectedGroup.id" :group-name="selectedGroup.name" :project-id="projectId || ''" :run-id="typeof route.query.groupRunId === 'string' ? route.query.groupRunId : undefined" /></div>
+        <a-card v-if="filtersOpen" class="filter-card" size="small">
+        <a-space wrap style="margin-bottom:12px"><a-checkbox v-model:checked="archivedGroups" @change="groupFilter=undefined;loadPlans()">已归档计划组</a-checkbox><a-button @click="groupFilter='__ungrouped__';workspaceFilter.module_id=undefined;handleFilterChange()">未分组计划</a-button></a-space>
         <a-row :gutter="16" align="middle">
           <a-col :span="6">
             <a-input-search
@@ -91,11 +62,7 @@
           </a-col>
         </a-row>
       </a-card>
-      </div>
-    </div>
-
-    <!-- 可滚动内容区域 -->
-    <div class="scrollable-content">
+      <div class="plan-list-content">
       <!-- 计划列表 -->
       <a-card class="plans-card">
         <a-table
@@ -105,7 +72,7 @@
           :pagination="false"
           row-key="id"
           :row-selection="{ selectedRowKeys: selectedPlanIds, onChange: (keys: any[]) => selectedPlanIds = keys.map(String) }"
-          :scroll="{ x: 1200, y: 'calc(100vh - 420px)' }"
+          :scroll="{ x: 1200, y: 'calc(100vh - 330px)' }"
           @change="handleTableChange"
           size="middle"
         >
@@ -246,7 +213,8 @@
           @show-size-change="handlePaginationChange"
         />
       </div>
-    </div>
+      </div>
+    </section>
 
     <a-modal v-model:open="groupModal" :title="groupId ? '编辑计划组' : '新建计划组'" @ok="saveGroup" :confirm-loading="groupSaving">
       <a-form layout="vertical"><a-form-item label="计划组名称" required><a-input v-model:value="groupForm.name" :maxlength="100" /></a-form-item><a-form-item label="说明"><a-textarea v-model:value="groupForm.description" :rows="3" /></a-form-item><a-form-item label="计划模块"><a-select v-model:value="groupForm.moduleId" allow-clear :options="groupModules.map(m=>({value:m.id,label:m.name}))" /></a-form-item><a-form-item label="标签"><a-select v-model:value="groupForm.tags" mode="tags" /></a-form-item><a-form-item label="归档"><a-switch v-model:checked="groupForm.archived" /></a-form-item></a-form>
@@ -312,8 +280,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { message } from 'ant-design-vue';
-import { PlusOutlined, ReloadOutlined, DownloadOutlined, ExperimentOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
+import { message, Modal } from 'ant-design-vue';
+import { ReloadOutlined, DownloadOutlined, ExperimentOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
 import type { Dayjs } from 'dayjs';
 import type { TestPlan, Environment, Project, CaseStatusCounts } from '@/types';
 import { testPlanApi } from '@/api/testPlan'
@@ -323,7 +291,8 @@ import TestPlanDetail from '@/components/TestPlan/TestPlanDetail.vue'
 import TestPlanEdit from '@/components/TestPlan/TestPlanEdit.vue'
 import PlanWorkspaceToolbar from '@/components/TestPlan/PlanWorkspaceToolbar.vue'
 import PlanGroupExecution from '@/components/TestPlan/PlanGroupExecution.vue'
-import { planWorkspaceApi } from '@/api/planWorkspace'
+import PlanNavigator from '@/components/TestPlan/PlanNavigator.vue'
+import { planWorkspaceApi, type PlanModule } from '@/api/planWorkspace'
 
 
 const router = useRouter()
@@ -343,8 +312,8 @@ const projectId = computed<string | undefined>(() => {
 const loading = ref(false)
 const plans = ref<TestPlan[]>([])
 const selectedPlanIds = ref<string[]>([])
-const workspaceFilter = ref<{module_id?:string;followed:boolean;archived:boolean;tag?:string}>({followed:false,archived:false})
-function applyWorkspaceFilter(value:typeof workspaceFilter.value) { workspaceFilter.value=value; pagination.value.current=1; void loadPlans() }
+const workspaceFilter = ref<{module_id?:string;followed:boolean;archived:boolean;tag?:string}>({module_id:typeof route.query.moduleId === 'string'?route.query.moduleId:undefined,followed:false,archived:false})
+function applyWorkspaceFilter(value:typeof workspaceFilter.value) { workspaceFilter.value={...value,module_id:workspaceFilter.value.module_id}; pagination.value.current=1; void loadPlans() }
 async function toggleFollow(plan: TestPlan & {followed?:boolean}) { try { await planWorkspaceApi.follow(plan.id,!plan.followed); await loadPlans() } catch(error) { console.error('关注计划失败',error); message.error('关注失败') } }
 
 const selectedPlan = ref<TestPlan | null>(null)
@@ -434,14 +403,17 @@ const columns = [
 
 const groupFilter = ref<string | undefined>(typeof route.query.groupId === 'string' ? route.query.groupId : undefined)
 const archivedGroups = ref(false)
-const groupModules = ref<{id:string;name:string}[]>([])
+const groupModules = ref<PlanModule[]>([])
+const navigationPlans = ref<TestPlan[]>([])
+const workspaceToolbar=ref<InstanceType<typeof PlanWorkspaceToolbar>>()
+const filtersOpen=ref(false)
 const planGroups = ref<PlanGroup[]>([])
 const selectedGroup = computed(() => planGroups.value.find(g => g.id === groupFilter.value))
 const groupModal = ref(false)
 const groupSaving = ref(false)
 const groupId = ref('')
 const groupForm = ref({ name: '', description: '', tags: [] as string[], archived: false, moduleId: null as string|null })
-function openGroup(group?: PlanGroup) { groupId.value = group?.id || ''; groupForm.value = { name: group?.name || '', description: group?.description || '', tags: group?.tags || [], archived: group?.archived || false, moduleId:group?.moduleId || null }; groupModal.value = true }
+function openGroup(group?: PlanGroup) { groupId.value = group?.id || ''; groupForm.value = { name: group?.name || '', description: group?.description || '', tags: group?.tags || [], archived: group?.archived || false, moduleId:group?.moduleId || workspaceFilter.value.module_id || null }; groupModal.value = true }
 async function saveGroup() {
   if (!projectId.value) return
   if (!groupForm.value.name.trim()) { message.warning('请输入计划组名称'); return }
@@ -450,77 +422,56 @@ async function saveGroup() {
   catch (error) { console.error('保存计划组失败', error); message.error('保存计划组失败') }
   finally { groupSaving.value = false }
 }
-async function cloneGroup() { if (!selectedGroup.value) return; try { const group = await planOrchestrationApi.cloneGroup(selectedGroup.value.id); groupFilter.value=group.id; await loadPlans(); message.success('计划组与成员计划已完整复制') } catch(error) {console.error('复制计划组失败',error);message.error('复制计划组失败')} }
+async function cloneGroup() { if (!selectedGroup.value) return; try { const group = await planOrchestrationApi.cloneGroup(selectedGroup.value.id); await selectNavigation(`group:${group.id}`); message.success('计划组与成员计划已完整复制') } catch(error) {console.error('复制计划组失败',error);message.error('复制计划组失败')} }
 async function deleteGroup() { if (!selectedGroup.value) return; try { await planOrchestrationApi.deleteGroup(selectedGroup.value.id); groupFilter.value = undefined; await loadPlans(); message.success('分组已删除，计划已保留') } catch (error) { console.error('删除计划组失败', error); message.error('删除失败') } }
 
-// 方法
-const loadPlans = async () => {
-  loading.value = true
-  try {
-    const params = {
-      ...workspaceFilter.value,
-      page: pagination.value.current,
-      size: pagination.value.pageSize,
-      search: searchValue.value || undefined,
-      status: statusFilter.value || undefined,
-      type: typeFilter.value || undefined,
-      group_id: groupFilter.value || undefined,
-      startDate: dateRange.value?.[0]?.format('YYYY-MM-DD'),
-      endDate: dateRange.value?.[1]?.format('YYYY-MM-DD')
-    }
-
-    if (!projectId.value) {
-      message.warning('请先选择项目')
-      return
-    }
-
-    console.log('开始加载测试计划，projectId:', projectId.value, 'params:', params)
-
-    const response = await testPlanApi.getTestPlans(projectId.value, params)
-    planGroups.value = await planOrchestrationApi.groups(projectId.value, archivedGroups.value)
-    groupModules.value = await planWorkspaceApi.modules(projectId.value)
-    console.log('获取测试计划响应:', response)
-    console.log('响应类型:', typeof response)
-    console.log('响应是否为数组:', Array.isArray(response))
-
-    // apiClient.get() 返回的是 response.data.data，所以这里直接是分页数据对象
-    if (response && typeof response === 'object') {
-      if (Array.isArray(response)) {
-        // 如果直接是数组（不应该发生，但做兼容处理）
-        plans.value = response
-        pagination.value.total = response.length
-        console.warn('响应是数组格式，可能数据格式不正确')
-      } else if (response.items && Array.isArray(response.items)) {
-        // 标准分页格式
-        plans.value = response.items
-        pagination.value.total = response.total || 0
-        console.log('成功加载计划列表:', plans.value.length, '条，总数:', pagination.value.total)
-      } else {
-        // 尝试从嵌套的 data 中获取
-        const data = (response as any).data
-        if (data && data.items && Array.isArray(data.items)) {
-          plans.value = data.items
-          pagination.value.total = data.total || 0
-          console.log('从嵌套data中加载计划列表:', plans.value.length, '条')
-        } else {
-          console.error('无法解析响应数据:', response)
-          plans.value = []
-          pagination.value.total = 0
-        }
-      }
-    } else {
-      console.error('响应数据格式错误:', response)
-      plans.value = []
-      pagination.value.total = 0
-    }
-
-    console.log('最终计划列表:', plans.value.map(p => ({ id: p.id, name: p.name })))
-  } catch (error) {
-    console.error('Failed to load plans:', error)
-    message.error('加载测试计划失败')
-  } finally {
-    loading.value = false
+// 每次刷新加载完整导航范围，列表保留分页；序号防止旧项目响应覆盖当前页面。
+let planLoadSequence=0
+async function navigationRows(id:string) {
+  const first=await testPlanApi.getTestPlans(id,{page:1,size:100,archived:workspaceFilter.value.archived})
+  const normalize=(items:TestPlan[])=>items.map(p=>({...p,groupId:(p as any).executionPolicy?.groupId || null}))
+  const rows=normalize(first.items || [])
+  for(let page=2;rows.length<first.total;page++){
+    const next=await testPlanApi.getTestPlans(id,{page,size:100,archived:workspaceFilter.value.archived})
+    if(!next.items?.length)break
+    rows.push(...normalize(next.items))
   }
+  return rows
+}
+const loadPlans = async () => {
+  const id=projectId.value,sequence=++planLoadSequence
+  if(!id){plans.value=[];navigationPlans.value=[];groupModules.value=[];planGroups.value=[];pagination.value.total=0;return}
+  loading.value=true
+  try {
+    const params={...workspaceFilter.value,include_descendants:true,page:pagination.value.current,size:pagination.value.pageSize,search:searchValue.value || undefined,status:statusFilter.value || undefined,type:typeFilter.value || undefined,group_id:groupFilter.value || undefined,startDate:dateRange.value?.[0]?.format('YYYY-MM-DD'),endDate:dateRange.value?.[1]?.format('YYYY-MM-DD')}
+    const [response,groups,modules,allPlans]=await Promise.all([testPlanApi.getTestPlans(id,params),planOrchestrationApi.groups(id,archivedGroups.value),planWorkspaceApi.modules(id),navigationRows(id)])
+    if(sequence!==planLoadSequence || id!==projectId.value)return
+    plans.value=response.items || [];pagination.value.total=response.total || 0
+    planGroups.value=groups;groupModules.value=modules;navigationPlans.value=allPlans
+    console.info('测试计划列表与导航已加载',{projectId:id,total:response.total,navigationCount:allPlans.length})
+  }catch(error){console.error('加载测试计划列表与导航失败',error);if(sequence===planLoadSequence)message.error('加载测试计划失败')}
+  finally{if(sequence===planLoadSequence)loading.value=false}
+}
+const navigationKey=computed(()=>groupFilter.value?`group:${groupFilter.value}`:workspaceFilter.value.module_id?`module:${workspaceFilter.value.module_id}`:'all')
+const navigationTitle=computed(()=>groupFilter.value==='__ungrouped__'?'未分组计划':selectedGroup.value?.name || groupModules.value.find(m=>m.id===workspaceFilter.value.module_id)?.name || '全部测试计划')
+async function selectNavigation(key:string){
+  if(key.startsWith('plan:')){await viewPlanDetail(key.slice(5));return}
+  groupFilter.value=key.startsWith('group:')?key.slice(6):undefined
+  workspaceFilter.value.module_id=key.startsWith('module:')?key.slice(7):undefined
+  pagination.value.current=1;selectedPlanIds.value=[]
+  await router.replace({query:{projectId:projectId.value,groupId:groupFilter.value,moduleId:workspaceFilter.value.module_id}})
+  await loadPlans()
+}
+function moduleAction(action:string,id?:string){
+  if(action==='create')workspaceToolbar.value?.editModule(undefined,id)
+  else if(action==='edit')workspaceToolbar.value?.editModule(groupModules.value.find(m=>m.id===id))
+  else if(id)Modal.confirm({title:'删除模块？',content:'模块内计划将保留。请先处理子模块。',okText:'删除',cancelText:'取消',onOk:async()=>{await workspaceToolbar.value?.removeModule(id);await selectNavigation('all')}})
+}
+async function groupAction(action:string,id:string){
+  await selectNavigation(`group:${id}`)
+  if(action==='edit')openGroup(planGroups.value.find(g=>g.id===id))
+  else if(action==='copy')await cloneGroup()
+  else Modal.confirm({title:'删除计划组？',content:'组内计划将保留并移至未分组。',okText:'删除',cancelText:'取消',onOk:deleteGroup})
 }
 
 const loadEnvironments = async () => {
@@ -925,14 +876,16 @@ onMounted(async () => {
   if (typeof route.query.planId === 'string') await viewPlanDetail(route.query.planId)
 })
 
-watch(() => route.query.groupId, (value) => { if (typeof value === 'string') {groupFilter.value=value; void loadPlans()} })
+watch(() => [route.query.groupId,route.query.moduleId], ([group,module]) => {const g=typeof group==='string'?group:undefined,m=typeof module==='string'?module:undefined;if(g!==groupFilter.value || m!==workspaceFilter.value.module_id){groupFilter.value=g;workspaceFilter.value.module_id=m;pagination.value.current=1;void loadPlans()}})
 watch(() => route.query.planId, (value) => { if (typeof value === 'string') void viewPlanDetail(value) })
 
 // 监听项目变化
 watch(
   () => projectStore.currentProject?.id,
   () => {
-    groupFilter.value = undefined
+    groupFilter.value = typeof route.query.groupId === 'string'?route.query.groupId:undefined
+    workspaceFilter.value.module_id=typeof route.query.moduleId === 'string'?route.query.moduleId:undefined
+    navigationPlans.value=[];groupModules.value=[];planGroups.value=[]
     selectedPlanIds.value = []
     if (projectId.value) {
       loadPlans()
@@ -950,11 +903,17 @@ const handleActionMenuEvent = (info: { key: string | number }, record: TestPlan)
 </script>
 
 <style scoped>
+.plan-workspace{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;background:#fff;padding:16px}
+.plan-workspace-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.plan-workspace-header strong span{font-weight:400;color:#86909c}
+.plan-list-content{flex:1;min-height:0;overflow:auto}.plan-workspace :deep(.plans-card){border:0}.plan-workspace :deep(.plans-card>.ant-card-body){padding:0}.plan-workspace .fixed-footer{margin-bottom:0;padding:12px 0}
+.selected-group-tools{padding:8px 0}.plan-workspace :deep(.workspace-toolbar){padding:12px 0}.plan-workspace .filter-card{margin-bottom:12px}
+@media(max-width:768px){.test-plans-container{flex-direction:column !important}.plan-workspace{padding:12px}.plan-workspace-header .ant-space{flex-wrap:wrap}.plan-workspace :deep(.ant-table-cell-fix-right){position:static !important}}
+
 .plan-groups { margin-bottom: 12px; }
 .test-plans-container {
-  height: 100vh;
+  height: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   background: #f5f5f5;
   overflow: hidden;
 }

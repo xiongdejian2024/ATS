@@ -68,6 +68,7 @@ async def get_test_plans(
     owner_id: Optional[str] = None,
     group_id: Optional[str] = None,
     module_id: Optional[str] = None,
+    include_descendants: bool = False,
     archived: Optional[bool] = False,
     followed: bool = False,
     tag: Optional[str] = None,
@@ -111,7 +112,8 @@ async def get_test_plans(
             plan_type=actual_plan_type,  # 使用实际的值
             owner_id=owner_id,
             group_id=group_id, start_date=start_date, end_date=end_date, module_id=module_id,
-            archived=archived, followed_by=current_user.id if followed else None, tag=tag
+            archived=archived, followed_by=current_user.id if followed else None, tag=tag,
+            include_descendants=include_descendants,
         )
 
         logger.debug(f"Service返回结果 - 总数: {result['total']}, 项目数: {len(result['items'])}")
