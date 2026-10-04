@@ -32,6 +32,7 @@ class TestLogger:
         # 创建logger
         self._logger = logging.getLogger("xat.framework")
         self._logger.setLevel(getattr(logging, config.TEST_LOG_LEVEL))
+        self._logger.propagate = False
         
         # 避免重复添加handler
         if self._logger.handlers:
@@ -52,7 +53,7 @@ class TestLogger:
         # 文件输出（如果启用）
         if config.TEST_LOG_TO_FILE:
             log_dir = Path(config.TEST_LOG_FILE_DIR)
-            log_dir.mkdir(exist_ok=True)
+            log_dir.mkdir(parents=True, exist_ok=True)
             
             # 测试运行日志（带时间戳）
             log_file = log_dir / f"{config.TEST_LOG_FILE_PREFIX}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"

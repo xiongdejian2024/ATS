@@ -16,6 +16,10 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ["LOG_FILE"] = str(TEST_DIRECTORY / "backend.log")
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "xat_external: 需要本机 SAT/ECU 源码的软件验收")
+
+
 @pytest.fixture(autouse=True)
 def isolated_database():
     from database import engine, Base

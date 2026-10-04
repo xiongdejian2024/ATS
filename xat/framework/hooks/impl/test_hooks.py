@@ -103,8 +103,6 @@ class TestResultCollectorHook(TestReportHook):
         self._case_ids_map: dict = {}  # case_code -> case_id
         self._result_file: Optional[Path] = None
         self._file_lock = threading.Lock()  # 文件写入锁
-        self._load_case_ids_map()
-        self._init_result_file()
     
     def _load_case_ids_map(self):
         """从test_cases.json文件加载case_code到case_id的映射"""
@@ -168,6 +166,9 @@ class TestResultCollectorHook(TestReportHook):
     
     def log_test_result(self, test_name: str, status: str, duration: float = 0.0, error: str = ""):
         """记录测试结果并立即写入文件（增量）"""
+        if self._result_file is None:
+            self._load_case_ids_map()
+            self._init_result_file()
         # 调用父类方法记录日志
         super().log_test_result(test_name, status, duration, error)
         

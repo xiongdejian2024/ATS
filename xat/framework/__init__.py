@@ -1,93 +1,43 @@
-# -*- coding: utf-8 -*-
-"""Pytest测试框架主入口"""
-from framework.config import TestConfig, get_test_config
-from framework.logger import (
-    get_logger,
-    log_debug,
-    log_info,
-    log_warning,
-    log_error,
-    log_critical,
-)
-from framework.hooks import (
-    pytest_configure,
-    pytest_sessionstart,
-    pytest_sessionfinish,
-    pytest_collection_modifyitems,
-    pytest_runtest_setup,
-    pytest_runtest_teardown,
-    pytest_runtest_logreport,
-    get_hook_registry,
-)
+"""XAT 公共接口，按需导入，导入包时不创建日志或结果文件。"""
 
-# 注意：fixtures模块已被删除，如果需要可以重新创建
-# from framework.fixtures import (
-#     # Database
-#     test_db,
-#     db_session,
-#     db_engine,
-#     test_database,
-#     # Client
-#     test_client,
-#     async_client,
-#     # Auth
-#     test_user,
-#     admin_user,
-#     auth_headers,
-#     admin_auth_headers,
-#     # Data
-#     sample_project,
-#     sample_test_case,
-#     sample_module,
-# )
+from importlib import import_module
 
-from framework.utils import (
-    assert_response_success,
-    assert_response_error,
-    create_test_user,
-    create_test_project,
-    attach_screenshot,
-    attach_text,
-    attach_json,
-    attach_html,
-    step,
-    label,
-    description,
-    severity,
-)
+_EXPORTS = {
+    "TestConfig": ".config",
+    "get_test_config": ".config",
+    "get_logger": ".logger",
+    "log_debug": ".logger",
+    "log_info": ".logger",
+    "log_warning": ".logger",
+    "log_error": ".logger",
+    "log_critical": ".logger",
+    "pytest_configure": ".hooks",
+    "pytest_sessionstart": ".hooks",
+    "pytest_sessionfinish": ".hooks",
+    "pytest_collection_modifyitems": ".hooks",
+    "pytest_runtest_setup": ".hooks",
+    "pytest_runtest_teardown": ".hooks",
+    "pytest_runtest_logreport": ".hooks",
+    "get_hook_registry": ".hooks",
+    "assert_response_success": ".utils",
+    "assert_response_error": ".utils",
+    "create_test_user": ".utils",
+    "create_test_project": ".utils",
+    "attach_screenshot": ".utils",
+    "attach_text": ".utils",
+    "attach_json": ".utils",
+    "attach_html": ".utils",
+    "step": ".utils",
+    "label": ".utils",
+    "description": ".utils",
+    "severity": ".utils",
+}
+__all__ = list(_EXPORTS)
 
-__all__ = [
-    # Config
-    "TestConfig",
-    "get_test_config",
-    # Logger
-    "get_logger",
-    "log_debug",
-    "log_info",
-    "log_warning",
-    "log_error",
-    "log_critical",
-    # Hooks
-    "pytest_configure",
-    "pytest_sessionstart",
-    "pytest_sessionfinish",
-    "pytest_collection_modifyitems",
-    "pytest_runtest_setup",
-    "pytest_runtest_teardown",
-    "pytest_runtest_logreport",
-    "get_hook_registry",
-    # Utils
-    "assert_response_success",
-    "assert_response_error",
-    "create_test_user",
-    "create_test_project",
-    # Allure Utils
-    "attach_screenshot",
-    "attach_text",
-    "attach_json",
-    "attach_html",
-    "step",
-    "label",
-    "description",
-    "severity",
-]
+
+def __getattr__(name):
+    if name not in _EXPORTS:
+        raise AttributeError(name)
+    value = getattr(import_module(_EXPORTS[name], __name__), name)
+    globals()[name] = value
+    return value

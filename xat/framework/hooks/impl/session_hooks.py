@@ -65,7 +65,7 @@ class TestEnvironmentSetupHook(SessionStartHook):
         import logging
         from pathlib import Path
         
-        log_dir = Path("logs")
+        log_dir = Path(config.TEST_LOG_FILE_DIR)
         log_dir.mkdir(exist_ok=True)
         
         logging.basicConfig(
@@ -122,10 +122,13 @@ class SessionFinishHookImpl(SessionFinishHook):
     
     def _collect_test_stats(self, session: pytest.Session) -> None:
         """收集测试统计信息"""
-        # 从session中获取测试结果
-        # 注意：这需要在pytest_runtest_logreport中收集
-        # 这里先设置默认值
-        pass
+        results = session.config.pluginmanager.get_plugin("xat-results")
+        rows = list(results.rows.values()) if results else []
+        self._test_stats = {
+            "total": len(rows),
+            **{status: sum(row["status"] == status for row in rows)
+               for status in ("passed", "failed", "skipped", "error")},
+        }
     
     def update_test_stats(self, **kwargs) -> None:
         """更新测试统计信息"""

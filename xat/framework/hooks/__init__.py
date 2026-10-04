@@ -102,33 +102,7 @@ def pytest_runtest_teardown(item):
 
 
 def pytest_runtest_logreport(report):
-    """Pytest测试报告hook - 记录测试结果"""
-    from framework.logger import get_logger
-    
-    logger = get_logger()
-    
-    # 只在测试结束时记录
-    if report.when == "call" and report.outcome:
-        test_name = report.nodeid
-        status_map = {
-            "passed": "PASSED",
-            "failed": "FAILED",
-            "skipped": "SKIPPED",
-        }
-        status = status_map.get(report.outcome, "UNKNOWN")
-        duration = getattr(report, 'duration', 0.0)
-        error = ""
-        
-        if report.outcome == "failed" and hasattr(report, 'longrepr'):
-            error = str(report.longrepr)[:1000]  # 限制错误信息长度
-        
-        logger.log_test_end(test_name, status, duration, error)
-        
-        # 调用结果收集Hook（立即写入文件）
-        # TestResultCollectorHook继承自TestTeardownHook，所以从test_teardown hooks中获取
-        for hook in _hook_registry.get_hooks("test_teardown"):
-            if hasattr(hook, 'log_test_result'):
-                hook.log_test_result(test_name, status, duration, error)
+    """完整阶段结果由 framework.integrations.plugin 统一采集。"""
 
 
 __all__ = [

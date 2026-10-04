@@ -1,6 +1,6 @@
-def main():
-    print("Hello from xat!")
+"""保留原 main.py 启动方式，使用 XAT 统一执行入口。"""
 
+from framework.__main__ import main
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
