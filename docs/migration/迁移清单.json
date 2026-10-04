@@ -1,0 +1,985 @@
+[
+  {
+    "组": "模块化ECU库",
+    "来源": "README.md",
+    "目标": "xat/packages/ecu/src/xat_ecu/README.md",
+    "源SHA256": "5b55f9b82c2a308c53608427717f8c93a55d3f314792755f0963ce2fdba79a48",
+    "目标SHA256": "5b55f9b82c2a308c53608427717f8c93a55d3f314792755f0963ce2fdba79a48",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/__init__.py",
+    "源SHA256": "d2f5e503939473cd926c7871f8994210d86391ca0e7b583dcbda520f6c186e78",
+    "目标SHA256": "76433cd2cb52f3f2267b99378081d993fbf56ef7ffd2fa5a83b6d84020bcd4ee",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "compat/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/compat/__init__.py",
+    "源SHA256": "90399f23f940e19cb819eccacde4b02a0bea86fcd702b271881ac1de0e7f9e55",
+    "目标SHA256": "f0aedb533f915d28136dbef36386168c7b0d05ce28cb18cc2d45437862e11fbf",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "compat/ecu_simulator.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/compat/ecu_simulator.py",
+    "源SHA256": "1c3d7a3bf65747fdcaab617c1a9e29de40c62d331e0e325c288bab0a15c9e4d5",
+    "目标SHA256": "23c7b4fdb0bd05288c41f411f786cea1263f901c871482cfdb6afa083a1acd95",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "config/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/config/__init__.py",
+    "源SHA256": "707e06f96d2f0e7241c9cd5380690c153c2d0e729104c2c07444c3b857f555b6",
+    "目标SHA256": "707e06f96d2f0e7241c9cd5380690c153c2d0e729104c2c07444c3b857f555b6",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "config/credentials.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/config/credentials.py",
+    "源SHA256": "51a5018ac1ab3eabb8f6fb42c5daabab7ed61ead28812d046efde291cb1deeeb",
+    "目标SHA256": "7f97c6d31d2bec390eaf98f5ac982ddec93896916c795505470d118e85e89d69",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "config/manager.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/config/manager.py",
+    "源SHA256": "53b02dfad9ed0c879120bb51a46d7f5bc275b6b7d095d2e94b7c96d1ff16a22d",
+    "目标SHA256": "5907ca7da1e42d2e52cfdbd1feb1cc821142c16e9e58c51dec0edd6aad48594b",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "config/vehicle_registry.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/config/vehicle_registry.py",
+    "源SHA256": "1c855691fe429a14ae8d04c68fab6015c0effebd435b5bcadcca5b245a01dcb8",
+    "目标SHA256": "fb7496bc1b0c0defafe50351f3d25a94045992ee8808bceeff31424084d1a3ef",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "core/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/core/__init__.py",
+    "源SHA256": "fa569685b86961ff7ded895309e4365eabd47b713f6bb55bb3ba2dc19e2fdc3e",
+    "目标SHA256": "d08f2d7830940efbfa28515c623efea6875b74a9c19f94f985bc40d75211aaa9",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "core/errors.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/core/errors.py",
+    "源SHA256": "c51ce128bd0cb93e033f0ebd0011208804895832cef2a34bac76631d37389666",
+    "目标SHA256": "c51ce128bd0cb93e033f0ebd0011208804895832cef2a34bac76631d37389666",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "core/events.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/core/events.py",
+    "源SHA256": "07ab3f479c6a89ec30cc042a97d075c55cda9b19e731b2cf71b01e4156d54e1a",
+    "目标SHA256": "1ce36c32464dc2a961c86d8b205a29c98504955d64be448a0783a2c8d21c08a4",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "core/interfaces.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/core/interfaces.py",
+    "源SHA256": "69482899c432c3d05e23ef3b9b68b144d264331ecc0f1fb5869ebba5fbcd3952",
+    "目标SHA256": "6977ba9379479022a840988f7d3f650e12f7e5044eb8b895f89c6df56d33f6e9",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "core/plugin.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/core/plugin.py",
+    "源SHA256": "4366655ef948a1b9f6a0d02d71d4fd8f9ac9baaadc344f6286c484f362f29adc",
+    "目标SHA256": "e456b9b92a559f90bdd3a81ad714b4272a971d568941290e7e101d7ab0daf3fa",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "core/types.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/core/types.py",
+    "源SHA256": "23338884ccde4c3e6732f2153fb7d3d3fb9366cb157797f5581a2e3f1b2cd033",
+    "目标SHA256": "23338884ccde4c3e6732f2153fb7d3d3fb9366cb157797f5581a2e3f1b2cd033",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "facade.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/facade.py",
+    "源SHA256": "6062535d25cb8fb4d343ebf57cdc7984991bb548aedf215cf6e84f659b24d324",
+    "目标SHA256": "2e724660695204baabb8bc40774d89cff16e3902a36fdee3309c42f446c2ae8b",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "hal/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/hal/__init__.py",
+    "源SHA256": "fc5a1a124879442ba9f72b5254cca54788ba6d425fc53ded16c82c16193d261c",
+    "目标SHA256": "a7841102a9dd534be658f38aca80ad36ea264a1fea83eb33730b1b4bfcea38e7",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "hal/adapter.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/hal/adapter.py",
+    "源SHA256": "2bbd24ba7c5f92a9f88fef526949af55453360d9c23bea83e8e9630f677df027",
+    "目标SHA256": "6ca206ccf1d8a827865dcf2438c3e129ae90b670a7a5839e49151e5d6493d145",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "hal/adapters/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/hal/adapters/__init__.py",
+    "源SHA256": "67895bbe870b36bfd7691235dba95e0f455edc18e73cdbc38aee24929070ff57",
+    "目标SHA256": "67895bbe870b36bfd7691235dba95e0f455edc18e73cdbc38aee24929070ff57",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "hal/adapters/pcan.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/hal/adapters/pcan.py",
+    "源SHA256": "624ef5951932c9b5c97dc9174e83089e83bd4f71f70504ba238d468c92a5f525",
+    "目标SHA256": "57a477b7b7294229cc9837eaff7c02f49d9d238752db4e7871545a7e1a510254",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "hal/adapters/socketcan.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/hal/adapters/socketcan.py",
+    "源SHA256": "62184c2c0dc3791cb6744739e1adb89a53bb713eb67c2692e6e0e97fb40919bc",
+    "目标SHA256": "29db06b209b3eebefc03fe51b56ac199ae6fd197c6d198a6af94bde23c73015e",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "hal/adapters/toomoss.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/hal/adapters/toomoss.py",
+    "源SHA256": "e7bde1c18f46b3e5eafe2d88b3043a2def516ab6659dcd218a69b11d38a65559",
+    "目标SHA256": "b15eec286333b8d9fbe34eddef369826d2e5646d7b21011861cb1aafbf23ed19",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "hal/adapters/tosun.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/hal/adapters/tosun.py",
+    "源SHA256": "fe3e5a501f6425ec4a43149339311d29a62de4a64e8677b6d30b98b1168b0a1d",
+    "目标SHA256": "93426ed0d8717c5c9572d3a4581d98b3467f951869594af973d5b3e0fae58273",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "hal/factory.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/hal/factory.py",
+    "源SHA256": "f29d62093a6cc1d2b60592451be0511f6e31adcea6d541e29e8cc271c2fe11da",
+    "目标SHA256": "caaca54092c281490c8a0b8a7840d10f6d6e7a5f7c4f78a404b6f8f2ffe6da9d",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "hal/registry.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/hal/registry.py",
+    "源SHA256": "aa3220e43e8228b4aa1c8c3571caad6fd0ca2bb1829a7aef31875fd03c453cce",
+    "目标SHA256": "659f3a5ba1aa3d94f89866e33118326b0c1f1c0923a6ca4a9e0ba68679691bac",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/__init__.py",
+    "源SHA256": "5d3eaab83b6ab268248bc854f944135db15e99e66a5addda280b15bf63d79560",
+    "目标SHA256": "5d3eaab83b6ab268248bc854f944135db15e99e66a5addda280b15bf63d79560",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/docan/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/docan/__init__.py",
+    "源SHA256": "665ef2ffaa92f84edce11511bd5d1d8a374c2a96c64ab5c23b08d3ea9de3d144",
+    "目标SHA256": "665ef2ffaa92f84edce11511bd5d1d8a374c2a96c64ab5c23b08d3ea9de3d144",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/docan/client.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/docan/client.py",
+    "源SHA256": "2faba402ac7e2437cb58dc28326a4e7756aa073cc43cd22854b015ee2340206e",
+    "目标SHA256": "481ff2f83c51fe2a7cd3a894503f8653d66478015c1020670a4249d34a1ecb45",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/docan/server.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/docan/server.py",
+    "源SHA256": "edcf98f44202248e16f03b5fe368fffe6e8bac0b5bd419a3cd31168acda72c9e",
+    "目标SHA256": "73830c13c3bc9db3cb735034f8dc7625539026a785d05d4338fbb52f1549703d",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/doip/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/doip/__init__.py",
+    "源SHA256": "bd84766d75cfafd4b1f0e48ccfa16ee92986ff9266b5b484d6824c4b945a41f9",
+    "目标SHA256": "bd84766d75cfafd4b1f0e48ccfa16ee92986ff9266b5b484d6824c4b945a41f9",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/doip/client.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/doip/client.py",
+    "源SHA256": "35d373c95b61d978665f2343ef5db5a04ca1b90950ea2942df8e389f21f30fa8",
+    "目标SHA256": "231ac4b2607b21fc6794e41b1dfc110e2cd3c9defe2d93f8bfd9376b23f18c75",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/doip/payload.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/doip/payload.py",
+    "源SHA256": "b760b9a4357a54855a28b1da1030dfab859ab76d4f4991d7a91434adae95e69f",
+    "目标SHA256": "b760b9a4357a54855a28b1da1030dfab859ab76d4f4991d7a91434adae95e69f",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/doip/server.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/doip/server.py",
+    "源SHA256": "b023ac36a5617f790972051f2e3b0d2f4423bdf4ce50a12a2c622967396367b2",
+    "目标SHA256": "3ad828297c1ffc14f35257c5008fbf1e2f136db29ac6255174f6978abf0db0a9",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/doip/types.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/doip/types.py",
+    "源SHA256": "46cdd14b407bf60e748fa6b514a3920aa6aabdd34ed8a180163859bfa7447bbf",
+    "目标SHA256": "46cdd14b407bf60e748fa6b514a3920aa6aabdd34ed8a180163859bfa7447bbf",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/someip/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/someip/__init__.py",
+    "源SHA256": "622823d3fb2879d8c7e0f4ad09ca75e579676e2a7126d33956c2bb237c7e628a",
+    "目标SHA256": "622823d3fb2879d8c7e0f4ad09ca75e579676e2a7126d33956c2bb237c7e628a",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/someip/service.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/someip/service.py",
+    "源SHA256": "1e27922b299305b746e9895f6225c452dd04da94ddc86bfc08a20538291d1287",
+    "目标SHA256": "1e27922b299305b746e9895f6225c452dd04da94ddc86bfc08a20538291d1287",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/uds/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/uds/__init__.py",
+    "源SHA256": "2fe0127d5c7dd1f4a92b8ef4d3fc135ad5a4c804d23a1dcfcf691062ce5f7b5c",
+    "目标SHA256": "2fe0127d5c7dd1f4a92b8ef4d3fc135ad5a4c804d23a1dcfcf691062ce5f7b5c",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/uds/builder.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/uds/builder.py",
+    "源SHA256": "54cd6f5292775d5989f7776ad4f553c9a26889272f00bd86a2b0f08327458e5e",
+    "目标SHA256": "e456551326e49fabed23d08a07c350b82e0c69fbf1562a2c92114cebe3f8737d",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/uds/data.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/uds/data.py",
+    "源SHA256": "7759dbb0c766fe52145375fd90afa5e67dd51127c26b0f1cccacd88986595597",
+    "目标SHA256": "7759dbb0c766fe52145375fd90afa5e67dd51127c26b0f1cccacd88986595597",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/uds/parser.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/uds/parser.py",
+    "源SHA256": "40877fa5f3bf6d7733a6c5b2870e1dc09ff38c15f741bdbdde9d58445a38108f",
+    "目标SHA256": "f3d09c4a052ae34356a856d661a69154f32f9db29a42857056ceb3c02da89e2f",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/uds/security.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/uds/security.py",
+    "源SHA256": "c4a0ad95ee2c181ff9137f39027939fe44520cc283508a55d2ab26e5e6a881e4",
+    "目标SHA256": "d8c2456fb7ad797cb21da3955fe2169b1f5fe3521c895e64e963653af6169f5f",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "protocol/uds/services.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/protocol/uds/services.py",
+    "源SHA256": "dad9a8f0e52bffd680fe9a0be5b3351431aa48723426761241f74668c2a6a4c1",
+    "目标SHA256": "dad9a8f0e52bffd680fe9a0be5b3351431aa48723426761241f74668c2a6a4c1",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "services/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/services/__init__.py",
+    "源SHA256": "c05d6e99eda9c3f8a2b83b9e6ff457c5e113080754250062b3eb2c4acf9f070a",
+    "目标SHA256": "c05d6e99eda9c3f8a2b83b9e6ff457c5e113080754250062b3eb2c4acf9f070a",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "services/bus.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/services/bus.py",
+    "源SHA256": "fd186f2f6855d51d4f240717b2f874e74ab032e8e95c42fb3e747ec36342ff09",
+    "目标SHA256": "683269c64b662ea0e7af2efa3e5540fbe635689393a0d895167ebf2962549e27",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "services/diagnostic.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/services/diagnostic.py",
+    "源SHA256": "7eff6c837a525024021298eccee6261d8940c3fb17242d04f8244b0c28863031",
+    "目标SHA256": "01ebffa119d8453e04cc559293ef54d97f67fb6812a758be1c928e954ef89104",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "services/flash.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/services/flash.py",
+    "源SHA256": "f5ceb718dcd09228d33ac6e259e5df22bf4c65e6b42c92f3080abfc65a805c61",
+    "目标SHA256": "60dd119024241bd8e95ef4d5d5a51ec0c52d6a0c93258e4849cb609269468bca",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "services/signal.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/services/signal.py",
+    "源SHA256": "0dcf4415fe3962e26093100365075868c3f242fb321349c9c2078e8b3ae3fb24",
+    "目标SHA256": "ac6a067cde3e08fa3beb851ddd956706c8ca9752f2ac46ddfc1ae9272d448112",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "services/simulator.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/services/simulator.py",
+    "源SHA256": "60d015e7a51fe45b377aba69e1de21b496fd1513489e6edc04549feacd5d0490",
+    "目标SHA256": "3a429ead6fb1f478a766a2327e0533bcf891f32d2569e82bda684a8a63b320bf",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "transport/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/transport/__init__.py",
+    "源SHA256": "27de667f96e338fa159b26c3d67aef8b4bdb9ab31ef82525fe97438aca2ed0d1",
+    "目标SHA256": "4ca3bbef7a0ba9569ffd0a02b23d7d8fda4b8628e457a9acb7dcf5f5890261c7",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "transport/can.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/transport/can.py",
+    "源SHA256": "c969388fbce8766c2942ac3e7c3d67bf61b1ce03c4a8b0f2fa0103b7e609ff84",
+    "目标SHA256": "53cbd9545f195fba133429f572e87374be81eaf71c1bf58ee9f0a4670c57ea4e",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "transport/ethernet.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/transport/ethernet.py",
+    "源SHA256": "e2b7a7677180068cf1f20d565a2346850e658dd898272714c26560deb57bb40e",
+    "目标SHA256": "157bfc8d9e119867e085c5b9cc78afd8e0be7e8caa9f4bfea5cf13e0c22fde78",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "transport/flexray.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/transport/flexray.py",
+    "源SHA256": "189531347910845a903d74a56924e684fe330388bd5ce519afb72602de9bf28d",
+    "目标SHA256": "d6c7bde595613f0288b1df1521ac16297a5f4f08c3858342292d4af30cec4a73",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "transport/lin.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/transport/lin.py",
+    "源SHA256": "b666ecbc67cf4a298b860a2bf2b64c60cc12d20703159b948afffdc00a367123",
+    "目标SHA256": "f78ee47e6dbf3e162273adde56ecc2540b60946533c90a4226a516de42bced51",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "transport/serial.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/transport/serial.py",
+    "源SHA256": "efa7158d96515411d55e000cacbf63b7ea1605379d7c5f8a93cfec85718f5890",
+    "目标SHA256": "c1646a98fa9c9d3ac215973450b376cbe26dfca3d437ac70f2eb95894fb242f5",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "transport/ssh.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/transport/ssh.py",
+    "源SHA256": "22b7fcf3c2ae31e354faad7d5165e0f355b0c9f63b54678e66ddc47acab2ec25",
+    "目标SHA256": "b5f39ada492c3110bbbdc7a0b5a819e9aec3a58315699e69d77f1eb06401c6c6",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "utils/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/utils/__init__.py",
+    "源SHA256": "ffd43a954200e13391296b46cd490ffe90c0887f28a166da76065c63dffed982",
+    "目标SHA256": "ffd43a954200e13391296b46cd490ffe90c0887f28a166da76065c63dffed982",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "utils/crypto.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/utils/crypto.py",
+    "源SHA256": "b9d333f97c3714af5a884bfe59d5b456d6a734bbfe2d8f171a333b5dfa0af27a",
+    "目标SHA256": "b9d333f97c3714af5a884bfe59d5b456d6a734bbfe2d8f171a333b5dfa0af27a",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "utils/data_types.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/utils/data_types.py",
+    "源SHA256": "be95c4fc01ddad06bf7c6b9ece5e322cee4ed4c3387a829d73ec69a2d7169377",
+    "目标SHA256": "be95c4fc01ddad06bf7c6b9ece5e322cee4ed4c3387a829d73ec69a2d7169377",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "utils/file_utils.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/utils/file_utils.py",
+    "源SHA256": "862938ab4ab0a076648e59a751a83c413da323a73c6c3ce4ece4b0dee26886d9",
+    "目标SHA256": "862938ab4ab0a076648e59a751a83c413da323a73c6c3ce4ece4b0dee26886d9",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "vehicle/__init__.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/vehicle/__init__.py",
+    "源SHA256": "6332c88926b1717a96c65f94aa8178d80468ed424aaa3f3ae254dea812ad32c7",
+    "目标SHA256": "6332c88926b1717a96c65f94aa8178d80468ed424aaa3f3ae254dea812ad32c7",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "vehicle/base.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/vehicle/base.py",
+    "源SHA256": "dededaf958f63de6c6d3524716d1d65b2a52e9b137877d1ca9c7d38727eb5dc1",
+    "目标SHA256": "588c91a201b9d954fa6599598cd9485e58454813f3d3475a497085aa3caded89",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "vehicle/data/README.md",
+    "目标": "xat/packages/ecu/src/xat_ecu/vehicle/data/README.md",
+    "源SHA256": "afb3e8700636afca9a185e4c225cad455f857eb3cc563114712b73e60b8b5794",
+    "目标SHA256": "afb3e8700636afca9a185e4c225cad455f857eb3cc563114712b73e60b8b5794",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "模块化ECU库",
+    "来源": "vehicle/loader.py",
+    "目标": "xat/packages/ecu/src/xat_ecu/vehicle/loader.py",
+    "源SHA256": "681180cb44254f9f3549c6c267f87f5a94800553722bb3830adc8e8dc25ea912",
+    "目标SHA256": "fe7e5ea337776b079d4cd4531dec51f1d681cebde8b7cbf7fdf71a95b22c5555",
+    "凭证替换": [],
+    "状态": "已迁入；首批库行为与独立依赖测试通过"
+  },
+  {
+    "组": "pytest框架",
+    "来源": ".gitignore",
+    "目标": "xat/framework/automotive/.gitignore",
+    "源SHA256": "ca03670e2208d1c34be8f5777965469aae4296cf2e4f955b98384adacca14b07",
+    "目标SHA256": "ca03670e2208d1c34be8f5777965469aae4296cf2e4f955b98384adacca14b07",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "__init__.py",
+    "目标": "xat/framework/automotive/__init__.py",
+    "源SHA256": "608f17c21d4921ecfb1c371f81097b1e4977c570b96c0bdfedf6b0440a2cef2b",
+    "目标SHA256": "608f17c21d4921ecfb1c371f81097b1e4977c570b96c0bdfedf6b0440a2cef2b",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "communication/__init__.py",
+    "目标": "xat/framework/automotive/communication/__init__.py",
+    "源SHA256": "638a96fad0fd6bb15eb2e26cc79cd418e56c27c3c759e376d3e879d848dea180",
+    "目标SHA256": "638a96fad0fd6bb15eb2e26cc79cd418e56c27c3c759e376d3e879d848dea180",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "communication/client.py",
+    "目标": "xat/framework/automotive/communication/client.py",
+    "源SHA256": "2edf2b14d916a3ca4f2e6dcc7292881a835bc748aaba08fc0267d7a8938d06fc",
+    "目标SHA256": "a937ff2567515217e248cc8f8063ceaa46e0014ebb908bf6f3a324bdc49e6aea",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "communication/message_protocol.py",
+    "目标": "xat/framework/automotive/communication/message_protocol.py",
+    "源SHA256": "9fb45d5bf247207a2d39a5988c8ab69464e12f2d1945c2db2bb85153aff291e1",
+    "目标SHA256": "f530add1eadc10ca364333a7bb8c9b7befcecef2de1cfae114028c6562a204c0",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "communication/server.py",
+    "目标": "xat/framework/automotive/communication/server.py",
+    "源SHA256": "946eead3464b7a402ff741a3cdfb85f280a6c177ebc08ceec81bc9650048c80c",
+    "目标SHA256": "594d4602a5dde3666c1037eabd4f9ab093f6c0679bcd66258a886891f026de77",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "core/__init__.py",
+    "目标": "xat/framework/automotive/core/__init__.py",
+    "源SHA256": "2541793bcae8a7dcb667673f195bab7d4befdf2a51d15219618c18364ff5ae20",
+    "目标SHA256": "2541793bcae8a7dcb667673f195bab7d4befdf2a51d15219618c18364ff5ae20",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "core/common_abc_test_base.py",
+    "目标": "xat/framework/automotive/core/common_abc_test_base.py",
+    "源SHA256": "b944394d830adb617f9f52f5c7305f69b5d08c4e6663245c687db5b4bfde4a35",
+    "目标SHA256": "ae11b7c324b8465984ae1fb9a36da6349b00b82f42c7a7ef1d6c9e8d8bd0de1b",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "core/common_sil_test_base.py",
+    "目标": "xat/framework/automotive/core/common_sil_test_base.py",
+    "源SHA256": "df826380f14b26f845d26c398bd41a61712fbee18b3384414b7660f55b95bd74",
+    "目标SHA256": "ed266e7920f6a00879cbfc0c097b80a38bd69913fcee43b11c089995df02366c",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "core/common_test_base.py",
+    "目标": "xat/framework/automotive/core/common_test_base.py",
+    "源SHA256": "91e7ddda01e4913060b713034f0d7426610122015d1eefe15ac178df510950e4",
+    "目标SHA256": "c0fd90ec9a88b6a6d39fbe994c626aeb978922ab43987e896841fc198af2cce9",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "core/dp2/__init__.py",
+    "目标": "xat/framework/automotive/core/dp2/__init__.py",
+    "源SHA256": "78443333ceea4657401bf4c6e3669db9e31a1e5df4507c12859431c735deaccd",
+    "目标SHA256": "78443333ceea4657401bf4c6e3669db9e31a1e5df4507c12859431c735deaccd",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "core/dp2/common_abc_test_base.py",
+    "目标": "xat/framework/automotive/core/dp2/common_abc_test_base.py",
+    "源SHA256": "a28bd0572cf991f30fe526bc6c744e6b3764993405b937bd894bdfe7490a30b3",
+    "目标SHA256": "ba92cb1d23935a1df783ede37af0bbbd827c785631960d4bb18fa9159f4e59b6",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "core/dp2/common_sil_test_base.py",
+    "目标": "xat/framework/automotive/core/dp2/common_sil_test_base.py",
+    "源SHA256": "9af3358d90e310c5c0386a6cb8f654f4241de610982cedc525927b0c0c346a6d",
+    "目标SHA256": "761de47eac563f616c664999c4cd236c65581794b6336ff41710d883c8380543",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "core/framework_base.py",
+    "目标": "xat/framework/automotive/core/framework_base.py",
+    "源SHA256": "1a5a0f4e5395874340295525e682a652bb04b7ed987ddde08eacb66b6e41d7d5",
+    "目标SHA256": "f80cc11ac44aeeb611effcd2e83abb9871b85b91d5f4d89b98f69925b46e5264",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "fixture/__init__.py",
+    "目标": "xat/framework/automotive/fixture/__init__.py",
+    "源SHA256": "c89b50176912324d6a8c7348fd471b0564af669cb2ef436aed249a6d7168e91e",
+    "目标SHA256": "c89b50176912324d6a8c7348fd471b0564af669cb2ef436aed249a6d7168e91e",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "fixture/fixture_base.py",
+    "目标": "xat/framework/automotive/fixture/fixture_base.py",
+    "源SHA256": "96a4b53452103a0c55f7374d35f395c38489c70da97a6a7a71c55d660c8af97b",
+    "目标SHA256": "7ceb4316cbabc6f08064266f9af93eb0a59e87780823e31759ed1584fbba27f6",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "fixture/fixture_class.py",
+    "目标": "xat/framework/automotive/fixture/fixture_class.py",
+    "源SHA256": "9ed839510efa71078441951fbb121dfc8219f9a3248b08075cea7ce70ab31df4",
+    "目标SHA256": "ace32373e04db68e7b5f8c936b9a8973ce83beff109b7cc76eb0c5c3403115b9",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "hook/__init__.py",
+    "目标": "xat/framework/automotive/hook/__init__.py",
+    "源SHA256": "c4b460937e5f11a34ed774fe7a9e7cdb4e4dc7d72d8cb53909879c2bf3e90815",
+    "目标SHA256": "c4b460937e5f11a34ed774fe7a9e7cdb4e4dc7d72d8cb53909879c2bf3e90815",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "hook/hook_base.py",
+    "目标": "xat/framework/automotive/hook/hook_base.py",
+    "源SHA256": "619a5df8bbb44055929d7920bc24adf5b15118458377bdeb4f22b32165ec64ce",
+    "目标SHA256": "32a60f636ff8398e6ad4dd33824dd2c15337b8b6bcfed55d5c1a9e8715d35b87",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "hook/hook_master.py",
+    "目标": "xat/framework/automotive/hook/hook_master.py",
+    "源SHA256": "85adf18623897a842998dab80be0be2d3e2ab4700f1890409138cead9ce9d300",
+    "目标SHA256": "185f0fc0b51cf5c47df582336c0498de9c424cedd77eaa0f2df6dd9193c05f02",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "hook/hook_non_dist.py",
+    "目标": "xat/framework/automotive/hook/hook_non_dist.py",
+    "源SHA256": "d22231b04fe0c629bc97d2688c5e981fc6698c2cc9674fcf0e4a8234f5d30f30",
+    "目标SHA256": "188d098db1bb1fd89a1d28ed4104090f31f9d4c20d25220481fca64c9e249c8e",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "hook/hook_slave.py",
+    "目标": "xat/framework/automotive/hook/hook_slave.py",
+    "源SHA256": "2ec084744208a3add929b8a6f6de9aff11c44f912a79fa3388299306d17db56d",
+    "目标SHA256": "090486084446732dddd4a1ac5e9a8974a80a66d69fb9e03ec7c3533a364f8abd",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "scripts/__init__.py",
+    "目标": "xat/framework/automotive/scripts/__init__.py",
+    "源SHA256": "de6f949991588164ccbbf6ab7f11add0b18c5b20f04f52e212c64fb31c4349d5",
+    "目标SHA256": "de6f949991588164ccbbf6ab7f11add0b18c5b20f04f52e212c64fb31c4349d5",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "scripts/record_top.sh",
+    "目标": "xat/framework/automotive/scripts/record_top.sh",
+    "源SHA256": "e243a734ad402167cac09553eb8ea8724c11e76eaaaf7bfebcc9aa2f451b9bd7",
+    "目标SHA256": "e243a734ad402167cac09553eb8ea8724c11e76eaaaf7bfebcc9aa2f451b9bd7",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "scripts/record_vm_stat.sh",
+    "目标": "xat/framework/automotive/scripts/record_vm_stat.sh",
+    "源SHA256": "cf92c61916ab97a41ac3de17feb4b05514404c19d3fd9b5f390a5c3fe573044e",
+    "目标SHA256": "cf92c61916ab97a41ac3de17feb4b05514404c19d3fd9b5f390a5c3fe573044e",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "statics/notice.png",
+    "目标": "xat/framework/automotive/statics/notice.png",
+    "源SHA256": "46343a56dae0e49efdc6d8bba5ebc1ec698a6e03032c2d8a52a12fa0c31ba25f",
+    "目标SHA256": "46343a56dae0e49efdc6d8bba5ebc1ec698a6e03032c2d8a52a12fa0c31ba25f",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "statics/report.html",
+    "目标": "xat/framework/automotive/statics/report.html",
+    "源SHA256": "3bf392695c698011d6b2e0dc35f56034a3a674aefa873866a3e9e0a39f4d2d44",
+    "目标SHA256": "3bf392695c698011d6b2e0dc35f56034a3a674aefa873866a3e9e0a39f4d2d44",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/__init__.py",
+    "目标": "xat/framework/automotive/utils/__init__.py",
+    "源SHA256": "c89b50176912324d6a8c7348fd471b0564af669cb2ef436aed249a6d7168e91e",
+    "目标SHA256": "c89b50176912324d6a8c7348fd471b0564af669cb2ef436aed249a6d7168e91e",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/artifactory_helper.py",
+    "目标": "xat/framework/automotive/utils/artifactory_helper.py",
+    "源SHA256": "7cad5b0d2174ce8912f84cb363f740615b7c4cceea984f90010f687581d1ba76",
+    "目标SHA256": "fdbd5921b20c492a5f82b10066e3e9b41857ec0d8f1d090654e03a7192483cf8",
+    "凭证替换": [
+      {
+        "名称": "ARTIFACTORY_PASSWORD",
+        "环境变量": "XAT_CREDENTIAL_PYTEST___UTILS_ARTIFACTORY_HELPER_PY_ARTIFACTORY_PASSWORD",
+        "行": 12
+      },
+      {
+        "名称": "ARTIFACTORY_QUAN_PASSWORD",
+        "环境变量": "XAT_CREDENTIAL_PYTEST___UTILS_ARTIFACTORY_HELPER_PY_ARTIFACTORY_QUAN_PASSWORD",
+        "行": 15
+      }
+    ],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/bench_helper.py",
+    "目标": "xat/framework/automotive/utils/bench_helper.py",
+    "源SHA256": "01e3a8011c2f3ea13b223493fca33f9406266e3e15acd085a01bbaa74aac83cf",
+    "目标SHA256": "de12f3991193172af8cfd1ce3d7e2eeeeecc5e78396c90060c95d2ee719f0934",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/bgm_helper.py",
+    "目标": "xat/framework/automotive/utils/bgm_helper.py",
+    "源SHA256": "4c524594f59b9238f6fbf0dd8007c5974ae934a96cb27ee52bc9b78f754b3c96",
+    "目标SHA256": "9925702e814c802567197406f06cbea6b3ba3e36e22eac148775b1095b6fd0d0",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/case_info_helper.py",
+    "目标": "xat/framework/automotive/utils/case_info_helper.py",
+    "源SHA256": "faf0a53b2d36c5281ad3ad14f241b0b86c4f5dfdaca39e8370ba363e5250439e",
+    "目标SHA256": "3f9dff8712c30aa01e976873958962b54b0c30bd36e72bc6a110a081405a4db1",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/conftest_helper.py",
+    "目标": "xat/framework/automotive/utils/conftest_helper.py",
+    "源SHA256": "b9c92723dab3fb59f017049fa1dadc6d6a193db253a851c13bd673b465f2271e",
+    "目标SHA256": "72e4e85741f83be6f3459b565f8f9bc3470674599ba73a4c7c2aed5c0269a3f3",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/data_type.py",
+    "目标": "xat/framework/automotive/utils/data_type.py",
+    "源SHA256": "9cb87e4e4165b6a894fe64faaac72e45abead5891defec35bd550201264338c9",
+    "目标SHA256": "463669ae726ba80d0ada593e9a5a6c56613fd8cb49d5adb4395e5d40a9916780",
+    "凭证替换": [
+      {
+        "名称": "password",
+        "环境变量": "XAT_CREDENTIAL_PYTEST___UTILS_DATA_TYPE_PY_PASSWORD",
+        "行": 191
+      }
+    ],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/database_helper.py",
+    "目标": "xat/framework/automotive/utils/database_helper.py",
+    "源SHA256": "afa81d606382158f97b5d5d4660ea8a21dd0d5bc74b6e466fe8e8ad4c41b84a7",
+    "目标SHA256": "74b1972c710a47ff2e5522c9568c90ceec3609163dae6d69959e1d9f20a67167",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/email_helper.py",
+    "目标": "xat/framework/automotive/utils/email_helper.py",
+    "源SHA256": "a5423a84108e90713ff7c295acc2de8b33eaeb054e00d6c3236ac6451adba236",
+    "目标SHA256": "58bcabd945d942b605f40ebccffc6784797c0a0cdc7155ac8e6d0bc4ef8d0ee9",
+    "凭证替换": [
+      {
+        "名称": "mail_pass",
+        "环境变量": "XAT_CREDENTIAL_PYTEST___UTILS_EMAIL_HELPER_PY_MAIL_PASS",
+        "行": 51
+      }
+    ],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/feishu_helper.py",
+    "目标": "xat/framework/automotive/utils/feishu_helper.py",
+    "源SHA256": "d5f4966f220024a29068cfbc02f952114c30abeea2b659c651fc69b61f56d1e6",
+    "目标SHA256": "e920a152ac77b72447d536a2fab528ba8a467afb139a55bd26fd69afdd5491eb",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/ms_helper.py",
+    "目标": "xat/framework/automotive/utils/ms_helper.py",
+    "源SHA256": "6d7cf377eb3db01e39937972ce432562d48dc07970b731cb7ad7f29477f0b647",
+    "目标SHA256": "579a9b0f2ec30efae74722e4ed02655b7b0eea10b96164085d73148b28f5dbbb",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/new_relay_helper.py",
+    "目标": "xat/framework/automotive/utils/new_relay_helper.py",
+    "源SHA256": "f3e20d6a164f27a0f2f43cf01c58cf0aad4f7b11f52f43b2d81d521243700ed2",
+    "目标SHA256": "1c81c6f0f5493745e170f0c9c23b5a0bab6f0b5eac4027a63bdc11791bf5daa9",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/partner_helper.py",
+    "目标": "xat/framework/automotive/utils/partner_helper.py",
+    "源SHA256": "93ac836a8be092fb240e123bd96f6f349ef795d272f8ff1e11e4421814fdb233",
+    "目标SHA256": "4b5b8fa812f3ab97b606bd3d66a6137929779d1d81ece5aff4b9aaa709da4f99",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/report_helper.py",
+    "目标": "xat/framework/automotive/utils/report_helper.py",
+    "源SHA256": "bccda8000c727682848d42243c188c8192f587f6da15cb8fc463a3c864787ec4",
+    "目标SHA256": "46828bb13c4e8417ddbfa3aecba63927dabf8f4b606fa935a723bcb159f7329c",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/tasks_helper.py",
+    "目标": "xat/framework/automotive/utils/tasks_helper.py",
+    "源SHA256": "f7569b65ae879921aaad48feeba4d675673274d2f2575d1c245e754a5238c7c6",
+    "目标SHA256": "639a9ff97318afb5b65a6cccb4b1b0058545de0fe4df56f3d4733cd2b499d22f",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/thread_helper.py",
+    "目标": "xat/framework/automotive/utils/thread_helper.py",
+    "源SHA256": "17eda46a0297f0e4c200d2d1a07d2f36281769a540e26780ea942c0aa0c30782",
+    "目标SHA256": "17eda46a0297f0e4c200d2d1a07d2f36281769a540e26780ea942c0aa0c30782",
+    "凭证替换": [],
+    "状态": "已迁入，待功能验证"
+  },
+  {
+    "组": "pytest框架",
+    "来源": "utils/willow_helper.py",
+    "目标": "xat/framework/automotive/utils/willow_helper.py",
+    "源SHA256": "22a0775ab3665ff346ac7a2009111be37c71086e993a6b599d5bccc154281bd3",
+    "目标SHA256": "16fdf65165eb7343c7be4d3cce06eb4da51731dcc6bff848cde69c83093fdd55",
+    "凭证替换": [
+      {
+        "名称": "Authorization",
+        "环境变量": "XAT_CREDENTIAL_PYTEST___UTILS_WILLOW_HELPER_PY_AUTHORIZATION",
+        "行": 31
+      }
+    ],
+    "状态": "已迁入，待功能验证"
+  }
+]

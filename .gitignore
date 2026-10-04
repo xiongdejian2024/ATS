@@ -137,3 +137,6 @@ __pycache__/
 allure-results/
 test_results.json
 evidence/
+*.egg-info/
+**/build/
+**/dist/
