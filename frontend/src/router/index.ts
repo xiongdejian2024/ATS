@@ -23,6 +23,7 @@ const routes = [
       { path: 'test-cases/:caseId/edit', name: 'CaseEdit', component: () => import('@views/CaseEditorPage.vue'), meta: { title: '编辑用例' } },
       { path: 'test-cases/:caseId/created', name: 'CaseCreated', component: () => import('@views/CaseCreated.vue'), meta: { title: '创建成功' } },
       { path: 'case-reviews', name: 'CaseReviews', component: () => import('@views/CaseReviews.vue'), meta: { title: '用例评审' } },
+      { path: 'test-plans/:planId/functional-execution', name: 'PlanFunctionalExecution', component: () => import('@views/PlanFunctionalExecution.vue'), meta: { title: '功能用例执行' } },
       { path: 'test-plans/:planId/detail', name: 'TestPlanDetailPage', component: () => import('@views/TestPlanDetailPage.vue'), meta: { title: '计划详情' } },
       { path: 'test-plan-reports', name: 'TestPlanReports', component: () => import('@views/TestPlanReports.vue'), meta: { title: '计划报告' } },
       { path: 'test-plan-reports/:runId', name: 'TestPlanReportDetail', component: () => import('@views/TestPlanReportDetail.vue'), meta: { title: '计划报告详情' } },

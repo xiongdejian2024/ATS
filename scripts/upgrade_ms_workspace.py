@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""预览或执行用例、计划工作区增量升级；只新增表、列和索引，禁止重建已有表。"""
+"""预览或执行用例、计划工作区增量升级；只增量扩展结构与时间精度，禁止重建已有表。"""
 import argparse
 import json
 import os
@@ -78,6 +78,11 @@ def migration_plan(engine):
                 steps.append((f"新增索引 {index.name}", str(CreateIndex(index).compile(dialect=engine.dialect))))
             continue
         actual = {c["name"]: c for c in inspector.get_columns(table.name)}
+        # 同一秒内启动新批次时必须能区分先后；仅扩大已审查字段精度，保留原时间值。
+        if table.name == "plan_runs" and engine.dialect.name == "mysql":
+            timestamp = actual.get("created_at", {})
+            if getattr(timestamp.get("type"), "fsp", None) != 6:
+                steps.append(("扩大计划批次创建时间精度至微秒", "ALTER TABLE plan_runs MODIFY COLUMN created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)"))
         missing_columns=set(table.columns.keys())-set(actual)
         for column in table.columns:
             if column.name in actual:

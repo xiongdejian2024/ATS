@@ -138,7 +138,7 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
                               assignedTo=node.assigned_to, prerequisites=entry["prerequisites"],
                               linkedFunctionalId=node.linked_functional_id)
                 snapshots.append(frozen)
-    run = PlanRun(id=str(uuid.uuid4()), plan_id=plan_id, executor_id=str(user_id),
+    run = PlanRun(id=str(uuid.uuid4()), plan_id=plan_id, executor_id=str(user_id), created_at=beijing_now(),
                   idempotency_key=idempotency_key, status="group_waiting" if defer else ("queued" if suites else "running"),
                   plan_name=plan.name, config_snapshot=policy, notes=notes,
                   case_snapshot=snapshots,

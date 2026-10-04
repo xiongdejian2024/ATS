@@ -17,6 +17,7 @@ from .ai_assistance import AIModelConfig, AIConversation, AICaseDraft
 from .case_governance import CaseVersion, CaseReview, CaseReviewItem, CaseReviewDecision, CaseReviewComment, CaseSavedView
 from .case_features import CaseChange
 from .plan_orchestration import PlanGroup, PlanSettings, PlanRun, PlanRunItem
+from . import plan_case_execution
 from . import plan_workspace
 from . import plan_group_execution
 from . import plan_report_workspace

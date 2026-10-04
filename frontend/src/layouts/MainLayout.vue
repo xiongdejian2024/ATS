@@ -116,7 +116,7 @@ async function changeGlobalProject(id: string) {
   if (!target) return
   try {
     // 切换项目时移除旧项目实体链接，不能把旧用例/批次带入新项目。
-    const path=['CaseEdit','CaseCreated'].includes(String(route.name)) ? '/test-cases' : route.name==='TestPlanDetailPage' ? '/test-plans' : route.name==='TestPlanReportDetail' ? '/test-plan-reports' : route.path
+    const path=['CaseEdit','CaseCreated'].includes(String(route.name)) ? '/test-cases' : ['TestPlanDetailPage','PlanFunctionalExecution'].includes(String(route.name)) ? '/test-plans' : route.name==='TestPlanReportDetail' ? '/test-plan-reports' : route.path
     const failure=await router.replace({ path, query: { projectId: id } })
     if(isNavigationFailure(failure)) { console.info('项目切换已取消，保留原项目'); return }
     projectStore.setCurrentProject(target)

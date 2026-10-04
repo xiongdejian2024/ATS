@@ -69,15 +69,17 @@ def entries(db, plan, category):
             bugCount=len(bugs.get(case.id,set())), runId=run.id if result else None,
             grouped=grouped, precondition=case.precondition, steps=case.steps, caseEditType=case.case_edit_type,
             textDescription=case.text_description, expectedResult=case.expected_result))
-    return items, list(points.values()), modules, uses
+    from services.plan_case_execution import overlay
+    return overlay(db, plan.id, items, run), list(points.values()), modules, uses
 
 
 def listing(db, plan, category, params):
     items, points, modules, uses = entries(db,plan,category)
     search = (params.get('search') or '').strip().casefold()
+    results = set((params.get('result') or '').split(','))
     filtered = [item for item in items if (not search or search in (item['name']+' '+item['caseCode']).casefold())
         and (not params.get('priority') or item['priority'] == params['priority'])
-        and (not params.get('result') or item['result'] == params['result'])
+        and (not params.get('result') or item['result'] in results)
         and (not params.get('executor') or item['assignedTo'] == params['executor'])
         and (not params.get('tag') or params['tag'] in item['tags'])]
     def tree_rows(rows, field):

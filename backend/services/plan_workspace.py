@@ -140,7 +140,9 @@ def apply_tree_statistics(db, plan_id, payload):
     from models.test_suite import TestSuite
     rows = db.query(PlanNode).filter(PlanNode.plan_id == plan_id, PlanNode.node_type != "point").all()
     from services.plan_tree import uses_tree
+    from services.plan_case_execution import apply_statistics
     if not uses_tree(db, plan_id):
+        apply_statistics(db, plan_id, payload)
         return
     run = db.query(PlanRun).filter_by(plan_id=plan_id).order_by(PlanRun.created_at.desc()).first()
     from services.plan_orchestration import build_report
@@ -156,3 +158,4 @@ def apply_tree_statistics(db, plan_id, payload):
     payload["executedCases"] = sum(state != "pending" for state in states)
     payload["caseStatusCounts"] = {key: sum(mapping.get(state, "pending") == key for state in states) for key in ("pending", "pass", "fail", "broken", "error", "skip")}
     payload["usesTestPointTree"] = True
+    apply_statistics(db, plan_id, payload)

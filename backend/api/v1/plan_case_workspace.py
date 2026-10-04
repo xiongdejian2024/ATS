@@ -9,6 +9,7 @@ from api.v1.plan_workspace import plan_access, ok
 from api.v1.case_governance import transact
 from core.project_access import require_project_access
 from services import plan_case_workspace as service
+from schemas.plan_case_execution import ExecuteInput
 router=APIRouter()
 Category=Literal['functional','api','scenario']
 class Selection(BaseModel):
@@ -43,7 +44,10 @@ def listing(plan_id:str,category:Category='functional',tree_type:Literal['COLLEC
     plan=plan_access(db,user,plan_id)
     require_project_access(db,user,plan.project_id,'test_case:read')
     params=dict(view=view,tree_type=tree_type,folder=folder,include_descendants=include_descendants,search=search,priority=priority,result=result,executor=executor,tag=tag,page=page,size=size,sort=sort,direction=direction)
-    return ok(service.listing(db,plan,category,params))
+    from services.plan_case_execution import can_execute
+    payload = service.listing(db,plan,category,params)
+    payload["canExecute"] = can_execute(db,user,plan)
+    return ok(payload)
 
 @router.post('/plans/{plan_id}/case-workspace/batch')
 def batch(plan_id:str,data:Batch,db:Session=Depends(get_db),user=Depends(get_current_user)):
@@ -56,3 +60,20 @@ def associate(plan_id:str,data:Association,db:Session=Depends(get_db),user=Depen
     plan=plan_access(db,user,plan_id,'update')
     require_project_access(db,user,plan.project_id,'test_case:read')
     return ok(transact(db,lambda:service.associate(db,plan,user,data)))
+
+
+@router.post('/plans/{plan_id}/case-workspace/execute')
+def execute_cases(plan_id: str, data: 'ExecuteInput', db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_execution import execute
+    plan = plan_access(db,user,plan_id,'execute')
+    require_project_access(db,user,plan.project_id,'test_case:read')
+    return ok(transact(db,lambda:execute(db,user,plan,data)))
+
+
+@router.get('/plans/{plan_id}/case-workspace/execution')
+def execution_detail(plan_id: str, source: Literal['legacy','node'], associationId: str = Query(min_length=1,max_length=36), caseId: str = Query(min_length=1,max_length=36),
+                     page: int = Query(1,ge=1), size: int = Query(20,ge=1,le=100), db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_execution import detail
+    plan = plan_access(db,user,plan_id)
+    require_project_access(db,user,plan.project_id,'test_case:read')
+    return ok(detail(db,user,plan,source,associationId,caseId,page,size))

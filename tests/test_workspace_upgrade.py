@@ -53,3 +53,21 @@ def test_plan_collections_upgrade_preserves_legacy_relations_and_executor():
         row=connection.execute(text("SELECT case_id,assigned_to,execution_status,collection_id FROM plan_case_relations WHERE id='relation'")).one()
         assert tuple(row)==('case','owner','pass',None)
     assert module.upgrade(engine,True)==[]
+
+
+def test_execution_history_upgrade_preserves_runs_and_is_idempotent():
+    """新历史表迁移不能删除或重写原计划报告。"""
+    with engine.begin() as connection:
+        connection.execute(text("INSERT INTO users (id,username,email,password_hash,status) VALUES ('owner','执行历史升级','execution-upgrade@example.com','仅测试',1)"))
+        connection.execute(text("INSERT INTO projects (id,name,owner_id,status) VALUES ('project','执行历史旧项目','owner','active')"))
+        connection.execute(text("INSERT INTO test_plans (id,project_id,owner_id,name,plan_number,plan_type,status) VALUES ('plan','project','owner','旧计划','TP-EXECUTION','manual','completed')"))
+        connection.execute(text("INSERT INTO plan_runs (id,plan_id,executor_id,plan_name,status,config_snapshot,case_snapshot,manual_results,manual_revision,report) VALUES ('old-run','plan','owner','旧计划','completed','{}','[]','{}',0,:report)"), {'report':'{"total":1,"passed":1}'})
+        connection.execute(text('DROP TABLE plan_case_executions'))
+    preview=module.upgrade(engine,False)
+    assert any('plan_case_executions' in description for description,_ in preview)
+    assert 'plan_case_executions' not in inspect(engine).get_table_names()
+    module.upgrade(engine,True)
+    with engine.connect() as connection:
+        assert connection.execute(text("SELECT report FROM plan_runs WHERE id='old-run'")).scalar()=='{"total":1,"passed":1}'
+        assert connection.execute(text('SELECT COUNT(*) FROM plan_case_executions')).scalar()==0
+    assert module.upgrade(engine,True)==[]

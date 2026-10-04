@@ -132,7 +132,7 @@
           :pagination="pagination"
           :scroll="{ x: 1850 }"
           :row-selection="
-            canEdit
+            canEdit || data?.canExecute
               ? {
                   selectedRowKeys: selected,
                   onChange: (keys: (string | number)[]) =>
@@ -146,9 +146,11 @@
           @change="tableChange"
         >
           <template #bodyCell="{ column, record }">
-            <a v-if="column.key === 'caseCode'" @click="openCase(record)">{{
-              record.caseCode
-            }}</a>
+            <a
+              v-if="column.key === 'caseCode'"
+              @click="openExecution(record)"
+              >{{ record.caseCode }}</a
+            >
             <template v-else-if="column.key === 'name'"
               ><span>{{ record.name }}</span
               ><a-tag v-if="record.recycled" color="red"
@@ -171,11 +173,22 @@
                 tag
               }}</a-tag></a-space
             >
-            <a-tag
-              v-else-if="column.key === 'result'"
-              :color="resultColor(record.result)"
-              >{{ resultLabels[record.result] || record.result }}</a-tag
-            >
+            <template v-else-if="column.key === 'result'">
+              <a-select
+                v-if="data?.canExecute && !record.grouped && !record.recycled"
+                :value="record.result"
+                :disabled="executing.has(record.id)"
+                :options="[
+                  { value: 'pending', label: '未执行' },
+                  ...functionalResults,
+                ]"
+                style="width: 100%"
+                @change="(value: unknown) => inlineResult(record, value)"
+              />
+              <a-tag v-else :color="resultColor(record.result)">{{
+                resultLabels[record.result] || record.result
+              }}</a-tag>
+            </template>
             <span v-else-if="['createdAt', 'updatedAt'].includes(column.key)">{{
               formatTime(record[column.key])
             }}</span>
@@ -185,8 +198,11 @@
               >{{ record.bugCount }}</a
             >
             <a-space v-else-if="column.key === 'actions'"
-              ><a-button type="link" size="small" @click="openCase(record)"
-                >查看</a-button
+              ><a-button
+                type="link"
+                size="small"
+                @click="openExecution(record)"
+                >{{ data?.canExecute ? "执行" : "查看" }}</a-button
               ><a-popconfirm
                 v-if="canEdit && !record.grouped"
                 :title="`取消关联用例“${record.name}”？`"
@@ -200,12 +216,24 @@
           </template>
         </a-table>
       </template>
-      <div v-if="selected.length && canEdit" class="selection-toolbar">
+      <div
+        v-if="selected.length && (canEdit || data?.canExecute)"
+        class="selection-toolbar"
+      >
         <span>已选择 {{ selected.length }} 项</span
-        ><a-button @click="openBatch('assign')">修改执行人</a-button
-        ><a-button v-if="treeType === 'COLLECTION'" @click="openBatch('move')"
+        ><a-button
+          v-if="data?.canExecute"
+          @click="openExecuteBatch"
+          :disabled="selectedRows.some((row) => row.recycled || row.grouped)"
+          >执行</a-button
+        ><a-button v-if="canEdit" @click="openBatch('assign')"
+          >修改执行人</a-button
+        ><a-button
+          v-if="canEdit && treeType === 'COLLECTION'"
+          @click="openBatch('move')"
           >移动</a-button
         ><a-popconfirm
+          v-if="canEdit"
           title="取消已选用例的计划关联？"
           @confirm="unlink(selectedRows)"
           ><a-button>取消关联</a-button></a-popconfirm
@@ -213,6 +241,21 @@
       </div>
     </div>
   </section>
+  <a-modal
+    v-model:open="executeBatchOpen"
+    title="批量执行"
+    width="min(800px,100vw)"
+    :confirm-loading="executeSaving"
+    :mask-closable="!executeSaving"
+    :cancel-button-props="{ disabled: executeSaving }"
+    ok-text="提交结果"
+    @ok="executeBatch"
+    ><p>已选择 {{ executeTargets.length }} 个用例</p>
+    <PlanCaseExecuteForm
+      v-model:result="executeResult"
+      v-model:description="executeDescription"
+      :disabled="executeSaving"
+  /></a-modal>
   <a-modal
     v-model:open="batchOpen"
     :title="batchAction === 'assign' ? '修改执行人' : '移动到测试集'"
@@ -234,17 +277,6 @@
       :field-names="{ label: 'title', value: 'key' }"
       style="width: 100%"
   /></a-modal>
-  <a-drawer
-    v-model:open="caseOpen"
-    :title="current?.name"
-    width="min(860px,100vw)"
-    destroy-on-close
-    ><TestCaseDetail
-      v-if="current && caseOpen"
-      :case-id="current.caseId"
-      :project-id="plan.projectId"
-      read-only
-  /></a-drawer>
   <a-drawer
     v-model:open="defectsOpen"
     title="关联缺陷"
@@ -277,20 +309,25 @@ import {
 } from "@/api/planCaseWorkspace";
 import { planTreeApi } from "@/api/planTree";
 import { caseFolderTree } from "./planCaseFolders";
-import TestCaseDetail from "@/components/TestCase/TestCaseDetail.vue";
 import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
 import PlanDefects from "./PlanDefects.vue";
+import PlanCaseExecuteForm from "./PlanCaseExecuteForm.vue";
+import {
+  functionalResults,
+  functionalListingState,
+} from "./functionalExecution";
 const props = defineProps<{ plan: TestPlan; canEdit: boolean }>(),
   emit = defineEmits<{ changed: [] }>(),
   route = useRoute(),
   router = useRouter();
+const initialListing = functionalListingState(route.query);
 const data = ref<PlanCaseListing>(),
   loading = ref(false),
   failed = ref(false),
-  search = ref(""),
+  search = ref(initialListing.search),
   folderSearch = ref(""),
   showType = ref("list"),
-  advanced = ref(false),
+  advanced = ref(initialListing.advanced),
   expanded = ref<string[]>([]),
   selected = ref<string[]>([]),
   executors = ref<{ id: string; name: string }[]>([]);
@@ -299,15 +336,15 @@ const treeType = ref<"COLLECTION" | "MODULE">(
   ),
   folder = ref(String(route.query.caseFolder || "all"));
 const filters = reactive({
-    priority: undefined as string | undefined,
-    result: undefined as string | undefined,
-    executor: undefined as string | undefined,
-    tag: "",
+    priority: initialListing.priority,
+    result: initialListing.result,
+    executor: initialListing.executor,
+    tag: initialListing.tag,
   }),
-  page = ref(1),
-  size = ref(20),
-  sort = ref("createdAt"),
-  direction = ref("desc");
+  page = ref(initialListing.page),
+  size = ref(initialListing.size),
+  sort = ref(initialListing.sort),
+  direction = ref(initialListing.direction);
 const folders = computed(() =>
     treeType.value === "COLLECTION"
       ? data.value?.collections || []
@@ -339,6 +376,7 @@ const priorities = ["P0", "P1", "P2", "P3"].map((value) => ({
     pending: "未执行",
     passed: "通过",
     failed: "失败",
+    blocked: "阻塞",
     error: "错误",
     skipped: "跳过",
     cancelled: "已取消",
@@ -490,12 +528,89 @@ function tableChange(p: any, _filters: any, sorter: any) {
   }
   void load();
 }
-const caseOpen = ref(false),
-  defectsOpen = ref(false),
+const defectsOpen = ref(false),
   current = ref<PlanCaseEntry>();
-function openCase(row: PlanCaseEntry) {
-  current.value = row;
-  caseOpen.value = true;
+function openExecution(row: PlanCaseEntry) {
+  void router.push({
+    name: "PlanFunctionalExecution",
+    params: { planId: props.plan.id },
+    query: {
+      ...route.query,
+      source: row.source,
+      associationId: row.associationId,
+      caseId: row.caseId,
+      casePage: String(page.value),
+      caseSize: String(size.value),
+      caseSearch: search.value,
+      casePriority: filters.priority,
+      caseResult: filters.result,
+      caseExecutor: filters.executor,
+      caseTag: filters.tag,
+      caseSort: sort.value,
+      caseDirection: direction.value,
+      caseAdvanced: advanced.value ? "1" : "0",
+    },
+  });
+}
+const executing = ref(new Set<string>()),
+  executeBatchOpen = ref(false),
+  executeSaving = ref(false),
+  executeResult = ref("passed"),
+  executeDescription = ref(""),
+  executeTargets = ref<PlanCaseEntry[]>([]);
+async function inlineResult(row: PlanCaseEntry, value: unknown) {
+  if (
+    !data.value?.canExecute ||
+    typeof value !== "string" ||
+    executing.value.has(row.id)
+  )
+    return;
+  executing.value = new Set([...executing.value, row.id]);
+  try {
+    await planCaseWorkspaceApi.execute(props.plan.id, {
+      requestId: crypto.randomUUID(),
+      selections: selection([row]),
+      result: value,
+    });
+    await load();
+    emit("changed");
+    message.success("执行结果已更新");
+  } catch (error) {
+    console.error("更新计划行内执行结果失败", error);
+    message.error("结果提交失败，请刷新检查");
+    await load();
+  } finally {
+    const next = new Set(executing.value);
+    next.delete(row.id);
+    executing.value = next;
+  }
+}
+function openExecuteBatch() {
+  executeTargets.value = [...selectedRows.value];
+  executeResult.value = "passed";
+  executeDescription.value = "";
+  executeBatchOpen.value = true;
+}
+async function executeBatch() {
+  if (!data.value?.canExecute) return;
+  executeSaving.value = true;
+  try {
+    await planCaseWorkspaceApi.execute(props.plan.id, {
+      requestId: crypto.randomUUID(),
+      selections: selection(executeTargets.value),
+      result: executeResult.value,
+      description: executeDescription.value,
+    });
+    executeBatchOpen.value = false;
+    await load();
+    emit("changed");
+    message.success("批量执行结果已提交");
+  } catch (error) {
+    console.error("提交计划批量执行结果失败", error);
+    message.error("批量结果提交失败，请检查关联和执行状态");
+  } finally {
+    executeSaving.value = false;
+  }
 }
 function openDefects(row: PlanCaseEntry) {
   current.value = row;
@@ -503,7 +618,7 @@ function openDefects(row: PlanCaseEntry) {
 }
 function selectMind(row: Partial<TestCase>) {
   const item = data.value?.items.find((item) => item.id === row.id);
-  if (item) openCase(item);
+  if (item) openExecution(item);
 }
 const batchOpen = ref(false),
   batchAction = ref<"assign" | "move">("assign"),
@@ -576,6 +691,8 @@ watch(
   () => {
     data.value = undefined;
     selected.value = [];
+    executeBatchOpen.value = false;
+    executeTargets.value = [];
     void load();
     void loadExecutors();
   },

@@ -24,6 +24,9 @@ export interface PlanCaseEntry {
   bugCount: number;
   runId?: string;
   grouped: boolean;
+  executionId?: string;
+  executedBy?: string;
+  executedAt?: string;
   precondition?: string;
   steps: { action: string; expected: string }[];
   caseEditType?: string;
@@ -45,6 +48,7 @@ export interface PlanCaseListing {
   modules: CaseFolder[];
   counts: { all: number; default: number; unassigned: number };
   usesTree: boolean;
+  canExecute: boolean;
 }
 export interface PlanAssociateListing {
   items: (TestCase & { moduleName: string; alreadyLinked: boolean })[];
@@ -73,6 +77,18 @@ export const planCaseWorkspaceApi = {
   ) => apiClient.post(base(id) + "/batch", data),
   candidates: (id: string, params: Record<string, unknown>) =>
     apiClient.get<PlanAssociateListing>(base(id) + "/candidates", { params }),
+  execute: (
+    id: string,
+    data: {
+      requestId: string;
+      selections: { source: string; id: string }[];
+      result: string;
+      description?: string;
+      stepResults?: { index: number; result: string; actual?: string }[];
+    },
+  ) => apiClient.post(base(id) + "/execute", data),
+  execution: (id: string, params: Record<string, unknown>) =>
+    apiClient.get<PlanCaseExecutionDetail>(base(id) + "/execution", { params }),
   associate: (
     id: string,
     data: {
@@ -83,3 +99,22 @@ export const planCaseWorkspaceApi = {
     },
   ) => apiClient.post(base(id) + "/associate", data),
 };
+
+export interface PlanCaseExecutionRecord {
+  id: string;
+  result: string;
+  description: string;
+  executorName: string;
+  createdAt: string;
+  caseSnapshot: TestCase;
+  stepResults: { index: number; result: string; actual: string }[];
+}
+export interface PlanCaseExecutionDetail {
+  entry?: PlanCaseEntry;
+  detached: boolean;
+  canExecute: boolean;
+  history: PlanCaseExecutionRecord[];
+  total: number;
+  page: number;
+  size: number;
+}

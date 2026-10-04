@@ -1,6 +1,8 @@
 """测试计划分组、策略与不可覆盖的执行批次。"""
 import uuid
+from utils.datetime_utils import beijing_now
 from sqlalchemy import Column, String, Text, Boolean, Integer, Float, JSON, ForeignKey, DateTime, func
+from sqlalchemy.dialects.mysql import DATETIME
 from database import Base
 from models.base import BaseModel
 
@@ -23,6 +25,8 @@ class PlanSettings(Base):
 
 
 class PlanRun(Base, BaseModel):
+    # 批次时间保留微秒，确保同一秒内重跑能正确覆盖当前结果。
+    created_at = Column(DateTime(timezone=True).with_variant(DATETIME(fsp=6), "mysql"), default=beijing_now, server_default=func.now(), nullable=False)
     __tablename__ = "plan_runs"
     plan_id = Column(String(36), ForeignKey("test_plans.id", ondelete="CASCADE"), nullable=False, index=True)
     executor_id = Column(String(36), ForeignKey("users.id"), nullable=False)
