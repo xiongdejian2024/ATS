@@ -94,7 +94,7 @@
           :data-source="suites"
           :loading="loading"
           :pagination="pagination"
-          :row-key="record => record.id"
+          row-key="id"
           :scroll="{ x: 1200 }"
           @change="handleTableChange"
           size="middle"
@@ -161,7 +161,9 @@
                     更多
                   </a-button>
                   <template #overlay>
-                    <a-menu @click="(info) => handleMoreMenuClick(info.key, record)">
+                    <a-menu @click="handleMoreMenuEvent($event, record)">
+                      <a-menu-item key="logs">执行日志</a-menu-item>
+                      <a-menu-item key="cancel" :disabled="record.status !== 'running' && record.status !== 'pending'">取消执行</a-menu-item>
                       <a-menu-item key="viewExecutions">执行详情</a-menu-item>
                       <a-menu-divider />
                       <a-menu-item key="delete" danger>删除</a-menu-item>
@@ -240,7 +242,7 @@
         :data-source="executionHistory"
         :loading="executionHistoryLoading"
         :pagination="executionPagination"
-        :row-key="record => record.id"
+        row-key="id"
         :scroll="{ x: 1040 }"
         @change="handleExecutionTableChange"
         size="middle"
@@ -359,29 +361,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { message, Modal } from 'ant-design-vue'
-import {
-  PlusOutlined,
-  ReloadOutlined,
-  GithubOutlined,
-  GitlabOutlined,
-  CodeOutlined,
-  PlayCircleOutlined,
-  ClockCircleOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  FileTextOutlined
-} from '@ant-design/icons-vue'
-import { testSuiteApi, type TestSuite, type TestSuiteExecution } from '@/api/testSuite'
-import { testPlanApi } from '@/api/testPlan'
-import { environmentApi } from '@/api/environment'
-import { useProjectStore } from '@/stores/project'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { message, Modal } from 'ant-design-vue';
+import { PlusOutlined, ReloadOutlined, GithubOutlined, GitlabOutlined, CodeOutlined, PlayCircleOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined } from '@ant-design/icons-vue';
+import { testSuiteApi, type TestSuite, type TestSuiteExecution } from '@/api/testSuite';
+import { testPlanApi } from '@/api/testPlan';
+import { environmentApi } from '@/api/environment';
+import { useProjectStore } from '@/stores/project';
 import TestSuiteEdit from '@/components/TestPlan/TestSuiteEdit.vue'
-import { logWebSocketManager, type LogMessage } from '@/utils/logWebSocket'
-import type { TestPlan, Project } from '@/types'
+import { logWebSocketManager, type LogMessage } from '@/utils/logWebSocket';
+import type { TestPlan, Project } from '@/types';
 import dayjs from 'dayjs'
+import { useIntervalFn } from '@vueuse/core'
 
 const route = useRoute()
 const router = useRouter()
@@ -496,7 +488,7 @@ const executionHistoryLoading = ref(false)
 const executionLogLoading = ref(false)
 const currentSuiteId = ref<string>('')
 const executionHistory = ref<any[]>([])
-const executionLog = ref('')
+
 const executionLogModalVisible = ref(false)
 const currentLogSuite = ref<TestSuite | null>(null)
 const suiteLogs = ref<Array<{ message: string; timestamp: string; execution_id?: string }>>([])
@@ -626,13 +618,7 @@ const getProjectName = (projectId: string | undefined): string => {
   return project?.name || '未知项目'
 }
 
-const filterPlan = (input: string, option: any) => {
-  const plan = allPlans.value.find(p => p.id === option.value)
-  if (!plan) return false
-  const searchText = input.toLowerCase()
-  return plan.name.toLowerCase().includes(searchText) ||
-         getProjectName(plan.projectId).toLowerCase().includes(searchText)
-}
+
 
 const filterPlanOption = (input: string, option: any) => {
   const plan = allPlans.value.find(p => p.id === option.value)
@@ -1014,6 +1000,12 @@ const handleMoreMenuClick = (key: string, record: TestSuite) => {
         })
       }
       break
+    case 'logs':
+      viewSuiteLogs(record)
+      break
+    case 'cancel':
+      cancelSuite(record)
+      break
     case 'delete':
       deleteSuite(record)
       break
@@ -1312,6 +1304,13 @@ onMounted(async () => {
 })
 
 // 组件卸载时清理
+// 自动跟踪运行中任务，完成后无需用户手动刷新；卸载时由 VueUse 清理。
+useIntervalFn(() => {
+  if (!loading.value && suites.value.some(suite => suite.status === 'running')) {
+    void loadSuites()
+  }
+}, 3000)
+
 onUnmounted(() => {
   // 断开WebSocket连接
   if (currentLogHandler.value) {
@@ -1320,6 +1319,7 @@ onUnmounted(() => {
   }
   logWebSocketManager.disconnect()
 })
+const handleMoreMenuEvent = (info: { key: string | number }, record: TestSuite) => handleMoreMenuClick(String(info.key), record)
 </script>
 
 <style scoped>
@@ -1474,4 +1474,3 @@ onUnmounted(() => {
   background: #fafafa !important;
 }
 </style>
-
