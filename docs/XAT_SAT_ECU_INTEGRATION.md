@@ -79,3 +79,11 @@ PYTHONPATH=xat .venv-integration/bin/python -m framework \
 上面的命令是台架使用说明，本次未执行。真实 SAT 依赖、原 ECU 硬件与网络初始化需要台架环境；软件验收只证明 XAT 的接入、fixture 生命周期和结果行为，以及实际 SAT 数据类型 / ECU 内存模拟功能。
 
 也可直接使用 pytest：先设置 `PYTHONPATH=xat`，加载 `-p framework.hooks -p framework.integrations.plugin`，传入 `--xat-mode offline`、`--sat-root`、`--ecu-root`、`--xat-results`。XAT 目录内的 `conftest.py` 已注册两个插件。
+
+## 验收与远程同步
+
+运行 `./scripts/check_software.sh` 验证完整软件链路和前端。2026-10-04 最终版本的 27 项软件回归、前端类型检查、2 项单测和构建通过；XAT wheel 包实际运行的 4 项模块检查通过。通过 ego-browser 验证了前端保存 XAT 模板、整套运行产生4条通过记录，以及单用例运行只新增1条通过记录。
+
+GitHub CI 运行 XAT / Agent 的无外部源码检查和前端检查。带 `xat_external` 标记的检查使用本机真实 SAT/ECU 源码，只在配置了源码的环境运行。测试不连接台架，也不把外部源码、数据库、日志或运行产物上传。
+
+每阶段提交并推送到 `xiongdejian2024/ATS` 的 `codex/sat-ecu-integration` 分支。原 `wh-xdj/ATS` 没有写权限，未合并到其主分支。具体提交、验收与 CI 记录见 [开发验收日志](开发验收日志.md)。

@@ -11,7 +11,17 @@ from pydantic import BaseModel
 from typing import Literal
 
 logger = logging.getLogger("xat.integrations")
-WORKSPACE = Path(__file__).resolve().parents[3]
+_package_parent = Path(__file__).resolve().parents[2]
+_current_directory = Path.cwd()
+WORKSPACE = (
+    _package_parent.parent
+    if _package_parent.name == "xat"
+    else (
+        _current_directory.parent
+        if _current_directory.name == "xat"
+        else _current_directory
+    )
+)
 
 
 class IntegrationSettings(BaseModel):

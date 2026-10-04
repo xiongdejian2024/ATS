@@ -7,6 +7,6 @@ integrations:
     # Use existing repositories; no copies, git reset or automatic installation.
     root: /Users/xiongdejian/project/python_project/sat
     ecu_root: /Users/xiongdejian/project/python_project/ecu-simulator
-    # Interpreter must have SAT dependencies for bench mode, pytest for offline mode.
+    # 解释器需安装 XAT 集成依赖；台架模式还需要 SAT 的完整依赖。
     python: /Users/xiongdejian/project/python_project/ATS/.venv-integration/bin/python
     allow_hardware: false

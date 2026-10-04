@@ -218,3 +218,78 @@ def test_caseid_sdk(ecu_sdk): pass
         "second": "passed",
         "sdk": "error",
     }
+
+
+def test_xat_paths_and_fixture_exports(tmp_path):
+    """源码路径限制阻止越界和符号链接；fixture 入口可正常导入。"""
+    env = dict(os.environ, PYTHONPATH=str(ROOT / "xat"))
+    (tmp_path / "sat" / "sat_framework").mkdir(parents=True)
+    (tmp_path / "ecu" / "src" / "automotive_sdk").mkdir(parents=True)
+    (tmp_path / "outside.yaml").write_text("node: outside\n")
+    (tmp_path / "sat" / "escape.yaml").symlink_to(tmp_path / "outside.yaml")
+    source = """from pathlib import Path
+from framework.integrations.runtime import IntegrationSettings
+from framework.fixtures import ecu_simulator, sat_types
+settings = IntegrationSettings(mode="offline", sat_root=Path("sat"), ecu_root=Path("ecu"))
+settings.prepare()
+for value in ("../outside.yaml", "escape.yaml"):
+    try:
+        settings.sat_path(value)
+    except ValueError:
+        continue
+    raise AssertionError("越界路径必须拒绝")
+assert ecu_simulator is not None and sat_types is not None
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", source],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.xat_external
+def test_xat_sat_yaml_configuration_and_invalid_yaml_traceback(tmp_path, sat_config):
+    sat_root = tmp_path / "sat"
+    sat_root.mkdir()
+    (sat_root / "sat_framework").symlink_to(
+        Path(sat_config.sat_root) / "sat_framework", target_is_directory=True
+    )
+    (sat_root / "bench.yaml").write_text("node: offline\necus: [ECU]\n")
+    (sat_root / "cases.yaml").write_text("requirement: XAT-SAT-001\n")
+    source = tmp_path / "test_configured.py"
+    source.write_text("""def test_caseid_config(sat_runtime):
+    assert sat_runtime.bench_config == {"node": "offline", "ecus": ["ECU"]}
+    assert sat_runtime.case_config["requirement"] == "XAT-SAT-001"
+    assert sat_runtime.types.ReportInfo(total=1).total == 1
+""")
+    for name, expected in [("valid", "passed"), ("invalid", "error")]:
+        if name == "invalid":
+            (sat_root / "cases.yaml").write_text("- 非对象配置\n")
+        output = tmp_path / name
+        output.mkdir()
+        result, rows = run_xat(
+            output,
+            "--mode",
+            "offline",
+            "--sat-root",
+            str(sat_root),
+            "--ecu-root",
+            sat_config.ecu_root,
+            "--bench-config",
+            "bench.yaml",
+            "--case-config",
+            "cases.yaml",
+            "--tests",
+            str(source),
+        )
+        assert result.returncode == (0 if expected == "passed" else 1), (
+            result.stdout + result.stderr
+        )
+        assert len(rows) == 1 and rows[0]["status"] == expected
+        if expected == "error":
+            assert "Traceback" in rows[0]["log"]
+            assert "SAT YAML 配置必须是对象" in rows[0]["error"]

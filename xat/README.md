@@ -2,6 +2,10 @@
 
 XAT (eXtensible Automated Testing) 是一个基于pytest的自动化测试框架，采用面向对象的设计，实现了hooks和fixtures的完全解耦封装。
 
+当前已集成 SAT 与 ECU Simulator。实际执行、源码路径、fixture、用例选择和台架入口见 [XAT 集成说明](../docs/XAT_SAT_ECU_INTEGRATION.md)。在 ATS 根目录执行 `PYTHONPATH=xat .venv-integration/bin/python -m framework --mode offline` 可完成软件检查；前端任务使用 `xat --mode offline`，旧 `ats-sat` 命令兼容。
+
+当前可用 fixture 为 `sat_runtime`、`sat_types`、`ecu_profile`、`ecu_simulator`、`ecu_sdk_options`、`ecu_sdk`。下文中的数据库、客户端和认证 fixture 属于历史设计，对应文件此前已删除，当前未提供；请以新集成说明和实际代码为准。
+
 ## 目录结构
 
 ```
@@ -482,4 +486,3 @@ ALLURE_REPORT_DIR=allure-report
 ## 许可证
 
 MIT License
-

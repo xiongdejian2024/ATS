@@ -52,7 +52,7 @@ Ctrl+C 关闭实验服务。数据库和执行目录保留在终端打印的临�
 
 ## 在已有 ATS 环境接入 Agent
 
-保留正常后端/前端启动方式及已有环境 Token。参考 `agent/config.sat.yaml.example` 配置 SAT 根目录、ECU 根目录和 Python 解释器；解释器需安装 pytest，台架模式还需 SAT 与旧 ECU 的完整依赖。
+保留正常后端/前端启动方式及已有环境 Token。参考 `agent/config.sat.yaml.example` 配置 SAT 根目录、ECU 根目录和 Python 解释器；解释器需安装 XAT 集成依赖（可使用本文的 requirements-integration.txt），台架模式还需 SAT 与旧 ECU 的完整依赖。
 
 ```bash
 .venv-integration/bin/python -m agent.agent \
