@@ -199,6 +199,9 @@ async def get_test_plan(
     if not plan:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="测试计划不存在")
 
+    if project_id and plan.project_id != project_id:
+        raise HTTPException(404, "此项目中不存在该计划")
+
     plan_data = serialize_model(plan, camel_case=True)
     
     # 添加关联的测试用例（已包含执行状态）
@@ -221,6 +224,13 @@ async def get_test_plan(
         "skip": sum(1 for case in cases if case.get("executionStatus") == "skip")
     }
     apply_tree_statistics(db, plan_id, plan_data)
+    from core.project_access import project_allows
+    from models import Project
+    from services.plan_detail import category_counts
+    project = db.get(Project, plan.project_id)
+    plan_data["categoryCounts"] = category_counts(db, plan_id, cases)
+    plan_data["capabilities"] = {key: project_allows(db, current_user, project, "test_plan:" + action)
+                                 for key, action in (("edit", "update"), ("execute", "execute"), ("copy", "create"), ("delete", "delete"))}
     # 确保 plan_data 包含 projectId（用于前端加载模块列表）
     if "projectId" not in plan_data and plan.project_id:
         plan_data["projectId"] = str(plan.project_id)
@@ -368,7 +378,7 @@ async def get_plan_cases(
     return APIResponse(
         status=ResponseStatus.SUCCESS,
         message="获取成功",
-        data=serialize_list(cases, camel_case=True),
+        data=cases,
     )
 
 

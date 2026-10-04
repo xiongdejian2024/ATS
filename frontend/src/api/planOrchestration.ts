@@ -13,6 +13,7 @@ export interface PlanRun {
   id: string; planId: string; planName: string; status: string; notes?: string
   createdAt: string; startedAt: string; completedAt?: string
   configSnapshot: PlanPolicy
+  reportDeleted?: boolean
   report: { total: number; passRate: number; passThreshold: number; outcome: string
     counts: Record<string, number>; cases: RunCase[]
     items: { suiteId: string; suiteName: string; status: string; executionId: string }[] }

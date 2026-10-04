@@ -78,15 +78,12 @@
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'name'">
-              <a
-                @click="viewPlanDetail(record.id)"
-                class="plan-name-link"
-              >
+              <div class="plan-name-link">
                 <div class="plan-icon">
                   <ExperimentOutlined />
                 </div>
                 <div class="plan-info">
-                  <span class="plan-name">{{ record.name }}</span>
+                  <router-link class="plan-name" :to="{name:'TestPlanDetailPage',params:{planId:record.id},query:{projectId}}">{{ record.name }}</router-link>
                   <a-button type="text" size="small" @click.stop="toggleFollow(record)">{{ record.followed ? '★' : '☆' }}</a-button>
                   <a-tag v-for="tag in record.tags || []" :key="tag">{{ tag }}</a-tag>
                   <a-tag v-if="record.archived">已归档</a-tag>
@@ -94,7 +91,7 @@
                     {{ record.planNumber }}
                   </div>
                 </div>
-              </a>
+              </div>
 
             </template>
 
@@ -220,23 +217,6 @@
       <a-form layout="vertical"><a-form-item label="计划组名称" required><a-input v-model:value="groupForm.name" :maxlength="100" /></a-form-item><a-form-item label="说明"><a-textarea v-model:value="groupForm.description" :rows="3" /></a-form-item><a-form-item label="计划模块"><a-select v-model:value="groupForm.moduleId" allow-clear :options="groupModules.map(m=>({value:m.id,label:m.name}))" /></a-form-item><a-form-item label="标签"><a-select v-model:value="groupForm.tags" mode="tags" /></a-form-item><a-form-item label="归档"><a-switch v-model:checked="groupForm.archived" /></a-form-item></a-form>
     </a-modal>
 
-    <!-- 计划详情抽屉 -->
-    <a-drawer
-      v-model:visible="detailDrawerVisible"
-      :width="'min(960px, 100vw)'"
-      :title="selectedPlan ? selectedPlan.name : '计划详情'"
-      @close="closeDetailDrawer"
-    >
-      <TestPlanDetail
-        v-if="selectedPlan"
-        :plan="selectedPlan"
-        :run-id="String(route.query.runId || '')"
-        @edit="editSelectedPlan"
-        @execute="executeSelectedPlan"
-        @close="closeDetailDrawer"
-      />
-    </a-drawer>
-
     <!-- 计划编辑对话框 -->
     <a-modal
       v-model:visible="editModalVisible"
@@ -287,7 +267,6 @@ import type { TestPlan, Environment, Project, CaseStatusCounts } from '@/types';
 import { testPlanApi } from '@/api/testPlan'
 import { planOrchestrationApi, type PlanGroup } from '@/api/planOrchestration';
 import { useProjectStore } from '@/stores/project';
-import TestPlanDetail from '@/components/TestPlan/TestPlanDetail.vue'
 import TestPlanEdit from '@/components/TestPlan/TestPlanEdit.vue'
 import PlanWorkspaceToolbar from '@/components/TestPlan/PlanWorkspaceToolbar.vue'
 import PlanGroupExecution from '@/components/TestPlan/PlanGroupExecution.vue'
@@ -302,6 +281,7 @@ const projectStore = useProjectStore()
 // 项目选择
 const projects = computed<Project[]>(() => projectStore.projects)
 const projectId = computed<string | undefined>(() => {
+  if(typeof route.query.projectId==='string')return route.query.projectId
   if (projectStore.currentProject) return projectStore.currentProject.id
   return projects.value[0]?.id
 })
@@ -326,7 +306,6 @@ const typeFilter = ref<string>()
 const dateRange = ref<[Dayjs, Dayjs] | null>(null)
 
 // 模态框状态
-const detailDrawerVisible = ref(false)
 const editModalVisible = ref(false)
 const executeModalVisible = ref(false)
 const isEditMode = ref(false)
@@ -541,14 +520,7 @@ const editPlan = (planId: string) => {
 }
 
 const viewPlanDetail = async (planId: string) => {
-  try {
-    const plan = await testPlanApi.getTestPlan(planId)
-    selectedPlan.value = plan
-    detailDrawerVisible.value = true
-  } catch (error) {
-    console.error('Failed to load plan detail:', error)
-    message.error('加载计划详情失败')
-  }
+  await router.push({name:'TestPlanDetailPage',params:{planId},query:{projectId:projectId.value, ...(route.query.runId ? {runId:route.query.runId} : {})}})
 }
 
 const viewPlanExecution = (plan: TestPlan) => {
@@ -565,11 +537,6 @@ const viewPlanExecution = (plan: TestPlan) => {
       planId: plan.id
     }
   })
-}
-
-const closeDetailDrawer = () => {
-  detailDrawerVisible.value = false
-  selectedPlan.value = null
 }
 
 const closeEditModal = () => {
@@ -734,14 +701,6 @@ const canDeletePlan = (plan: TestPlan) => {
   return plan.status === 'not_started' || plan.status === 'completed'
 }
 
-const editSelectedPlan = () => {
-  if (selectedPlan.value) editPlan(selectedPlan.value.id)
-}
-
-const executeSelectedPlan = () => {
-  if (selectedPlan.value) executePlan(selectedPlan.value)
-}
-
 // 辅助方法
 const getStatusColor = (status: string) => {
   const colorMap: Record<string, string> = {
@@ -869,7 +828,8 @@ onMounted(async () => {
   }
   // 如果没有当前项目，设置第一个项目为当前项目
   if (!projectStore.currentProject && projects.value.length > 0) {
-    projectStore.setCurrentProject(projects.value[0])
+    const linked=projects.value.find(project=>project.id===route.query.projectId)
+    projectStore.setCurrentProject(linked||projects.value[0])
   }
   loadPlans()
   loadEnvironments()

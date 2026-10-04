@@ -491,8 +491,8 @@ const handleSubmit = async () => {
       planType: formData.planType,
       description: formData.description || '',
       notes: formData.notes || '',
-      startDate: formData.startDate ? formData.startDate.toISOString() : null,
-      endDate: formData.endDate ? formData.endDate.toISOString() : null,
+      startDate: formData.startDate ? formData.startDate.format('YYYY-MM-DD') : null,
+      endDate: formData.endDate ? formData.endDate.format('YYYY-MM-DD') : null,
       environmentId: formData.environmentId || null,
       environmentConfig: {
         ...formData.environmentConfig,
@@ -509,13 +509,13 @@ const handleSubmit = async () => {
 
     Object.keys(submitData).forEach(key => {
       if (submitData[key] === null || submitData[key] === undefined || submitData[key] === '') {
-        if (key !== 'description' && key !== 'notes' && key !== 'testCaseIds') {
+        if (!['description','notes','testCaseIds','startDate','endDate','environmentId'].includes(key)) {
           delete submitData[key]
         }
       }
     })
 
-    console.log('提交数据:', submitData)
+    console.info('保存计划基本信息', {planId:props.planId,projectId:props.projectId})
 
     let plan
     if (isEditMode.value) {
@@ -532,7 +532,7 @@ const handleSubmit = async () => {
 
     emit('save', plan)
   } catch (error: any) {
-    console.error('Failed to save plan:', error)
+    console.error('保存计划失败', error)
     const errorMessage = error?.response?.data?.detail || error?.message || (isEditMode.value ? '更新失败' : '创建失败')
     message.error(errorMessage)
   } finally {

@@ -139,6 +139,9 @@ export interface TestPlan {
   executedCases?: number
   testCases?: PlanCase[]
   caseStatusCounts?: CaseStatusCounts
+  usesTestPointTree?: boolean
+  categoryCounts?: Record<'functional'|'api'|'scenario',number>
+  capabilities?: {edit:boolean;execute:boolean;copy:boolean;delete:boolean}
 }
 
 export interface TestExecution {

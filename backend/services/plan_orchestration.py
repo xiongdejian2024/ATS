@@ -485,6 +485,9 @@ def record_manual_result(db, run_id, case_id, data, user_id):
 
 def run_data(db, run, include_report=True):
     data = serialize_model(run, camel_case=True)
+    from models.plan_report_workspace import PlanReportWorkspace
+    workspace = db.get(PlanReportWorkspace, run.id)
+    data["reportDeleted"] = bool(workspace and workspace.deleted)
     if include_report:
         data["report"] = run.report if run.status not in ACTIVE and run.report else build_report(db, run)
     else:

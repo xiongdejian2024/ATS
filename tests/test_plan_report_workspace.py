@@ -138,7 +138,8 @@ async def test_rename_delete_revokes_shares_but_retains_frozen_history(reports_h
         assert db.get(PlanRun, direct.id).report == frozen
         assert db.get(PlanGroupRun, group.id).report['passRate'] == 100
         assert db.get(GroupReportWorkspace, group.id).deleted
-        assert (await client.get(f'/orchestration/runs/{direct.id}')).status_code == 200  # 执行记录保持可读
+        history = await client.get(f'/orchestration/runs/{direct.id}')
+        assert history.status_code == 200 and history.json()['data']['reportDeleted']  # 执行记录可读，报告按钮禁用
 
 
 @pytest.mark.asyncio

@@ -397,6 +397,12 @@ class TestPlanService:
                 'name': case.name,
                 'caseCode': case.case_code,
                 'priority': case.priority,
+                'type': case.type,
+                'isAutomated': case.is_automated,
+                'caseEditType': case.case_edit_type,
+                'textDescription': case.text_description,
+                'expectedResult': case.expected_result,
+                'description': case.description,
                 'moduleId': case.module_id,
                 'projectId': case.project_id,  # 添加项目ID，用于加载模块列表
                 'precondition': getattr(case, 'precondition', None),  # TestCase 使用 precondition（单数）

@@ -9,6 +9,7 @@ from models.test_plan import TestPlan
 from services.plan_workspace import metadata, update_metadata
 from utils.serializer import serialize_model
 from schemas.common import APIResponse, ResponseStatus
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
@@ -23,6 +24,47 @@ def plan_access(db, user, plan_id, action="read"):
         raise HTTPException(404, "计划不存在")
     require_project_access(db, user, plan.project_id, f"test_plan:{action}")
     return plan
+
+
+class PlanDefectWrite(BaseModel):
+    caseId: str = Field(min_length=1, max_length=36)
+    title: str = Field(min_length=1, max_length=300)
+    description: str = Field("", max_length=20000)
+
+
+@router.get("/plans/{plan_id}/defects")
+def plan_defects(plan_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_detail import defects
+    from core.project_access import project_allows
+    plan = plan_access(db, user, plan_id)
+    project = require_project_access(db, user, plan.project_id, "test_case:read")
+    payload = defects(db, plan)
+    payload["canEdit"] = project_allows(db, user, project, "test_plan:update") and project_allows(db, user, project, "test_case:update")
+    return ok(payload)
+
+
+@router.post("/plans/{plan_id}/defects")
+def create_plan_defect(plan_id: str, data: PlanDefectWrite, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_detail import plan_case_ids
+    from services import case_features as service
+    from models.case_features import CaseIssueLink
+    from schemas.case_features import IssueWrite
+    from api.v1.case_governance import transact
+    from core.logger import logger
+    plan = plan_access(db, user, plan_id, "update")
+    if data.caseId not in plan_case_ids(db, plan.id):
+        raise HTTPException(422, "只能关联此计划中的用例")
+    if not data.title.strip():
+        raise HTTPException(422, "缺陷标题不能为空")
+    current = service.find_case(db, user, plan.project_id, data.caseId, "update")
+    def operation():
+        issue = service.write_issue(db, user, plan.project_id, IssueWrite(kind="defect", title=data.title.strip(), description=data.description, status="open"))
+        db.add(CaseIssueLink(case_id=data.caseId, issue_id=issue.id, created_by=str(user.id)))
+        service.change(db, current, user.id, "关联计划缺陷", {"planId": plan.id, "issueId": issue.id})
+        return issue
+    issue = transact(db, operation)
+    logger.info("已在计划详情新建并关联缺陷：计划={}，缺陷={}", plan_id, issue.id)
+    return ok(serialize_model(issue, camel_case=True))
 
 
 @router.get("/projects/{project_id}/modules")
