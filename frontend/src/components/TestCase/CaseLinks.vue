@@ -6,7 +6,7 @@
         key="issues"
         tab="需求与缺陷"
       >
-        <a-space wrap
+        <a-space v-if="!readOnly" wrap
           ><a-select
             v-model:value="issueId"
             show-search
@@ -42,7 +42,7 @@
               ><a-list-item-meta
                 :title="`${item.kind === 'defect' ? '缺陷' : '需求'} · ${item.title}`"
                 :description="`${issueStatuses[item.status] || item.status} · ${item.externalRef || item.description || ''}`"
-              /><template #actions
+              /><template v-if="!readOnly" #actions
                 ><a-button type="link" @click="openIssue(item)">编辑</a-button
                 ><a-popconfirm
                   title="取消这条关联？"
@@ -67,7 +67,7 @@
           show-icon
           style="margin-bottom: 12px"
         />
-        <a-space wrap
+        <a-space v-if="!readOnly" wrap
           ><a-select
             v-model:value="relationKind"
             :options="visibleRelationKinds"
@@ -94,7 +94,7 @@
               ><a-list-item-meta
                 :title="`${relationKinds.find((k) => k.value === item.kind)?.label || item.kind} · ${item.name}`"
                 :description="item.deleted ? '用例已移入回收站' : item.caseCode"
-              /><template #actions
+              /><template v-if="!readOnly" #actions
                 ><a-button
                   type="link"
                   @click="emit('navigate', item.targetCaseId)"
@@ -123,7 +123,7 @@
           show-icon
           style="margin-bottom: 12px"
         />
-        <a-form layout="vertical"
+        <a-form v-if="!readOnly" layout="vertical"
           ><a-row :gutter="12"
             ><a-col :span="8"
               ><a-form-item label="自动化类型"
@@ -171,7 +171,7 @@
                   automationKinds.find((k) => k.value === item.category)?.label
                 "
                 :description="automationName(item)"
-              /><template #actions
+              /><template v-if="!readOnly" #actions
                 ><a-popconfirm
                   title="删除此自动化关联？"
                   @confirm="removeAutomation(item.id)"
@@ -198,7 +198,7 @@
       :confirm-loading="busy"
       @ok="saveIssue"
     >
-      <a-form layout="vertical"
+      <a-form v-if="!readOnly" layout="vertical"
         ><a-form-item v-if="!section" label="类别"
           ><a-radio-group v-model:value="issueForm.kind"
             ><a-radio value="requirement">需求</a-radio
@@ -239,6 +239,7 @@ import {
 import { testCaseApi } from "@/api/testCase";
 const props = defineProps<{
     projectId: string;
+    readOnly?: boolean;
     caseId: string;
     section?: "requirement" | "defect" | "dependency" | "case";
   }>(),
@@ -342,6 +343,7 @@ async function load() {
   }
 }
 async function run(task: () => Promise<unknown>) {
+  if (props.readOnly) return;
   busy.value = true;
   try {
     await task();

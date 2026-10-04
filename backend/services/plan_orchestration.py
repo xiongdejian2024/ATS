@@ -90,6 +90,8 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
         if len(requested) != len(set(requested)) or not set(requested) <= known:
             raise ValueError("选择的测试套不属于当前计划或存在重复")
         suites = [s for s in suites if s.id in requested]
+    if suite_ids is None:
+        suites = [suite for suite in suites if suite.case_ids]
     policy = get_policy(db, plan_id)
     from services.plan_tree import compile_tree
     tree_entries = compile_tree(db, plan, policy) if suite_ids is None else None

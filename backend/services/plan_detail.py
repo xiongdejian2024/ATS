@@ -8,7 +8,8 @@ from utils.serializer import serialize_model
 def category_counts(db, plan_id, legacy_cases):
     nodes = db.query(PlanNode).filter(PlanNode.plan_id == plan_id, PlanNode.node_type != "point").all()
     counts = dict(functional=0, api=0, scenario=0)
-    if nodes:
+    from services.plan_tree import uses_tree
+    if uses_tree(db, plan_id):
         for node in nodes:
             counts[node.category] += 1
     else:
@@ -19,7 +20,8 @@ def category_counts(db, plan_id, legacy_cases):
 
 def plan_case_ids(db, plan_id):
     nodes = db.query(PlanNode).filter(PlanNode.plan_id == plan_id, PlanNode.node_type != "point").all()
-    if not nodes:
+    from services.plan_tree import uses_tree
+    if not uses_tree(db, plan_id):
         return {row.case_id for row in db.query(PlanCaseRelation).filter_by(plan_id=plan_id)}
     ids = {node.case_id for node in nodes if node.case_id}
     suite_ids = {node.suite_id for node in nodes if node.suite_id and not node.case_id}

@@ -166,3 +166,6 @@ def copy_group(group_id: str, db: Session = Depends(get_db), user=Depends(get_cu
         raise HTTPException(404, "计划组不存在")
     require_project_access(db, user, group.project_id, "test_plan:create")
     return ok(serialize_model(clone_group(db, group, str(user.id)), camel_case=True))
+
+from api.v1.plan_case_workspace import router as case_workspace_router
+router.include_router(case_workspace_router)

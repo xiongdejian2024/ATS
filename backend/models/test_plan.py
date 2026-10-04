@@ -43,6 +43,7 @@ class PlanCaseRelation(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     plan_id = Column(String(36), ForeignKey("test_plans.id", ondelete="CASCADE"), nullable=False, index=True)
     case_id = Column(String(36), ForeignKey("test_cases.id", ondelete="CASCADE"), nullable=False, index=True)
+    collection_id = Column(String(36), ForeignKey("plan_nodes.id", ondelete="SET NULL"), nullable=True, index=True)
     assigned_to = Column(String(36), ForeignKey("users.id"), nullable=True, index=True)
     execution_order = Column(Integer, default=0, nullable=False)
     execution_status = Column(String(50), default="pending", nullable=True)  # pending, pass, fail, broken, error, skip

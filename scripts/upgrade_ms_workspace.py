@@ -18,7 +18,7 @@ from core.logger import logger
 EXTENSIBLE_TABLES = {
     "test_cases", "case_reviews", "case_review_items", "case_saved_views",
     "test_plans", "plan_settings", "plan_runs", "plan_run_items", "plan_case_relations",
-    "task_schedules", "task_schedule_runs", "plan_groups",
+    "task_schedules", "task_schedule_runs", "plan_groups", "plan_workspaces",
 }
 
 

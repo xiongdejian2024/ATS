@@ -48,7 +48,7 @@ def clone_extensions(db, source, target, user_id):
     from models.test_suite import TestSuite
     source_meta = db.get(PlanWorkspace, source.id)
     if source_meta:
-        db.add(PlanWorkspace(plan_id=target.id, module_id=source_meta.module_id, tags=deepcopy(source_meta.tags), archived=False))
+        db.add(PlanWorkspace(plan_id=target.id, module_id=source_meta.module_id, tags=deepcopy(source_meta.tags), archived=False, uses_tree=source_meta.uses_tree))
     mapping = {}
     for suite in db.query(TestSuite).filter_by(plan_id=source.id).all():
         clone = TestSuite(plan_id=target.id, name=suite.name, description=suite.description,
@@ -77,6 +77,12 @@ def clone_extensions(db, source, target, user_id):
     for node in originals:
         node_map[node.id].parent_id = node_map[node.parent_id].id if node.parent_id in node_map else None
         node_map[node.id].linked_functional_id = node_map[node.linked_functional_id].id if node.linked_functional_id in node_map else None
+    from models.test_plan import PlanCaseRelation
+    originals_by_case = {row.case_id: row for row in db.query(PlanCaseRelation).filter_by(plan_id=source.id)}
+    for relation in db.query(PlanCaseRelation).filter_by(plan_id=target.id):
+        original = originals_by_case.get(relation.case_id)
+        if original and original.collection_id in node_map:
+            relation.collection_id = node_map[original.collection_id].id
     return mapping
 
 
@@ -133,7 +139,8 @@ def apply_tree_statistics(db, plan_id, payload):
     from models.plan_workspace import PlanNode
     from models.test_suite import TestSuite
     rows = db.query(PlanNode).filter(PlanNode.plan_id == plan_id, PlanNode.node_type != "point").all()
-    if not rows:
+    from services.plan_tree import uses_tree
+    if not uses_tree(db, plan_id):
         return
     run = db.query(PlanRun).filter_by(plan_id=plan_id).order_by(PlanRun.created_at.desc()).first()
     from services.plan_orchestration import build_report

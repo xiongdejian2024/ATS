@@ -33,3 +33,23 @@ def test_migration_rejects_uninitialized_database(tmp_path):
     with pytest.raises(RuntimeError,match='不是已初始化'):
         module.upgrade(empty,True)
     assert inspect(empty).get_table_names()==[]
+
+
+def test_plan_collections_upgrade_preserves_legacy_relations_and_executor():
+    with engine.begin() as connection:
+        connection.execute(text("INSERT INTO users (id,username,email,password_hash,status) VALUES ('owner','原执行人','collection@example.com','仅测试',1)"))
+        connection.execute(text("INSERT INTO projects (id,name,owner_id,status) VALUES ('project','旧计划项目','owner','active')"))
+        connection.execute(text("INSERT INTO test_plans (id,project_id,owner_id,name,plan_number,plan_type,status) VALUES ('plan','project','owner','旧计划','TP-COLLECTION','manual','not_started')"))
+        connection.execute(text("INSERT INTO test_cases (id,project_id,case_code,name,type,priority,steps,created_by,is_automated,status) VALUES ('case','project','OLD-COLLECTION','旧用例','functional','P2','[]','owner',0,'not_executed')"))
+        connection.execute(text('DROP TABLE plan_case_relations'))
+        connection.execute(text('CREATE TABLE plan_case_relations (id VARCHAR(36) PRIMARY KEY,plan_id VARCHAR(36) NOT NULL,case_id VARCHAR(36) NOT NULL,assigned_to VARCHAR(36),execution_order INTEGER NOT NULL DEFAULT 0,execution_status VARCHAR(50),execution_updated_at DATETIME,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)'))
+        connection.execute(text("INSERT INTO plan_case_relations(id,plan_id,case_id,assigned_to,execution_status) VALUES ('relation','plan','case','owner','pass')"))
+        connection.execute(text('ALTER TABLE plan_workspaces DROP COLUMN uses_tree'))
+    preview=module.upgrade(engine,False)
+    assert any('plan_case_relations.collection_id' in step[0] for step in preview)
+    assert any('plan_workspaces.uses_tree' in step[0] for step in preview)
+    module.upgrade(engine,True)
+    with engine.connect() as connection:
+        row=connection.execute(text("SELECT case_id,assigned_to,execution_status,collection_id FROM plan_case_relations WHERE id='relation'")).one()
+        assert tuple(row)==('case','owner','pass',None)
+    assert module.upgrade(engine,True)==[]

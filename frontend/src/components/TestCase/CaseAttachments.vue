@@ -1,7 +1,10 @@
 <template>
   <a-card title="附件" size="small">
     <template #extra
-      ><a-upload v-if="caseId" :before-upload="upload" :show-upload-list="false"
+      ><a-upload
+        v-if="caseId && !readOnly"
+        :before-upload="upload"
+        :show-upload-list="false"
         ><a-button :loading="busy">上传附件</a-button></a-upload
       ></template
     >
@@ -20,7 +23,10 @@
               :description="`${(item.fileSize / 1024).toFixed(1)} KB · ${item.uploadTime}`"
             /><template #actions
               ><a-button type="link" @click="download(item)">下载</a-button
-              ><a-popconfirm title="删除此附件？" @confirm="remove(item)"
+              ><a-popconfirm
+                v-if="!readOnly"
+                title="删除此附件？"
+                @confirm="remove(item)"
                 ><a-button type="link" danger>删除</a-button></a-popconfirm
               ></template
             ></a-list-item
@@ -38,7 +44,11 @@ import {
   saveCaseBlob,
   type CaseFile,
 } from "@/api/caseFeatures";
-const props = defineProps<{ projectId: string; caseId?: string }>();
+const props = defineProps<{
+  projectId: string;
+  caseId?: string;
+  readOnly?: boolean;
+}>();
 const files = ref<CaseFile[]>([]),
   loading = ref(false),
   busy = ref(false);
@@ -55,7 +65,7 @@ async function load() {
   }
 }
 async function upload(file: File) {
-  if (!props.caseId) return false;
+  if (!props.caseId || props.readOnly) return false;
   busy.value = true;
   try {
     const item = await api.upload(props.projectId, props.caseId, file);
@@ -76,6 +86,7 @@ async function download(item: CaseFile) {
   }
 }
 async function remove(item: CaseFile) {
+  if (props.readOnly) return;
   try {
     await api.deleteAttachment(props.projectId, item.id);
     files.value = files.value.filter((f) => f.id !== item.id);

@@ -19,6 +19,7 @@ class PlanWorkspace(Base):
     module_id = Column(String(36), ForeignKey("plan_modules.id", ondelete="SET NULL"), nullable=True)
     tags = Column(JSON, nullable=False, default=list)
     archived = Column(Boolean, nullable=False, default=False)
+    uses_tree = Column(Boolean, nullable=False, default=False)
 
 
 class PlanFollow(Base, BaseModel):

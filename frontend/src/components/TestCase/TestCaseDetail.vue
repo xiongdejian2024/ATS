@@ -7,7 +7,9 @@
             <span>【{{ item.caseCode }}】</span><span>{{ item.name }}</span>
           </div>
           <a-space :size="4" wrap>
-            <a-button @click="emit('edit')"><EditOutlined /> 编辑</a-button>
+            <a-button v-if="!readOnly" @click="emit('edit')"
+              ><EditOutlined /> 编辑</a-button
+            >
             <a-button @click="share"><LinkOutlined /> 分享</a-button>
             <a-button :loading="followBusy" @click="toggleFollow"
               ><StarFilled
@@ -16,7 +18,7 @@
               /><StarOutlined v-else />
               {{ followed ? "取消关注" : "关注" }}</a-button
             >
-            <a-dropdown
+            <a-dropdown v-if="!readOnly"
               ><a-button><MoreOutlined /> 更多</a-button
               ><template #overlay
                 ><a-menu
@@ -83,11 +85,21 @@
             </template>
             <template v-else-if="tab.key === 'detail'">
               <a-card title="前置条件" size="small"
-                ><CaseRichText :model-value="item.precondition || '无'" readonly /></a-card
-              >
+                ><CaseRichText
+                  :model-value="item.precondition || '无'"
+                  readonly
+              /></a-card>
               <template v-if="item.caseEditType === 'TEXT'">
-                <a-card title="文本描述" size="small"><CaseRichText :model-value="item.textDescription || '无'" readonly /></a-card>
-                <a-card title="预期结果" size="small"><CaseRichText :model-value="item.expectedResult || '无'" readonly /></a-card>
+                <a-card title="文本描述" size="small"
+                  ><CaseRichText
+                    :model-value="item.textDescription || '无'"
+                    readonly
+                /></a-card>
+                <a-card title="预期结果" size="small"
+                  ><CaseRichText
+                    :model-value="item.expectedResult || '无'"
+                    readonly
+                /></a-card>
               </template>
               <a-table
                 v-else
@@ -99,8 +111,14 @@
                   ><p class="text">{{ record[column.dataIndex] }}</p></template
                 ></a-table
               >
-              <a-card title="备注" size="small"><CaseRichText :model-value="item.description || '无'" readonly /></a-card>
-              <CaseAttachments :project-id="projectId" :case-id="caseId" />
+              <a-card title="备注" size="small"
+                ><CaseRichText :model-value="item.description || '无'" readonly
+              /></a-card>
+              <CaseAttachments
+                :read-only="readOnly"
+                :project-id="projectId"
+                :case-id="caseId"
+              />
             </template>
             <CaseLinks
               v-else-if="
@@ -110,6 +128,7 @@
               "
               :project-id="projectId"
               :case-id="caseId"
+              :read-only="readOnly"
               :section="
                 tab.key as 'case' | 'requirement' | 'defect' | 'dependency'
               "

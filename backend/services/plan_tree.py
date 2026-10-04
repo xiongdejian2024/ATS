@@ -49,6 +49,19 @@ def node_data(db, node):
     return data
 
 
+def uses_tree(db, plan_id):
+    from models.plan_workspace import PlanWorkspace
+    workspace = db.get(PlanWorkspace, plan_id)
+    return bool(workspace and workspace.uses_tree) or db.query(PlanNode.id).filter(PlanNode.plan_id == plan_id, PlanNode.node_type != "point").first() is not None
+
+
+def remember_tree(db, plan_id):
+    from models.plan_workspace import PlanWorkspace
+    workspace = db.get(PlanWorkspace, plan_id) or PlanWorkspace(plan_id=plan_id)
+    workspace.uses_tree = True
+    db.add(workspace)
+
+
 def save_node(db, plan, data, existing=None):
     row = existing or PlanNode(plan_id=plan.id)
     name = str(data.get("name", row.name or "")).strip()
@@ -124,6 +137,8 @@ def save_node(db, plan, data, existing=None):
         # 同级新增节点默认追加，避免同一秒创建后由随机 UUID 改变串行顺序。
         last = db.query(func.max(PlanNode.position)).filter_by(plan_id=plan.id, parent_id=parent_id).scalar()
         row.position = (last + 1) if last is not None else 0
+    if row.node_type != "point":
+        remember_tree(db, plan.id)
     db.add(row)
     db.flush()
     logger.info("已保存计划测试点节点：计划={}，节点={}，分类={}", plan.id, row.id, row.category)
@@ -133,7 +148,7 @@ def save_node(db, plan, data, existing=None):
 def compile_tree(db, plan, policy):
     """将树编译为关联实例及显式前置节点，保留分支串并行语义。"""
     all_nodes = nodes(db, plan.id)
-    if not any(n.node_type != "point" for n in all_nodes):
+    if not uses_tree(db, plan.id):
         return None
     children = {}
     for node in all_nodes:

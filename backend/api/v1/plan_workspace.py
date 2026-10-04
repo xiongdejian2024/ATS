@@ -204,11 +204,16 @@ def delete_node(node_id: str, db: Session = Depends(get_db), user=Depends(get_cu
     if not row:
         raise HTTPException(404, "测试点节点不存在")
     plan_access(db, user, row.plan_id, "update")
+    from services.plan_tree import uses_tree, remember_tree
+    if uses_tree(db, row.plan_id):
+        remember_tree(db, row.plan_id)
     # 显式清子树让 SQLite（FK可未启用）与 MySQL 一致；批次保存独立快照。
     def remove(node):
         for child in db.query(PlanNode).filter_by(parent_id=node.id).all():
             remove(child)
         db.query(PlanNode).filter_by(linked_functional_id=node.id).update({"linked_functional_id": None})
+        from models.test_plan import PlanCaseRelation
+        db.query(PlanCaseRelation).filter_by(collection_id=node.id).update({"collection_id": None})
         db.delete(node)
         db.flush()
     remove(row)
