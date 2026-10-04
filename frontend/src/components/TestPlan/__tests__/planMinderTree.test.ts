@@ -69,3 +69,51 @@ describe("脑图折叠与数据保留", () => {
     expect(presentPlanMinder(tree, new Set())).toEqual(tree);
   });
 });
+
+describe("脑图环境与资源池真实配置", () => {
+  it("API测试集显示生效环境和执行方式，功能测试集没有配置叶子", () => {
+    const api = {
+      ...point("api"),
+      category: "api",
+      config: { environmentId: "own" },
+      effectiveConfig: { environmentId: "actual", executionMode: "parallel" },
+    } as PlanNode;
+    const tree = buildPlanMinder(
+      "计划",
+      [point("functional"), api],
+      { functional: [], api: [], scenario: [] },
+      { environmentNames: { actual: "继承软件环境" } },
+    );
+    const collection = tree.children![1].children![0];
+    expect(collection.executionMode).toBe("parallel");
+    expect(collection.children!.map((child) => child.name)).toEqual([
+      "0 条用例",
+      "环境：继承软件环境",
+      "资源池：默认资源池",
+    ]);
+    expect(
+      tree.children![0].children![0].children!.map((child) => child.kind),
+    ).toEqual(["count"]);
+    expect(tree.count).toBe(0);
+  });
+  it("场景资源池以实际节点名称展示，未知节点使用可读文案且不泄露内部标识", () => {
+    const scenario = {
+      ...point("scenario"),
+      category: "scenario",
+      effectiveConfig: { resourcePool: ["first", "unknown-internal-id"] },
+    } as PlanNode;
+    const tree = buildPlanMinder(
+      "计划",
+      [scenario],
+      { functional: [], api: [], scenario: [entry("scenario")] },
+      { environmentNames: { first: "软件节点一" } },
+    );
+    const resource = tree.children![2].children![0].children!.find(
+      (child) => child.kind === "resource",
+    )!;
+    expect(resource.name).toBe("资源池：软件节点一、已指定节点");
+    expect(resource.nodeId).toBe("scenario");
+    expect(resource.count).toBe(1);
+    expect(tree.children![2].count).toBe(1);
+  });
+});

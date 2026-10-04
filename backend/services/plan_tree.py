@@ -31,7 +31,7 @@ def effective_config(db, node):
     config = {"environmentId": plan.environment_id} if plan.environment_id else {}
     for ancestor in reversed(ancestors):
         for key, value in (ancestor.config or {}).items():
-            if value is not None:
+            if value is not None and not (key in ("environmentId", "resourcePool") and not value):
                 config[key] = value
                 if key == "environmentId":
                     config.pop("resourcePool", None)
@@ -122,12 +122,17 @@ def save_node(db, plan, data, existing=None):
         raise HTTPException(422, "配置仅支持串并行、环境和资源池")
     if config.get("executionMode") not in (None, "serial", "parallel"):
         raise HTTPException(422, "执行模式无效")
-    if config.get("environmentId") and config.get("resourcePool"):
+    environment_id = config.get("environmentId")
+    if environment_id is not None and (not isinstance(environment_id, str) or len(environment_id) > 36):
+        raise HTTPException(422, "执行环境须为有效标识")
+    pool = config.get("resourcePool")
+    if pool is None:
+        pool = []
+    if not isinstance(pool, list) or len(pool) > 100 or any(not isinstance(value, str) or not 1 <= len(value) <= 36 for value in pool) or len(set(pool)) != len(pool):
+        raise HTTPException(422, "资源池须为最多100个不重复的ATS执行环境")
+    if environment_id and pool:
         raise HTTPException(422, "指定环境和资源池不能同时设置")
-    pool = config.get("resourcePool") or []
-    if not isinstance(pool, list) or len(pool) > 100:
-        raise HTTPException(422, "资源池必须为最多100个ATS执行环境")
-    for env_id in pool + ([config["environmentId"]] if config.get("environmentId") else []):
+    for env_id in pool + ([environment_id] if environment_id else []):
         if not db.get(Environment, env_id):
             raise HTTPException(400, "执行环境不存在")
     row.config = config

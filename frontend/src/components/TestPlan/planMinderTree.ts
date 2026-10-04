@@ -1,14 +1,21 @@
-import type { PlanNode } from "@/api/planTree";
+import type { PlanNode, NodeConfig } from "@/api/planTree";
 import type { PlanCaseEntry } from "@/api/planCaseWorkspace";
 import { nodeHierarchy } from "./planCategoryTree";
 export type PlanCategory = "functional" | "api" | "scenario";
 export interface PlanMinderNode {
   id: string;
   name: string;
-  kind: "root" | "category" | "collection" | "count";
+  kind:
+    | "root"
+    | "category"
+    | "collection"
+    | "count"
+    | "environment"
+    | "resource";
   category?: PlanCategory;
   nodeId?: string;
   count: number;
+  executionMode?: "serial" | "parallel";
   children?: PlanMinderNode[];
 }
 export const planCategoryNames: Record<PlanCategory, string> = {
@@ -21,7 +28,46 @@ export function buildPlanMinder(
   name: string,
   nodes: PlanNode[],
   entries: Record<PlanCategory, PlanCaseEntry[]>,
+  options: {
+    environmentNames?: Record<string, string>;
+    defaultEnvironmentId?: string | null;
+  } = {},
 ): PlanMinderNode {
+  function configurationNodes(
+    category: PlanCategory,
+    nodeId: string | undefined,
+    effective: NodeConfig,
+    count: number,
+  ): PlanMinderNode[] {
+    if (category === "functional") return [];
+    const environmentName = effective.environmentId
+      ? options.environmentNames?.[effective.environmentId] || "已指定环境"
+      : "默认环境";
+    const pool = effective.resourcePool || [];
+    const poolName = pool.length
+      ? pool
+          .map((id) => options.environmentNames?.[id] || "已指定节点")
+          .join("、")
+      : "默认资源池";
+    return [
+      {
+        id: `environment:${category}:${nodeId || "default"}`,
+        name: `环境：${environmentName}`,
+        kind: "environment",
+        category,
+        nodeId,
+        count,
+      },
+      {
+        id: `resource:${category}:${nodeId || "default"}`,
+        name: `资源池：${poolName}`,
+        kind: "resource",
+        category,
+        nodeId,
+        count,
+      },
+    ];
+  }
   const points = nodes.filter((node) => node.nodeType === "point"),
     byId = new Map(points.map((node) => [node.id, node]));
   const categories = (Object.keys(planCategoryNames) as PlanCategory[]).map(
@@ -56,6 +102,7 @@ export function buildPlanMinder(
           kind: "collection",
           category,
           count,
+          executionMode: point.effectiveConfig?.executionMode || undefined,
           children: [
             {
               id: `count:${category}:${point.id}`,
@@ -65,6 +112,12 @@ export function buildPlanMinder(
               category,
               count,
             },
+            ...configurationNodes(
+              category,
+              point.id,
+              point.effectiveConfig || point.config || {},
+              count,
+            ),
             ...children,
           ],
         };
@@ -81,6 +134,14 @@ export function buildPlanMinder(
           category,
           count: unassigned,
           children: [
+            ...configurationNodes(
+              category,
+              undefined,
+              {
+                environmentId: options.defaultEnvironmentId,
+              },
+              unassigned,
+            ),
             {
               id: `count:default:${category}`,
               name: `${unassigned} 条用例`,

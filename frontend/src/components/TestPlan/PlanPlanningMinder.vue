@@ -82,9 +82,27 @@
                 ><a-input v-model:value="pointForm.name" :maxlength="255"
               /></a-form-item>
               <template v-if="selected.category !== 'functional'">
+                <a-form-item label="继承上级配置"
+                  ><a-switch
+                    v-model:checked="pointForm.inherit"
+                    :disabled="!canEdit"
+                    @change="changeInheritance"
+                /></a-form-item>
+                <a-alert
+                  v-if="selectedPoint.category !== selected.category"
+                  message="此节点是多个分类共用的父测试集，配置会影响其下级测试集。"
+                  type="info"
+                  show-icon
+                />
                 <a-form-item label="执行方式"
                   ><a-select
-                    v-model:value="pointForm.executionMode"
+                    :value="
+                      pointForm.inherit
+                        ? selectedPoint.effectiveConfig.executionMode
+                        : pointForm.executionMode
+                    "
+                    :disabled="!canEdit || pointForm.inherit"
+                    @change="changeExecutionMode"
                     allow-clear
                     placeholder="继承计划/父测试集配置"
                     :options="[
@@ -94,7 +112,13 @@
                 /></a-form-item>
                 <a-form-item label="环境"
                   ><a-select
-                    v-model:value="pointForm.environmentId"
+                    ref="environmentSelect"
+                    :value="
+                      pointForm.inherit
+                        ? selectedPoint.effectiveConfig.environmentId
+                        : pointForm.environmentId
+                    "
+                    :disabled="!canEdit || pointForm.inherit"
                     allow-clear
                     placeholder="继承计划/父测试集环境"
                     :options="
@@ -103,11 +127,17 @@
                         label: item.name,
                       }))
                     "
-                    @change="pointForm.resourcePool = []"
+                    @change="changeEnvironment"
                 /></a-form-item>
                 <a-form-item label="资源池"
                   ><a-select
-                    v-model:value="pointForm.resourcePool"
+                    ref="resourceSelect"
+                    :value="
+                      pointForm.inherit
+                        ? selectedPoint.effectiveConfig.resourcePool
+                        : pointForm.resourcePool
+                    "
+                    :disabled="!canEdit || pointForm.inherit"
                     mode="multiple"
                     placeholder="继承父配置"
                     :options="
@@ -116,7 +146,7 @@
                         label: item.name,
                       }))
                     "
-                    @change="pointForm.environmentId = undefined"
+                    @change="changeResourcePool"
                 /></a-form-item>
               </template>
               <a-space v-if="canEdit" wrap
@@ -170,7 +200,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import { computed, ref, reactive, watch } from "vue";
+import { computed, ref, reactive, watch, nextTick } from "vue";
 import {
   useRouter,
   useRoute,
@@ -220,7 +250,12 @@ const nodes = ref<PlanNode[]>([]),
   viewport = ref<HTMLElement>(),
   collapsed = ref(new Set<string>());
 const tree = computed(() =>
-  buildPlanMinder(props.plan.name, nodes.value, entries.value),
+  buildPlanMinder(props.plan.name, nodes.value, entries.value, {
+    environmentNames: Object.fromEntries(
+      environments.value.map((item) => [item.id, item.name]),
+    ),
+    defaultEnvironmentId: props.plan.environmentId,
+  }),
 );
 const flatNodes = computed(() => {
   const result: PlanMinderNode[] = [];
@@ -233,7 +268,7 @@ const flatNodes = computed(() => {
 });
 const nodeOptions = computed(() =>
   flatNodes.value
-    .filter((node) => node.kind !== "count")
+    .filter((node) => ["root", "category", "collection"].includes(node.kind))
     .map((node) => ({
       value: node.id,
       label:
@@ -246,7 +281,8 @@ const nodeOptions = computed(() =>
 );
 const selectedOption = computed(() => {
   const node = selected.value;
-  if (node?.kind !== "count") return node?.id;
+  if (!node || ["root", "category", "collection"].includes(node.kind))
+    return node?.id;
   return node.nodeId
     ? `${node.category}:${node.nodeId}`
     : `default:${node.category}`;
@@ -258,6 +294,7 @@ const selectedPoint = computed(() =>
 );
 const pointForm = reactive({
   name: "",
+  inherit: true,
   executionMode: undefined as "serial" | "parallel" | undefined,
   environmentId: undefined as string | undefined,
   resourcePool: [] as string[],
@@ -265,19 +302,57 @@ const pointForm = reactive({
 function resetPoint() {
   const node = selectedPoint.value;
   pointForm.name = node?.name || "";
+  pointForm.inherit = !hasOwnConfiguration(node);
   pointForm.executionMode = node?.config.executionMode || undefined;
   pointForm.environmentId = node?.config.environmentId || undefined;
   pointForm.resourcePool = [...(node?.config.resourcePool || [])];
 }
+function hasOwnConfiguration(node?: PlanNode) {
+  return !!(
+    node?.config.executionMode ||
+    node?.config.environmentId ||
+    node?.config.resourcePool?.length
+  );
+}
+function changeExecutionMode(value: unknown) {
+  pointForm.executionMode =
+    value === "serial" || value === "parallel" ? value : undefined;
+}
+function changeEnvironment(value: unknown) {
+  pointForm.environmentId = typeof value === "string" ? value : undefined;
+  pointForm.resourcePool = [];
+}
+function changeResourcePool(value: unknown) {
+  pointForm.resourcePool = Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+  pointForm.environmentId = undefined;
+}
+function changeInheritance(inherit: boolean) {
+  if (inherit) {
+    pointForm.executionMode = undefined;
+    pointForm.environmentId = undefined;
+    pointForm.resourcePool = [];
+  } else {
+    const effective = selectedPoint.value?.effectiveConfig;
+    pointForm.executionMode = effective?.executionMode || "serial";
+    pointForm.environmentId = effective?.environmentId || undefined;
+    pointForm.resourcePool = [...(effective?.resourcePool || [])];
+  }
+}
+const environmentSelect = ref<{ focus: () => void }>(),
+  resourceSelect = ref<{ focus: () => void }>();
 const dirty = computed(() => {
   const node = selectedPoint.value;
   if (!node) return false;
   return (
     pointForm.name !== node.name ||
-    pointForm.executionMode !== (node.config.executionMode || undefined) ||
-    pointForm.environmentId !== (node.config.environmentId || undefined) ||
-    JSON.stringify(pointForm.resourcePool) !==
-      JSON.stringify(node.config.resourcePool || [])
+    pointForm.inherit === hasOwnConfiguration(node) ||
+    (!pointForm.inherit &&
+      (pointForm.executionMode !== (node.config.executionMode || undefined) ||
+        pointForm.environmentId !== (node.config.environmentId || undefined) ||
+        JSON.stringify(pointForm.resourcePool) !==
+          JSON.stringify(node.config.resourcePool || [])))
   );
 });
 const presentedTree = computed(() =>
@@ -316,6 +391,8 @@ const option = computed(() => ({
       right: 220,
       symbolSize: 9,
       label: {
+        formatter: (item: any) =>
+          `${item.data.executionMode ? (item.data.executionMode === "parallel" ? "并行 · " : "串行 · ") : ""}${item.data.name}`,
         position: "left",
         align: "right",
         fontSize: 12,
@@ -383,9 +460,15 @@ async function load() {
 }
 async function loadEnvironments() {
   try {
-    environments.value = (
-      await environmentApi.getEnvironments({ size: 100 })
-    ).items;
+    const all: Environment[] = [];
+    let page = 1;
+    while (true) {
+      const result = await environmentApi.getEnvironments({ page, size: 100 });
+      all.push(...result.items);
+      if (all.length >= result.total || !result.items.length) break;
+      page++;
+    }
+    environments.value = all;
   } catch (error) {
     console.error("加载测试集环境选项失败", error);
   }
@@ -405,9 +488,18 @@ function selectNode(event: unknown) {
   const node = flatNodes.value.find((item) => item.id === data.id);
   if (!node) return;
   selectById(node.id);
+  if (dirty.value) return;
   viewport.value?.focus({ preventScroll: true });
   if (node.kind === "count" && props.canEdit && !dirty.value)
     associateOpen.value = true;
+  if (["environment", "resource"].includes(node.kind) && props.canEdit) {
+    void nextTick(() =>
+      (node.kind === "environment"
+        ? environmentSelect.value
+        : resourceSelect.value
+      )?.focus(),
+    );
+  }
 }
 
 const canAdd = computed(
@@ -580,14 +672,16 @@ async function savePoint() {
     const updated = await planTreeApi.update(node.id, {
       name: pointForm.name.trim(),
       config:
-        node.category === "functional"
+        selected.value?.category === "functional"
           ? node.config
-          : {
-              ...node.config,
-              executionMode: pointForm.executionMode || null,
-              environmentId: pointForm.environmentId || null,
-              resourcePool: pointForm.resourcePool,
-            },
+          : pointForm.inherit
+            ? {}
+            : {
+                ...node.config,
+                executionMode: pointForm.executionMode || null,
+                environmentId: pointForm.environmentId || null,
+                resourcePool: pointForm.resourcePool,
+              },
     });
     nodes.value = nodes.value.map((item) =>
       item.id === node.id ? updated : item,
@@ -677,6 +771,8 @@ watch(
 }
 .node-configuration {
   width: 320px;
+  max-height: clamp(420px, calc(100vh - 320px), 700px);
+  overflow-y: auto;
   flex-shrink: 0;
   padding: 16px;
   border-left: 1px solid var(--ms-border);
@@ -697,6 +793,8 @@ watch(
   }
   .node-configuration {
     width: 100%;
+    max-height: none;
+    overflow-y: visible;
     border-left: 0;
     border-top: 1px solid var(--ms-border);
   }

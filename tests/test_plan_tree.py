@@ -210,3 +210,36 @@ async def test_assigned_project_member_can_fill_only_assigned_instance(workspace
         assert response.status_code==200,response.text
         assert (await client.put(f'/orchestration/runs/{run.id}/cases/{other.id}/result',json={'result':'passed'})).status_code==403
         assert (await client.post(f'/orchestration/runs/{run.id}/cases/{assigned.id}/comments',json={'content':'成员执行完成'})).status_code==200
+
+
+@pytest.mark.asyncio
+async def test_empty_resource_pool_preserves_explicit_and_inherited_environment(plan_lab):
+    from services.plan_tree import compile_tree
+    db, sent = plan_lab
+    db.add(Environment(id="spare", name="继承验证软件节点", is_online=True, max_concurrent_tasks=1)); db.commit()
+    parent = node(db, nodeType="point", caseId=None, category="api", config={"executionMode": "parallel", "environmentId": "spare", "resourcePool": []})
+    child = node(db, nodeType="point", caseId=None, category="api", parentId=parent.id, config={"executionMode": None, "environmentId": None, "resourcePool": []})
+    auto = node(db, category="api", caseId="case-0", suiteId="suite-0", parentId=child.id)
+    assert effective_config(db, child) == {"executionMode": "parallel", "environmentId": "spare"}
+    assert effective_config(db, auto)["environmentId"] == "spare"
+    compiled = compile_tree(db, db.get(Plan, "plan"), {"executionMode": "serial"})
+    assert compiled[0]["suite"].environment_id == "spare"
+    run = await start_plan_run(db, "plan", "owner")
+    assert db.query(PlanRunItem).filter_by(run_id=run.id).one().environment_id == "spare"
+    assert not sent
+    save_node(db, db.get(Plan, "plan"), {"config": {"environmentId": None, "resourcePool": ["node"]}}, child); db.commit()
+    assert effective_config(db, auto) == {"executionMode": "parallel", "resourcePool": ["node"]}
+    save_node(db, db.get(Plan, "plan"), {"config": {}}, child); db.commit()
+    assert effective_config(db, auto)["environmentId"] == "spare"
+    # 已创建批次继续采用原配置快照，不跟随修改后的测试集。
+    assert db.query(PlanRunItem).filter_by(run_id=run.id).one().environment_id == "spare"
+
+
+@pytest.mark.parametrize("config", [{"environmentId": ["node"]}, {"resourcePool": "node"}, {"resourcePool": ["node", "node"]}, {"resourcePool": [False]}, {"resourcePool": ""}])
+def test_invalid_node_environment_config_rejected_before_database_lookup(plan_lab, config):
+    db, sent = plan_lab
+    with pytest.raises(HTTPException) as caught:
+        node(db, nodeType="point", caseId=None, config=config)
+    assert caught.value.status_code == 422
+    db.rollback()
+    assert db.query(PlanNode).count() == 0 and not sent
