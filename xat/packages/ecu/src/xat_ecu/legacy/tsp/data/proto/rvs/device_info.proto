@@ -1,0 +1,60 @@
+syntax = "proto3";
+package vehiclestatus;
+import "common.proto";
+import "block_head.proto";
+
+// =====================================================================
+// 设备信息块
+// =====================================================================
+message DeviceInfoBlock {
+  BlockHead              head       = 1 ; //公共头
+  Key                    key        = 2 ; //钥匙
+  //    ETC                    etc        = 3 ; //etc 不在上报
+
+}
+
+message Key {
+    repeated  DigitalKeyConnectInfo connectInfo = 1;
+}
+
+message DigitalKeyConnectInfo {
+  bytes                 keyId             = 1; //keyId
+  KeyType               keyType           = 2 ; //数字钥匙类型
+  Bool                  isConnected       = 3 ;//是否链接
+  ConnectedZone         zone              = 4 ;//区域
+}
+enum KeyType {
+    KtUnknown                       = 0 ; //未知key id 用于没有钥匙连接时 (kNoKeyConnected)
+    KtNfcCard                       = 1 ; //NFC_Card (kNfcCard)
+    KtBleKey                        = 2 ; //BLE_Key  (kBleKey)
+    KtBleUwbKey                     = 3 ; //BLE_UWB_KeyFob. (kBleUwbKey)
+    KtTempBleKey                    = 4 ; //Temp_BLE_Key (kTempBleKey)
+    KtIcceBleKey                    = 5 ; //ICCE_BLE_Key (kIcceBleKey)
+    KtIcceNfcKey                    = 6 ; //ICCE_NFC_Key (kIcceNfcKey)
+    KtCccNfcBleUwbKey               = 7 ; //CCC_NFC_BLE_UWB_Key (kCccNfcBleUwbKey)
+    KtCccNfcKey                     = 8 ; //CCC_NFC_Key (kCccNfcKey)
+    KtCccNfcBleKey                  = 9 ; //CCC_NFC_BLE_Key (kCccNfcBleKey)
+    KtEmpty                         = -1 ;//--
+}
+
+// 数字钥匙连接时所处的区域
+enum  	ConnectedZone {
+    CzZone0                         = 0 ; // kZone0 (kZone0)
+    CzZone1                         = 1 ; // kZone1 (kZone1)
+    CzZone2                         = 2 ; // kZone2 (kZone2)
+    CzZone3                         = 3 ; // kZone3 (kZone3)
+    CzZone4                         = 4 ; // kZone4 (kZone4)
+    CzZone5                         = 5 ; // kZone5 (kZone5)
+    CzZone6                         = 6 ; // kZone6 (kZone6)
+    CzZone7                         = 7 ; // kZone7 (kZone7)
+    CzZone8                         = 8 ; // kZone8 (kZone8)
+    CzZone9                         = 9 ; // kZone9 (kZone9)
+    CzZone10                        = 10 ; // kZone10 (kZone10)
+    CzZone11                        = 11 ; // kZone11 (kZone11)
+    CzZone12                        = 12 ; // kZone12 (kZone12)
+    CzZone13                        = 13 ; // kZone13 (kZone13)
+    CzZone14                        = 14 ; // kZone14 (kZone14)
+    CzZone15                        = 15 ; // kZone15 (kZone15)
+    CzZoneInvalid                   = 16 ; //kZoneInvalid (kZoneInvalid)
+    CzEmpty                         = -1 ; //--
+}

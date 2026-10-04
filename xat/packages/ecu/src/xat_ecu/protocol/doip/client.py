@@ -104,6 +104,7 @@ class DoipClient(ITransport):
         except socket.timeout:
             return None
         except Exception as e:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/protocol/doip/client.py")
             logger.error(f"DoIP Receive error: {e}")
             return None
 

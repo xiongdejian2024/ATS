@@ -1,0 +1,121 @@
+{
+    "DiagRequest5": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 60,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMP",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DiagResponse5": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 61,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "SMP"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "MmpSmp_Lin1Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 1,
+        "msg_id": 1,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "MMP",
+        "rx_nodes": [
+            "SMP"
+        ],
+        "pdu_data": [
+            0
+        ],
+        "tx_change": true
+    },
+    "MmpSmp_Lin1PartNrFr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "MMP",
+        "rx_nodes": [
+            "SMP"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "MmpSmp_Lin1PartNrFr02": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 7,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "MMP",
+        "rx_nodes": [
+            "SMP"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmpSmp_Lin1Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 2,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SMP",
+        "rx_nodes": [
+            "MMP"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    }
+}

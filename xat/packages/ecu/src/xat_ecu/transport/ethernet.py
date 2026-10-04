@@ -32,6 +32,7 @@ class EthernetTransport(ITransport):
             self.is_connected = True
             logger.info(f"EthernetTransport connected to {self.host}:{self.port} ({self.protocol})")
         except Exception as e:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/transport/ethernet.py")
             logger.error(f"Failed to connect EthernetTransport: {e}")
             raise
 
@@ -72,6 +73,7 @@ class EthernetTransport(ITransport):
         except socket.timeout:
             return None
         except Exception as e:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/transport/ethernet.py")
             logger.error(f"Error receiving data: {e}")
             return None
 

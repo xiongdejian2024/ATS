@@ -1,0 +1,105 @@
+'''
+Author: seven 865762826@qq.com
+Date: 2023-08-04 22:31:39
+LastEditors: seven 865762826@qq.com
+LastEditTime: 2023-12-25 00:33:13
+FilePath: \window_linux_Rep\c++\TSFlexray\src\SocketClient.py
+Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+'''
+from libTSCANAPI import *
+
+import socket
+import struct
+import sys
+# import vthread
+
+class TLIBFlexrayHW(Structure):
+    _pack_ = 1
+    _fields_ = [("FHWIdx", c_int32),
+                ("StopNet",c_int32),
+                ("LogFlag",c_int32),
+                ("AMsg", TLIBFlexray),
+    ]
+    def __str__(self):
+        return str(self.FHWIdx) +"  "+str(self.AMsg)
+PLIBFlexrayHW = POINTER(TLIBFlexrayHW)   
+
+class TLIBCANFDHW(Structure):
+    _pack_ = 1
+    _fields_ = [("FHWIdx", c_int32),
+                ("CyclicTime",c_float),
+                ("LogFlag",c_int32),
+                ("AMsg", TLIBCANFD),
+    ]
+    def __str__(self):
+        return str(self.FHWIdx) +"  "+str(self.AMsg)
+PLIBCANFDHW = POINTER(TLIBCANFDHW) 
+
+# create a socket object
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+# set the host and port number
+host = '127.0.0.1'
+# can
+port = 8003
+# flexray
+# port = 8001
+
+# connection to host on the port.
+client_socket.bind((host, port))
+# client_socket.sendto("nihao".encode("utf8"), (host, 8002))
+a = True
+b = 0
+while True:
+    # key = input("input:")
+    # if key == "1":
+    #     a = TLIBCANFDHW()
+    #     a.FHWIdx = 0
+    #     a.CyclicTime = 0
+    #     a.LogFlag = 1
+    #     a.AMsg = TLIBCANFD(FIdxChn=2,FIdentifier=0x11,FData=[0xff,0xf0])
+    #     client_socket.sendto(a, (host, 8002))
+    # elif key == "2":
+    #     a = TLIBCANFDHW()
+    #     a.FHWIdx = 0
+    #     a.CyclicTime = 0
+    #     a.LogFlag = 1
+    #     a.AMsg = TLIBCANFD(FIdxChn=2,FIdentifier=0x11,FData=[0x00,0x00])
+    #     client_socket.sendto(a, (host, 8002))
+    # # time.sleep(0.01)
+    msg, addr = client_socket.recvfrom(1024)
+    if(len(msg)>= 308):
+        pass
+    elif(len(msg) >= 88):
+        ## UDP发送can
+        Msg = cast(msg, PLIBCANFDHW).contents
+        # if(Msg.AMsg.FIdxChn == 2 and (Msg.AMsg.FIdentifier == 0x11)):
+        print(Msg.AMsg)
+        # if a:
+        #     # if b == 10:
+        #     #     b = 0
+        #     AMsg = TLIBCANFD(0,8,0x53F,1,0,[1,2,3,4,5,6,7,8])
+        #     # print(sizeof(AMsg))
+        #     Msg.AMsg = AMsg
+        #     Msg.CyclicTime = 0 # 周期时间,0为发送一帧，-1为停止当前帧发送，-2为停止当前bus发送
+        #     Msg.LogFlag = 1 # log启停,0为log启动，1为暂停
+        #     a = False
+        #     print(b)
+        #     # print(sizeof(Msg))
+        #     client_socket.sendto(Msg,(host, 8002))
+        #     b = b+1
+        #     time.sleep(0.001)
+
+        # print(Msg)
+    # Msg.FData[0] = 0xf1
+    
+
+    # # client_socket.sendto(Msg,(host, 8000))
+
+    #     # frlist.append(str(Msg))
+
+
+client_socket.close()
+
+
+

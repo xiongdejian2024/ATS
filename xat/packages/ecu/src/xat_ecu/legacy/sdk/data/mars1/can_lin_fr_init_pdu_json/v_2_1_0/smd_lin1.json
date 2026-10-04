@@ -1,0 +1,121 @@
+{
+    "DiagRequest5": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 60,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DiagResponse5": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 61,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "MmdSmd_Lin1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 1,
+        "msg_id": 1,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "MMD",
+        "rx_nodes": [
+            "SMD"
+        ],
+        "pdu_data": [
+            0
+        ],
+        "tx_change": true
+    },
+    "MmdSmd_Lin1PartNrFr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "MMD",
+        "rx_nodes": [
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "MmdSmd_Lin1PartNrFr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 7,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "MMD",
+        "rx_nodes": [
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmdSmd_Lin1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 3,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "MMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    }
+}

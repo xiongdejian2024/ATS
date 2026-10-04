@@ -1,0 +1,34 @@
+syntax="proto3";
+
+package cmd;
+
+option go_package="go/remote_vehicle_control/cmd";
+
+import "source/remote_vehicle_control/cmd/common.proto";
+
+/** 3、指令延续上报 **/
+message RenewalCmdNotify{
+  string                        execId                   = 1; // 执行唯一ID   车端生成
+  string                        subscribeId              = 2; // 预约ID
+  int64                         operateUserId            = 3; // 操作人ID
+
+  EnumVehicleModel              vehicleModel             = 4; // 车型
+
+  RenewalOpType                 opType                   = 5; // 执行类型 1：请求续约（tcam->tsp使用），2：续约确认，3：续约取消 （tsp->tcam使用2,3）
+  repeated TaskCmdDetail        taskCmdDetail            = 6; // 指令项
+
+  uint64                        vehicleReportDatetime    = 7; // 车端上报时间 UTC时间戳，年月日时分秒
+}
+
+message RenewalCmdNotifyResp{
+  string                        execId                   = 1; // 执行唯一ID
+
+  repeated ExecDetail           execDetail               = 2; // 指令详情
+}
+
+enum RenewalOpType{
+  rnotUnknown                          = 0; // 空档
+  rnotRequest                          = 1; // 请求
+  rnotConfirm                          = 2; // 确认
+  rnotCancel                           = 3; // 取消
+}

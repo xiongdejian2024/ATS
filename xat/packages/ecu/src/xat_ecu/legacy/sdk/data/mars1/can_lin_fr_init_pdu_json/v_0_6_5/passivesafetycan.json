@@ -1,0 +1,711 @@
+{
+    "AsdmPassSafeCANFr02": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 131,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            4,
+            0,
+            36,
+            0,
+            0,
+            0,
+            4,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr04": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 133,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            44,
+            32,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr08": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 747,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr09": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 781,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr11": {
+        "msg_cycle": 0.085,
+        "msg_length": 8,
+        "msg_id": 815,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            32,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr12": {
+        "msg_cycle": 0.45,
+        "msg_length": 8,
+        "msg_id": 849,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            42,
+            192,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr14": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 338,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr15": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 953,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr16": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 288,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr17": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 101,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr18": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 118,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            240,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr21": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 518,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            128,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr22": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 84,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            80,
+            0,
+            25,
+            0,
+            0,
+            1,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr23": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 442,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr29": {
+        "msg_cycle": 0.12,
+        "msg_length": 8,
+        "msg_id": 528,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmPassSafeCANFr39": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 863,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmPassSafeCANFr01": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 533,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SRS"
+        ],
+        "pdu_data": [
+            0,
+            32,
+            0,
+            32,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmPassiveSafetyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1281,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SRS"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToAllPassSafeDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2047,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToRmlPassSafeDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1808,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DmmPassSafeCANFr02": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 69,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+        ]
+    },
+    "EtcToRmlXcpFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1412,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RmlPassSafeCANDevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1425,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "RML",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RmlPassSafeCANFrame1": {
+        "msg_cycle": 0.055,
+        "msg_length": 8,
+        "msg_id": 339,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "RML",
+        "rx_nodes": [
+            "SRS",
+            "BGM"
+        ],
+        "pdu_data": [
+            192,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RmlPassSafeCANFrame2": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 847,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "RML",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RmlPassiveSafetyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1294,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RML",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RmlToBgmPassSafeDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1552,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RML",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RmlToEtcXcpFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1410,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RML",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SrsPassSafeCANFr01": {
+        "msg_cycle": 0.06,
+        "msg_length": 8,
+        "msg_id": 137,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SRS",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            240,
+            0,
+            0,
+            0,
+            0,
+            255,
+            5,
+            130
+        ]
+    },
+    "SrsPassSafeCANFr02": {
+        "msg_cycle": 0.2,
+        "msg_length": 4,
+        "msg_id": 16,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SRS",
+        "rx_nodes": [],
+        "pdu_data": [
+            32,
+            255,
+            0,
+            0
+        ]
+    },
+    "SrsPassSafeCANFr04": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 18,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SRS",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            255,
+            5,
+            0,
+            0,
+            128,
+            0,
+            9,
+            7
+        ]
+    },
+    "SrsPassSafeCANFr05": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 19,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SRS",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            255,
+            0,
+            1,
+            5,
+            0,
+            1
+        ]
+    },
+    "SrsPassSafeCANFr06": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 33,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SRS",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            17,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SrsPassiveSafetyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1291,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SRS",
+        "rx_nodes": [
+            "RML"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

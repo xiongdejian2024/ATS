@@ -1,0 +1,25 @@
+syntax = "proto3";
+package vehiclestatus;
+import "block_head.proto";
+// =====================================================================
+// GNSS信息 发送类型：Cyclic:1s
+// =====================================================================
+
+// GNSS信息 请使用gis_and_travel 后面删除gnssblock
+message GNSSBlock {
+    BlockHead                        head                     = 1; // 公共头
+    Point3D                          position                 = 2; // 数据转出到外层，相应字段为longitude、latitude、altitude  绑路后位置坐标GCJ02  x代表经度、y代表纬度，z是高程信息。其中高程信息CDC只会发0给BGM
+    float                            speed                    = 3; // 车速 单位：m/s
+    float                            angle                    = 4; // 绑路后的方向角 单位：度 ---角度的范围是0-360，顺时针为正，0度代表北
+    uint64                           timestamp                = 5; // 时间戳 单位：ms
+    int32                            probability              = 6; // 道路匹配的可信度 0 自由：不可信；1~400 低可信；401~700 较为可信；701~1000 非常可信
+    double                           longitude                = 7; // 经度  绑路后位置坐标GCJ02
+    double                           latitude                 = 8; // 纬度  绑路后位置坐标GCJ02
+    double                           altitude                 = 9; // 高程信息 高程信息CDC只会发0给BGM
+}
+
+message Point3D {
+    double             x = 1; //基于不同的应用场景  经度
+    double             y = 2; //基于不同的应用场景  纬度
+    double             z = 3; //基于不同的应用场景  高程信息
+}

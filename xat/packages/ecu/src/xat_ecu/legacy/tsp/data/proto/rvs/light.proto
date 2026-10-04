@@ -1,0 +1,53 @@
+syntax = "proto3";
+package vehiclestatus;
+import "common.proto";
+import "block_head.proto";
+
+// 灯光
+message LightBlock {
+  BlockHead                        head                     = 1 ; //公共头
+  repeated LightInfo               light                    = 2 ; // 灯光
+  LightShowActive                  showActive               = 3 ; // 灯光秀激活状态 只针对灯光秀有用 前pixel灯、前一字眉(贯穿)灯、一字眉(贯穿)A灯、一字眉(贯穿)B灯、后pixel灯、轮眉灯（前后+左右 4颗）、侧AI指示灯（左右
+  HighBeamStatus                   highBeamStatus           = 4 ; // 远光灯状态
+  TurnLampMode                     turnLampMode             = 5 ; // 转向灯状态
+}
+
+// 灯光状态
+message LightInfo {
+  LightType 	                    type                      = 1; // 该灯的种类
+  LightZoneId 	                  zoneId                    = 2; // 该灯的位置Id 和LightType 会转换成LightId
+  //  LightMode                       mode                      = 3; // 模式
+  LightStatus                     status                    = 4; // 灯状态
+}
+//灯光秀激活状态,类型定义: LightShowActive
+enum LightShowActive	{
+  LsaEnable                                           		  = 0 ;//关闭 default (kEnable)
+  LsaActivated                                        		  = 1 ;//开启 激活 (kActivated)
+  LsaDisable                                          		  = 2 ;//不可用 (kDisable)
+  LsaEmpty                                             		  = -1 ;//-- (Empty)
+}
+//灯光状态,类型定义: LightStatus
+enum LightStatus	{
+  LightStatusOff                                         		= 0 ;//关闭 (kLightOff)
+  LightStatusOn                                          		= 1 ;//开启 (kLightOn)
+  LightStatusFault                                       		= 2 ;//故障 LightStatus (kLightFault)
+  LightStatusEmpty                                          = -1 ;//-- (Empty)
+}
+//远光灯状态, 类型定义: HighBeamSts
+enum HighBeamStatus	{
+  HighBeamAllOff                                           		= 0 ;//关闭 (kAllOff)
+  HighBeamHighBeamOn                                       		= 1 ;//手动远光灯开启 (kHighBeamOn)
+  HighBeamAHBC                                             		= 2 ;//自动远光灯开启 (kAHBC)
+  HighBeamAHBCTemporarilyOff                             		  = 3 ;//自动远光灯关闭 , 类型定义: HighBeamSts (kAHBC_Temporarily_Off)
+  HighBeamError                                            		= 4 ;//状态异常 , 类型定义: HighBeamSts (kError)
+  HighBeamEmpty                                             	= -1 ;//-- (Empty)
+}
+
+//转向灯模式: TurnLampMode
+enum TurnLampMode	{
+  TurnLampStop                                             		= 0 ;//转向灯关闭 (kStop)
+  TurnLampLeft                                             		= 1 ;//左转向灯开启 (kLeft)
+  TurnLampRight                                            		= 2 ;//右转向灯开启 (kRight)
+  TurnLampHazard                                           		= 3 ;//危险报警灯开启 (kHazard)
+  TurnLampEmpty                                             	= -1 ;//-- (Empty)
+}

@@ -1,0 +1,155 @@
+syntax="proto3";
+package vehiclestatus;
+import "common.proto";
+import "block_head.proto";
+
+// =====================================================================
+// 业务功能状态
+// =====================================================================
+
+message BusStatusBlock {
+    BlockHead                        head                     = 1; // 公共头
+    VehicleHuntStatus                huntStatus               = 2; // 寻车状态
+    AntiTheftAlarmEventInfo          antiTheftAlarmEventInfo  = 3; // 车身防盗事件  (1.0废弃)
+    AntiTheftAlarmInfo               antiTheftAlarmInfo       = 4; // 车辆设防系统报警状态  (1.0废弃)
+    RemindInfo                       remindInfo               = 5; // 提醒信息
+    repeated BookInfo                bookInfo                 = 6; // 预约事件
+    SentryModeStatus                 sentryModeStatus         = 7; // 哨兵模式
+    Bool                             remoteAuthStartStatus    = 8; // 远程授权启动状态 FALSE: 不允许远程启动 TRUE: 允许远程启动(v2.0废弃)
+    AccountInfo                      accountInfo              = 9; // 登录账号
+    RemoteAuthInfo                   remoteAuthInfo           = 10;// 远程授权启动状态
+
+//    BusOtaStatus                     otaStatus             = 2; // OTA 相关
+//    repeated BusBookInfo             bookInfo              = 3; // 预约事件
+//    BusHAVPStatus                    havp                  = 4; // AVP 业务
+//    BusSentryModeStatus              sentinelMode          = 5; // 哨兵模式
+//    BusCareModeStatus                nannyMode             = 6; // 照看模式
+//    BusVehicleTrackStatus            antiTheftTrackingMode = 7; // 防盗追踪模式
+}
+
+//车身防盗事件
+message AntiTheftAlarmEventInfo {
+  Bool                 isAlarm                             = 1 ; // true : 触发  false ：未触发
+  AntiTheftAlarmSource alarmSource                         = 2 ; //告警源
+  uint32               utcData                             = 3 ; //UTC日期: ddmmyy（日月年）格式
+  uint64               utcTime                             = 4 ; //UTC时间: hhmmssSSS，后三位为毫秒
+}
+//车身防盗
+message AntiTheftAlarmInfo {
+  AntiTheftSystemStatus status                             = 1; //状态
+}
+
+
+//公共警告信息
+message RemindInfo {
+ //任一车窗已开启，且雨天自动关窗已打开，满足1||2； 1 若锁车后28h内监测到下雨  2 锁车后（期间未解锁）未下雨且到达28h；将自动执行升窗动作
+ Bool                       rainStatusRestricted = 1; //自动关窗提醒 rainStatusRestricted 该接口只有在车辆处于abandoned模式，且任一车窗(包括天窗)未关闭时，才会生效
+}
+
+//预约事件
+message BookInfo {
+  string bookType                 = 1; //设置预约事件类型 为方便未来拓展, 传输string类型数字,0=None,1=FOTA,2=CLIMATE,3=SEAT_HEAT,4=SEAT_VENT,5=STEERING_HEAT,6=CHARGING,7=BATTERY_HEAT...
+  BookRepeatType repeatType       = 2; //预约事件重复类型
+  uint64 startTime                = 3; //开始时间(BCD时间以分钟为单位,0x201801061647 表示2018年1月6日16时47分)
+  uint64 stopTime                 = 4; //结束时间(BCD时间以分钟为单位,0x201801061647 表示2018年1月6日16时47分)
+}
+
+//哨兵
+message SentryModeStatus {
+  SentryMainStatus    mainStatus       = 1 ; //哨兵主开关状态
+  SentryWorkStatus    workStatus       = 2 ; //工作状态
+}
+
+// 登录账号
+message AccountInfo {
+  AccountLoginStatus     loginStatus      = 1; // 用户账号登录状态
+  uint64                 uid              = 2; // 用户账号信息，0==无账号登录
+}
+
+//寻车状态
+enum VehicleHuntStatus {
+  HuntIdle                        = 0; //未寻车 (kIdle)
+  HuntSuccessful                  = 1;//寻车成功 (kSuccess)
+  HuntFail                        = 2;//寻车失败 (kFail)
+  HuntInvalid                     = 3;//寻车无效 (kInvalid)
+  HuntEmpty                       = -1 ;//--
+}
+//防盗报警源
+enum AntiTheftAlarmSource {
+  NoTrigSource                    = 0; //无触发源 (NO_TRIG_SOURCE)
+  BattBackedSensor                = 1 ; //BATT_BACKED (BATT_BACKED_SENSOR)
+  InclinationSensor               = 2 ; //倾斜传感器 (INCLINATION_SENSOR)
+  IntrusionScannerSensor          = 3 ; //入侵扫描仪传感器 (INTRUSION_SCANNER_SENSOR)
+  AntiTheftSourceHood             = 4 ; //HOOD (HOOD)
+  AntiTheftSourceTr               = 5 ; //TR (TR)
+  DoorDrvr                        = 6 ; //DOOR_DRVR (DOOR_DRVR)
+  DoorDass                        = 7 ; //DOOR_PASS (DOOR_PASS)
+  DoorDele                        = 8 ; //DOOR_RELE (DOOR_RELE)
+  DoorReri                        = 9 ; //DOOR_RERI (DOOR_RERI)
+  Vehlmobninvld                   = 10; //VEHLMOBNINVLD (VEHLMOBNINVLD)
+  AntiTheftSourceEmpty            = -1 ;// --
+}
+
+/**
+ * 车辆设防系统报警状态
+ */
+ enum AntiTheftSystemStatus{
+  AntiTheftDisarmd                  = 0 ; // 解防 (DISARMD)
+  AntiTheftArmd                     = 1 ; // 设防 (ARMD)
+  AntiTheftActv                     = 2 ; // 报警 (ACTV)
+  AntiTheftEmpty                    = -1 ;// --
+
+}
+
+/**
+ * 类型定义: 预约事件重复类型
+ */
+enum BookRepeatType {
+  RepeatTypeOneTime             = 0; //默认值 (kOneTime)
+  RepeatTypeDaily               = 1; //每日同一时间唤醒触发 (kDaily)
+  RepeatTypeWorkDay             = 2; //工作日同一时间唤醒触发 (kWorkDay)
+  RepeatTypeEmpty               = -1 ;// --
+}
+
+/**
+* 哨兵主开关状态
+*/
+enum SentryMainStatus {
+  SentryMainStatusOFF                 = 0 ; //关 (OFF)
+  SentryMainStatusON                  = 1 ; //开 (ON)
+  SentryMainStatusEmpty               = -1 ;// --
+}
+
+/**
+* 哨兵工作状态
+*/
+enum SentryWorkStatus {
+  SentryWorkStatusOFF                 = 0 ; //停止  (OFF)
+  SentryWorkStatusIDLE                = 1 ; //待机  (IDLE)
+  SentryWorkStatusRUN                 = 2 ; //运行  (RUN)
+  SentryWorkStatusEmpty               = -1 ;// --
+}
+
+// 用户账号登录状态
+enum AccountLoginStatus {
+  AccountLoginStatusLogout            = 0; // logout
+  AccountLoginStatusLogin             = 1; // login
+  AccountLoginStatusEmpty             = -1; // --
+}
+
+// 远程授权启动状态
+message RemoteAuthInfo {
+  RemoteAuthSts         remoteAuthSts      = 1; // 用户账号登录状态
+  uint32                remoteAuthTime     = 2; // 授权启动激活倒计时，单位s,默认值0xFFFFFFFF
+}
+
+// 远程授权启动状态
+enum RemoteAuthSts {
+  RemoteAuthStsDefault            = 0; // 默认(关闭)
+  RemoteAuthStsReady2R            = 1; // 自动授权条件判断
+  RemoteAuthStsUnlockWait         = 2; // 等待解锁状态
+  RemoteAuthStsReadyEntry         = 3; // 远程授权成功，倒计时
+  RemoteAuthStsEntry              = 4; // 进入远程授权模式
+  RemoteAuthStsReady2L            = 5; // 授权启动取消,进入本地模式
+  RemoteAuthStsEmpty              = -1; // --
+}

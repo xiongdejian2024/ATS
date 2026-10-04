@@ -1,0 +1,11 @@
+[{
+  "S2SConfigVersion": ["v3.0.0", "All"],
+  "CurFileConfigVersion": 1.0,
+  "S2SConfigData": {
+      "WaitWindowShortDelayTimeSecs" : 2,
+      "WaitOtherWindowShortDelayTimeSecs" : 2,
+      "WindowActionDelayTime" : 300,
+      "WinFrntShoPosn" : 12,
+      "WinRearShoPosn": 16
+                    }
+}]

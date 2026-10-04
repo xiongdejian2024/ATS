@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<testmodule title="CANoe Test Module" version="1.1" xmlns="http://www.vector-informatik.de/CANoe/TestModule/1.27">
+		<description>For execution of the test module ensure that no macro is running!</description>
+		<sut>
+			<info>
+				<name>Test Module</name>
+				<description>Function Integration Test Automation</description>
+			</info>
+		</sut>
+		<engineer>
+			<info>
+				<name>junxing.pang</name>
+				<description>CANoeDemo</description>
+			</info>
+		</engineer>
+		<testgroup title="PreCondition">
+			<description>This test group executed PreCondition.</description>
+			<capltestcase name="PreCondition" title="PreCondition" ident="TC-0000"/>
+		</testgroup>
+		<testgroup title="Main Test">
+			<description>This test group verify basic function for UDS.</description>
+			<capltestcase name="test_110001" title="test_110001" ident="TC-0001"/>
+			<capltestcase name="test_110002" title="test_110002" ident="TC-0002"/>
+			<capltestcase name="test_110003" title="test_110003" ident="TC-0003"/>
+		</testgroup>
+		<testgroup title="PostCondition">
+			<description>This test group executed PostCondition.</description>
+			<capltestcase name="PostCondition" title="PostCondition" ident="TC-0004"/>
+		</testgroup>
+	</testmodule>

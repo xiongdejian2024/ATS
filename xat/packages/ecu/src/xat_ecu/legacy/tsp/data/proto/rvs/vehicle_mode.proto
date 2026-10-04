@@ -1,0 +1,151 @@
+syntax = "proto3";
+package vehiclestatus;
+import "block_head.proto";
+
+// =====================================================================
+// 车辆模型块 发送类型：Event
+// =====================================================================
+
+// 车辆模型块
+message VehicleModeBlock {
+  BlockHead           head              = 1; // 公共头
+  VehicleMode         model             = 2; // 车辆模式
+  UsageMode           usage             = 3; // 使用模式
+  MaintenanceMode     maintenanceMode   = 4; // 维修模式
+  ParkingComfortMode  parkingComfortMode                    = 5; // 维持上电模式
+  PowerOutletDelayInfo  powerOutletDelayInfo                = 6; // 12V电池延时信息
+  PetModeSts          petModeSts                            = 7; // 宠物模式
+  bool                washModeSts                           = 8; // 洗车模式 false:关闭  true:开启
+}
+
+enum VehicleMode {
+  VehicleModeNormal     = 0; //	普通模式   (NORMAL)
+  VehicleModeTransport  = 1; //	运输模式   (TRANSPORT)
+  VehicleModeFactory    = 2; //	工厂模式   (FACTORY)
+  VehicleModeCrash      = 3; //	碰撞模式   (CRASH)
+  VehicleModeDyno       = 5; //	Dyno转毂  (DYNO)
+  VehicleModeEmpty      = -1; // --
+}
+enum UsageMode {
+  UsageModeAbandoned    = 0  ;     //	Abandoned 车辆休眠  驻车状态 介于休眠和激活的中间状态 (ABANDONED)
+  UsageModeInactive     = 1  ;     //	Inactive 车辆唤醒 未激活状态 介于休眠和激活的中间状态，部分ECU唤醒激活，但仅提供有限的功能支  (INACTIVE)
+  UsageModeConvenience  = 2  ;     //	Convenience 充电 舒亨状态 用户上车，上高压，座舱功能全激活，动力底盘相关功能未激活 (CONVENIENCE)
+  UsageModeActive       = 11  ;    //	Active 车辆上电 激活状态 非正常模式，所有ECU全激活，但动力系统不工作  (ACTIVE)
+  UsageModeDriving      = 13  ;    //	Driving 车辆驾驶 驾驶状态 用户有驾驶意图或驾驶中，所有ECU全激活  (DRIVING)
+  UsageModeEmpty        = -1  ;    //--
+}
+//维修模式 1.3添加
+enum MaintenanceMode {
+  MaintenanceModeUnknown      = 0  ;     //	未知 正常车端不会用到
+  MaintenanceModeClose        = 10  ;     //	关闭
+  MaintenanceModeOpen         = 11  ;     //	开启
+  MaintenanceModeEmpty        = -1  ;    //--
+}
+//维持上电模式 1.4添加
+message ParkingComfortMode {
+  ParkComModeStatus                  status                       = 1; //维持上电状态
+  ParkComModeOffReason               offReason                    = 2; //维持上电关闭原因
+  int64                              parkComModeUpdateTime        = 3; //维持上电状态变化的时间 毫秒
+  uint32                             leftTime                     = 4; //维持上电预估剩余时间 min 65535是无效值
+  DisplayLeftTime                    displayLeftTime              = 5; //预估剩余时间提示
+}
+
+//维持上电模式状态
+enum ParkComModeStatus	{
+  ParkComModeOff                                                  = 0 ;//关闭 (kOff)
+  ParkComModeOn                                                   = 1 ;//打开 (kOn)
+  ParkComModeEmpty                                                = -1 ;//-- (Empty)
+}
+//维持上电模式退出原因
+enum ParkComModeOffReason	{
+  ParkComModeOffNormal                                            = 0 ;//正常状态，默认值 (kNormal)
+  ParkComModeOffUserReq                                           = 1 ;//用户请求关闭 (kUserReq)
+  ParkComModeOffHVSOC                                             = 2 ;//高压电池电量低于阈值 (kHVSOC)
+  ParkComModeOffGearNotP                                          = 3 ;//挡位非P挡 (kGearNotP)
+  ParkComModeOffCarModeNotNormal                                  = 4 ;//车辆模式不满足 (kCarModeNotNormal)
+  ParkComModeOffFOTAUpdate                                        = 5 ;//车辆开始FOTA升级 (kFOTAUpdate)
+  ParkComModeOffOther                                             = 6 ;//其他原因 (kOther)
+  ParkComModeOffEmpty                                             = -1 ;//-- (Empty)
+}
+
+//维持上电模式剩余时间提示
+enum DisplayLeftTime	{
+  DisplayLeftTimeUnknown                                                  = 0 ;//未知，默认值 (kUnknown)
+  DisplayLeftTimeCharging                                                 = 1 ;//充电中无限时长 (kCharging)
+  DisplayLeftTimeCalulating                                               = 2 ;//时间计算中 (kCalulating)
+  DisplayLeftTime15Min                                                    = 3 ;//维持上电模式 预估15分钟内退出 (kWithin15Min)
+  DisplayLeftTime30Min                                                    = 4 ;//维持上电模式 预估30分钟内退出 (kWithin30Min)
+  DisplayLeftTime1Hour                                                    = 5 ;//维持上电模式 预估1小时内退出 (kWithin1Hour)
+  DisplayLeftTime2Hour                                                    = 6 ;//维持上电模式 预估2小时内退出 (kWithin2Hour)
+  DisplayLeftTime3Hour                                                    = 7 ;//维持上电模式 预估3小时内退出 (kWithin3Hour)
+  DisplayLeftTime4Hour                                                    = 8 ;//维持上电模式 预估4小时内退出 (kWithin4Hour)
+  DisplayLeftTime5Hour                                                    = 9 ;//维持上电模式 预估5小时内退出 (kWithin5Hour)
+  DisplayLeftTime6Hour                                                    = 10 ;//维持上电模式 预估6小时内退出 (kWithin6Hour)
+  DisplayLeftTime7Hour                                                    = 11 ;//维持上电模式 预估7小时内退出 (kWithin7Hour)
+  DisplayLeftTime8Hour                                                    = 12 ;//维持上电模式 预估8小时内退出 (kWithin8Hour)
+  DisplayLeftTime9Hour                                                    = 13 ;//维持上电模式 预估9小时内退出 (kWithin9Hour)
+  DisplayLeftTime10Hour                                                   = 14 ;//维持上电模式 预估10小时内退出 (kWithin10Hour)
+  DisplayLeftTime11Hour                                                   = 15 ;//维持上电模式 预估11小时内退出 (kWithin11Hour)
+  DisplayLeftTime12Hour                                                   = 16 ;//维持上电模式 预估12小时内退出 (kWithin12Hour)
+  DisplayLeftTime13Hour                                                   = 17 ;//维持上电模式 预估13小时内退出 (kWithin13Hour)
+  DisplayLeftTime14Hour                                                   = 18 ;//维持上电模式 预估14小时内退出 (kWithin14Hour)
+  DisplayLeftTime15Hour                                                   = 19 ;//维持上电模式 预估15小时内退出 (kWithin15Hour)
+  DisplayLeftTime16Hour                                                   = 20 ;//维持上电模式 预估16小时内退出 (kWithin16Hour)
+  DisplayLeftTime17Hour                                                   = 21 ;//维持上电模式 预估17小时内退出 (kWithin17Hour)
+  DisplayLeftTime18Hour                                                   = 22 ;//维持上电模式 预估18小时内退出 (kWithin18Hour)
+  DisplayLeftTime19Hour                                                   = 23 ;//维持上电模式 预估19小时内退出 (kWithin19Hour)
+  DisplayLeftTime20Hour                                                   = 24 ;//维持上电模式 预估20小时内退出 (kWithin20Hour)
+  DisplayLeftTime21Hour                                                   = 25 ;//维持上电模式 预估21小时内退出 (kWithin21Hour)
+  DisplayLeftTime22Hour                                                   = 26 ;//维持上电模式 预估22小时内退出 (kWithin22Hour)
+  DisplayLeftTime23Hour                                                   = 27 ;//维持上电模式 预估23小时内退出 (kWithin23Hour)
+  DisplayLeftTime24Hour                                                   = 28 ;//维持上电模式 预估24小时内退出 (kWithin24Hour)
+  DisplayLeftTime24HourPlus                                               = 29 ;//维持上电模式 预估可运行24小时以上 (k24HourPlus//维持上电模式)
+  DisplayLeftTimeEmpty                                                    = -1 ;//-- (Empty)
+}
+
+//12V低压延时模式信息
+message PowerOutletDelayInfo {
+  PowerOutletDelaySts                 delaySts                    = 1; //12V电源延时模式工作状态
+  uint32                              delayTimeLeft               = 2; //延时计时剩余时间 单位：分钟
+  PowerOutletDelayOffReason           reason                      = 3 ;//12V电源延时模式退出原因
+  PowerOutletDelayReqType             delayType                   = 4 ; //当前延时设置类型
+  uint64                              lastSetTime                 = 5 ; //最后一次delayType设置的时长 UTC时间戳 毫秒
+  uint64                              timeStamp                   = 6 ; //RVS检测delayType跳变的时间戳 UTC时间戳 毫秒
+}
+
+// 12V低压延时模式状态
+enum PowerOutletDelaySts	{
+  PowerDelayStsOff                                             = 0 ;//初始状态 关闭，无延时 (kOff)
+  PowerDelayStsStandby                                         = 1 ;//延时控制激活，待触发 (kStandby)
+  PowerDelayStsKeeping                                         = 2 ;//延时中 (kKeeping)
+  PowerDelayStsStop                                            = 3 ;//延时暂停  (kStop)
+  PowerDelayStsEmpty                                           = -1 ;//-- (Empty)
+}
+
+//12V低压延时模式退出原因
+enum PowerOutletDelayOffReason	{
+  PowerDelayOffReasonNormal                                    = 0 ;//正常状态 默认值 (kNormal)
+  PowerDelayOffReasonUserReq                                   = 1 ;//用户请求关闭 (kUserReq)
+  PowerDelayOffReasonHVSOC                                     = 2 ;//高压电池电量低于阈值 (kHVSOC)
+  PowerDelayOffReasonTimer                                     = 3 ;//定时结束关闭 (kTimer)
+  PowerDelayOffReasonUsageMode                                 = 4 ;//用户上车，结束延时循环 (kUsageMode)
+  PowerDelayOffReasonOther                                     = 5 ;//其他原因退出 (kOther)
+  PowerDelayOffReasonEmpty                                     = -1 ;//-- (Empty)
+}
+
+//@brief PowerOutletDelayReqType 12V延迟请求类型
+enum PowerOutletDelayReqType	{
+  PowerDelayTypeOff                                            = 0 ;//关闭延时模式 (kOff)
+  PowerDelayTypeTimerMode                                      = 1 ;//指定时长延时 (kTimerMode)
+  PowerDelayTypeKeepMode                                 		   = 2 ;//持续开启 (kKeepMode//持续开启)
+  PowerDelayTypeEmpty                                          = -1 ;//-- (Empty)
+}
+
+//宠物模式状态
+enum PetModeSts	{
+  PetModeOFF                                              		= 0 ;//关闭状态状态 (kOFF)
+  PetModeON                                               		= 1 ;//idle状态 (kON)
+  PetModeRUN                                              		= 2 ;//运行状态 (kRUN)
+  PetModeUnExpect                                         		= 255 ;//未预期状态 (kUnExpect)
+  PetModeEmpty                                             		= -1 ;//-- (Empty)
+}

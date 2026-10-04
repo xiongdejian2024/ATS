@@ -1,0 +1,19 @@
+syntax = "proto3";
+package vehiclestatus;
+import "block_head.proto";
+import "eic_charging.proto";
+
+// =====================================================================
+// BLOCK ID 10207
+// 蓝牙充电三电信息块 发送类型：Event
+// https://jama.jiduauto.com/perspective.req#/items/2819431?projectId=46
+// =====================================================================
+
+//蓝牙充电信息块
+message ChargingBlueToothBlock {
+  BlockHead                        head                     = 1; //公共头
+  PluggerStatus                    pluggerStatus            = 2; // 充放电设备状态
+  uint32                           chargingLidPos           = 3; // 充电口盖位置百分比 范围0-100(0~5：全关，6~100：打开，100：全开)，单位%，default：255(Unknown)
+  float                            chargeTargetSoc          = 4; // 充电目标电量 % 50-100
+  bool                             isConnect                = 5; // 是否连接枪 (交直流两个充电口至少连接一个充电或放电设备)
+}

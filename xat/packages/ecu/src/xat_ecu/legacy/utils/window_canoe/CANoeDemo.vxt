@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testmodule title="CANoe Test Module" version="1.1" xmlns="http://www.vector-informatik.de/CANoe/TestModule/1.27">
+	<description>For execution of the test module ensure that no macro is running!</description>
+	<sut>
+		<info>
+			<name>Test Module</name>
+			<description>Function Integration Test Automation</description>
+		</info>
+	</sut>
+	<engineer>
+		<info>
+			<name>junxing.pang</name>
+			<description>CANoeDemo</description>
+		</info>
+	</engineer>
+	<testgroup title="Main Test">
+		<description>This test group verify basic function for UDS.</description>
+		<capltestcase name="test_100489" title="test_100489" ident="TC-1001"></capltestcase>
+		<capltestcase name="test_100486" title="test_100486" ident="TC-1002"></capltestcase>
+		<capltestcase name="test_100485" title="test_100485" ident="TC-1003"></capltestcase>
+		<capltestcase name="test_100484" title="test_100484" ident="TC-1004"></capltestcase>
+	</testgroup>
+</testmodule>

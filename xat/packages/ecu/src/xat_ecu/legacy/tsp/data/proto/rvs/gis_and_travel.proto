@@ -1,0 +1,81 @@
+syntax = "proto3";
+package vehiclestatus;
+import "common.proto";
+import "block_head.proto";
+
+// =====================================================================
+// 车辆行驶信息 发送类型：Cyclic:1s
+// =====================================================================
+
+// 地理行驶信息
+message GISAndTravelBlock {
+    BlockHead                   head            = 1 ; //公共头
+    TravelMileage               travelMileage   = 2; // 里程信息
+    SpeedWithUnit               speed           = 3; // 速度信息
+    Location                    location        = 4; // GPS信息 v1.1之后rvs不在上报
+    HvSocInfo                   socInfo         = 5 ; //SOC信息
+    Gnss                        gnss            = 6 ; //绑路信息
+    float                       hvSOH           = 7 ; // 动力电池当前SOH 0~100%, 精度0.5%
+}
+
+message Gnss {
+    double                      longitude        = 1; // 经度  绑路后位置坐标GCJ02
+    double                      latitude         = 2; // 纬度  绑路后位置坐标GCJ02
+    float                       angle            = 3; // 绑路后的方向角 单位：度 ---角度的范围是0-360，顺时针为正，0度代表北
+    uint64                      timestamp        = 4; // 时间戳 单位：ms
+    int32                       probability      = 5; // 道路匹配的可信度 0 自由：不可信；1~400 低可信；401~700 较为可信；701~1000 非常可信
+    float                       speed            = 6; // 车速 单位：m/s 导航推演，地图根据行驶距离和时间推算的。如果急刹车急加速就会有偏差
+}
+
+// 里程信息
+message TravelMileage {
+    int64                       currentMileage           = 1; // 当前里程，单位：米
+    int32                       cltcResidueMileage       = 2; // CLTC工况剩余续航里程 范围：0~999 精度：1 单位：Km 默认值或无效值：0xFFFF
+    int32                       estimatedResidueMileage  = 3; // 实估续航里程 范围：0~999 精度：1 单位：Km 默认值或无效值：0xFFFF
+    MileageType                 mileageType              = 4; // 当前用户选择的表显续航里程类型
+    float                       estimatedAEC             = 5; // 估算的平均电耗 范围：-100~100 单位：kWh/100km 精度：0.1 默认值或无效值为256
+}
+
+// 速度信息
+message SpeedWithUnit {
+    int32                       speed           = 1; // 当前车速 范围：0-512
+    SpeedUnit                   unit            = 2; // 单位
+    Bool                        isValid         = 3; // 有效性  FALSE:无效  TRUE:有效  （V1.0删除：RVS过滤，不再上传）
+//    SensorQualityFactor         factor          = 3; // 显示车速QF 3:车速可信 0/1/2，车速不可信，手机显示应为--km/h
+}
+
+message Location {
+    float                       latitude        = 1 ; // 车辆纬度
+    float                       longitude       = 2 ; // 车辆经度
+    double                      heading         = 3;  //todo 没有 航向角度，与上一个点的角度
+}
+
+message HvSocInfo {
+    float                       realSoc         = 1; // 真实剩余电量 0-100%，精度为0.05% 默认值:0.0
+    float                       displaySoc      = 2; // 显示剩余电量 范围：0-100 精度：1 单位：% 默认值:0
+}
+
+enum SpeedUnit {
+    SpeedUnitKMPH                               = 0; // km/h (KMPH)
+    SpeedUnitMPH                                = 1; // mile/h 英里每小时 (MPH)
+    SpeedUnitNA                                 = 2; // 未知单位 (UNKNOW)
+    SpeedUnitEmpty                              = -1;// --
+}
+
+enum MileageType {
+    Cltc                         = 0 ; // CLTC工况剩余续航里程 (kCltc)
+    Estimated                    = 1 ; // 实估续航里程 (kEstimated)
+    MtEmpty                      = -1 ;//--
+}
+
+/**
+ * 显示车速QF
+ * SensorQualityFactor
+ */
+enum SensorQualityFactor {
+    UndefindDataAccur                               = 0; // UNDEFIND_DATA_ACCUR
+    TempUndefinedData                               = 1; // TEMP_UNDEFINED_DATA
+    DataAccurNotWithinSpcn                          = 2; // DATA_ACCUR_NOT_WITHIN_SPCN
+    AccurData                                       = 3; // ACCUR_DATA
+    SqfEmpty                                        = -1;// --
+}

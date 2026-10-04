@@ -1,0 +1,145 @@
+{
+    "AcuADCANFDFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 304,
+        "tx_flag": null,
+        "rx_flag": false,
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AcuADCANFDFr03": {
+        "msg_cycle": null,
+        "msg_length": 32,
+        "msg_id": 645,
+        "tx_flag": null,
+        "rx_flag": false,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmADCANFDFr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 784,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmADCANFDFr02": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 320,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            64,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmADCANFDFr03": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 321,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmADCANFDFr04": {
+        "msg_cycle": 0.6,
+        "msg_length": 8,
+        "msg_id": 848,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmADCANFDFr05": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 506,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

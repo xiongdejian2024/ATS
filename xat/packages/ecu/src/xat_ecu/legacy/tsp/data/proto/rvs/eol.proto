@@ -1,0 +1,33 @@
+syntax = "proto3";
+package vehiclestatus;
+import "block_head.proto";
+
+// =====================================================================
+// eol车辆信息块
+// =====================================================================
+
+message EOLDataBlock {
+  BlockHead              head = 1 ; //公共头
+  BNCMInfo               bncm = 2;
+  TCAMInfo               tcam = 3;
+  ETCMInfo               etc  = 4;
+}
+
+message BNCMInfo {
+  string sn           = 1;
+  string seId         = 2;
+  string mac          = 3;
+  string whiteLists   = 4;
+}
+
+message TCAMInfo {
+  string sn           = 1;
+  string iccId        = 2;
+  string imsi         = 3;
+  string imei         = 4;
+  string msisdn       = 5;
+}
+
+message ETCMInfo {
+  string sn           = 1;
+}

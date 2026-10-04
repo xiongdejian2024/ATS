@@ -1,0 +1,302 @@
+gw_can: "diagnosticcan"
+
+# diagnostic can is first
+vehicle_topology:
+  #  ['lculcanfd1', 'propulsioncanfd', 'lcurcanfd1', 'lculcanfd3', 'lcul_lin3', 'lcurcanfd2', 'lcur_alm_lin1', 'chassis2canfd',
+  #   'flrcanfd', 'lcur_lin1', 'cdradarcanfd1', 'lcur_alm_lin3', 'lcul_lin4', 'lcur_lin4', 'lcur_alm_lin2', 'lcul_lin1',
+  #    'chassis1canfd', 'adradarcanfd1', 'diagnosticcan', 'infocanfd', 'cdfsivirtualcanfd', 'lcur_lin2', 'publiccanfd', 'mgm_lin', 'adradarcanfd2',
+  #  'lcul_alm_lin3', 'lculcanfd2', 'cdradarcanfd2', 'iem_lin', 'lcul_lin2', 'lcur_lin3', 'lcul_alm_lin2', 'lcul_alm_lin1']
+  ACCM: []
+  ADSOCFSI: []
+  AFU: []
+  AGM: []
+  AGU: []
+  ALMLCULLIN1: []
+  ALMLCULLIN2: []
+  ALMLCULLIN3: []
+  ALMLCURLIN1: []
+  ALMLCURLIN2: []
+  ALMLCURLIN3: []
+  BCFV: []
+  BCTV: []
+  BCU1: []
+  BCU2: []
+  BECM: []
+  BEXV: []
+  BMSF: []
+  BMSR: []
+  BNCM: []
+  CCTV: []
+  CCUMCUAD: []
+  CCUMCUCD:
+    [
+      "diagnosticcan",
+      "propulsioncanfd",
+      "chassis2canfd",
+      "publiccanfd",
+      "infocanfd",
+    ]
+  CCUNAD: []
+  CCUSOCAD: []
+  CCUSOCCD: []
+  CDSOCFSI: []
+  CD: []
+  CERV: []
+  CRCM: []
+  DCTV: []
+  DPOD: []
+  DRF: []
+  DRMFL: []
+  DRMFR: []
+  DRMRL: []
+  DRMRR: []
+  ECTV: []
+  EGSM: []
+  EPM: []
+  ETCM: ["infocanfd"]
+  FCSI: []
+  FEXV: []
+  FLR: []
+  FSRL: []
+  FSRR: []
+  HCML: []
+  HCMR: []
+  HCTV: []
+  HOD: []
+  HVAH: []
+  HVCH: []
+  IEM: []
+  IRMM: []
+  LCTV: []
+  LCUL: []
+  LCUR: []
+  LPOD: []
+  MGM: []
+  MMD: []
+  MMP: []
+  NKR: []
+  ODP: []
+  OHC: []
+  PMSI: []
+  PNG1: []
+  PPOD: []
+  PSCM1: []
+  PSCM2: []
+  RCML: []
+  RCMR: []
+  REXV: []
+  RLMM: []
+  RLSM: []
+  RML: []
+  RPOD: []
+  RRMM: []
+  SCMF: []
+  SCMR: []
+  SODL: ["chassis2canfd"]
+  SODR: []
+  SRS: []
+  SUM: []
+  SWTL: []
+  SWTR: []
+  TERV: []
+  TPM: []
+  TRM: []
+  VCU: ["chassis2canfd", "publiccanfd", "propulsioncanfd"]
+  WERV: []
+  WMM: []
+  WPC2: []
+  WPC3: []
+
+bus_type:
+  can: ["diagnosticcan"]
+  canfd:
+    [
+      "lculcanfd1",
+      "propulsioncanfd",
+      "lcurcanfd1",
+      "lculcanfd3",
+      "lcurcanfd2",
+      "chassis2canfd",
+      "flrcanfd",
+      "cdradarcanfd1",
+      "chassis1canfd",
+      "adradarcanfd1",
+      "infocanfd",
+      "cdfsivirtualcanfd",
+      "publiccanfd",
+      "adradarcanfd2",
+      "lculcanfd2",
+      "cdradarcanfd2",
+    ]
+  lin:
+    [
+      "lcul_lin3",
+      "lcur_alm_lin1",
+      "lcur_lin1",
+      "lcur_alm_lin3",
+      "lcul_lin4",
+      "lcur_lin4",
+      "lcur_alm_lin2",
+      "lcul_lin1",
+      "lcur_lin2",
+      "mgm_lin",
+      "lcul_alm_lin3",
+      "iem_lin",
+      "lcul_lin2",
+      "lcur_lin3",
+      "lcul_alm_lin2",
+      "lcul_alm_lin1",
+    ]
+  fr: []
+  eth: []
+
+ecu_map_id:
+  ACCM: [~, ~, ~, ~, ~, ~, ~]
+  ADSOCFSI: [~, ~, ~, ~, ~, ~, ~]
+  AFU: [~, ~, ~, ~, ~, ~, ~]
+  AGM: [~, ~, ~, ~, ~, ~, ~]
+  AGU: [~, ~, ~, ~, ~, ~, ~]
+  ALMLCULLIN1: [~, ~, ~, ~, ~, ~, ~]
+  ALMLCULLIN2: [~, ~, ~, ~, ~, ~, ~]
+  ALMLCULLIN3: [~, ~, ~, ~, ~, ~, ~]
+  ALMLCURLIN1: [~, ~, ~, ~, ~, ~, ~]
+  ALMLCURLIN2: [~, ~, ~, ~, ~, ~, ~]
+  ALMLCURLIN3: [~, ~, ~, ~, ~, ~, ~]
+  BCFV: [~, ~, ~, ~, ~, ~, ~]
+  BCTV: [~, ~, ~, ~, ~, ~, ~]
+  BCU1: [~, ~, ~, ~, ~, ~, ~]
+  BCU2: [~, ~, ~, ~, ~, ~, ~]
+  BECM: [~, ~, ~, ~, ~, ~, ~]
+  BEXV: [~, ~, ~, ~, ~, ~, ~]
+  BMSF: [~, ~, ~, ~, ~, ~, ~]
+  BMSR: [~, ~, ~, ~, ~, ~, ~]
+  BNCM: [~, ~, ~, ~, ~, ~, ~]
+  CCTV: [~, ~, ~, ~, ~, ~, ~]
+  CCUMCUAD: [~, ~, ~, ~, ~, ~, ~]
+  CCUMCUCD: [0x1002, ~, ~, ~, ~, "172.20.9.12", "172.20.5.12"]
+  CCUNAD: [0x1011, ~, ~, ~, ~, ~, ~]
+  CCUSOCAD: [~, ~, ~, ~, ~, ~, ~]
+  CCUSOCCD: [0x1001, ~, ~, ~, ~, "172.20.9.11", "172.20.5.11"]
+  CDSOCFSI: [~, ~, ~, ~, ~, ~, ~]
+  CD: [~, ~, ~, ~, ~, ~, ~]
+  CERV: [~, ~, ~, ~, ~, ~, ~]
+  CRCM: [~, ~, ~, ~, ~, ~, ~]
+  DCTV: [~, ~, ~, ~, ~, ~, ~]
+  DPOD: [~, ~, ~, ~, ~, ~, ~]
+  DRF: [~, ~, ~, ~, ~, ~, ~]
+  DRMFL: [~, ~, ~, ~, ~, ~, ~]
+  DRMFR: [~, ~, ~, ~, ~, ~, ~]
+  DRMRL: [~, ~, ~, ~, ~, ~, ~]
+  DRMRR: [~, ~, ~, ~, ~, ~, ~]
+  ECTV: [~, ~, ~, ~, ~, ~, ~]
+  EGSM: [~, ~, ~, ~, ~, ~, ~]
+  EPM: [~, ~, ~, ~, ~, ~, ~]
+  ETCM: [~, ~, ~, ~, ~, ~, ~]
+  FCSI: [~, ~, ~, ~, ~, ~, ~]
+  FEXV: [~, ~, ~, ~, ~, ~, ~]
+  FLR: [~, ~, ~, ~, ~, ~, ~]
+  FSRL: [~, ~, ~, ~, ~, ~, ~]
+  FSRR: [~, ~, ~, ~, ~, ~, ~]
+  HCML: [~, ~, ~, ~, ~, ~, ~]
+  HCMR: [~, ~, ~, ~, ~, ~, ~]
+  HCTV: [~, ~, ~, ~, ~, ~, ~]
+  HOD: [~, ~, ~, ~, ~, ~, ~]
+  HVAH: [~, ~, ~, ~, ~, ~, ~]
+  HVCH: [~, ~, ~, ~, ~, ~, ~]
+  IEM: [~, ~, ~, ~, ~, ~, ~]
+  IRMM: [~, ~, ~, ~, ~, ~, ~]
+  LCTV: [~, ~, ~, ~, ~, ~, ~]
+  LCUL: [~, ~, ~, ~, ~, ~, ~]
+  LCUR: [~, ~, ~, ~, ~, ~, ~]
+  LPOD: [~, ~, ~, ~, ~, ~, ~]
+  MGM: [~, ~, ~, ~, ~, ~, ~]
+  MMD: [~, ~, ~, ~, ~, ~, ~]
+  MMP: [~, ~, ~, ~, ~, ~, ~]
+  NKR: [~, ~, ~, ~, ~, ~, ~]
+  ODP: [~, ~, ~, ~, ~, ~, ~]
+  OHC: [~, ~, ~, ~, ~, ~, ~]
+  PMSI: [~, ~, ~, ~, ~, ~, ~]
+  PNG1: [~, ~, ~, ~, ~, ~, ~]
+  PPOD: [~, ~, ~, ~, ~, ~, ~]
+  PSCM1: [~, ~, ~, ~, ~, ~, ~]
+  PSCM2: [~, ~, ~, ~, ~, ~, ~]
+  RCML: [~, ~, ~, ~, ~, ~, ~]
+  RCMR: [~, ~, ~, ~, ~, ~, ~]
+  REXV: [~, ~, ~, ~, ~, ~, ~]
+  RLMM: [~, ~, ~, ~, ~, ~, ~]
+  RLSM: [~, ~, ~, ~, ~, ~, ~]
+  RML: [~, ~, ~, ~, ~, ~, ~]
+  RPOD: [~, ~, ~, ~, ~, ~, ~]
+  RRMM: [~, ~, ~, ~, ~, ~, ~]
+  SCMF: [~, ~, ~, ~, ~, ~, ~]
+  SCMR: [~, ~, ~, ~, ~, ~, ~]
+  SODL: [~, ~, ~, ~, ~, ~, ~]
+  SODR: [~, ~, ~, ~, ~, ~, ~]
+  SRS: [~, ~, ~, ~, ~, ~, ~]
+  SUM: [~, ~, ~, ~, ~, ~, ~]
+  SWTL: [~, ~, ~, ~, ~, ~, ~]
+  SWTR: [~, ~, ~, ~, ~, ~, ~]
+  TERV: [~, ~, ~, ~, ~, ~, ~]
+  TPM: [~, ~, ~, ~, ~, ~, ~]
+  TRM: [~, ~, ~, ~, ~, ~, ~]
+  VCU: [~, ~, ~, ~, ~, ~, ~]
+  WERV: [~, ~, ~, ~, ~, ~, ~]
+  WMM: [~, ~, ~, ~, ~, ~, ~]
+  WPC2: [~, ~, ~, ~, ~, ~, ~]
+  WPC3: [~, ~, ~, ~, ~, ~, ~]
+
+positive_data:
+  CCUMCUCD: { F101: 08FFFFFFFFFFFFFFC33F0D1D0C7B0004A6 }
+
+dtc_code_table:
+  VCU: { "AB1FD_SQUIB_DRIVER_FRONTAL_STAGE_1_SHORT_TO_GROUND": "B150111" }
+
+dtc_snapshot_table:
+  VCU:
+    {
+      "P16B308":
+        [
+          36,
+          0,
+          0,
+          1,
+          29,
+          5,
+          1,
+          33,
+          5,
+          2,
+          7,
+          5,
+          3,
+          35,
+          5,
+          4,
+          23,
+          5,
+          5,
+          4,
+          5,
+          6,
+          22,
+          5,
+          7,
+          0,
+          46,
+        ],
+    }
+
+dtc_extended_data_table:
+  VCU:
+    {
+      "U010087": [4, 1, 5, 21, 7, 24, 13, 34, 59, 0, 46, 172, 0, 0, 0],
+      "U101786": [4, 1, 1, 21, 7, 28, 10, 55, 37, 0, 47, 146, 0, 0, 0],
+    }
+
+routine_control_table:
+  CCUMCUCD:
+    {
+      "0206": { 1: [0x10, 0x01], 2: [0x10, 0x01], 3: [0x10, 0x01] },
+      "A100": { 1: [0x10, 0x01], 2: [0x10, 0x01], 3: [0x10, 0x01] },
+      "4289": { 1: [0x10, 0x01], 2: [0x10, 0x01], 3: [0x10, 0x01] },
+    }

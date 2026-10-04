@@ -1,0 +1,1 @@
+-i https://repo.jidudev.com/artifactory/api/pypi/pypi/simple

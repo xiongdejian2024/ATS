@@ -1,0 +1,370 @@
+{
+    "CemCem_Lin3Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 0,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PSGL",
+            "DSGL"
+        ],
+        "pdu_data": [
+            0,
+            51,
+            51,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemCem_Lin3Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 21,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "OHC",
+            "PSGL",
+            "DSGL"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemCem_Lin3Fr04": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 7,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "OHC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemCem_Lin3Fr05": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 5,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "OHC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemCem_Lin3Fr06": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 29,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            188,
+            2
+        ],
+        "tx_change": true
+    },
+    "DiagRequest2": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 60,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DiagResponse2": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 61,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DsglCem_Lin3Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 33,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DSGL",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DsglCem_Lin3PartNrFr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 25,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DSGL",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DsglCem_Lin3SerNrFr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 4,
+        "msg_id": 27,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DSGL",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "OhcCem_Lin3Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 32,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "OHC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "OhcCem_Lin3Fr04": {
+        "msg_cycle": 0.039,
+        "msg_length": 1,
+        "msg_id": 20,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "OHC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0
+        ],
+        "tx_change": true
+    },
+    "OhcCem_Lin3Fr05": {
+        "msg_cycle": 0.039,
+        "msg_length": 2,
+        "msg_id": 22,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "OHC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "OhcCem_Lin3PartNrFr04": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 23,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "OHC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "OhcCem_Lin3SerNrFr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 10,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "OHC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PsglCem_Lin3Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 34,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSGL",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PsglCem_Lin3PartNrFr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 24,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSGL",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PsglCem_Lin3SerNrFr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 4,
+        "msg_id": 26,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSGL",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    }
+}

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<testmodule starttime="2024-07-01 14:07:35" timestamp="   0.890767" verdicts="2_basic">
+  <testgroup>
+    <testcase starttime="2024-07-01 14:07:35" timestamp="   0.890767">
+      <verdict time="2024-07-01 14:07:35" timestamp="   0.890767" endtime="2024-07-01 14:07:35" endtimestamp="   0.890767" result="pass" />
+      <title>PreCondition</title>
+      <ident>PreCondition</ident>
+      <description>PreCondition</description>
+    </testcase>
+    <title>PreCondition</title>
+    <description>This test group executed PreCondition.</description>
+  </testgroup>
+  <testgroup>
+    <testcase starttime="2024-07-01 14:07:35" timestamp="   0.890767">
+      <teststep timestamp="   1.890767" level="1" type="auto" ident="Resume reason" result="na">Elapsed time=1000ms (max=1000ms)</teststep>
+      <teststep timestamp="   1.890767" level="0" type="user" ident="Check" result="pass">Run case test_110001 pass</teststep>
+      <verdict time="2024-07-01 14:07:36" timestamp="   1.890767" endtime="2024-07-01 14:07:36" endtimestamp="   1.890767" result="pass" />
+      <title>Run test_110001</title>
+      <ident>test_110001</ident>
+      <description>Description</description>
+    </testcase>
+    <testcase starttime="2024-07-01 14:07:36" timestamp="   1.890767">
+      <teststep timestamp="   1.890767" level="0" type="user" ident="Check" result="fail">Run case test_110002 fail</teststep>
+      <verdict time="2024-07-01 14:07:36" timestamp="   1.890767" endtime="2024-07-01 14:07:36" endtimestamp="   1.890767" result="fail" />
+      <title>Run test_110002</title>
+      <ident>test_110002</ident>
+      <description>Description</description>
+    </testcase>
+    <testcase starttime="2024-07-01 14:07:36" timestamp="   1.890767">
+      <teststep timestamp="   1.890767" level="0" type="user" ident="Check" result="warn">Run case test_110003 warning</teststep>
+      <verdict time="2024-07-01 14:07:36" timestamp="   1.890767" endtime="2024-07-01 14:07:36" endtimestamp="   1.890767" result="pass" />
+      <title>Run test_110003</title>
+      <ident>test_110003</ident>
+      <description>Description</description>
+    </testcase>
+    <title>Main Test</title>
+    <description>This test group verify basic function for UDS.</description>
+  </testgroup>
+  <testgroup>
+    <testcase starttime="2024-07-01 14:07:36" timestamp="   1.890767">
+      <verdict time="2024-07-01 14:07:36" timestamp="   1.890767" endtime="2024-07-01 14:07:36" endtimestamp="   1.890767" result="pass" />
+      <title>PostCondition</title>
+      <ident>PostCondition</ident>
+      <description>PostCondition</description>
+    </testcase>
+    <title>PostCondition</title>
+    <description>This test group executed PostCondition.</description>
+  </testgroup>
+  <verdict time="2024-07-01 14:07:36" timestamp="   1.890767" endtime="2024-07-01 14:07:36" endtimestamp="   1.890767" result="fail" />
+  <title>CANoe Test Module</title>
+  <description>For execution of the test module ensure that no macro is running!</description>
+  <testlogfiles>
+  </testlogfiles>
+  <engineer>
+    <xinfo>
+      <name>Windows Login Name</name>
+      <description>junxing.pang</description>
+    </xinfo>
+    <info>
+      <name>junxing.pang</name>
+      <description>CANoeDemo</description>
+    </info>
+  </engineer>
+  <testsetup>
+    <xinfo>
+      <name>Version</name>
+      <description>CANoe.ISO11783.J1939.CANopen.CAN.LIN.MOST.FlexRay.J1587.Ethernet.AMD/XCP.Scope /pro 12.0.75</description>
+    </xinfo>
+    <xinfo>
+      <name>Configuration</name>
+      <description>D:\Sylar\01_python\01_pythonCAPL\CANoePrj\test.cfg</description>
+    </xinfo>
+    <xinfo>
+      <name>Test Module Name</name>
+      <description>CANoeDemo</description>
+    </xinfo>
+    <xinfo>
+      <name>Test Module File</name>
+      <description>D:\Sylar\01_python\01_pythonCAPL\CANoePrj\TestCases\CANoeDemo.vxt</description>
+    </xinfo>
+    <xinfo>
+      <name>Last modification of Test Module File</name>
+      <description>2024-06-24, 19:36:22</description>
+    </xinfo>
+    <xinfo>
+      <name>Test Module Library (CAPL)</name>
+      <description>D:\Sylar\01_python\01_pythonCAPL\CANoePrj\TestCases\test_CANoeDemo.can</description>
+    </xinfo>
+    <xinfo>
+      <name>Windows Computer Name</name>
+      <description>178HCNX3</description>
+    </xinfo>
+  </testsetup>
+  <sut>
+    <info>
+      <name>Test Module</name>
+      <description>Function Integration Test Automation</description>
+    </info>
+  </sut>
+  <hardware name="CAN Channel Interfaces" category="CategoryCANIF">
+    <xinfoset type="device">
+      <xinfoobject type="device">
+      <xinfo key="channel">
+        <name>Channel</name>
+        <description>1</description>
+      </xinfo>
+      <xinfo key="device">
+        <name>Device</name>
+        <description>Virtual CAN Bus</description>
+      </xinfo>
+      <xinfo key="serialnumber">
+        <name>Serial number</name>
+        <description>100</description>
+      </xinfo>
+      <xinfo key="driverdllversion">
+        <name>Driver DLL version</name>
+        <description>24.10.14</description>
+      </xinfo>
+      <xinfo key="driverversion">
+        <name>Driver version</name>
+        <description>21.10.20</description>
+      </xinfo>
+      </xinfoobject>
+    </xinfoset>
+  </hardware>
+</testmodule>
+<!--footprint="e15b744efdc22733d2900b1178aa7b2c" version="1"-->

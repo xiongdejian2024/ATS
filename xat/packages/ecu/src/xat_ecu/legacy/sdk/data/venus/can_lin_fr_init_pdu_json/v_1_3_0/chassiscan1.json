@@ -1,0 +1,2013 @@
+{
+    "AcuChas1Fr04": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 298,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ACU",
+        "rx_nodes": [
+            "BGM",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            192,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "AcuChassisCAN1NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1321,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "ACU",
+        "rx_nodes": [
+            "PSCM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AsdmChas1Fr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 147,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ACU",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            84,
+            0,
+            0,
+            1,
+            0,
+            1,
+            4
+        ],
+        "tx_change": true
+    },
+    "AsdmChas1Fr03": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 51,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ACU",
+        "rx_nodes": [
+            "PSCM1"
+        ],
+        "pdu_data": [
+            188,
+            32,
+            116,
+            0,
+            0,
+            7,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmChas1Fr01": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 293,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "VDDM",
+            "ECM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            112,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmChas1Fr02": {
+        "msg_cycle": 0.06,
+        "msg_length": 8,
+        "msg_id": 294,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            10,
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmChassisCAN1NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1281,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EcmChas1Fr07": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 554,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            50,
+            50,
+            0,
+            0,
+            0,
+            4
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr08": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 1111,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "PSCM1"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr09": {
+        "msg_cycle": 0.13,
+        "msg_length": 8,
+        "msg_id": 708,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver",
+            "ACU",
+            "VDDM"
+        ],
+        "pdu_data": [
+            112,
+            0,
+            250,
+            24,
+            0,
+            16,
+            0,
+            128
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr12": {
+        "msg_cycle": 0.17,
+        "msg_length": 8,
+        "msg_id": 859,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            240,
+            8
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr13": {
+        "msg_cycle": 0.2,
+        "msg_length": 8,
+        "msg_id": 871,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            128,
+            21,
+            8,
+            0,
+            250,
+            12,
+            140,
+            1
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr16": {
+        "msg_cycle": 0.26,
+        "msg_length": 8,
+        "msg_id": 979,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            248,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr17": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 1039,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            16,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr18": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 563,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "BGM",
+            "VDDM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            64,
+            0,
+            0,
+            176
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr19": {
+        "msg_cycle": 0.27,
+        "msg_length": 8,
+        "msg_id": 991,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            32,
+            0,
+            24,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr21": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 304,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            8,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr22": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 1135,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            6,
+            0,
+            1,
+            0,
+            128,
+            0,
+            33
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr23": {
+        "msg_cycle": 0.8,
+        "msg_length": 8,
+        "msg_id": 576,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr24": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 455,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            48,
+            0,
+            0,
+            0,
+            8
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr25": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 587,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            64,
+            0,
+            32,
+            0,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr26": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 543,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            128,
+            21,
+            160,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr27": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 609,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr29": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 632,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            128,
+            0,
+            3,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr30": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 642,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            64,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr31": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 131,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            160,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr37": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 752,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "SAS",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            242,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr38": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1157,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            4,
+            241,
+            60,
+            79,
+            16,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr39": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1158,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            5,
+            0,
+            4,
+            128,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr40": {
+        "msg_cycle": 0.26,
+        "msg_length": 8,
+        "msg_id": 820,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            192,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr41": {
+        "msg_cycle": 0.26,
+        "msg_length": 8,
+        "msg_id": 832,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr42": {
+        "msg_cycle": 0.26,
+        "msg_length": 8,
+        "msg_id": 837,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            128,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr43": {
+        "msg_cycle": 0.26,
+        "msg_length": 8,
+        "msg_id": 822,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas1Fr48": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 913,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            64,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChassisCAN1NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1296,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "SAS"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToPscmChas1XcpFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1416,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "PSCM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToPscmDevelFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1431,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "PSCM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtctoVddmBcmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1421,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtctoVddmDevelFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1432,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtctoVddmDevelFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1433,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "Pscm1ChassisCAN1NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1315,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PSCM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PscmChas1Fr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 246,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSCM1",
+        "rx_nodes": [
+            "VDDM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            4,
+            128,
+            0,
+            0,
+            0,
+            0,
+            3
+        ],
+        "tx_change": true
+    },
+    "PscmChas1Fr02": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 70,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSCM1",
+        "rx_nodes": [
+            "VDDM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            128,
+            0,
+            0,
+            2,
+            192,
+            0
+        ],
+        "tx_change": true
+    },
+    "PscmChas1Fr03": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 444,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSCM1",
+        "rx_nodes": [
+            "VDDM",
+            "ACU"
+        ],
+        "pdu_data": [
+            2,
+            0,
+            0,
+            0,
+            0,
+            152,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PscmChas1Fr06": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 955,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSCM1",
+        "rx_nodes": [
+            "S2SReceiver",
+            "VDDM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "PscmChas1Fr07": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 78,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSCM1",
+        "rx_nodes": [
+            "VDDM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            64,
+            0,
+            64,
+            0,
+            0,
+            0,
+            6
+        ],
+        "tx_change": true
+    },
+    "PscmDevelpFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1430,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSCM1",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PscmToEtcChas1XcpFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1417,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PSCM1",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PscmToVddmChas1DiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1648,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PSCM1",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SasChas1Fr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 64,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SAS",
+        "rx_nodes": [
+            "VDDM",
+            "ECM",
+            "ACU"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SasChassisCAN1NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1319,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SAS",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SasToVddmChas1DiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1650,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SAS",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VddmBcmtoETCXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1422,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VddmChas1DevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1434,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1DevFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1435,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1DevFr03": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 362,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "CCM",
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1DevFr04": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 363,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 81,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            255,
+            0,
+            1,
+            5,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr03": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 160,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1"
+        ],
+        "pdu_data": [
+            255,
+            5,
+            0,
+            0,
+            128,
+            0,
+            9,
+            7
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr04": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 400,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            4,
+            0,
+            0,
+            0,
+            1,
+            130,
+            188
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr05": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 224,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "SAS",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            3,
+            0,
+            128,
+            0,
+            0,
+            4
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr08": {
+        "msg_cycle": 0.32,
+        "msg_length": 8,
+        "msg_id": 928,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SAS",
+            "ECM"
+        ],
+        "pdu_data": [
+            75,
+            11,
+            3,
+            232,
+            128,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr10": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 433,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            5,
+            0,
+            1,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr12": {
+        "msg_cycle": 0.35,
+        "msg_length": 8,
+        "msg_id": 1087,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            240,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr14": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 432,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            255,
+            5,
+            6,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr19": {
+        "msg_cycle": 0.07,
+        "msg_length": 8,
+        "msg_id": 736,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "SAS",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            1,
+            0,
+            0,
+            1,
+            64,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr21": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 38,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            240,
+            0,
+            50,
+            50,
+            40,
+            128,
+            0,
+            160
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr22": {
+        "msg_cycle": 0.17,
+        "msg_length": 8,
+        "msg_id": 1123,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            50,
+            0,
+            7,
+            8,
+            12
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr23": {
+        "msg_cycle": 0.17,
+        "msg_length": 8,
+        "msg_id": 784,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SAS"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            146,
+            194,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr24": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 137,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            80,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            12
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr30": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 592,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "SAS"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr33": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1015,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr34": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 775,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            196,
+            0,
+            132,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr37": {
+        "msg_cycle": 0.165,
+        "msg_length": 8,
+        "msg_id": 823,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            32,
+            0,
+            0,
+            0,
+            1,
+            24,
+            2,
+            120
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr41": {
+        "msg_cycle": 0.12,
+        "msg_length": 8,
+        "msg_id": 686,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            96,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr42": {
+        "msg_cycle": 0.17,
+        "msg_length": 8,
+        "msg_id": 1243,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            96,
+            0,
+            96,
+            0,
+            96,
+            0,
+            96,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr43": {
+        "msg_cycle": 0.17,
+        "msg_length": 8,
+        "msg_id": 1255,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            96,
+            0,
+            96,
+            0,
+            96,
+            0,
+            96,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr44": {
+        "msg_cycle": 0.17,
+        "msg_length": 8,
+        "msg_id": 1267,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            96,
+            0,
+            96,
+            0,
+            0,
+            0,
+            2,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr46": {
+        "msg_cycle": 0.17,
+        "msg_length": 8,
+        "msg_id": 1099,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            50,
+            188,
+            96,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr47": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 26,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            24,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr48": {
+        "msg_cycle": 0.7,
+        "msg_length": 8,
+        "msg_id": 1159,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr49": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 864,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "SAS",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            128,
+            0,
+            0,
+            2
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr50": {
+        "msg_cycle": 0.7,
+        "msg_length": 8,
+        "msg_id": 896,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "SAS"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            65,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr52": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 17,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            2,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr53": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 496,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "SAS",
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            128,
+            0,
+            0,
+            33,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas1Fr55": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 439,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "ECM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            5,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChassisCAN1NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1313,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VddmToAllChas1DiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2047,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1",
+            "SAS"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VddmToPscm1Chas1DiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1904,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "PSCM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VddmToSasChas1DiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1906,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SAS"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

@@ -1,0 +1,87 @@
+syntax = "proto3";
+package vehiclestatus;
+
+// =====================================================================
+// RVS车云通信
+// =====================================================================
+
+/* ecu版本上报指令发送payload */
+message VersionReportCmdReq{
+  string            execId            = 1; // 执行唯一ID
+}
+
+/* ecu版本上报指令回应payload */
+message VersionReportCmdResp{
+  string              execId          = 1; // 执行唯一ID
+  int32               code            = 2; // 0 执行成功，非0失败
+  string              msg             = 3; // 具体原因 MntnMode、OTAOngoing、DiagBusy
+  string              baseline        = 4; // 整车软件版本
+}
+
+
+
+// 云端服务名：tsp.fota-gateway
+
+// 车端服务名：v.rvs
+
+// APIName：TspEcuVersionsReq  (上行)
+
+// APIName: TspEcuVersionsResp（下行）
+
+/* ecu版本指令获取payload Req */
+message TspEcuVersionsReq{
+  string              execId                 = 1; // 执行唯一ID
+  string              vehicleBaseline        = 2; // 整车基线
+  int32               carType                = 3; // 1=MarsOne,2=Venus
+}
+
+/* ecu版本指令获取payload Resp */
+message TspEcuVersionsResp{
+  string              execId          = 1; // 执行唯一ID
+  int32               code            = 2; // 0 执行成功，非0失败
+  string              msg             = 3; //
+  repeated   EcuInfo  ecuInfo         = 4; // EcuVerisonInfoList
+  string              vehicleBaseline = 5; // 整车基线
+}
+
+message EcuInfo {
+  string ecuId                       = 1;
+  repeated HwSwPn hwSwPn             = 2;
+}
+
+message HwSwPn {
+  repeated string hwPn             = 1;
+  repeated string swPn             = 2;   // 期望的顺序 app, data1, data2, ... , ESS; 不需要SBL
+}
+
+// 云端服务名：？
+
+// 车端服务名：v.rvs
+
+// APIName：EcuVersionCompareSts
+
+/* 通知赛博坦平台版本号比对信息 */
+message EcuVersionCompareSts {
+  Baselinests       baselineStsInst    = 1; // 整车版本号是否统一为目标版本
+  repeated ecuPNExt ecuHwSwPNList      = 2; // 如果硬件版本号不同则直接上传硬件版本号不再对比软件版本号，如果硬件版本号相同软件版本号不同则只传递软件版本号
+  string            baseline           = 3; // 当前整车baseline
+}
+
+enum Baselinests	{
+  uniform                                           		  = 0 ;//统一的
+  varied                                        		      = 1 ;//不统一的
+  unKnown                                          		    = 255 ;//unknown
+}
+
+message ecuPNExt{
+  string ecuId                          =1;               //ECU Id
+  EcuVersionType  type                  =2;               //ECU版本号的类别
+  repeated string actualPartNumber      =3;               //当前实际版本号
+  repeated string targetPartNumber      =4;               // 目标版本号
+}
+
+enum EcuVersionType{
+  kHardwarePN                      =0;//硬件版本号
+  kSoftwarePN                      =1;//软件版本号
+  kUnknown                         =255;//unknown
+}

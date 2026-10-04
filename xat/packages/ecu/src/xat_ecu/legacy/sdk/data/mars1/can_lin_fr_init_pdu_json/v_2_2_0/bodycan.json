@@ -1,0 +1,5901 @@
+{
+    "BgmBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1281,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SWTR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmBodyFr01": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 560,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SWTR",
+            "S2SReceiver",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "SWTL"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            3,
+            0,
+            32
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr02": {
+        "msg_cycle": 0.055,
+        "msg_length": 8,
+        "msg_id": 576,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            12,
+            65,
+            64,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr04": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 608,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "LPOD",
+            "DPOD"
+        ],
+        "pdu_data": [
+            255,
+            0,
+            255,
+            255,
+            0,
+            255,
+            192,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr05": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 624,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "DPOD",
+            "RPOD"
+        ],
+        "pdu_data": [
+            203,
+            203,
+            203,
+            203,
+            203,
+            203,
+            203,
+            203
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr06": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 640,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "DPOD",
+            "RPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            31,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr08": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 613,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "RPOD",
+            "IPM"
+        ],
+        "pdu_data": [
+            255,
+            0,
+            255,
+            255,
+            0,
+            255,
+            208,
+            1
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr09": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 597,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "DPOD",
+            "RPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            5,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr10": {
+        "msg_cycle": 0.295,
+        "msg_length": 8,
+        "msg_id": 612,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            132,
+            252,
+            7,
+            252
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr11": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 611,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            7,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr12": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 610,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ETCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            128,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr13": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 609,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "CCM",
+            "SWTL",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            255,
+            64
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr14": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 614,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SWTR",
+            "SWTL"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr15": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 615,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ETCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmBodyFr16": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 582,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "CCM"
+        ],
+        "pdu_data": [
+            44,
+            213,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmToAllFuncBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2047,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "SWTR",
+            "ETCM",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SMD",
+            "IPM",
+            "SWTL",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToCcmBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1809,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToDdmBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1810,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToDpodBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1856,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToEtcmBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1814,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ETCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToIpmBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1874,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "IPM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToLpodBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1858,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "LPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToPdmBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1811,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToPotBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1813,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "POT"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToPpodBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1857,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToRldmBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1825,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RLDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToRpodBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1859,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToRrdmBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1826,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToSmbBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1840,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToSmdBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1831,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToSmpBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1832,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToSwtlBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1922,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SWTL"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmToSwtrBodyDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1923,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SWTR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CEMBodyFr11": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 224,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "SWTR",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SWTL",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            200,
+            0,
+            44,
+            0,
+            48,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr12": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 240,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "SWTR",
+            "ETCM",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SMD",
+            "IPM",
+            "SWTL",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            128,
+            1,
+            0,
+            0,
+            0,
+            128,
+            112,
+            32
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr13": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 256,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "CCM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            192,
+            1,
+            192,
+            128,
+            3,
+            192,
+            0,
+            208
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr14": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 320,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "CCM",
+            "SMD"
+        ],
+        "pdu_data": [
+            11,
+            248,
+            13,
+            96,
+            0,
+            56,
+            192,
+            57
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr15": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 384,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            142,
+            14,
+            14,
+            14,
+            128,
+            47,
+            15,
+            0
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr19": {
+        "msg_cycle": 0.235,
+        "msg_length": 8,
+        "msg_id": 528,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "CCM",
+            "SMD",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            4,
+            50,
+            145,
+            0,
+            8,
+            0,
+            149
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr24": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 656,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            144,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr27": {
+        "msg_cycle": 0.175,
+        "msg_length": 8,
+        "msg_id": 784,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "SWTR",
+            "ETCM",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SMD",
+            "IPM",
+            "SWTL",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            32,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr28": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 464,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "CCM"
+        ],
+        "pdu_data": [
+            4,
+            0,
+            0,
+            96,
+            32,
+            0,
+            160,
+            0
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr30": {
+        "msg_cycle": 0.62,
+        "msg_length": 8,
+        "msg_id": 880,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "SWTR",
+            "ETCM",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SMD",
+            "IPM",
+            "SWTL",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            33,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr32": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 896,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "CCM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            232,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr33": {
+        "msg_cycle": 0.215,
+        "msg_length": 8,
+        "msg_id": 816,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "SWTR",
+            "ETCM",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SMD",
+            "IPM",
+            "SWTL",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            96,
+            0,
+            4
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr34": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 832,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SMD",
+            "IPM",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr35": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 306,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SMD",
+            "IPM",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CEMBodyFr36": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 849,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "ETCM",
+            "RRDM",
+            "POT",
+            "CCM",
+            "SMD",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            3,
+            208,
+            152,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1282,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "SWTL"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyDevFr02": {
+        "msg_cycle": 1.25,
+        "msg_length": 8,
+        "msg_id": 1435,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 177,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "CCM",
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            224,
+            0,
+            128,
+            72
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr02": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 37,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "PPOD",
+            "S2SReceiver",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            28,
+            0,
+            0,
+            12,
+            0,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr03": {
+        "msg_cycle": 0.09,
+        "msg_length": 8,
+        "msg_id": 512,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            24,
+            0,
+            0,
+            104,
+            0,
+            0,
+            24,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr08": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 289,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "SMP",
+            "SWTR",
+            "CCM",
+            "SMD",
+            "SWTL",
+            "BGM"
+        ],
+        "pdu_data": [
+            162,
+            88,
+            10,
+            88,
+            82,
+            88,
+            18,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr11": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1029,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            194,
+            0,
+            0,
+            12,
+            0,
+            50,
+            160,
+            50
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr15": {
+        "msg_cycle": 0.25,
+        "msg_length": 8,
+        "msg_id": 1033,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            96,
+            0,
+            96,
+            0,
+            96,
+            0,
+            96,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr16": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1034,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            96,
+            0,
+            96,
+            0,
+            96,
+            0,
+            96,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr20": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 933,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            60,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr21": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1037,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            11,
+            0,
+            0,
+            0,
+            0,
+            240
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr22": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1040,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM",
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            179,
+            224,
+            0,
+            224,
+            0,
+            85
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr25": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1049,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            60,
+            120,
+            114,
+            88,
+            6,
+            171,
+            32,
+            43
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr27": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1145,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            112,
+            157,
+            0,
+            0,
+            160,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr28": {
+        "msg_cycle": 0.06,
+        "msg_length": 8,
+        "msg_id": 1168,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "SMP",
+            "CCM",
+            "SMD",
+            "BGM"
+        ],
+        "pdu_data": [
+            226,
+            188,
+            0,
+            100,
+            100,
+            0,
+            0,
+            192
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr29": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1184,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            252,
+            104
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr30": {
+        "msg_cycle": 0.5,
+        "msg_length": 8,
+        "msg_id": 1025,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            64,
+            0,
+            224,
+            0,
+            0,
+            41,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr31": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 295,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "SMP",
+            "CCM",
+            "SMD",
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            80,
+            7,
+            255
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr34": {
+        "msg_cycle": 0.2,
+        "msg_length": 8,
+        "msg_id": 831,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM",
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            64,
+            44,
+            240,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr35": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 851,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr36": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 856,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr37": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 860,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr38": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 865,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr39": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 868,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr40": {
+        "msg_cycle": 0.9,
+        "msg_length": 8,
+        "msg_id": 596,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            60,
+            0,
+            0,
+            32,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr41": {
+        "msg_cycle": 0.9,
+        "msg_length": 8,
+        "msg_id": 600,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            60,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr42": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 604,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            60,
+            0,
+            0,
+            48,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr43": {
+        "msg_cycle": 0.9,
+        "msg_length": 8,
+        "msg_id": 607,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            7,
+            215,
+            7,
+            212,
+            7,
+            208,
+            7,
+            208
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr44": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 593,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            10,
+            73,
+            81,
+            72,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr45": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1152,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr46": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1153,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr47": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1154,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr48": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1155,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr49": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1156,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr50": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1157,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr51": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1158,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr52": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1159,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr53": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1160,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr54": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1161,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr55": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1162,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr56": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1163,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr57": {
+        "msg_cycle": 0.135,
+        "msg_length": 8,
+        "msg_id": 805,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            224,
+            0,
+            10,
+            88,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr58": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 579,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            85,
+            32,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr60": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 768,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            248
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr61": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 769,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            85,
+            85,
+            82,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr62": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 770,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            127,
+            255,
+            64,
+            127,
+            255,
+            64,
+            255,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr63": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 771,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            127,
+            255,
+            64,
+            127,
+            255,
+            64,
+            255,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr64": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 772,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            127,
+            255,
+            64,
+            127,
+            255,
+            64,
+            255,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr65": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 773,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            127,
+            255,
+            64,
+            127,
+            255,
+            64,
+            255,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyFr66": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 774,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            127,
+            255,
+            64,
+            127,
+            255,
+            64,
+            255,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1346,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1553,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1409,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmToEtcXCPFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1410,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmToEtcXCPFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1411,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmToEtcXCPFr04": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1412,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyDevFr01": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1434,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 32,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "RRDM",
+            "CCM",
+            "CCM",
+            "SMD",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            8,
+            16,
+            8,
+            11,
+            0,
+            0,
+            0,
+            225
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr02": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 64,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "SWTR",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SMD",
+            "SWTL",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            64,
+            96,
+            104,
+            17,
+            32,
+            34
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr03": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 118,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "SWTR",
+            "ETCM",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "POT",
+            "CCM",
+            "SMD",
+            "IPM",
+            "SWTL",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            64,
+            0,
+            128,
+            0,
+            0,
+            4,
+            0,
+            16
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr04": {
+        "msg_cycle": 0.14,
+        "msg_length": 8,
+        "msg_id": 1072,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            51,
+            51,
+            188,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr06": {
+        "msg_cycle": 0.19,
+        "msg_length": 8,
+        "msg_id": 1120,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            8,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr08": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 1171,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "CCM",
+            "SMD",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            189,
+            40,
+            177,
+            189,
+            182,
+            226,
+            188,
+            40
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr09": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 65,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "DDM",
+            "SMD"
+        ],
+        "pdu_data": [
+            3,
+            207,
+            60,
+            243,
+            207,
+            60,
+            252,
+            32
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr10": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1196,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr103": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 91,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "IPM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            36,
+            152,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr107": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 960,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr109": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 818,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            24,
+            0,
+            213,
+            11,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr121": {
+        "msg_cycle": 0.075,
+        "msg_length": 8,
+        "msg_id": 276,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "CCM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            16
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr131": {
+        "msg_cycle": 0.085,
+        "msg_length": 8,
+        "msg_id": 280,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "POT",
+            "IPM"
+        ],
+        "pdu_data": [
+            229,
+            229,
+            0,
+            0,
+            64,
+            128,
+            64,
+            8
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr44": {
+        "msg_cycle": 1.3,
+        "msg_length": 8,
+        "msg_id": 937,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            83,
+            79,
+            217,
+            0,
+            38,
+            159,
+            178,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr46": {
+        "msg_cycle": 0.285,
+        "msg_length": 8,
+        "msg_id": 928,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            16,
+            255,
+            0,
+            15,
+            0,
+            48
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr47": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 645,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            40,
+            12,
+            0,
+            0,
+            128,
+            72,
+            0,
+            124
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr48": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 855,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM",
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            192,
+            224,
+            248,
+            4
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr49": {
+        "msg_cycle": 0.285,
+        "msg_length": 8,
+        "msg_id": 944,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr51": {
+        "msg_cycle": 0.285,
+        "msg_length": 8,
+        "msg_id": 951,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            40,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr52": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 356,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            60,
+            0,
+            75,
+            24,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr54": {
+        "msg_cycle": 0.645,
+        "msg_length": 8,
+        "msg_id": 151,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            221,
+            0,
+            0,
+            0,
+            0,
+            30
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr55": {
+        "msg_cycle": 0.545,
+        "msg_length": 8,
+        "msg_id": 153,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "CCM",
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            179,
+            252,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr60": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 300,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "CCM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            80,
+            128,
+            170,
+            240,
+            0,
+            75,
+            26,
+            138
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr63": {
+        "msg_cycle": 0.275,
+        "msg_length": 8,
+        "msg_id": 447,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            64,
+            144
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr67": {
+        "msg_cycle": 0.035,
+        "msg_length": 8,
+        "msg_id": 570,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            50,
+            132,
+            0,
+            8
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr68": {
+        "msg_cycle": 0.035,
+        "msg_length": 8,
+        "msg_id": 178,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "CCM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            8,
+            5,
+            0,
+            7,
+            4,
+            4
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr69": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 196,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "CCM",
+            "SMD",
+            "PDM",
+            "RLDM",
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            36,
+            0,
+            64,
+            12,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr70": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 257,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "RRDM",
+            "CCM",
+            "SMD",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            16,
+            0,
+            1,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr71": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 853,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            12,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr73": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 152,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM",
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            96
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr74": {
+        "msg_cycle": 0.135,
+        "msg_length": 8,
+        "msg_id": 309,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            255,
+            5,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr78": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 180,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            4,
+            0,
+            255,
+            4,
+            0,
+            255,
+            0,
+            5
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr79": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 184,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "PPOD",
+            "RRDM",
+            "RPOD",
+            "PDM"
+        ],
+        "pdu_data": [
+            4,
+            0,
+            255,
+            28,
+            0,
+            255,
+            0,
+            6
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr80": {
+        "msg_cycle": 0.6,
+        "msg_length": 8,
+        "msg_id": 1045,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            15
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr84": {
+        "msg_cycle": 0.18,
+        "msg_length": 8,
+        "msg_id": 468,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SMP",
+            "RRDM",
+            "CCM",
+            "SMD",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            24,
+            0,
+            0,
+            192,
+            0,
+            96,
+            255,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr86": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 956,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            252
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr87": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 958,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "CCM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            228,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr88": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 963,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            192,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr89": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 967,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            142,
+            0,
+            50,
+            50
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr90": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 971,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            135,
+            40,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr91": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 975,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            201,
+            0,
+            32,
+            0
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr92": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 952,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "CCM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            140,
+            0,
+            0,
+            192
+        ],
+        "tx_change": true
+    },
+    "CemBodyFr99": {
+        "msg_cycle": 0.24,
+        "msg_length": 8,
+        "msg_id": 827,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "RRDM",
+            "CCM",
+            "RLDM",
+            "DDM",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            40,
+            37,
+            30,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DdmBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1283,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "SMP"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DdmBodyFr01": {
+        "msg_cycle": 0.07,
+        "msg_length": 8,
+        "msg_id": 48,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "SMP",
+            "RRDM",
+            "DPOD",
+            "RLDM",
+            "BGM",
+            "PDM"
+        ],
+        "pdu_data": [
+            28,
+            132,
+            3,
+            2,
+            0,
+            2,
+            1,
+            0
+        ],
+        "tx_change": true
+    },
+    "DdmBodyFr02": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 480,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            87,
+            132,
+            0,
+            0,
+            64,
+            48,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DdmBodyFr03": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 291,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver",
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            192,
+            0,
+            0,
+            204,
+            43,
+            199
+        ],
+        "tx_change": true
+    },
+    "DdmBodyFr04": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 5,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "CCM",
+            "IPM",
+            "PDM",
+            "RLDM",
+            "BGM"
+        ],
+        "pdu_data": [
+            148,
+            0,
+            188,
+            138,
+            4,
+            0,
+            1,
+            255
+        ],
+        "tx_change": true
+    },
+    "DdmBodyFr07": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 192,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "S2SReceiver",
+            "RRDM",
+            "RLDM",
+            "BGM",
+            "PDM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            5,
+            0,
+            0,
+            0,
+            2
+        ],
+        "tx_change": true
+    },
+    "DdmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1347,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DdmToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1554,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DdmtoEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1417,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DpodBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1315,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DPOD",
+        "rx_nodes": [
+            "RPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DpodBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 535,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DPOD",
+        "rx_nodes": [
+            "BGM",
+            "DDM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            11,
+            143,
+            168,
+            0,
+            19,
+            203,
+            203,
+            42
+        ],
+        "tx_change": true
+    },
+    "DpodBodyFr02": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 53,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DPOD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            64,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DpodToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1600,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DPOD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcBodyFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 21,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtcSmdBodyCanDevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1426,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtcSmpBodyCanDevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1427,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "SMP"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtcToCcmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1526,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToCcmXCPFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1527,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToCcmXCPFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1528,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToCcmXCPFr04": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1529,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToDdmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1522,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToPdmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1523,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToPotXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1467,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "POT"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToRldmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1524,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "RLDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToRrdmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1525,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "RRDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcmBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1312,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "ETCM",
+        "rx_nodes": [
+            "SMD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcmBodyFr01": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 581,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ETCM",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            46,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtcmBodyFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 565,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "ETCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            128,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtcmBodyFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 566,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "ETCM",
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            184,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtcmToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1558,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "ETCM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "IpmBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1320,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "IPM",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "IpmBodyFr01": {
+        "msg_cycle": 0.2,
+        "msg_length": 8,
+        "msg_id": 800,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "IPM",
+        "rx_nodes": [
+            "DDM",
+            "S2SReceiver",
+            "RRDM",
+            "RLDM",
+            "BGM",
+            "PDM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            136,
+            149,
+            85,
+            0,
+            32,
+            9
+        ],
+        "tx_change": true
+    },
+    "IpmToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1618,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "IPM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "LpodBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1317,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "LPOD",
+        "rx_nodes": [
+            "DPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "LpodBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 536,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "LPOD",
+        "rx_nodes": [
+            "RLDM",
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            71,
+            160,
+            0,
+            3,
+            243,
+            203,
+            203,
+            42
+        ],
+        "tx_change": true
+    },
+    "LpodBodyFr02": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 54,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "LPOD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            64,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "LpodToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1602,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "LPOD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PdmBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1284,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PDM",
+        "rx_nodes": [
+            "RRDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PdmBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 16,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PDM",
+        "rx_nodes": [
+            "PPOD",
+            "DDM",
+            "S2SReceiver",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "CCM",
+            "IPM",
+            "BGM"
+        ],
+        "pdu_data": [
+            5,
+            17,
+            1,
+            18,
+            29,
+            164,
+            29,
+            18
+        ],
+        "tx_change": true
+    },
+    "PdmBodyFr03": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 293,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PDM",
+        "rx_nodes": [
+            "BGM",
+            "DDM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            145,
+            98,
+            188,
+            41,
+            43,
+            199
+        ],
+        "tx_change": true
+    },
+    "PdmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1348,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PdmToBgmBodyDiagRespuFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1555,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PDM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PdmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1424,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PotBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1287,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "POT",
+        "rx_nodes": [
+            "RLDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PotBodyFr01": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 416,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "POT",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PotBodyFr02": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 149,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "POT",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            112,
+            26,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PotBodyFr03": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 578,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "POT",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            223,
+            229,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PotBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1351,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "POT",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PotToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1557,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "POT",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PotToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1466,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "POT",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PpodBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1316,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PPOD",
+        "rx_nodes": [
+            "LPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PpodBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 546,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PPOD",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver",
+            "PDM"
+        ],
+        "pdu_data": [
+            10,
+            71,
+            0,
+            3,
+            243,
+            203,
+            203,
+            42
+        ],
+        "tx_change": true
+    },
+    "PpodBodyFr02": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 55,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PPOD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            64,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PpodToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1601,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PPOD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RldmBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1289,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RLDM",
+        "rx_nodes": [
+            "POT"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RldmBodyFr01": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 112,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "RLDM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "DDM",
+            "S2SReceiver",
+            "LPOD",
+            "RRDM",
+            "DPOD",
+            "RPOD",
+            "CCM",
+            "IPM",
+            "BGM"
+        ],
+        "pdu_data": [
+            144,
+            160,
+            12,
+            135,
+            131,
+            50,
+            128,
+            58
+        ],
+        "tx_change": true
+    },
+    "RldmBodyFr02": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 515,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "RLDM",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            12,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "RldmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1353,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RLDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "RldmToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1569,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RLDM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RldmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1418,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RLDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RpodBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1318,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RPOD",
+        "rx_nodes": [
+            "PPOD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RpodBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 554,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "RPOD",
+        "rx_nodes": [
+            "BGM",
+            "RRDM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            10,
+            71,
+            0,
+            3,
+            243,
+            203,
+            203,
+            42
+        ],
+        "tx_change": true
+    },
+    "RpodBodyFr02": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 56,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "RPOD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            64,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "RpodToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1603,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RPOD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RrdmBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1296,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RRDM",
+        "rx_nodes": [
+            "PDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RrdmBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 117,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "RRDM",
+        "rx_nodes": [
+            "PPOD",
+            "SMP",
+            "DDM",
+            "S2SReceiver",
+            "LPOD",
+            "DPOD",
+            "RPOD",
+            "CCM",
+            "IPM",
+            "RLDM",
+            "BGM",
+            "PDM"
+        ],
+        "pdu_data": [
+            144,
+            160,
+            12,
+            71,
+            131,
+            44,
+            128,
+            58
+        ],
+        "tx_change": true
+    },
+    "RrdmBodyFr02": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 516,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "RRDM",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            12,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "RrdmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1360,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RRDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "RrdmToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1570,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RRDM",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RrdmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1419,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "RRDM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmbBodyFr00": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 901,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "BGM",
+            "CCM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            15,
+            0,
+            0,
+            0,
+            0,
+            240,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmbBodyFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 902,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "CCM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            15,
+            0,
+            0,
+            0,
+            0,
+            240,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmbBodyFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1008,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            1,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmbBodyFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 903,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            15,
+            128,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmbBodyFr04": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 132,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmbToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1584,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmdBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1298,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "ETCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmdBodyDevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1430,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmdBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 105,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "SMP",
+            "BGM",
+            "CCM"
+        ],
+        "pdu_data": [
+            92,
+            0,
+            192,
+            0,
+            0,
+            128,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmdBodyFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 864,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            36,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmdBodyFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1193,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmdBodyFr04": {
+        "msg_cycle": 0.095,
+        "msg_length": 8,
+        "msg_id": 665,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "SMP",
+            "S2SReceiver",
+            "CCM",
+            "BGM"
+        ],
+        "pdu_data": [
+            136,
+            0,
+            0,
+            228,
+            0,
+            28,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmdBodyFr05": {
+        "msg_cycle": 0.07,
+        "msg_length": 8,
+        "msg_id": 272,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            21,
+            250,
+            23,
+            232,
+            250,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmdBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1362,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmdToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1575,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMD",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmpBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1299,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMP",
+        "rx_nodes": [
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmpBodyDevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1431,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMP",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmpBodyFr01": {
+        "msg_cycle": 0.035,
+        "msg_length": 8,
+        "msg_id": 304,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SMP",
+        "rx_nodes": [
+            "BGM",
+            "CCM"
+        ],
+        "pdu_data": [
+            224,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            58
+        ],
+        "tx_change": true
+    },
+    "SmpBodyFr02": {
+        "msg_cycle": 0.07,
+        "msg_length": 8,
+        "msg_id": 275,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SMP",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            5,
+            250,
+            23,
+            232,
+            250,
+            0,
+            1,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmpBodyFr03": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1063,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SMP",
+        "rx_nodes": [
+            "BGM",
+            "CCM"
+        ],
+        "pdu_data": [
+            192,
+            192,
+            100,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmpBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1363,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMP",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SmpToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1576,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SMP",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "StleBodyFr01": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 511,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SwtlBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1313,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SWTL",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SwtlBodyFr01": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 616,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SWTL",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            144,
+            0,
+            32,
+            0,
+            32,
+            0
+        ],
+        "tx_change": true
+    },
+    "SwtlBodyFr02": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 617,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SWTL",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            32,
+            0,
+            32,
+            0,
+            32,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SwtlBodyFr03": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 129,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SWTL",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            16,
+            0,
+            0,
+            16,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SwtlToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1666,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SWTL",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SwtrBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1314,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SWTR",
+        "rx_nodes": [
+            "IPM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SwtrBodyFr01": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 625,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SWTR",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            15,
+            128,
+            0,
+            32,
+            0,
+            32,
+            0
+        ],
+        "tx_change": true
+    },
+    "SwtrBodyFr03": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 130,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SWTR",
+        "rx_nodes": [
+            "BGM",
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            16,
+            0,
+            0,
+            16,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SwtrToBgmBodyDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1667,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SWTR",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "TrmBodyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1321,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "TrmBodyFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 517,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            3,
+            248,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "TrmBodyFr04": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 775,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            2,
+            0,
+            7,
+            254,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "HbmfCcm_Lin1Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 50,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ETC",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

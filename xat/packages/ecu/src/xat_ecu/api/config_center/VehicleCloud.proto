@@ -1,0 +1,26 @@
+syntax = "proto3";
+package jet.v2t;
+message VehicleCloudInvoke{
+  V2TInvokeHeader header=1;
+  bytes body=2;
+}
+message V2TInvokeHeader{
+  string ver=1;
+  int64 timeStamp=2;
+  int32  type=3;
+  int64 msgId=4;
+  string traceId=5;
+  ServiceUri reqTarget=6;
+  ErrorInfo err=7;
+  int32 reqTimeout=8;
+}
+message ServiceUri{
+  string service=1;
+  string api=2;
+  bool wakeup=3;
+}
+message ErrorInfo
+{
+  int32 err=1;
+  string msg=2;
+}

@@ -1,0 +1,270 @@
+{
+    "BexvEcm_Lin3Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 31,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BexvEcm_Lin3PartNrFr04": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 13,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BexvEcm_Lin3PartNrFr08": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 45,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BexvEcm_Lin3SerNrFr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 18,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CexvEcm_Lin3Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 14,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CexvEcm_Lin3PartNrFr04": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 16,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CexvEcm_Lin3PartNrFr08": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 47,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CexvEcm_Lin3SerNrFr08": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 33,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EcmEcm_Lin3Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 11,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EcmEcm_Lin3Fr05": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            48,
+            2
+        ]
+    },
+    "EexvCcm_Lin2Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 36,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EexvCcm_Lin2PartNrFr04": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 32,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EexvCcm_Lin2PartNrFr08": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 52,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EexvCcm_Lin2SerNrFr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 34,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "HvscEcm_Lin3Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 3,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            4,
+            16,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "HvscEcm_Lin3Fr02": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 5,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RexvEcm_Lin3Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 27,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

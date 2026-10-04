@@ -1,0 +1,486 @@
+{
+    "BEXVLCUR_LIN2Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 0,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BEXV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BEXVLCUR_LIN2Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 1,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BEXV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BEXVLCUR_LIN2Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 2,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BEXV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CERVLCUR_LIN2Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 3,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CERV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CERVLCUR_LIN2Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 4,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CERV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CERVLCUR_LIN2Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 5,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CERV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DiagRequest3": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 60,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "LCUR",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DiagResponse3": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 61,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "FEXVLCUR_LIN2Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "FEXV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "FEXVLCUR_LIN2Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 7,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "FEXV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "FEXVLCUR_LIN2Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 8,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "FEXV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "LCURLCUR_LIN2Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 9,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "LCUR",
+        "rx_nodes": [
+            "CERV",
+            "REXV",
+            "BEXV",
+            "FEXV"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "LCURLCUR_LIN2Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 10,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "LCUR",
+        "rx_nodes": [
+            "WERV",
+            "TERV"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "REXVLCUR_LIN2Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 11,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "REXV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "REXVLCUR_LIN2Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 12,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "REXV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "REXVLCUR_LIN2Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 13,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "REXV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "TERVLCUR_LIN2Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 14,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "TERV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "TERVLCUR_LIN2Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 15,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "TERV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "TERVLCUR_LIN2Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 16,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "TERV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "WERVLCUR_LIN2Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 17,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "WERV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "WERVLCUR_LIN2Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 18,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "WERV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "WERVLCUR_LIN2Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 19,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "WERV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    }
+}

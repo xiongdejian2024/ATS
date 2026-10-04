@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes"?>
+<testmodule title="Test123" version="">
+	<preparation>
+		<capltestfunction name="PreTest" title=""/>
+  	</preparation>
+<completion>
+  <capltestfunction name="PostTest" title=""/>
+</completion>											
+</testmodule>

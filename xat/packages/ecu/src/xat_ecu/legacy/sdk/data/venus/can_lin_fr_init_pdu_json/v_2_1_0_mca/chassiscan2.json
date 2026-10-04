@@ -1,0 +1,3015 @@
+{
+    "BbmChas2DevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1424,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmChas2DevFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1425,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmChas2Fr01": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 258,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            80,
+            255,
+            15,
+            162,
+            15,
+            160,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmChas2Fr02": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 367,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "VDDM",
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            16,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmChas2Fr03": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1245,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            10,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmChas2Fr06": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 150,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmChassisCAN2NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1319,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BbmRbcmChas2Fr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 278,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            128,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmVcuChas2Fr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 136,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            12
+        ],
+        "tx_change": true
+    },
+    "BgmChas2Fr01": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 96,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SUM1"
+        ],
+        "pdu_data": [
+            8,
+            152,
+            239,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmChas2Fr02": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 64,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SUM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BgmChas2Fr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 45,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "SUM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            8,
+            128
+        ],
+        "tx_change": true
+    },
+    "BgmChassisCAN2NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1281,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EcmChas2Fr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 128,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "SUM1",
+            "VDDM",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr02": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 37,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "SUM1",
+            "VDDM",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr03": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 53,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            96,
+            4,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr04": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 256,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            255,
+            1
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr05": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 272,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            32,
+            255,
+            0,
+            16,
+            0,
+            3,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr06": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 304,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            7,
+            0,
+            5,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr07": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 288,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM",
+            "BBM"
+        ],
+        "pdu_data": [
+            255,
+            3,
+            0,
+            0,
+            64,
+            0,
+            61,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr08": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 352,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            17
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr09": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 512,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            72,
+            0,
+            0,
+            80,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr10": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 528,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            8,
+            88,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr11": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 544,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            1,
+            244,
+            192,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr12": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 704,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            64
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr13": {
+        "msg_cycle": 0.07,
+        "msg_length": 8,
+        "msg_id": 640,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr14": {
+        "msg_cycle": 0.2,
+        "msg_length": 8,
+        "msg_id": 800,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            8,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr15": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 560,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            42,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr16": {
+        "msg_cycle": 0.7,
+        "msg_length": 8,
+        "msg_id": 880,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            144
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr17": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 848,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            5,
+            0,
+            0,
+            0,
+            0,
+            65,
+            30
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr18": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 752,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            32,
+            0,
+            0,
+            0,
+            68,
+            136,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr19": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 944,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            128,
+            0,
+            2,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr20": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 547,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM",
+            "S2SReceiver",
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            41,
+            128,
+            0,
+            1,
+            131,
+            149
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr22": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 570,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            128,
+            128,
+            0,
+            32,
+            0,
+            32,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr27": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 101,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr28": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 156,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr31": {
+        "msg_cycle": 0.13,
+        "msg_length": 8,
+        "msg_id": 563,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            2,
+            0,
+            4
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr32": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 529,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            3
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr33": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 597,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            40,
+            40,
+            0,
+            3,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr37": {
+        "msg_cycle": 0.23,
+        "msg_length": 8,
+        "msg_id": 785,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            128,
+            0,
+            40,
+            128,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr38": {
+        "msg_cycle": 0.27,
+        "msg_length": 8,
+        "msg_id": 819,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            49,
+            40,
+            34,
+            64,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr45": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1136,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            252
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr46": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1137,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            192,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr47": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1138,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            192,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr48": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1139,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            192,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr49": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1140,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            192,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr50": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1141,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            32,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr51": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1142,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            32,
+            0,
+            32,
+            0,
+            64,
+            1,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr52": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1143,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            40,
+            0,
+            0,
+            128,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr53": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1144,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr54": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 36,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            32,
+            0,
+            68,
+            0,
+            0,
+            128
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr55": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 69,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM",
+            "BBM"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            1,
+            0,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr56": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1170,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr57": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1173,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr58": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1174,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr59": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1175,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr60": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1177,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr61": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1162,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr62": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1163,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr63": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1164,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr64": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1165,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr65": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1178,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr66": {
+        "msg_cycle": 0.5,
+        "msg_length": 8,
+        "msg_id": 1114,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            128,
+            39,
+            9
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr67": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 1091,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            64,
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr68": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 325,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "BBM"
+        ],
+        "pdu_data": [
+            80,
+            0,
+            0,
+            0,
+            16,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "EcmChas2Fr80": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 245,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "SUM1"
+        ],
+        "pdu_data": [
+            0,
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmChassisCAN2NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1311,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VCU",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcBbmChas2DevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1427,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtcBbmChas2DevFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1428,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtcToSumXcpFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1418,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "SUM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtctoBbmXcpFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1366,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SumChas2Fr02": {
+        "msg_cycle": 0.13,
+        "msg_length": 8,
+        "msg_id": 531,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SUM1",
+        "rx_nodes": [
+            "S2SReceiver"
+        ],
+        "pdu_data": [
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SumChas2Fr04": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 431,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SUM1",
+        "rx_nodes": [
+            "VDDM",
+            "VCU",
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            88,
+            12,
+            0
+        ],
+        "tx_change": true
+    },
+    "SumChas2Fr05": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 687,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SUM1",
+        "rx_nodes": [
+            "S2SReceiver",
+            "CCM"
+        ],
+        "pdu_data": [
+            1,
+            0,
+            7,
+            255,
+            0,
+            4,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SumChas2Fr06": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 447,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "SUM1",
+        "rx_nodes": [
+            "VDDM",
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            88,
+            0,
+            4
+        ],
+        "tx_change": true
+    },
+    "SumChas2Fr08": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 98,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            238,
+            238,
+            238,
+            238,
+            0,
+            0,
+            0,
+            96
+        ],
+        "tx_change": true
+    },
+    "SumChas2Fr10": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 80,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SUM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SumChas2VFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1352,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "SumChassisCAN2NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1317,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SUM1",
+        "rx_nodes": [
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SumToEtcXcpFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1417,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SUM1",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SumToVddmChas2DiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1556,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "SUM1",
+        "rx_nodes": [
+            "VDDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VddmChas2Fr02": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 112,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            14,
+            0,
+            0,
+            10,
+            68,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr03": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 160,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            255,
+            5,
+            0,
+            0,
+            128,
+            0,
+            9,
+            7
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr04": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 208,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            27,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr05": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 224,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            6,
+            128,
+            0,
+            0,
+            4
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr06": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 240,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            44,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            4
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr07": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 320,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            1,
+            3
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr08": {
+        "msg_cycle": 0.06,
+        "msg_length": 8,
+        "msg_id": 928,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            10,
+            3,
+            232,
+            0,
+            0,
+            1,
+            160
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr09": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 384,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            48,
+            0,
+            0,
+            2,
+            0,
+            160
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr11": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 480,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            208,
+            0,
+            0,
+            0,
+            0,
+            0,
+            64,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr12": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 448,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            128,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr13": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 336,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            4,
+            0,
+            0,
+            0,
+            3,
+            0,
+            19
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr14": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 432,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            255,
+            5,
+            16,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr16": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 496,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            48,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr17": {
+        "msg_cycle": 0.06,
+        "msg_length": 8,
+        "msg_id": 576,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            32,
+            0,
+            0,
+            0,
+            0,
+            0,
+            113,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr19": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 736,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            1,
+            0,
+            0,
+            1,
+            0,
+            1,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr20": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 720,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            16,
+            64,
+            132
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr21": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 513,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            20,
+            0,
+            0,
+            0,
+            100
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr22": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 784,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            8,
+            80,
+            0,
+            0,
+            0,
+            24,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr23": {
+        "msg_cycle": 0.5,
+        "msg_length": 8,
+        "msg_id": 864,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr25": {
+        "msg_cycle": 0.7,
+        "msg_length": 8,
+        "msg_id": 896,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU",
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            96,
+            69,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr26": {
+        "msg_cycle": 0.07,
+        "msg_length": 8,
+        "msg_id": 624,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            16,
+            34
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr28": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 688,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [],
+        "pdu_data": [
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr29": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 768,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            131,
+            128
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr30": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 592,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr31": {
+        "msg_cycle": 0.12,
+        "msg_length": 8,
+        "msg_id": 832,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr32": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 464,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            6,
+            8,
+            0,
+            0,
+            3
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr33": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 549,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            176,
+            32,
+            0,
+            210,
+            88,
+            0,
+            34,
+            88
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr34": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 562,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            255,
+            248,
+            255,
+            248,
+            127,
+            248,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr37": {
+        "msg_cycle": 0.17,
+        "msg_length": 8,
+        "msg_id": 774,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            10,
+            128
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr38": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 568,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr39": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1024,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr41": {
+        "msg_cycle": 0.13,
+        "msg_length": 8,
+        "msg_id": 776,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr43": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 501,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            64,
+            0,
+            0,
+            0,
+            3,
+            249,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr46": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 26,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1",
+            "VCU",
+            "BBM"
+        ],
+        "pdu_data": [
+            224,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr51": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1109,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr52": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 103,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr53": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 17,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU",
+            "BBM"
+        ],
+        "pdu_data": [
+            176,
+            0,
+            177,
+            224,
+            177,
+            224,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr64": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 548,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            128,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr66": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 579,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            33,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr67": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1058,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr68": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1059,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr69": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1060,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr70": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1061,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr71": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1062,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr72": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 856,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr73": {
+        "msg_cycle": 0.32,
+        "msg_length": 8,
+        "msg_id": 857,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            8,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr77": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 769,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            67,
+            202,
+            88
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr78": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 664,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            160,
+            75,
+            30,
+            0,
+            0,
+            2,
+            13,
+            50
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr79": {
+        "msg_cycle": 0.2,
+        "msg_length": 8,
+        "msg_id": 647,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            48,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr80": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 793,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            2,
+            34,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2Fr81": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1179,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "VCU"
+        ],
+        "pdu_data": [
+            142,
+            14,
+            14,
+            14,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VddmChas2VFCinfoEnaFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1519,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            4
+        ],
+        "tx_change": true
+    },
+    "VddmChassisCAN2NmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1314,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VddmToAllChas2DiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2047,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VddmToSumChas2DiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1812,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "VDDM",
+        "rx_nodes": [
+            "SUM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

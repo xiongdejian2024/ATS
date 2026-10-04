@@ -134,6 +134,7 @@ class SignalService:
                 init_data = db.get_init_pdu_data(msg_name)
                 self._pdu_cache[msg_name] = bytearray(init_data)
             except Exception:
+                __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/services/signal.py")
                 msg_def = db.get_message(msg_name)
                 dlc = msg_def.get("dlc", 8) if msg_def else 8
                 self._pdu_cache[msg_name] = bytearray(dlc)
@@ -168,6 +169,7 @@ class SignalService:
             try:
                 result[sig_name] = self.get_signal(sig_name)
             except Exception as e:
+                __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/services/signal.py")
                 logger.warning(f"Cannot read signal {sig_name}: {e}")
 
         return result
@@ -182,6 +184,7 @@ class SignalService:
                 init_data = db.get_init_pdu_data(msg_name)
                 self._pdu_cache[msg_name] = bytearray(init_data)
             except Exception:
+                __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/services/signal.py")
                 pass
 
         logger.info(

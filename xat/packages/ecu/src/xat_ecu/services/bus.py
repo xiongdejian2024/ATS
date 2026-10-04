@@ -59,6 +59,7 @@ class BusService:
             try:
                 bus_config = self._vehicle_profile.get_bus_config(bus_name)
             except Exception:
+                __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/services/bus.py")
                 pass
 
         # 创建硬件适配器
@@ -160,6 +161,7 @@ class BusService:
                             .get("buses", {}).keys()):
                     self._start_cyclic_for_bus(bus)
             except Exception as e:
+                __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/services/bus.py")
                 logger.error(f"Failed to start cyclic messages: {e}")
 
         self._cyclic_running = True
@@ -201,6 +203,7 @@ class BusService:
                     f"Cyclic: {msg_name} (0x{msg_id:X}) @ {cycle_time}s"
                 )
         except Exception as e:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/services/bus.py")
             logger.warning(f"Cannot load cyclic for {bus_name}: {e}")
 
     def stop_cyclic_messages(self, bus_name: str = None) -> None:
@@ -264,6 +267,7 @@ class BusService:
             logger.info(f"Bus recording saved: {path} "
                        f"({len(self._record_buffer)} messages)")
         except Exception as e:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/services/bus.py")
             logger.error(f"Failed to save recording: {e}")
 
         self._record_buffer = []

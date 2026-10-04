@@ -1,0 +1,156 @@
+syntax = "proto3";
+package vehiclestatus;
+import "common.proto";
+import "block_head.proto";
+
+// =====================================================================
+// 驾驶状态 手刹 挂档 方向盘 油门 力度 发送类型：Event 还可以升级到运动控制块：制动控制、转向控制、运动控制、推进系统、悬架控制
+// =====================================================================
+
+message DrivingStatusBlock {
+  BlockHead           head         = 1 ; // 公共头
+  Epb                 epb          = 2 ; // 电子手刹 目前soa中epb和车速、车辆模式定义在一起
+  GearLevel           gearLevel    = 3 ; // 档位
+  SteerWheelDriving   steerWheel   = 4 ; // 方向盘转角信息
+  repeated PedalInfo  pedalInfo    = 5; // 踏板信息
+  repeated SeatBeltStatusInfo  seatBeltStatusInfo = 6; // 指定座椅的安全带状态信息
+  HandOFFStatusInfo   handsOFFStatusInfo          = 7; // 驾驶员脱手监测状态
+}
+
+// 电子手刹
+message Epb {
+  EpbOperateStatus status           = 1 ;  //EPB状态
+}
+message SteerWheelDriving {
+  float  	angle        = 1; // 方向盘转角
+  float  	speed        = 2; // 方向盘转速 rad/s
+  Bool    isValid      = 3; // 数据有效信息  FALSE：代表此时方向盘转角状态不可使用 TRUE：代表此时方向盘转角状态可信  （V1.0删除：RVS过滤，不再上传）
+}
+
+message PedalInfo {
+  PedalId         pedalId            = 1; // PedalId
+  PressedStatus   pressedStatus      = 2; // 踏板踩下状态
+  Bool            isValid            = 3; // 数据有效信息  FALSE: 数据无效, TRUE: 数据有效  （V1.0删除：RVS过滤，不再上传）
+  float           position           = 4; // 踏板位置，百分比表示, 0%-100%, 100%表示完全踩下  （V1.0删除：车端不再上传）
+}
+
+message SeatBeltStatusInfo {
+  BeltSeatId       beltSeatId      = 1; // 安全带座椅ID 对于四座/五座车型, 只关注前排/后排即可，对于七座车型，可关注前排/后排/中间排
+  BeltStatus       beltStatus      = 2; // 安全带状态
+  BeltFaultStatus  beltFaultStatus = 3; // 安全带故障状态   （V1.0删除：车端不再上传）
+}
+
+// 驾驶员脱手监测状态
+message HandOFFStatusInfo {
+  HandsOnStatus      handsOnStatus          = 1; // HandsOn状态
+  HandsOnErrStatus   handsOnErrorStatus     = 2; // HandsOn故障状态  （V1.0删除：车端不再上传）
+}
+
+//// 驻车制动状态（EPB）
+//enum EPBOperationType {
+//  EpbApply        = 0 ; //夹紧EPB驻车器
+//  EpbRelease      = 1 ;// 释放EPB驻车器
+//  EpbForbidden    = 2 ; //禁止EPB驻车器
+//}
+// 驻车制动状态（EPB）
+
+// @https://jama.jiduauto.com/perspective.req#/items/154171?projectId=46
+enum EpbOperateStatus
+{
+  EpbResd0                  = 0;  //RESD0 (RESD0)
+  EpbResd1                  = 1; //RESD1 (RESD1)
+  EpbResd2                  = 2; //RESD2 (RESD2)
+  EpbBothApplied            = 3;  //EPB夹紧 卡钳已经加紧 是在驻车状态 (ALL_APPID)
+  EpbResd4                  = 4; //RESD4 (RESD4)
+  EpbInTransition           = 5; //卡钳正在动作中 有可能是加紧动作有可能是释放动作 (EPB_IN_TRAN)
+  EpbBrakingDynamicByActuator = 6; //执行器的动态制动 (BRKG_DYN_BY_ACTR)
+  EpbResd7                  = 7; //RESD7 (RESD7)
+  EpbResd8                  = 8; //RESD8 (RESD8)
+  EpbActuatorsAreReleased   = 9;  //EPB释放 卡钳已经释放，车辆有可能静止有可能在动 (EPB_ACT_RELEASED)
+  EpbBrakingDynamicDegraded = 10; //降级的动态制动 (ACTR_DYN_DEGRADED)
+  EpbResd11                 = 11; //RESD11 (RESD11)
+  EpbBrakingDynamic         = 12; //动态制动  车辆开的时候通过卡钳加紧进行减速 (BRKG_DYN)
+  EpbResd13                 = 13; //RESD13 (RESD13)
+  EpbResd14                 = 14; //RESD14 (RESD14)
+  EpbError                  = 15; //Error (ERR_STS)
+  EpbEmpty                  = -1; // --
+}
+
+enum GearLevel {
+  GearLevelP              = 0 ; //P档 (GEAR_P)
+  GearLevelR              = 1 ; //R档 (GEAR_R)
+  GearLevelN              = 2 ; //N档 (GEAR_N)
+  GearLevelD              = 3 ; //D档 (GEAR_D)
+  GearLevelNA             = 4 ; //Unknown (GEAR_UNKNOWN)
+  GearLevelEmpty          = -1 ; // --
+}
+
+enum PedalId {
+    PedalIdPedalAcc         = 0; // 加速踏板
+    PedalIdPedalBrake       = 1; // 刹车踏板
+    PedalIdPedalAll         = 2; // 全部踏板
+    PedalIdEmpty            = -1; // --
+}
+
+// 踏板踩下状态
+enum PressedStatus {
+  PedalReleased                 = 0; // 踏板释放（未踩下）
+  PedalPressed                  = 1; // 踏板已踩下
+  PedalNA                       = 2; // 踏板状态未知/踏板状态数据无效
+  PedalEmpty                    = -1; // --
+}
+
+// 安全带座椅位置
+enum BeltSeatId {
+  BeltSeatFrontLeft             = 0; // 前排左
+  BeltSeatFrontRight            = 1; // 前排右
+  BeltSeatFrontMiddle           = 2; // 前排中
+  BeltSeatFrontRow              = 3; // 第一排全部座椅
+  BeltSeatRearLeft              = 4; // 后排左
+  BeltSeatRearMiddle            = 5; // 后排中
+  BeltSeatRearRight             = 6; // 后排右
+  BeltSeatRearRow               = 7; // 后排全部座椅
+  BeltSeatThirdLeft             = 8; // 第三排左
+  BeltSeatThirdMiddle           = 9; // 第三排中间
+  BeltSeatThirdRight            = 10;// 第三排右
+  BeltSeatThirdRow              = 11;// 第三排全部座椅
+  BeltSeatAll                   = 12;// 全车座椅
+  BeltSeatEmpty                 = -1;// --
+}
+
+// 安全带状态
+enum BeltStatus {
+  BeltStatusBeltLocked               = 0; // 安全带已扣
+  BeltStatusBeltUnlock               = 1; // 安全带未扣
+  BeltStatusBeltNa                   = 2; // 安全带未知
+  BeltStatusBeltEmpty                = -1;// --
+}
+
+// 安全带故障状态
+enum BeltFaultStatus {
+  BeltFaultStatusNoFault           = 0; // 安全带无故障
+  BeltFaultStatusFault             = 1; // 安全带故障
+  BeltFaultStatusEmpty             = -1;// --
+}
+
+// 驾驶员脱手监测状态：HandsOn状态
+enum HandsOnStatus {
+  HandsOnStatusInitClass         = 0; // 初始化 (default)
+  HandsOnStatusHandsOn           = 1; // 握住 HAND_ON
+  HandsOnStatusHandsOff          = 2; // 脱手
+  HandsOnStatusUndeterminedClass = 3; // 未知状态 UNDETERMINDER_CLASS
+  HandsOnStatusEmpty             = -1; // --
+}
+
+// 驾驶员脱手监测状态：HandsOn故障状态
+enum HandsOnErrStatus {
+  HandsOnErrStatusInitDag           = 0; // 诊断初始化 default INIT_DAG
+  HandsOnErrStatusReserved1         = 1; // 预留 RESERVED
+  HandsOnErrStatusHOSWDReady        = 2; // 状态可信 HOSWD_READY
+  HandsOnErrStatusHOSWDCUFault      = 3; // 标定错误 HOSWD_CU_FAULT
+  HandsOnErrStatusHOSWDSMFault      = 4; // 系统错误 HOSWD_SM_FAULT
+  HandsOnErrStatusHOSWDSVFault      = 5; // 非永久错误 HOSWD_SV_FAULT
+  HandsOnErrStatusReserved2         = 6; // 预留 RESERVED2
+  HandsOnErrStatusReserved3         = 7; // 预留 RESERVED3
+  HandsOnErrStatusEmpty             = -1; // --
+}

@@ -1,0 +1,644 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                        Mentor Graphics Corporation                         */
+/*                            All rights reserved                             */
+/*                                                                            */
+/* ************************************************************************** */
+/*                                                                            */
+/*  Description:   LIN Description file                                       */
+/*  System:        SDB22R02                                                   */
+/*  Variant:       MC11                                                       */
+/*  Cluster:       CEM_LIN6                                                   */
+/*  Master:        CEM_LIN6                                                   */
+/*  Generated at:  2022-04-19 14:36                                           */
+/*                                                                            */
+/* ************************************************************************** */
+/*                                                                            */
+/*                THIS CONFIGURATION MIGHT CONTAIN SOME ERRORS                */
+/*                 IF THE INPUT MODEL WAS NOT PROPERLY FORMED!                */
+/*                       Do Not Use this File directly!                       */
+/*                                                                            */
+/* ************************************************************************** */
+
+LIN_description_file;
+LIN_protocol_version = "2.1";
+LIN_language_version = "2.1";
+LIN_speed = 19.2 kbps;
+Channel_name = "CEM_LIN6";
+
+Nodes {
+  Master: BGM_CEM_LIN6, 5 ms, 1 ms ;
+  Slaves: AWM_CEM_LIN6, BMS_CEM_LIN6 ;
+}
+
+Signals {
+  ActvReSplrHallSnsrFltHallAFlt_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrHallSnsrFltHallBFlt_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrHallSnsrFltHallOutpFlt_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrIceBreakFaild_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrIntFltActrFlt1_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrIntFltActrFlt2_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrIntFltActrFlt3_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrIntFltActrFlt4_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrIntFltActrFlt5_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrIntFltTmrFlt_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrMotBlk_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrPosn_CEM_LIN6: 3, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrPosnCmd_CEM_LIN6: 3, 0, BGM_CEM_LIN6, AWM_CEM_LIN6 ;
+  ActvReSplrUFltHiVoltDetdFlt_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ActvReSplrUFltLoVoltDetdFlt_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AmbTRawAtPassSideAmbTVal_CEM_LIN6: 11, 700, BGM_CEM_LIN6, AWM_CEM_LIN6 ;
+  AmbTRawAtPassSideQly_CEM_LIN6: 2, 0, BGM_CEM_LIN6, AWM_CEM_LIN6 ;
+  AWMPartNo10CmplEndSgn1_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMPartNo10CmplEndSgn2_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMPartNo10CmplEndSgn3_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMPartNo10CmplNr1_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMPartNo10CmplNr2_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMPartNo10CmplNr3_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMPartNo10CmplNr4_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMPartNo10CmplNr5_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMSerNoNr1_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMSerNoNr2_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMSerNoNr3_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  AWMSerNoNr4_CEM_LIN6: 8, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattChrgnBalDurgDrvgRaw_CEM_LIN6: 16, 20000, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattCircOpenU_CEM_LIN6: 5, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattCpEstimdAtTNomRaw_CEM_LIN6: 7, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattCpEstimdRaw_CEM_LIN6: 7, 80, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattCycChrgCntrRaw_CEM_LIN6: 14, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattCycDchaCntrDurgConvceRaw_CEM_LIN6: 14, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattCycDchaCntrDurgDrvgRaw_CEM_LIN6: 14, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattCycDchaCntrDurgQuiscPhaRaw_CEM_LIN6: 14, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattIQuiscAvgRaw_CEM_LIN6: 9, 511, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattIQuiscFildLongRaw_CEM_LIN6: 9, 511, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattIQuiscFildShoRaw_CEM_LIN6: 9, 511, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattIRaw_CEM_LIN6: 16, 32768, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattRAtTNomRaw_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattRRaw_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattSftySigChks_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattSftySigCntr_CEM_LIN6: 4, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattSftySigSysSaftyBattI_CEM_LIN6: 16, 32768, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattSftySigSysSaftyBattU_CEM_LIN6: 9, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattSnsrCalcnNotVldRaw_CEM_LIN6: 1, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattSnsrHwFltRaw_CEM_LIN6: 1, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattSnsrRstReq_CEM_LIN6: 1, 0, BGM_CEM_LIN6, BMS_CEM_LIN6 ;
+  BattSnsrStReq_CEM_LIN6: 2, 0, BGM_CEM_LIN6, BMS_CEM_LIN6 ;
+  BattSocRaw_CEM_LIN6: 10, 901, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattTiInSrvRaw_CEM_LIN6: 12, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattTRaw_CEM_LIN6: 9, 256, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattTyp_CEM_LIN6: 5, 0, BGM_CEM_LIN6, BMS_CEM_LIN6 ;
+  BattUMinAvgDurgCrkRaw_CEM_LIN6: 6, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  BattURaw_CEM_LIN6: 9, 350, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  CalforAWMPosn_CEM_LIN6: 2, 0, BGM_CEM_LIN6, AWM_CEM_LIN6 ;
+  CalStsAWM_CEM_LIN6: 2, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  EgyMeas_CEM_LIN6: 13, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  EgyMeasIntlIntl1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  EgyMeasIntlIntl2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  EgyMeasIntlIntl3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  EgyMeasIntlIntl4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  EgyMeasRst_CEM_LIN6: 1, 0, BGM_CEM_LIN6, BMS_CEM_LIN6 ;
+  EgyMeasSec_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  EgyMeasSecRst_CEM_LIN6: 1, 0, BGM_CEM_LIN6, BMS_CEM_LIN6 ;
+  NrSerlBMSNr1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  NrSerlBMSNr2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  NrSerlBMSNr3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  NrSerlBMSNr4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplBMSEndSgn1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplBMSEndSgn2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplBMSEndSgn3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplBMSNr1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplBMSNr2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplBMSNr3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplBMSNr4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplBMSNr5_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplDiagBMSEndSgn1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplDiagBMSEndSgn2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplDiagBMSEndSgn3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplDiagBMSNr1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplDiagBMSNr2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplDiagBMSNr3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplDiagBMSNr4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10ApplDiagBMSNr5_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10BMSEndSgn1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10BMSEndSgn2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10BMSEndSgn3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10BMSNr1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10BMSNr2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10BMSNr3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10BMSNr4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10BMSNr5_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10HwBMSEndSgn1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10HwBMSEndSgn2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10HwBMSEndSgn3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10HwBMSNr1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10HwBMSNr2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10HwBMSNr3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10HwBMSNr4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNo10HwBMSNr5_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplBMSEndSgn1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplBMSEndSgn2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplBMSEndSgn3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplBMSNr1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplBMSNr2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplBMSNr3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplBMSNr4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplDiagBMSEndSgn1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplDiagBMSEndSgn2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplDiagBMSEndSgn3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplDiagBMSNr1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplDiagBMSNr2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplDiagBMSNr3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoApplDiagBMSNr4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoBMSEndSgn1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoBMSEndSgn2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoBMSEndSgn3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoBMSNr1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoBMSNr2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoBMSNr3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoBMSNr4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoHwBMSEndSgn1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoHwBMSEndSgn2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoHwBMSEndSgn3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoHwBMSNr1_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoHwBMSNr2_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoHwBMSNr3_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  PartNoHwBMSNr4_CEM_LIN6: 8, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+  VehSpdLgtA_CEM_LIN6: 15, 0, BGM_CEM_LIN6, AWM_CEM_LIN6 ;
+  VehSpdLgtChks_CEM_LIN6: 8, 0, BGM_CEM_LIN6, AWM_CEM_LIN6 ;
+  VehSpdLgtCntr_CEM_LIN6: 4, 0, BGM_CEM_LIN6, AWM_CEM_LIN6 ;
+  VehSpdLgtQf_CEM_LIN6: 2, 1, BGM_CEM_LIN6, AWM_CEM_LIN6 ;
+  ErrRespAWM_CEM_LIN6: 1, 0, AWM_CEM_LIN6, BGM_CEM_LIN6 ;
+  ErrRespBMS_CEM_LIN6: 1, 0, BMS_CEM_LIN6, BGM_CEM_LIN6 ;
+}
+
+Diagnostic_signals {
+  MasterReqB0: 8, 0 ;
+  MasterReqB1: 8, 0 ;
+  MasterReqB2: 8, 0 ;
+  MasterReqB3: 8, 0 ;
+  MasterReqB4: 8, 0 ;
+  MasterReqB5: 8, 0 ;
+  MasterReqB6: 8, 0 ;
+  MasterReqB7: 8, 0 ;
+  SlaveRespB0: 8, 0 ;
+  SlaveRespB1: 8, 0 ;
+  SlaveRespB2: 8, 0 ;
+  SlaveRespB3: 8, 0 ;
+  SlaveRespB4: 8, 0 ;
+  SlaveRespB5: 8, 0 ;
+  SlaveRespB6: 8, 0 ;
+  SlaveRespB7: 8, 0 ;
+}
+
+
+
+Frames {
+  AwmCem_Lin6Fr01_CEM_LIN6: 32, AWM_CEM_LIN6, 8 {
+    ActvReSplrHallSnsrFltHallAFlt_CEM_LIN6, 0 ;
+    ActvReSplrHallSnsrFltHallBFlt_CEM_LIN6, 1 ;
+    ActvReSplrHallSnsrFltHallOutpFlt_CEM_LIN6, 2 ;
+    ActvReSplrIceBreakFaild_CEM_LIN6, 3 ;
+    ActvReSplrIntFltActrFlt1_CEM_LIN6, 40 ;
+    ActvReSplrIntFltActrFlt2_CEM_LIN6, 41 ;
+    ActvReSplrIntFltActrFlt3_CEM_LIN6, 42 ;
+    ActvReSplrIntFltActrFlt4_CEM_LIN6, 43 ;
+    ActvReSplrIntFltActrFlt5_CEM_LIN6, 44 ;
+    ActvReSplrIntFltTmrFlt_CEM_LIN6, 45 ;
+    ActvReSplrMotBlk_CEM_LIN6, 46 ;
+    ActvReSplrPosn_CEM_LIN6, 48 ;
+    ActvReSplrUFltHiVoltDetdFlt_CEM_LIN6, 51 ;
+    ActvReSplrUFltLoVoltDetdFlt_CEM_LIN6, 52 ;
+    AWMSerNoNr1_CEM_LIN6, 8 ;
+    AWMSerNoNr2_CEM_LIN6, 16 ;
+    AWMSerNoNr3_CEM_LIN6, 24 ;
+    AWMSerNoNr4_CEM_LIN6, 32 ;
+    CalStsAWM_CEM_LIN6, 53 ;
+    ErrRespAWM_CEM_LIN6, 7 ;
+  }
+  AwmCem_Lin6Fr02_CEM_LIN6: 33, AWM_CEM_LIN6, 8 {
+    AWMPartNo10CmplEndSgn1_CEM_LIN6, 0 ;
+    AWMPartNo10CmplEndSgn2_CEM_LIN6, 8 ;
+    AWMPartNo10CmplEndSgn3_CEM_LIN6, 16 ;
+    AWMPartNo10CmplNr1_CEM_LIN6, 24 ;
+    AWMPartNo10CmplNr2_CEM_LIN6, 32 ;
+    AWMPartNo10CmplNr3_CEM_LIN6, 40 ;
+    AWMPartNo10CmplNr4_CEM_LIN6, 48 ;
+    AWMPartNo10CmplNr5_CEM_LIN6, 56 ;
+  }
+  BgmCem_Lin6Fr01_CEM_LIN6: 36, BGM_CEM_LIN6, 8 {
+    ActvReSplrPosnCmd_CEM_LIN6, 13 ;
+    AmbTRawAtPassSideAmbTVal_CEM_LIN6, 0 ;
+    AmbTRawAtPassSideQly_CEM_LIN6, 11 ;
+    CalforAWMPosn_CEM_LIN6, 16 ;
+    VehSpdLgtA_CEM_LIN6, 40 ;
+    VehSpdLgtChks_CEM_LIN6, 24 ;
+    VehSpdLgtCntr_CEM_LIN6, 36 ;
+    VehSpdLgtQf_CEM_LIN6, 32 ;
+  }
+  BmsCem_Lin6Fr01_CEM_LIN6: 2, BMS_CEM_LIN6, 8 {
+    BattIRaw_CEM_LIN6, 0 ;
+    BattSftySigChks_CEM_LIN6, 48 ;
+    BattSftySigCntr_CEM_LIN6, 56 ;
+    BattSftySigSysSaftyBattI_CEM_LIN6, 32 ;
+    BattSftySigSysSaftyBattU_CEM_LIN6, 23 ;
+    BattUMinAvgDurgCrkRaw_CEM_LIN6, 16 ;
+    ErrRespBMS_CEM_LIN6, 22 ;
+  }
+  BmsCem_Lin6Fr02_CEM_LIN6: 3, BMS_CEM_LIN6, 8 {
+    BattCycChrgCntrRaw_CEM_LIN6, 0 ;
+    BattCycDchaCntrDurgConvceRaw_CEM_LIN6, 16 ;
+    BattCycDchaCntrDurgDrvgRaw_CEM_LIN6, 32 ;
+    BattCycDchaCntrDurgQuiscPhaRaw_CEM_LIN6, 48 ;
+  }
+  BmsCem_Lin6Fr03_CEM_LIN6: 4, BMS_CEM_LIN6, 7 {
+    BattCpEstimdAtTNomRaw_CEM_LIN6, 33 ;
+    BattCpEstimdRaw_CEM_LIN6, 49 ;
+    BattIQuiscAvgRaw_CEM_LIN6, 24 ;
+    BattIQuiscFildLongRaw_CEM_LIN6, 40 ;
+    BattSnsrHwFltRaw_CEM_LIN6, 12 ;
+    BattTiInSrvRaw_CEM_LIN6, 0 ;
+    BattTRaw_CEM_LIN6, 15 ;
+  }
+  BmsCem_Lin6Fr04_CEM_LIN6: 9, BMS_CEM_LIN6, 7 {
+    BattChrgnBalDurgDrvgRaw_CEM_LIN6, 0 ;
+    BattCircOpenU_CEM_LIN6, 27 ;
+    BattIQuiscFildShoRaw_CEM_LIN6, 16 ;
+    BattRAtTNomRaw_CEM_LIN6, 40 ;
+    BattRRaw_CEM_LIN6, 32 ;
+    BattSnsrCalcnNotVldRaw_CEM_LIN6, 25 ;
+  }
+  BmsCem_Lin6Fr05_CEM_LIN6: 6, BMS_CEM_LIN6, 7 {
+    BattSocRaw_CEM_LIN6, 0 ;
+    BattURaw_CEM_LIN6, 15 ;
+  }
+  BmsCem_Lin6Fr06_CEM_LIN6: 40, BMS_CEM_LIN6, 7 {
+    EgyMeas_CEM_LIN6, 0 ;
+    EgyMeasIntlIntl1_CEM_LIN6, 16 ;
+    EgyMeasIntlIntl2_CEM_LIN6, 24 ;
+    EgyMeasIntlIntl3_CEM_LIN6, 32 ;
+    EgyMeasIntlIntl4_CEM_LIN6, 40 ;
+    EgyMeasSec_CEM_LIN6, 48 ;
+  }
+  BmsCem_Lin6PartNrFr01_CEM_LIN6: 34, BMS_CEM_LIN6, 7 {
+    PartNoBMSEndSgn1_CEM_LIN6, 32 ;
+    PartNoBMSEndSgn2_CEM_LIN6, 40 ;
+    PartNoBMSEndSgn3_CEM_LIN6, 48 ;
+    PartNoBMSNr1_CEM_LIN6, 0 ;
+    PartNoBMSNr2_CEM_LIN6, 8 ;
+    PartNoBMSNr3_CEM_LIN6, 16 ;
+    PartNoBMSNr4_CEM_LIN6, 24 ;
+  }
+  BmsCem_Lin6PartNrFr02_CEM_LIN6: 14, BMS_CEM_LIN6, 7 {
+    PartNoApplBMSEndSgn1_CEM_LIN6, 0 ;
+    PartNoApplBMSEndSgn2_CEM_LIN6, 8 ;
+    PartNoApplBMSEndSgn3_CEM_LIN6, 16 ;
+    PartNoApplBMSNr1_CEM_LIN6, 24 ;
+    PartNoApplBMSNr2_CEM_LIN6, 32 ;
+    PartNoApplBMSNr3_CEM_LIN6, 40 ;
+    PartNoApplBMSNr4_CEM_LIN6, 48 ;
+  }
+  BmsCem_Lin6PartNrFr03_CEM_LIN6: 10, BMS_CEM_LIN6, 7 {
+    PartNoApplDiagBMSEndSgn1_CEM_LIN6, 0 ;
+    PartNoApplDiagBMSEndSgn2_CEM_LIN6, 8 ;
+    PartNoApplDiagBMSEndSgn3_CEM_LIN6, 16 ;
+    PartNoApplDiagBMSNr1_CEM_LIN6, 24 ;
+    PartNoApplDiagBMSNr2_CEM_LIN6, 32 ;
+    PartNoApplDiagBMSNr3_CEM_LIN6, 40 ;
+    PartNoApplDiagBMSNr4_CEM_LIN6, 48 ;
+  }
+  BmsCem_Lin6PartNrFr04_CEM_LIN6: 15, BMS_CEM_LIN6, 7 {
+    PartNoHwBMSEndSgn1_CEM_LIN6, 0 ;
+    PartNoHwBMSEndSgn2_CEM_LIN6, 8 ;
+    PartNoHwBMSEndSgn3_CEM_LIN6, 16 ;
+    PartNoHwBMSNr1_CEM_LIN6, 24 ;
+    PartNoHwBMSNr2_CEM_LIN6, 32 ;
+    PartNoHwBMSNr3_CEM_LIN6, 40 ;
+    PartNoHwBMSNr4_CEM_LIN6, 48 ;
+  }
+  BmsCem_Lin6PartNrFr05_CEM_LIN6: 5, BMS_CEM_LIN6, 8 {
+    PartNo10ApplBMSEndSgn1_CEM_LIN6, 40 ;
+    PartNo10ApplBMSEndSgn2_CEM_LIN6, 48 ;
+    PartNo10ApplBMSEndSgn3_CEM_LIN6, 56 ;
+    PartNo10ApplBMSNr1_CEM_LIN6, 0 ;
+    PartNo10ApplBMSNr2_CEM_LIN6, 8 ;
+    PartNo10ApplBMSNr3_CEM_LIN6, 16 ;
+    PartNo10ApplBMSNr4_CEM_LIN6, 24 ;
+    PartNo10ApplBMSNr5_CEM_LIN6, 32 ;
+  }
+  BmsCem_Lin6PartNrFr06_CEM_LIN6: 12, BMS_CEM_LIN6, 8 {
+    PartNo10ApplDiagBMSEndSgn1_CEM_LIN6, 40 ;
+    PartNo10ApplDiagBMSEndSgn2_CEM_LIN6, 48 ;
+    PartNo10ApplDiagBMSEndSgn3_CEM_LIN6, 56 ;
+    PartNo10ApplDiagBMSNr1_CEM_LIN6, 0 ;
+    PartNo10ApplDiagBMSNr2_CEM_LIN6, 8 ;
+    PartNo10ApplDiagBMSNr3_CEM_LIN6, 16 ;
+    PartNo10ApplDiagBMSNr4_CEM_LIN6, 24 ;
+    PartNo10ApplDiagBMSNr5_CEM_LIN6, 32 ;
+  }
+  BmsCem_Lin6PartNrFr07_CEM_LIN6: 17, BMS_CEM_LIN6, 8 {
+    PartNo10BMSEndSgn1_CEM_LIN6, 40 ;
+    PartNo10BMSEndSgn2_CEM_LIN6, 48 ;
+    PartNo10BMSEndSgn3_CEM_LIN6, 56 ;
+    PartNo10BMSNr1_CEM_LIN6, 0 ;
+    PartNo10BMSNr2_CEM_LIN6, 8 ;
+    PartNo10BMSNr3_CEM_LIN6, 16 ;
+    PartNo10BMSNr4_CEM_LIN6, 24 ;
+    PartNo10BMSNr5_CEM_LIN6, 32 ;
+  }
+  BmsCem_Lin6PartNrFr08_CEM_LIN6: 21, BMS_CEM_LIN6, 8 {
+    PartNo10HwBMSEndSgn1_CEM_LIN6, 40 ;
+    PartNo10HwBMSEndSgn2_CEM_LIN6, 48 ;
+    PartNo10HwBMSEndSgn3_CEM_LIN6, 56 ;
+    PartNo10HwBMSNr1_CEM_LIN6, 0 ;
+    PartNo10HwBMSNr2_CEM_LIN6, 8 ;
+    PartNo10HwBMSNr3_CEM_LIN6, 16 ;
+    PartNo10HwBMSNr4_CEM_LIN6, 24 ;
+    PartNo10HwBMSNr5_CEM_LIN6, 32 ;
+  }
+  BmsCem_Lin6SerNrFr01_CEM_LIN6: 35, BMS_CEM_LIN6, 4 {
+    NrSerlBMSNr1_CEM_LIN6, 0 ;
+    NrSerlBMSNr2_CEM_LIN6, 8 ;
+    NrSerlBMSNr3_CEM_LIN6, 16 ;
+    NrSerlBMSNr4_CEM_LIN6, 24 ;
+  }
+  CemCem_Lin6Fr02_CEM_LIN6: 13, BGM_CEM_LIN6, 5 {
+    BattSnsrRstReq_CEM_LIN6, 1 ;
+    BattSnsrStReq_CEM_LIN6, 2 ;
+    BattTyp_CEM_LIN6, 11 ;
+    EgyMeasRst_CEM_LIN6, 28 ;
+    EgyMeasSecRst_CEM_LIN6, 29 ;
+  }
+}
+
+
+
+Diagnostic_frames {
+  MasterReq: 0x3c {
+    MasterReqB0, 0 ;
+    MasterReqB1, 8 ;
+    MasterReqB2, 16 ;
+    MasterReqB3, 24 ;
+    MasterReqB4, 32 ;
+    MasterReqB5, 40 ;
+    MasterReqB6, 48 ;
+    MasterReqB7, 56 ;
+  }
+  SlaveResp: 0x3d {
+    SlaveRespB0, 0 ;
+    SlaveRespB1, 8 ;
+    SlaveRespB2, 16 ;
+    SlaveRespB3, 24 ;
+    SlaveRespB4, 32 ;
+    SlaveRespB5, 40 ;
+    SlaveRespB6, 48 ;
+    SlaveRespB7, 56 ;
+  }
+}
+
+Node_attributes {
+  AWM_CEM_LIN6{
+    LIN_protocol = "2.1" ;
+    configured_NAD = 0x10 ;
+    initial_NAD = 0x10 ;
+    product_id = 0x7, 0x0, 0 ;
+    response_error = ErrRespAWM_CEM_LIN6 ;
+    P2_min = 50 ms ;
+    ST_min = 0 ms ;
+    N_As_timeout = 1000 ms ;
+    N_Cr_timeout = 1000 ms ;
+    configurable_frames {
+      BgmCem_Lin6Fr01_CEM_LIN6 ;
+      AwmCem_Lin6Fr01_CEM_LIN6 ;
+      AwmCem_Lin6Fr02_CEM_LIN6 ;
+    }
+  }
+  BMS_CEM_LIN6{
+    LIN_protocol = "2.1" ;
+    configured_NAD = 0x61 ;
+    initial_NAD = 0x61 ;
+    product_id = 0x7, 0x0, 0 ;
+    response_error = ErrRespBMS_CEM_LIN6 ;
+    P2_min = 50 ms ;
+    ST_min = 0 ms ;
+    N_As_timeout = 1000 ms ;
+    N_Cr_timeout = 1000 ms ;
+    configurable_frames {
+      BmsCem_Lin6Fr04_CEM_LIN6 ;
+      BmsCem_Lin6Fr03_CEM_LIN6 ;
+      BmsCem_Lin6Fr02_CEM_LIN6 ;
+      BmsCem_Lin6Fr01_CEM_LIN6 ;
+      BmsCem_Lin6Fr05_CEM_LIN6 ;
+      BmsCem_Lin6Fr06_CEM_LIN6 ;
+      BmsCem_Lin6SerNrFr01_CEM_LIN6 ;
+      BmsCem_Lin6PartNrFr05_CEM_LIN6 ;
+      BmsCem_Lin6PartNrFr06_CEM_LIN6 ;
+      BmsCem_Lin6PartNrFr07_CEM_LIN6 ;
+      BmsCem_Lin6PartNrFr08_CEM_LIN6 ;
+      BmsCem_Lin6PartNrFr02_CEM_LIN6 ;
+      BmsCem_Lin6PartNrFr03_CEM_LIN6 ;
+      BmsCem_Lin6PartNrFr01_CEM_LIN6 ;
+      BmsCem_Lin6PartNrFr04_CEM_LIN6 ;
+      CemCem_Lin6Fr02_CEM_LIN6 ;
+    }
+  }
+}
+
+Schedule_tables {
+ Cem_Lin6_DiagRequestSchedule01_CEM_LIN6 {
+    MasterReq delay 15 ms ;
+  }
+ Cem_Lin6_DiagResponseSchedule01_CEM_LIN6 {
+    SlaveResp delay 15 ms ;
+  }
+ Cem_Lin6Schedule01_CEM_LIN6_CEM_LIN6 {
+    AwmCem_Lin6Fr01_CEM_LIN6 delay 15 ms ;
+    BgmCem_Lin6Fr01_CEM_LIN6 delay 15 ms ;
+    BmsCem_Lin6Fr06_CEM_LIN6 delay 10 ms ;
+    BmsCem_Lin6Fr02_CEM_LIN6 delay 15 ms ;
+    BmsCem_Lin6Fr01_CEM_LIN6 delay 15 ms ;
+    BmsCem_Lin6Fr03_CEM_LIN6 delay 10 ms ;
+    BmsCem_Lin6Fr04_CEM_LIN6 delay 10 ms ;
+    BmsCem_Lin6Fr05_CEM_LIN6 delay 10 ms ;
+    BmsCem_Lin6Fr01_CEM_LIN6 delay 15 ms ;
+    CemCem_Lin6Fr02_CEM_LIN6 delay 15 ms ;
+    BmsCem_Lin6Fr05_CEM_LIN6 delay 10 ms ;
+  }
+ Cem_Lin6ScheduleSerNrPartNr_CEM_LIN6_CEM_LIN6 {
+    AwmCem_Lin6Fr02_CEM_LIN6 delay 15 ms ;
+    BmsCem_Lin6PartNrFr01_CEM_LIN6 delay 10 ms ;
+    BmsCem_Lin6SerNrFr01_CEM_LIN6 delay 10 ms ;
+    BmsCem_Lin6PartNrFr03_CEM_LIN6 delay 10 ms ;
+    BmsCem_Lin6PartNrFr02_CEM_LIN6 delay 10 ms ;
+    BmsCem_Lin6PartNrFr04_CEM_LIN6 delay 10 ms ;
+    BmsCem_Lin6PartNrFr05_CEM_LIN6 delay 15 ms ;
+    BmsCem_Lin6PartNrFr06_CEM_LIN6 delay 15 ms ;
+    BmsCem_Lin6PartNrFr07_CEM_LIN6 delay 15 ms ;
+    BmsCem_Lin6PartNrFr08_CEM_LIN6 delay 15 ms ;
+  }
+}
+
+
+Signal_encoding_types {
+  ActvSplrCmd_CEM_LIN6 {
+    logical_value, 0, "ActvSplrCmd_NoCmd" ;
+    logical_value, 1, "ActvSplrCmd_P0" ;
+    logical_value, 2, "ActvSplrCmd_P1" ;
+    logical_value, 3, "ActvSplrCmd_P2" ;
+    logical_value, 4, "ActvSplrCmd_P3" ;
+    logical_value, 5, "ActvSplrCmd_Reserved1" ;
+    logical_value, 6, "ActvSplrCmd_Reserved2" ;
+    logical_value, 7, "ActvSplrCmd_Reserved3" ;
+  }
+  ActvSplr_CEM_LIN6 {
+    logical_value, 0, "ActvSplr_Ukwn" ;
+    logical_value, 1, "ActvSplr_P0" ;
+    logical_value, 2, "ActvSplr_P1" ;
+    logical_value, 3, "ActvSplr_P2" ;
+    logical_value, 4, "ActvSplr_P3" ;
+    logical_value, 5, "ActvSplr_Shifting" ;
+    logical_value, 6, "ActvSplr_Reserved" ;
+    logical_value, 7, "Error" ;
+  }
+  AmbT_CEM_LIN6 {
+    physical_value, 0, 2047, 0.1, -70, "degC" ;
+  }
+  BattChrgnBalDurgDrvg_CEM_LIN6 {
+    physical_value, 0, 40000, 0.005, -100, "Ah" ;
+  }
+  BattCircOpenU_CEM_LIN6 {
+    physical_value, 0, 31, 0.25, 6, "Volt" ;
+  }
+  BattCpEstimd_CEM_LIN6 {
+    physical_value, 0, 100, 1, 0, "Ah" ;
+  }
+  BattCycCntr2_CEM_LIN6 {
+    physical_value, 0, 16320, 0.015625, 0, "Cn" ;
+  }
+  BattCycCntr_CEM_LIN6 {
+    physical_value, 0, 16000, 0.05, 0, "Cn" ;
+  }
+  BattIQuisc1_CEM_LIN6 {
+    physical_value, 0, 511, 1, -511, "mA" ;
+  }
+  BattIQuiscAvg_CEM_LIN6 {
+    physical_value, 11, 511, 5, -2555, "mA" ;
+  }
+  BattI_CEM_LIN6 {
+    physical_value, 0, 65535, 0.015625, -512, "A" ;
+  }
+  BattR_CEM_LIN6 {
+    physical_value, 0, 250, 0.1, 0, "mOhm" ;
+  }
+  BattSnsrSt_CEM_LIN6 {
+    logical_value, 0, "BattSnsrSt_Off" ;
+    logical_value, 1, "BattSnsrSt_Accessory" ;
+    logical_value, 2, "BattSnsrSt_IgnistionONOrDriving" ;
+    logical_value, 3, "BattSnsrSt_Cranking" ;
+  }
+  BattSoc_CEM_LIN6 {
+    physical_value, 0, 1000, 0.1, 0, "%" ;
+  }
+  BattTRaw_CEM_LIN6 {
+    physical_value, 116, 506, 0.5, -128, "degC" ;
+  }
+  BattTiInSrv_CEM_LIN6 {
+    physical_value, 0, 4095, 1, 0, "Days" ;
+  }
+  BattUMinDurgCrkCold_CEM_LIN6 {
+    physical_value, 0, 60, 0.2, 0, "Volt" ;
+  }
+  BattU_CEM_LIN6 {
+    physical_value, 0, 511, 0.025, 5, "Volt" ;
+  }
+  Boolean_CEM_LIN6 {
+    logical_value, 0, "Boolean_FALSE" ;
+    logical_value, 1, "Boolean_TRUE" ;
+  }
+  CalStsAWM_CEM_LIN6 {
+    logical_value, 0, "CalStsAWM_Nocal" ;
+    logical_value, 1, "CalStsAWM_Calg" ;
+    logical_value, 2, "CalStsAWM_Cald" ;
+    logical_value, 3, "CalStsAWM_CalErr" ;
+  }
+  CalforAWMPosn_CEM_LIN6 {
+    logical_value, 0, "CalForAWMPosn_NoCmd" ;
+    logical_value, 1, "CalForAWMPosn_ClrCmd" ;
+    logical_value, 2, "CalForAWMPosn_LrngCmd" ;
+    logical_value, 3, "CalForAWMPosn_ReqCmd" ;
+  }
+  DevErrSts2_CEM_LIN6 {
+    logical_value, 0, "DevErrSts2_NoFlt" ;
+    logical_value, 1, "DevErrSts2_Flt" ;
+  }
+  EgyMeasSec_CEM_LIN6 {
+    physical_value, 0, 255, 0.5, 0, "Ah" ;
+  }
+  EgyMeas_CEM_LIN6 {
+    physical_value, 0, 8191, 0.01, 0, "Ah" ;
+  }
+  Flt_CEM_LIN6 {
+    logical_value, 0, "Flt_NoFault" ;
+    logical_value, 1, "Flt_Fault" ;
+  }
+  GenQf1_CEM_LIN6 {
+    logical_value, 0, "GenQf1_UndefindDataAccur" ;
+    logical_value, 1, "GenQf1_TmpUndefdData" ;
+    logical_value, 2, "GenQf1_DataAccurNotWithinSpcn" ;
+    logical_value, 3, "GenQf1_AccurData" ;
+  }
+  NoYes1_CEM_LIN6 {
+    logical_value, 0, "NoYes1_No" ;
+    logical_value, 1, "NoYes1_Yes" ;
+  }
+  ReqSts1_CEM_LIN6 {
+    logical_value, 0, "ReqSts1_NotReqd" ;
+    logical_value, 1, "ReqSts1_Reqd" ;
+  }
+  Spd1_CEM_LIN6 {
+    physical_value, 0, 31970, 0.00391, 0, "m/s" ;
+  }
+  UInt4_CEM_LIN6 {
+    physical_value, 0, 15, 1, 0, "Unitless" ;
+  }
+  UInt8_CEM_LIN6 {
+    physical_value, 0, 255, 1, 0, "Unitless" ;
+  }
+  Uint5_CEM_LIN6 {
+    physical_value, 0, 31, 1, 0, "Unitless" ;
+  }
+}
+
+Signal_representation {
+  ActvSplrCmd_CEM_LIN6: ActvReSplrPosnCmd_CEM_LIN6 ;
+  ActvSplr_CEM_LIN6: ActvReSplrPosn_CEM_LIN6 ;
+  AmbT_CEM_LIN6: AmbTRawAtPassSideAmbTVal_CEM_LIN6 ;
+  BattChrgnBalDurgDrvg_CEM_LIN6: BattChrgnBalDurgDrvgRaw_CEM_LIN6 ;
+  BattCircOpenU_CEM_LIN6: BattCircOpenU_CEM_LIN6 ;
+  BattCpEstimd_CEM_LIN6: BattCpEstimdAtTNomRaw_CEM_LIN6, BattCpEstimdRaw_CEM_LIN6 ;
+  BattCycCntr2_CEM_LIN6: BattCycDchaCntrDurgQuiscPhaRaw_CEM_LIN6 ;
+  BattCycCntr_CEM_LIN6: BattCycChrgCntrRaw_CEM_LIN6, BattCycDchaCntrDurgConvceRaw_CEM_LIN6, BattCycDchaCntrDurgDrvgRaw_CEM_LIN6 ;
+  BattIQuisc1_CEM_LIN6: BattIQuiscFildLongRaw_CEM_LIN6, BattIQuiscFildShoRaw_CEM_LIN6 ;
+  BattIQuiscAvg_CEM_LIN6: BattIQuiscAvgRaw_CEM_LIN6 ;
+  BattI_CEM_LIN6: BattIRaw_CEM_LIN6, BattSftySigSysSaftyBattI_CEM_LIN6 ;
+  BattR_CEM_LIN6: BattRAtTNomRaw_CEM_LIN6, BattRRaw_CEM_LIN6 ;
+  BattSnsrSt_CEM_LIN6: BattSnsrStReq_CEM_LIN6 ;
+  BattSoc_CEM_LIN6: BattSocRaw_CEM_LIN6 ;
+  BattTRaw_CEM_LIN6: BattTRaw_CEM_LIN6 ;
+  BattTiInSrv_CEM_LIN6: BattTiInSrvRaw_CEM_LIN6 ;
+  BattUMinDurgCrkCold_CEM_LIN6: BattUMinAvgDurgCrkRaw_CEM_LIN6 ;
+  BattU_CEM_LIN6: BattSftySigSysSaftyBattU_CEM_LIN6, BattURaw_CEM_LIN6 ;
+  Boolean_CEM_LIN6: EgyMeasRst_CEM_LIN6, EgyMeasSecRst_CEM_LIN6 ;
+  CalStsAWM_CEM_LIN6: CalStsAWM_CEM_LIN6 ;
+  CalforAWMPosn_CEM_LIN6: CalforAWMPosn_CEM_LIN6 ;
+  DevErrSts2_CEM_LIN6: BattSnsrCalcnNotVldRaw_CEM_LIN6, BattSnsrHwFltRaw_CEM_LIN6 ;
+  EgyMeasSec_CEM_LIN6: EgyMeasSec_CEM_LIN6 ;
+  EgyMeas_CEM_LIN6: EgyMeas_CEM_LIN6 ;
+  Flt_CEM_LIN6: ActvReSplrHallSnsrFltHallAFlt_CEM_LIN6, ActvReSplrHallSnsrFltHallBFlt_CEM_LIN6, ActvReSplrHallSnsrFltHallOutpFlt_CEM_LIN6, ActvReSplrIntFltActrFlt1_CEM_LIN6, ActvReSplrIntFltActrFlt2_CEM_LIN6, ActvReSplrIntFltActrFlt3_CEM_LIN6, ActvReSplrIntFltActrFlt4_CEM_LIN6, ActvReSplrIntFltActrFlt5_CEM_LIN6, ActvReSplrIntFltTmrFlt_CEM_LIN6, ActvReSplrUFltHiVoltDetdFlt_CEM_LIN6, ActvReSplrUFltLoVoltDetdFlt_CEM_LIN6 ;
+  GenQf1_CEM_LIN6: AmbTRawAtPassSideQly_CEM_LIN6, VehSpdLgtQf_CEM_LIN6 ;
+  NoYes1_CEM_LIN6: ActvReSplrIceBreakFaild_CEM_LIN6, ActvReSplrMotBlk_CEM_LIN6 ;
+  ReqSts1_CEM_LIN6: BattSnsrRstReq_CEM_LIN6 ;
+  Spd1_CEM_LIN6: VehSpdLgtA_CEM_LIN6 ;
+  UInt4_CEM_LIN6: BattSftySigCntr_CEM_LIN6, VehSpdLgtCntr_CEM_LIN6 ;
+  UInt8_CEM_LIN6: AWMPartNo10CmplEndSgn1_CEM_LIN6, AWMPartNo10CmplEndSgn2_CEM_LIN6, AWMPartNo10CmplEndSgn3_CEM_LIN6, AWMPartNo10CmplNr1_CEM_LIN6, AWMPartNo10CmplNr2_CEM_LIN6, AWMPartNo10CmplNr3_CEM_LIN6, AWMPartNo10CmplNr4_CEM_LIN6, AWMPartNo10CmplNr5_CEM_LIN6, AWMSerNoNr1_CEM_LIN6, AWMSerNoNr2_CEM_LIN6, AWMSerNoNr3_CEM_LIN6, AWMSerNoNr4_CEM_LIN6, BattSftySigChks_CEM_LIN6, EgyMeasIntlIntl1_CEM_LIN6, EgyMeasIntlIntl2_CEM_LIN6, EgyMeasIntlIntl3_CEM_LIN6, EgyMeasIntlIntl4_CEM_LIN6, NrSerlBMSNr1_CEM_LIN6, NrSerlBMSNr2_CEM_LIN6, NrSerlBMSNr3_CEM_LIN6, NrSerlBMSNr4_CEM_LIN6, PartNo10ApplBMSEndSgn1_CEM_LIN6, PartNo10ApplBMSEndSgn2_CEM_LIN6, PartNo10ApplBMSEndSgn3_CEM_LIN6, PartNo10ApplBMSNr1_CEM_LIN6, PartNo10ApplBMSNr2_CEM_LIN6, PartNo10ApplBMSNr3_CEM_LIN6, PartNo10ApplBMSNr4_CEM_LIN6, PartNo10ApplBMSNr5_CEM_LIN6, PartNo10ApplDiagBMSEndSgn1_CEM_LIN6, PartNo10ApplDiagBMSEndSgn2_CEM_LIN6, PartNo10ApplDiagBMSEndSgn3_CEM_LIN6, PartNo10ApplDiagBMSNr1_CEM_LIN6, PartNo10ApplDiagBMSNr2_CEM_LIN6, PartNo10ApplDiagBMSNr3_CEM_LIN6, PartNo10ApplDiagBMSNr4_CEM_LIN6, PartNo10ApplDiagBMSNr5_CEM_LIN6, PartNo10BMSEndSgn1_CEM_LIN6, PartNo10BMSEndSgn2_CEM_LIN6, PartNo10BMSEndSgn3_CEM_LIN6, PartNo10BMSNr1_CEM_LIN6, PartNo10BMSNr2_CEM_LIN6, PartNo10BMSNr3_CEM_LIN6, PartNo10BMSNr4_CEM_LIN6, PartNo10BMSNr5_CEM_LIN6, PartNo10HwBMSEndSgn1_CEM_LIN6, PartNo10HwBMSEndSgn2_CEM_LIN6, PartNo10HwBMSEndSgn3_CEM_LIN6, PartNo10HwBMSNr1_CEM_LIN6, PartNo10HwBMSNr2_CEM_LIN6, PartNo10HwBMSNr3_CEM_LIN6, PartNo10HwBMSNr4_CEM_LIN6, PartNo10HwBMSNr5_CEM_LIN6, PartNoApplBMSEndSgn1_CEM_LIN6, PartNoApplBMSEndSgn2_CEM_LIN6, PartNoApplBMSEndSgn3_CEM_LIN6, PartNoApplBMSNr1_CEM_LIN6, PartNoApplBMSNr2_CEM_LIN6, PartNoApplBMSNr3_CEM_LIN6, PartNoApplBMSNr4_CEM_LIN6, PartNoApplDiagBMSEndSgn1_CEM_LIN6, PartNoApplDiagBMSEndSgn2_CEM_LIN6, PartNoApplDiagBMSEndSgn3_CEM_LIN6, PartNoApplDiagBMSNr1_CEM_LIN6, PartNoApplDiagBMSNr2_CEM_LIN6, PartNoApplDiagBMSNr3_CEM_LIN6, PartNoApplDiagBMSNr4_CEM_LIN6, PartNoBMSEndSgn1_CEM_LIN6, PartNoBMSEndSgn2_CEM_LIN6, PartNoBMSEndSgn3_CEM_LIN6, PartNoBMSNr1_CEM_LIN6, PartNoBMSNr2_CEM_LIN6, PartNoBMSNr3_CEM_LIN6, PartNoBMSNr4_CEM_LIN6, PartNoHwBMSEndSgn1_CEM_LIN6, PartNoHwBMSEndSgn2_CEM_LIN6, PartNoHwBMSEndSgn3_CEM_LIN6, PartNoHwBMSNr1_CEM_LIN6, PartNoHwBMSNr2_CEM_LIN6, PartNoHwBMSNr3_CEM_LIN6, PartNoHwBMSNr4_CEM_LIN6, VehSpdLgtChks_CEM_LIN6 ;
+  Uint5_CEM_LIN6: BattTyp_CEM_LIN6 ;
+}

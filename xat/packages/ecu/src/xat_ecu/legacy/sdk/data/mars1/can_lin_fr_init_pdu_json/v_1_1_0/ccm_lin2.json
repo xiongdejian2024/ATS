@@ -1,0 +1,361 @@
+{
+    "AfuCcm_Lin2Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 2,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "AFU",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "AfuCcm_Lin2Fr02": {
+        "msg_cycle": 0.073,
+        "msg_length": 6,
+        "msg_id": 5,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "AFU",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "AfuCcm_Lin2Fr03": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 40,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "AFU",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "AfuCcm_Lin2PartNr10Fr04": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 59,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "AFU",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "AfuCcm_Lin2PartNrFr08": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 53,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "AFU",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "AfuCcm_Lin2SerNrFr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 13,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "AFU",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmCcm_Lin2Fr03": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 39,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "PMSI",
+            "ETC",
+            "AFU"
+        ],
+        "pdu_data": [
+            255,
+            15,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmCcm_Lin2Fr04": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "PMSI",
+            "AFU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            74
+        ],
+        "tx_change": true
+    },
+    "CcmCcm_Lin2Fr06": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 15,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "AFU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CcmCcm_Lin2Fr07": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 1,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "AFU"
+        ],
+        "pdu_data": [
+            88,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DiagRequest6": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 60,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DiagResponse6": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 61,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PmsiCcm_Lin1PartNrFr08": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 25,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PMSI",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PmsiCcm_Lin2Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 17,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PMSI",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PmsiCcm_Lin2PartNr10Fr04": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 20,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PMSI",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PmsiCcm_Lin2SerNrFr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 35,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PMSI",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "VbmrCcm_Lin2Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 50,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ETC",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            40,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    }
+}

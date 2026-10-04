@@ -1,0 +1,160 @@
+syntax = "proto3";
+package vehiclestatus;
+import "common.proto";
+import "block_head.proto";
+
+// 车身状态(门、窗、锁、灯光等)
+message VehicleBodyBlock {
+  BlockHead                  head         = 1; //公共头
+
+  repeated Door              doors        = 2; // 车门
+  TailGate                   tailGate     = 3; // 尾门
+  Bonnet                     bonnet       = 4; // 前引擎盖,前舱盖
+
+  repeated Window            windows      = 5; // 车窗
+  Sunroof                    sunroof      = 6; // 天窗  //1.0不上传
+
+  CentralLock                centralLock  = 7; // 中控锁
+  repeated TireInfo          tire         = 8; // 轮胎
+
+  repeated Light             light        = 9; // 灯光
+
+  repeated OuterRearView     outerRearView = 10; //后视镜
+  TailWing                   tailWing      = 11; //尾翼
+}
+//车门,前舱盖,尾门
+message Door {
+  DoorId                     id          = 1; // 门ID
+  DoorStatus                 status      = 2; // 状态信息
+  int32 	                   position    = 3 ; // 开度 0~100%
+  int32 	                   curAngle    = 4 ; // 角度 0~85 deg default=71 deg
+}
+
+// 尾门状态
+message TailGate {
+  TailGateStatus             status      = 1;
+  int32 	                   position    = 2 ; // 开度
+}
+// 前引擎盖,前舱盖
+message Bonnet {
+  BonnetStatus               status      = 1 ;
+}
+
+// 车窗状态
+message Window {
+  WindowId                    id         = 1 ; // WindowId
+  WindowStatus                status     = 2 ; // 状态 车端无法支持，不要在使用
+  int32 	                    position   = 3 ; // 开度 正常值范围0-100(0表示Closed，100表示全开)，单位%
+}
+
+//天窗
+message Sunroof {
+  int32                       transparency = 1; // 透明度百分比，默认0  0：全透明 100：全遮挡   （V1.0删除：车端未实现）
+}
+
+// 单个轮胎信息
+message TireInfo {
+  TyreId                      id            = 1; // 位置
+  float                       pressure      = 2; // 胎压
+  int32                       temperature   = 3; // 温度
+  TirePressureUnit            pressureUnit  = 4; // 胎压单位 正常1.3之前是Kpa 1.3及以后是bar
+}
+
+// 中控锁
+message CentralLock {
+  CentralLockStatus             status            = 1; //中控锁状态，true：锁  false：开
+  CentralLockTriggerSourceId    triggerSourceId   = 2; //触发锁状态的原因
+}
+
+// 灯光状态
+message Light {
+  LightType 	                type        = 1; // 该灯的种类
+  LightZoneId 	              zoneId      = 2; // 该灯的位置Id 和LightType 会转换成LightId
+  LightMode                   mode        = 3; // 模式
+}
+
+// 后视镜
+// https://soa.jidudev.com/structjet_1_1vehicle_1_1OuterRearView_1_1ViewFoldStatusInfo.html
+message OuterRearView {
+  ViewId 	                    id          = 1; // 后视镜ID
+  ViewFoldStatus 	            foldStatus  = 2; // 后视镜折叠信息
+}
+//尾翼
+//https://soa.jidudev.com/classjet_1_1vehicle_1_1TailWing.html
+message TailWing {
+  TailWingPosition            position    = 1 ; //尾翼位置
+  TailWingMode                wingMode    = 2 ; //尾翼模式
+  TailWingStatus              status      = 3 ; //尾翼状态  （V1.0新增）
+}
+//雨刷信息(包含和雨相关信息)
+//message WiperInfo {
+//}
+//后视镜状态
+enum ViewFoldStatus {
+  VfsStatusNa                           = 0 ; //状态未知 （未定义） (kStatusNa)
+  VfsStatusUnfolded                     = 1 ; //展开 (kStatusUnfolded)
+  VfsStatusFolded                       = 2 ; //折叠 (kStatusFolded)
+  VfsStatusUnfolding                    = 3 ; //正在展开 (kStatusUnfolding)
+  VfsStatusFolding                      = 4 ; //正在折叠 (kStatusFolding)
+  VfsStatusHover                        = 5 ; //悬停 (kStatusHover)
+  VfsEmpty                              = -1; // --
+}
+//尾翼位置
+enum TailWingPosition {
+  TwpTailWingPosition0	                = 0 ; //	收回 (kTailWingPosition0)
+  TwpTailWingPosition1	                = 1 ; //	展开到位置1 (kTailWingPosition1)
+  TwpTailWingPosition2	                = 2 ; //	展开到位置2 (kTailWingPosition2)
+  TwpTailWingPosition3	                = 3 ; //	展开到位置3 (kTailWingPosition3)
+  TwpTailWingPositionNA	                = 4 ; //	尾翼位置不可用 (kTailWingPositionNA)
+  TwpTailWingPositionUnknown            = 5 ; //  尾翼位置未知 (kTailWingPositionUnknow) （V1.0增加）
+  TwpEmpty                              = -1; // v2.2前版本使用
+  TwpEmpty2                             = 127; // v2.2及后版本使用
+}
+//尾翼模式
+enum TailWingMode {
+    TwmTailWingModeOff	                  = 0 ; //	关闭主动控制 (kTailWingModeOff)
+    TwmTailWingModeOn	                    = 1 ; //	使能主动控制 (kTailWingModeOn)
+    TwmTailWingModeAuto	                  = 2 ; //	自动控制 (kTailWingModeAuto)
+    TwmTailWingModeNA	                    = 3 ; //	模式未知 (kTailWingModeNA)
+    TwmEmpty                              = -1; // v2.2前版本使用
+    TwmEmpty2                             = 127; // v2.2及后版本使用
+}
+
+//尾翼状态
+enum TailWingStatus {
+  TwsTailWingStatusStopped                = 0; // 尾翼处于停止状态
+  TwsTailWingStatusShifting               = 1; // 尾翼处于运动状态
+  TwsTailWingStatusNA                     = 2; // 尾翼状态不可用
+  TwsEmpty                                = -1; // v2.2前版本使用
+  TwsEmpty2                               = 127; // v2.2及后版本使用
+}
+
+// 胎压单位 正常1.3之前是Kpa 1.3及以后是bar
+enum TirePressureUnit {
+    Kpa                                   = 0; // Kpa
+    Bar                                   = 1; // bar
+    PressureUnitEmpty                       = -1; // v2.2前版本使用
+    PressureUnitEmpty2                      = 127;// v2.2及后版本使用
+}
+
+/**
+ * 中控锁触发原因,类型定义: TriggerSourceId
+ * 内锁触发源：3、4、8、11
+ * 外锁触发源：1、2、5、7、9、10、12
+ */
+enum CentralLockTriggerSourceId	{
+  CentralLockNoTriggerSource                                  = 0 ;//Default (kNoTriggerSource)
+  CentralLockRemoteKey                                        = 1 ;//蓝牙解闭锁、车外语音解闭锁 (kRemoteKey)
+  CentralLockKeyLessPassive                                   = 2 ;//车外的按钮解锁上锁 (kKeyLessPassive)
+  CentralLockInteriorSwitches                                 = 3 ;//车内的按钮解锁、屏幕解闭锁 (kInteriorSwitches)
+  CentralLockSpeedLocking                                     = 4 ;//车速自动落锁 (kSpeedLocking)
+  CentralLockRelocking                                        = 5 ;//自动重上锁 （解锁30S后车辆状态未发生变化，自动重新上锁） (kRelocking)
+  CentralLockSlamLocking                                      = 6 ;//未使用 (kSlamLocking)
+  CentralLockTelematices                                      = 7 ;//远程解闭锁 (kTelematices)
+  CentralLockCrashUnlock                                      = 8 ;//碰撞解锁 (kCrashUnlock)
+  CentralLockApproach                                         = 9 ;//靠近解锁和离车闭锁 (kApproach)
+  CentralLockOutsideOthers                                    = 10 ;//外部的其他方式（当前对应的场景：泊车闭锁） (kOutsideOthers)
+  CentralLockInsideOthers                                     = 11 ;//内部的其他方式（当前对应的场景：热失控解锁、P挡自动解锁、维持上电模式下的外锁转内锁） (kInsideOthers)
+  CentralLockNFC                                              = 12 ;//NFC解闭锁 (kNFC)
+  CentralLockTriggerEmpty                                     = -1 ;//-- (Empty)
+}

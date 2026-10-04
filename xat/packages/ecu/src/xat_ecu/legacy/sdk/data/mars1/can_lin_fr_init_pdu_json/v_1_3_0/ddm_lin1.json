@@ -1,0 +1,146 @@
+{
+    "DdmDdm_Lin1Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 0,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [
+            "DDS"
+        ],
+        "pdu_data": [
+            0,
+            2,
+            0,
+            32,
+            8,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DdsDdm_Lin1Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 54,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDS",
+        "rx_nodes": [
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DdsDdm_Lin1PartNrFr05": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 43,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDS",
+        "rx_nodes": [
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DdsDdm_Lin1PartNrFr08": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 46,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDS",
+        "rx_nodes": [
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DdsDdm_Lin1SerNrFr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 47,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DDS",
+        "rx_nodes": [
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DiagRequest5": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 60,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DDM",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DiagResponse5": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 61,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "DDM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

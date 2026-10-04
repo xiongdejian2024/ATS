@@ -1,0 +1,314 @@
+syntax = "proto3";
+package vehiclestatus;
+import "common.proto";
+import "block_head.proto";
+
+// =====================================================================
+// 座舱状态块
+// =====================================================================
+message CabinStatusBlock {
+  BlockHead                         head                = 1 ; //公共头
+  Climate                           climate             = 2; // 空调系统,包括空调,香氛,PM25净化等功能
+  SteerWheel                        steerWheel          = 3; // Steering Wheel Heating 方向盘加热状态
+  repeated SeatHeatVent             seatHeatVent        = 4; // 座椅加热状态
+
+  DefrostStatus                     defrostStatus       = 5; // 除霜状态
+  OutletSystemStatus                outletSystemStatus  = 6; // 出风口系统状态
+  repeated SeatInfo                 seatInfo            = 7; // 座椅信息
+}
+
+message Climate{
+  ClimateInfo                       climateInfo          = 1; // 空调信息
+  Fragrance                         fragrance            = 2; // 香氛系统状态
+  PM25                              pm25                 = 3; // PM2.5系统信息
+  float 	                          temperature          = 4; // 车内温度
+//  AQSLevel                          aqs                  = 5; //
+  ClimateCoolingHeatingStatus       coolingHeatingStatus = 6; // 空调制冷制热状态
+}
+
+// 空调
+message ClimateInfo {
+  Bool                              climateStatus         = 1; // 空调运行状态 true:on, false:off
+  Bool                              remoteActiveStatus    = 2; // 空调远程激活状态 true:on, false:offRemoteOnStatus
+  float                             targetTemperature     = 3; // 目标温度 主驾设置的温度
+  repeated ClimateFaultInfo         faultInfo             = 4; // 空调系统故障信息
+}
+
+message ClimateFaultInfo {
+  ClimateFaultId                    faultId               = 1; // 故障ID
+  string                            faultMsg              = 2; // 故障描述信息
+}
+
+// 香氛状态
+message Fragrance {
+  Bool                              isRefreshOn           = 1; // 香氛提神功能开启/关闭状态 true:on,false:off  （V1.0删除：车端不再上传）
+  repeated Bool                     isUseUp               = 2; // 每个通道的香氛的消耗情况，vector[0]表示通道1
+  repeated uint32                   channelId             = 3; // 每个通道内的香氛的ID（即表示具体的香型）,vector[0]表示通道1
+  FragranceLevel                    level                 = 4; // 香氛当前的浓度等级
+  FragranceChannel                  channel               = 5; // 香氛当前的香型
+}
+
+//PM2.5信息
+message PM25
+{
+  SensorWorkStatus                 status                 = 1;//PM2.5检测状态 PM2.5传感器工作状态
+  PM25Level                        level                  = 2;//PM2.5等级
+  uint32                           value                  = 3; //PM2.5浓度值
+}
+
+// 方向盘加热状态
+message SteerWheel {
+  SteerWheelHeatLevel               level                 = 1; // 加热等级
+  HeatingAvailableStatus            status                = 2;// 方向盘加热开启状态
+}
+
+// 座椅通风加热状态
+message SeatHeatVent {
+  SeatId 	                          id                   = 1; // 座椅位置
+  SeatHeatVentStatus 	              status               = 2; // 座椅加热/通风状态信息
+}
+
+// 座椅信息
+message SeatInfo {
+  SeatId 	                          id                   = 1; // 座椅位置
+  OccupiedStatus 	                  occupied             = 2; // 座椅占位信息 （V1.0修改Bool类型为OccupiedStatus枚举类型） 支持 SeatId = kSeatFrontLeft, kSeatFrontRight, kSeatRearLeft, kSeatRearMiddle, kSeatRearRight
+  uint32                            backAngle            = 3; // 座椅靠背角度，0~180 Deg，default=0  （V1.0删除：车端不再上传）
+  uint32                            lonPosition          = 4; // 座椅前后位置，0~100%,精度0.1%, default=100 longitudinalPosition  （V1.0删除：车端不再上传）
+  uint32                            verPosition          = 5; // 座椅高度位置，0~100%,精度0.1%, default=100 verticalPosition  （V1.0删除：车端不再上传）
+  uint32                            legRestVerPosition   = 6; // 座椅腿托高度位置，0~100%,精度0.1%, default=100 legRestVerticalPosition  （V1.0删除：车端不再上传）
+  OccupiedStatus 	                  treatedOccupied      = 7; // 高阶座椅占位信息 做过业务逻辑处理
+}
+//座椅加热/通风状态信息
+message SeatHeatVentStatus {
+  uint32 	                          heatLevel            = 1; // 座椅的加热等级, 0 = OFF(default), 1 = Level1, 2 = level2, 3 = level3
+  HeatVentWorkStatus 	              heatWorkStatus       = 2; // 座椅的加热工作状态
+
+  uint32 	                          ventLevel            = 3;// 座椅的通风等级, 0 = OFF(default), 1 = Level1, 2 = level2, 3 = level3
+  HeatVentWorkStatus 	              ventWorkStatus       = 4; //座椅的通风工作状态
+}
+
+//除霜状态
+message DefrostStatus {
+  Bool                              fastDefrostMode      = 1; // 强力除霜功能工作状态 前挡风玻璃除霜，与空调开关互斥 在 Climate 里
+  repeated ShieldWindowDefrost      shieldWindow         = 2; // 挡风玻璃 目前只有后挡风玻璃加热状态
+  repeated ViewSwitchInfo           viewSwitchInfo       = 3; // 后视镜加热状态
+}
+
+//挡风玻璃
+message ShieldWindowDefrost {
+  ShieldWindowId 	                  windowId             = 1; //挡风玻璃Id
+  ShieldWindowHeatStatus 	          ventWorkStatus       = 2; //挡风玻璃加热状态
+}
+//后视镜开关信息
+message ViewSwitchInfo {
+    ViewId                          viewId               = 1 ;
+    Bool                            status               = 2 ; //加热状态
+}
+
+//出风口系统状态
+message OutletSystemStatus {
+  OutletStatus 	                    driverVentStatus     = 1 ; //主驾驶出风口状态
+  OutletStatus 	                    passengerVentStatus  = 2 ; //副驾驶出风口状态
+  OutletStatus 	                    secRowVentStatus     = 3 ; //二排出风口状态
+}
+message OutletStatus {
+  Bool                              isOpen               = 1 ; // false:出风口关闭,true:出风口打开  （V1.0删除：车端删除了isOpen，增加了isLeftOpen、isRightOpen）
+  SwingMode                         direction            = 2 ; // 扫风方向  （V1.0删除，车端不再上传）
+  AirVentMode                       ventMode             = 3 ; // 出风口模式  （V1.0删除，车端不再上传）
+  uint32                            leftHorizontal       = 4 ; // 左侧水平方向角度，0~100%  （V1.0删除，车端不再上传）
+  uint32                            leftVertical         = 5 ; // 左侧垂直方向角度，0~100%  （V1.0删除，车端不再上传）
+  uint32                            rightHorizontal      = 6 ; // 右侧水平方向角度，0~100%  （V1.0删除，车端不再上传）
+  uint32                            rightVertical        = 7 ; // 右侧垂直方向角度，0~100%  （V1.0删除，车端不再上传）
+  Bool                              isLeftOpen           = 8 ; // 左侧电动出风口开启关闭状态 false:出风口关闭,true:出风口打开 （V1.0新增）
+  Bool                              isRightOpen          = 9 ; // 右侧电动出风口开启关闭状态 false:出风口关闭,true:出风口打开 （V1.0新增）
+}
+
+//PM2.5检测状态 PM2.5传感器工作状态
+enum SensorWorkStatus {
+  SensorInitial                       = 0; //初始化 (kInitial)
+  SensorCollecting                    = 1; //正在收集 (kCollecting)
+  SensorComplete                      = 2; //已完成 (kComplete)
+  SensorError                         = 3; //出错 (kError)
+  SensorEmpty                         = -1 ;//--
+}
+//PM2.5等级
+enum PM25Level {
+  PmLevel1                            =	0	; //等级1 (kLevel1)
+  PmLevel2                            =	1	; //等级2 (kLevel2)
+  PmLevel3                            =	2	; //等级3 (kLevel3)
+  PmLevel4                            =	3	; //等级4 (kLevel4)
+  PmLevel5                            =	4	; //等级5 (kLevel5)
+  PmLevel6                            =	5	; //等级6 (kLevel6)
+  PmLevelReserved                     =	6	; //重置 (kLevelReserved)
+  PmLevelInvalid                      =	7	; //无效 (kLevelInvalid)
+  PmEmpty                             = -1 ;//--
+}
+
+//空调分区ID
+enum ClimateZoneId	{
+  ClimateAllZone                     = 0 ;//所有区域 (kAllZone)
+  ClimateFirstRow                    = 1 ;//第一排 (kFirstRow)
+  ClimateSecondRow                   = 2 ;//第二排 (kSecondRow)
+  ClimateFirstRowLeft                = 3 ;//第一排左 (kFirstRowLeft)
+  ClimateFirstRowRight               = 4 ;//第一排右 (kFirstRowRight)
+  ClimateSecondRowLeft               = 5 ;//第二排左 (kSecondRowLeft)
+  ClimateSecondRowMiddle             = 6 ;//第二排中间 (kSecondRowMiddle)
+  ClimateSecondRowRight              = 7 ;//第二排右 (kSecondRowRight)
+  ClimateEmpty                       = -1 ;//-- (Empty)
+}
+//AQS的等级
+//enum AQSLevel {
+//  AqsNo                               = 0;
+//  AqsLow                              = 1;
+//  AqsMedium                           = 2;
+//  AqsHigh                             = 3;
+//}
+
+// 方向盘加热等级
+enum SteerWheelHeatLevel
+{
+  SteerWheelHeatOff                   = 0; // 关闭 (kHeatOff)
+  SteerWheelHeatLow                   = 1; // 低热 (kHeatLow)
+  SteerWheelHeatMedium                = 2; // 中热 (kHeatMedium)
+  SteerWheelHeatHigh                  = 3; // 高热 (kHeatHigh)
+  SteerWheelEmpty                     = -1;//--
+}
+//方向盘加热可用状态 SteerHeatAvailiable
+enum HeatingAvailableStatus{
+  HasNone                           = 0; //默认状态 默认值 (kNone)
+  HasOn                             = 1; //开启 (kOn)
+  HasOff                            = 2; //关闭 (kOff)
+  HasError                          = 3; //加热错误 (kError)
+  HasFunctionalLimit                = 4 ; //功能受限 (kFuncational_Limit)
+  HasEnergyLimit                    = 5 ; //能量受限 (kEnergy_Limit)
+  HasEmpty                          = -1;//--
+}
+// 座椅位置
+enum SeatId	{
+  SeatFrontLeft                       = 0 ;// 前排左 (kSeatFrontLeft)
+  SeatFrontRight                      = 1 ;// 前排右 (kSeatFrontRight)
+  SeatFrontMiddle                     = 2 ;// 前排中 (kSeatFrontMiddle)
+  SeatFrontRow                        = 3 ;// 第一排全部座椅 (kSeatFrontRow)
+  SeatRearLeft                        = 4 ;// 后排左 (kSeatRearLeft)
+  SeatRearMiddle                      = 5 ;// 后排中 (kSeatRearMiddle)
+  SeatRearRight                       = 6 ;// 后排右 (kSeatRearRight)
+  SeatRearRow                         = 7 ;// 后排全部座椅 (kSeatRearRow)
+  SeatThirdLeft                       = 8 ;// 第三排左 (kSeatThirdLeft)
+  SeatThirdMiddle                     = 9 ;// 第三排中间 (kSeatThirdMiddle)
+  SeatThirdRight                      = 10 ;// 第三排右 (kSeatThirdRight)
+  SeatThirdRow                        = 11 ;// 第三排全部座椅 (kSeatThirdRow)
+  SeatAll                             = 12 ;// 全车座椅 (kSeatAll)
+  SeatEmpty                           = -1 ;//-- (Empty)
+}
+
+// 加热/通风状态信息
+enum HeatVentWorkStatus	{
+  HeatVentNone                        = 0 ;// 默认状态 （默认） (kNone)
+  HeatVentOn                          = 1 ;// 开启 (kOn)
+  HeatVentOff                         = 2 ;// 关闭 (kOff)
+  HeatVentError                       = 3 ;// 功能错误 (kError)
+  HeatVentFunctionLimit               = 4 ;// 功能限制 (kFunctionLimit)
+  HeatVentEnergyLimit                 = 5 ;// 能量限制 (kEnergyLimit)
+  HeatVentReserved1                   = 6 ;// 预留1 (kReserved1)
+  HeatVentReserved2                   = 7 ;// 预留2 (kReserved2)
+  HeatVentEmpty                       = -1 ;//-- (Empty)
+}
+// 香氛浓度等级
+enum  FragranceLevel
+{
+  FragranceValueNoWarn                = 0; //未知 (kFragLevelOff)
+  FragranceValueLevel1                = 1; //等级1 (kFragLevel1)
+  FragranceValueLevel2                = 2; //等级2 (kFragLevel2)
+  FragranceValueLevel3                = 3; //等级3 (kFragLevel3)
+  FragranceValueEmpty                 = -1; //--
+}
+
+// 香氛当前的香型
+enum FragranceChannel {
+  FragranceNoReq                      = 0; //未知 (kNoReq)
+  FragranceChannel1                   = 1; //通道1 (kChannel_1)
+  FragranceChannel2                   = 2; //通道2 (kChannel_2)
+  FragranceChannel3                   = 3; //通道3 (kChannel_3)
+  FragranceChannel4                   = 4; //通道4 (kChannel_4)
+  FragranceChannel5                   = 5; //通道5 (kChannel_5)
+  FragranceChannelEmpty               = -1; //--
+}
+
+// 香氛消耗情况/剩余的量
+enum  FragranceLeftValue {
+  FlvNoWarn                           = 0; //未知 （kValueNoWarn）
+  FlvLevel1                           = 1; //等级1 （kValueLevel1）
+  FlvLevel2                           = 2; //等级2 （kValueLevel2）
+  FlvLevel3                           = 3; //等级3 （kValueLevel3）
+  FlEmpty                             = -1; //--
+}
+
+//挡风玻璃Id
+enum ShieldWindowId {
+  ShieldWindowAll                     = 0; // 全部挡风玻璃 (kShieldWindowAll)
+  ShieldWindowFront                   = 1; // 前摄像头 (kShieldWindowFront)
+  ShieldWindowRear                    = 2; // 后挡风玻璃 (kShieldWindowRear)
+  ShieldWindowEmpty                   = -1; //--
+}
+//挡风玻璃加热状态
+enum ShieldWindowHeatStatus {
+  SwhsHeatStatusOff                   = 0; // 关闭 (kHeatStatusOff)
+  SwhsHeatStatusOn                    = 1; // 开启 (kHeatStatusOn)
+  SwhsHeatStatusAutoOn                = 2; // 自动开启 (kHeatStatusAutoOn)
+  SwhsHeatFault                       = 3; // 前摄像头加热故障  ，后挡风玻璃加热状态车端不会发送 (kHeatFault)
+  SwhsEmpty                           = -1;//--
+}
+
+//摆风模式
+enum SwingMode	{
+  SwingModeOff                        = 0 ;//停止摆风 (kSwingOff)
+  SwingModeAllOn                      = 1 ;//上下左右同时摆风 (kSwingAllOn)
+  SwingModeUpDown                     = 2 ;//上下摆风 (kSwingUpDown)
+  SwingModeLeftRight                  = 3 ;//左右摆风 (kSwingLeftRight)
+  SwingModeEmpty                      = -1 ;//-- (Empty)
+}
+//出风模式，用来定义风以什么样的特点吹到人身上
+enum AirVentMode	{
+  AirVentModeNormal                   = 0 ;//出风口手动调节，用户可以设置出风口坐标 (kNormal)
+  AirVentModeFocus                    = 1 ;//出风口吹面，出风口调整到驾驶/副驾驶侧吹头的位置 (kFocus)
+  AirVentModeAvoid                    = 2 ;//出风口避免吹面，出风口调整到避免吹到驾驶/副驾驶乘员的位置 (kAvoid)
+  AirVentModeCustomize                = 3 ;//个性化，按照存储的个性化设置的出风口坐标值调整出风口 (kCustomize)
+  AirVentModeEmpty                    = -1 ;//-- (Empty)
+}
+
+//空调系统故障
+enum ClimateFaultId {
+  ClimateFaultIdOK                            = 0; // 无故障 OK
+  ClimateFaultIdFaultOutletError              = 1; // 电动出风口故障
+  ClimateFaultIdFaultExternalTempSensorError  = 2; // 舱外温度传感器故障，当传感器的QF不等于GENQF1_ACCUR_DATA时，上报该故障码
+  ClimateFaultIdFaultInternalTempSensorError  = 3; // 舱内温度传感器故障，当传感器的QF不等于GENQF1_ACCUR_DATA时，上报该故障码
+  ClimateFaultIdFaultOutletEnergyLimit        = 4; // 由于能耗限制，无法调节出风口
+  ClimateFaultIdFaultAQSSensorError           = 5; // AQS传感器故障
+  ClimateFaultIdFaultCoolantLow               = 6; // 冷却液不足
+  ClimateFaultIdFaultBatteryLow               = 7; // 电量不足  (kFaultBatteryLow)
+  ClimateFaultIdFaultCoolantLowAndBatteryLow  = 8; // 冷却液和电量不足  (kFaultCoolantLowAndBatteryLow)
+  ClimateFaultIdFaultTemperatureLow           = 9; // 温度过低  (kFaultTemperatureLow)
+  ClimateFaultIdFaultTemperatureHigh          = 10; // 温度过高  (kFaultTemperatureHigh)
+  ClimateFaultIdFaultClimateError             = 11; // 空调异常  (kFaultClimateError)
+  ClimateFaultIdFaultHighVoltageError         = 12; // 高压异常  (kFaultHighVoltageError)
+  ClimateFaultIdFaultActivationLimited        = 13; // 开启时间已满  (kFaultActivationLimited)
+  ClimateFaultIdNA                            = 14; // 未知故障
+  ClimateFaultIdEmpty                         = -1; // -- (Empty)
+}
+
+enum OccupiedStatus {
+  OccupiedStatusNoPresent           = 0; // 未占位
+  OccupiedStatusPresent             = 1; // 占位
+  OccupiedStatusUnknown             = 255; // 状态未知
+  OccupiedStatusEmpty               = -1;  // -- (Empty RVS未读取到时上传)
+}
+
+//空调制冷制热状态，类型定义: CoolingHeatingStatus
+enum ClimateCoolingHeatingStatus {
+  ClimateChNone                                             	= 0 ;//既不在制冷状态也不在制热状态  (kNone)
+  ClimateCooling                                          		= 1 ;//制冷状态  (kCooling)
+  ClimateHeating                                          		= 2 ;//制热状态  (kHeating)
+  ClimateCoolingAndHeating                                		= 3 ;//既在制冷状态也在制热状态，比如加热除湿场景  (kCoolingAndHeating)
+  ClimateChInvalid                                          	= 255 ;//默认值，实车不会发出来，因Mars1/Venus无PostHeating锁车空调功能  (kInvalid)
+  ClimateChEmpty                                             	= -1 ;//-- (Empty)
+}

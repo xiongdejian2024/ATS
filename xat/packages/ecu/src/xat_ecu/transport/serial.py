@@ -38,6 +38,7 @@ class SerialTransport(ITransport):
             self.is_connected = True
             logger.info(f"SerialTransport connected to {self.port} at {self.baudrate} baud.")
         except Exception as e:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/transport/serial.py")
             logger.error(f"Failed to connect SerialTransport: {e}")
             raise
 
@@ -67,6 +68,7 @@ class SerialTransport(ITransport):
                 return data
             return None
         except Exception as e:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/transport/serial.py")
             logger.error(f"Error receiving serial data: {e}")
             return None
 

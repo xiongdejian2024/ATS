@@ -1,0 +1,239 @@
+gw_can: "diagnosticcan"
+
+# diagnostic can is first
+vehicle_topology:
+  BGM: [ 'infocanfd', 'backbonefr', 'cem_lin5', 'chassiscan2', 'bodycan', 'propulsioncan','bodyalmcanfd1', 'cem_lin1', 'chassiscan1', 'bodyexposedcanfd', 'diagnosticcan','cem_lin6', 'cem_lin2', 'adcanfd', 'cem_lin4', 'bodyalmcanfd2', 'connectivitycanfd','passivesafetycan', 'cem_lin3','eth_tcam', 'eth_cdc', 'eth_acu','eth_diagnostic' ]
+  TCAM: [ "connectivitycanfd", 'eth_tcam' ]
+  ACU: [ 'chassiscan1', 'backbonefr', 'adprivatecanfd2', 'flrcanfd', 'adprivatecanfd1','adredundancycan', 'adcanfd','eth_adinfoprivate', 'eth_lidar_r', 'eth_lidar_l', 'eth_acu' ]
+  CDC: [ 'adredundancycan', 'backbonefr', 'privateinfocanfd', 'flrcanfd', 'infocanfd','eth_adinfoprivate', 'eth_cdc' ]
+  CCM: [ 'bodycan', 'ccm_lin3', 'ccm_lin2' ]
+  BNCM: [ 'connectivitycanfd', 'privatebncmcanfd' ]
+  ETCM: [ "bodycan" ]
+  AUD: [ "privateinfocanfd" ]
+  CD: [ "privateinfocanfd" ]
+  # todo 名字不同 LIDAR_L
+  LidarL: [ "eth_lidar_l" ] #Ethernet_LidarL
+  # todo 名字不同 LIDAR_R
+  LidarR: [ "eth_lidar_r" ] #Ethernet_LidarR
+  FLR: [ "flrcanfd" ] #flrcan
+  FSRL: [ "adprivatecanfd1" ]
+  FSRR: [ "adprivatecanfd1" ]
+  SODL: [ "adprivatecanfd2" ]
+  SODR: [ "adprivatecanfd2" ]
+  VDDM: ['backbonefr', 'propulsioncan',  'chassiscan2', 'chassiscan1' ]
+  BBM: ['backbonefr', 'chassiscan2', 'adredundancycan' ]
+  SRS:  [ 'backbonefr', 'propulsioncan', 'passivesafetycan']
+  EGSM: [ "propulsioncan" ]
+  # todo 名字不一样 BECM1
+  BECM: [ "propulsioncan" ]
+  MGM: [ "propulsioncan" ]
+  IEM: [ "propulsioncan" ]
+  HVCM: [ "propulsioncan" ]
+  ECM3: [ 'backbonefr', 'propulsioncan', 'ecm_lin1', 'ecm_lin3', 'chassiscan2',  'chassiscan1', 'ecm_lin4' ]
+  SAS: [ "chassiscan1" ]
+  # todo 名字不一样 PSCM_1 PSCM_2
+  PSCM1: [ 'chassiscan2', 'chassiscan1' ]
+  PSCM2: [ 'chassiscan2', 'chassiscan1' ]
+  # todo 名字不一样 SUM1
+  SUM4: [ "chassiscan2" ]
+  RML: [ "passivesafetycan" ]
+  WPC: [ "connectivitycanfd" ]
+  NKR: [ "connectivitycanfd" ]
+  DRMFL: [ "connectivitycanfd" ]
+  DRMFR: [ "connectivitycanfd" ]
+  DRMRL: [ "connectivitycanfd" ]
+  DRMRR: [ "connectivitycanfd" ]
+  DPOD: [ "bodycan" ]
+  PPOD: [ "bodycan" ]
+  LPOD: [ "bodycan" ]
+  RPOD: [ "bodycan" ]
+  DDM: [ 'bodycan', 'ddm_lin1' ]
+  PDM: [ "bodycan" ]
+  RLDM: [ "bodycan" ]
+  RRDM: [ "bodycan" ]
+  POT: [ "bodycan" ]
+  SMP: [ 'bodycan', 'smp_lin1' ]
+  SWTL: [ "bodycan" ]
+  SWTR: [ "bodycan" ]
+  SMD: [ 'bodycan', 'smd_lin1' ]
+  HCML: [ "bodyexposedcanfd" ]
+  HCMR: [ "bodyexposedcanfd" ]
+  RCML: [ "bodyexposedcanfd" ]
+  RCMR: [ "bodyexposedcanfd" ]
+  RCMM: [ "bodyexposedcanfd" ]
+  RLSM: [ "cem_lin1" ]
+  WMM: [ "cem_lin1" ]
+  IRMM: [ "cem_lin1" ]
+  PRLD: [ "cem_lin2" ]
+  FCSI: [ "cem_lin2" ]
+  # todo 名字不一样 AIIL_L AIIL_R
+  AIILL: [ "cem_lin2" ]
+  AIILR: [ "cem_lin2" ]
+  OHC: [ "cem_lin3" ]
+  PSGL: [ "cem_lin3" ]
+  DSGL: [ "cem_lin3" ]
+  ASWM: [ "cem_lin4" ]
+  HOD: [ "cem_lin4" ]
+  TLCM: [ "cem_lin4" ]
+  # todo 存在 ALM_1 到 ALM_8 都是 lin5
+  ALM1: [ "cem_lin5" ]
+  AWM: [ "cem_lin6" ]
+  BMS: [ "cem_lin6" ]
+  DLC: ["diagnosticcan"]
+
+bus_type:
+  # can: ["bodycan","propulsioncan","chassiscan1","chassiscan2","adredundancycan","passivesafetycan"]
+  # canfd: ["connectivitycanfd","privateinfocanfd","flrcanfd","adprivatecanfd1","adprivatecanfd2","bodyexposedcanfd", "infocanfd", "adcanfd", "bodyalmcanfd1", "bodyalmcanfd2"]
+  # lin: ["cem_lin1", "cem_lin2", "cem_lin3", "cem_lin4", "cem_lin5", "cem_lin6"]
+  # fr: ["backbonefr"]
+  # eth: ["eth_obd", "eth_vlan9"]
+  can: [ 'adredundancycan', 'diagnosticcan', 'passivesafetycan','chassiscan1', 'bodycan', 'chassiscan2', 'propulsioncan']
+  canfd: [ 'privatebncmcanfd', 'adcanfd', 'connectivitycanfd', 'adprivatecanfd2', 'infocanfd','privateinfocanfd', 'bodyalmcanfd1', 'flrcanfd','bodyexposedcanfd', 'bodyalmcanfd2', 'adprivatecanfd1' ]
+  lin: [ 'ccm_lin2', 'ccm_lin3', 'cem_lin1', 'cem_lin2', 'cem_lin3', 'cem_lin4', 'cem_lin5', 'cem_lin6','ddm_lin1', 'ecm_lin1', 'ecm_lin3', 'ecm_lin4', 'smd_lin1', 'smp_lin1']
+  fr: [ "backbonefr" ]
+  eth: [ 'eth_lidar_r', 'eth_adinfoprivate', 'eth_tcam', 'eth_lidar_l', 'eth_acu', 'eth_diagnostic', 'eth_cdc' ]
+
+ecu_map_id:
+  BGM: [0x1001, 0x701, 0x601, ~, ~, "172.16.9.1", "172.16.5.1"]
+  TCAM: [0x1011, ~, ~, ~, ~, "172.16.9.31", "172.16.5.31"]
+  ACU: [0x1401, ~, ~, ~, ~, "172.16.9.21", "172.16.5.21"]
+  CDC: [0x1201, ~, ~, ~, ~, ~, ~]
+  ETCM: [0x1A16, 0x716, 0x616,~, ~, ~, ~]
+  AUD: [0x1280, ~, ~, ~, ~, ~, ~]
+  CD: [0x1281, 0x781, 0x681,~, ~, ~, ~]
+  FLR: [0x1444, 0x744, 0x644,~, ~, ~, ~]
+  LidarL: [0x14AE, ~, ~, ~, ~, ~, ~]
+  LidarR: [0x14BE, ~, ~, ~, ~, ~, ~]
+  FSRL: [0x1460, 0x760, 0x660,~, ~, ~, ~]
+  FSRR: [0x1461, 0x761, 0x661,~, ~, ~, ~]
+  SODL: [0x1450, 0x750, 0x650,~, ~, ~, ~]
+  SODR: [0x1451, 0x751, 0x651,~, ~, ~, ~]
+  BBM: [0x1701, ~, ~, ~, 0x42, ~, ~]
+  VDDM: [0x1601, ~, ~, ~, 0x45, ~, ~]
+  SRS: [0x1C01, ~, ~, ~, 0x46, ~, ~]
+  EGSM: [0x1633, 0x733, 0x633,~, ~, ~, ~]
+  BECM: [0x1635, 0x735, 0x635,~, ~, ~, ~]
+  MGM: [0x1631, 0x731, 0x631,~, ~, ~, ~]
+  IEM: [0x1637, 0x737, 0x637,~, ~, ~, ~]
+  HVCM: [0x1650, 0x750, 0x650,~, ~, ~, ~]
+  ECM3: [0x1630, 0x730, 0x630,~, 0x45, ~, ~]
+  PSCM1: [0x1670, 0x770, 0x670,~, ~, ~, ~]
+  PSCM2: [0x1720, 0x720, 0x620,~, ~, ~, ~]
+  SAS: [0x1672, 0x772, 0x622,~, ~, ~, ~]
+  SUM4: [0x1614, 0x714, 0x614,~, ~, ~, ~]
+  RML: [0x1510, 0x710, 0x610,~, ~, ~, ~]
+  BNCM: [0x1023, 0x723, 0x623,~, ~, ~, ~]
+  WPC: [0x1024, 0x724, 0x624,~, ~, ~, ~]
+  NKR: [0x1025, 0x725, 0x625,~, ~, ~, ~]
+  DRMFL: [0x1030, 0x730, 0x630,~, ~, ~, ~]
+  DRMFR: [0x1510, 0x731, 0x631,~, ~, ~, ~]
+  DRMRL: [0x1510, 0x732, 0x632,~, ~, ~, ~]
+  DRMRR: [0x1510, 0x733, 0x633,~, ~, ~, ~]
+  DDM: [0x1A12, 0x712, 0x612,~, ~, ~, ~]
+  PDM: [0x1A13, 0x713, 0x613,~, ~, ~, ~]
+  RLDM: [0x1A21, 0x721, 0x621,~, ~, ~, ~]
+  RRDM: [0x1A22, 0x722, 0x622,~, ~, ~, ~]
+  DPOD: [0x1A40, 0x740, 0x640,~, ~, ~, ~]
+  PPOD: [0x1A41, 0x741, 0x641,~, ~, ~, ~]
+  LPOD: [0x1A42, 0x742, 0x642,~, ~, ~, ~]
+  RPOD: [0x1A43, 0x743, 0x643,~, ~, ~, ~]
+  POT: [0x1A15, 0x715, 0x615,~, ~, ~, ~]
+  SMD: [0x1A27, 0x727, 0x627,~, ~, ~, ~]
+  SMP: [0x1A28, 0x728, 0x628,~, ~, ~, ~]
+  CCM: [0x1A11, 0x711, 0x611,~, ~, ~, ~]
+  SWTL: [0x1A82, 0x782, 0x682,~, ~, ~, ~]
+  SWTR: [0x1A83, 0x783, 0x683,~, ~, ~, ~]
+  HCML: [0x1BB3, 0x7B3, 0x6B3,~, ~, ~, ~]
+  HCMR: [0x1BB4, 0x7B4, 0x6B4,~, ~, ~, ~]
+  RCML: [0x1BB5, 0x7B5, 0x6B5,~, ~, ~, ~]
+  RCMR: [0x1BB6, 0x7B6, 0x6B6,~, ~, ~, ~]
+  RCMM: [0x1BB7, 0x7B7, 0x6B7,~, ~, ~, ~]
+  RLSM: [~, ~, ~, ~, ~, ~, ~]
+  WMM: [~, ~, ~, ~, ~, ~, ~]
+  IRMM: [~, ~, ~, ~, ~, ~, ~]
+  PRLD: [~, ~, ~, ~, ~, ~, ~]
+  FCSI: [~, ~, ~, ~, ~, ~, ~]
+  AIILL: [~, ~, ~, ~, ~, ~, ~]
+  AIILR: [~, ~, ~, ~, ~, ~, ~]
+  OHC: [~, ~, ~, ~, ~, ~, ~]
+  PSGL: [~, ~, ~, ~, ~, ~, ~]
+  DSGL: [~, ~, ~, ~, ~, ~, ~]
+  ASWM: [~, ~, ~, ~, ~, ~, ~]
+  HOD: [~, ~, ~, ~, ~, ~, ~]
+  TLCM: [~, ~, ~, ~, ~, ~, ~]
+  ALM1: [~, ~, ~, ~, ~, ~, ~]
+  AWM: [~, ~, ~, ~, ~, ~, ~]
+  BMS: [~, ~, ~, ~, ~, ~, ~]
+  DLC: [~, ~, ~, ~, ~, ~, ~]
+
+
+positive_data:
+  BGM: {F101: 08FFFFFFFFFFFFFFC33F0D1D0C7B0004A6, F110: P0000551 AC, F118: P0067833 AE, F18C: '12345678', node_id: '21'}
+  CDC: {F101: 08FFFFFFFFFFFFFFFFFF010000000000EB, F110: P0067848 AC, F118: P0064957 CF, F18C: '12345678', node_id: '35'}
+  ACU: {F101: 08FFFFFFFFFFFFFFC33F0D1D0C7B0004A6, F110: P0000465 AE, F118: P0060426 AL, F18C: '12345678', node_id: '55'}
+  TCAM: {F101: 08FFFFFFFFFFFFFF0300000000000000AF, F110: P0059674 AB, F118: P0061225 AP, F18C: '12345678', node_id: '36'}
+  BNCM: {F1AE: {F1AE: ["6110210055 AA","1110210055 AA", "1210210055 AA", "1310210055 AA", "1410210055 AA"]}, F1AA: "8895036218  A", F118: P0061225 AP, F18C: '12345678', node_id: '36'}
+  ETCM: {F1AE: {F1AE: ["6110510055 AA","1110510055 AA"]}, F1AA: "8895038818  A", F118: P0061225 AP, F18C: '12345678', node_id: '37'}
+  WPC: {F1AE: {F1AE: ["1110310055 AB","6110310055 AC"]}, F1AA: "8895036210  B"}
+  NKR: {F1AE: {F1AE: ["6110410055 AB"]}, F1AA: "8895036223  A"}
+  LidarL: {F1AE: {F1AE: ["6120210055 AB"]}, F1AA: "8895036238  B"}
+  LidarR: {F1AE: {F1AE: ["6120310055 AB"]}, F1AA: "8895036239  B"}
+  FLR: {F1AE: {F1AE: ["6120410055 AA"]}, F1AA: "8895036232  A"}
+  SODL: {F1AE: {F1AE: ["6120610050 AA"]}, F1AA: "8895036236  A"}
+  SODR: {F1AE: {F1AE: ["6120610050 AA"]}, F1AA: "8895036236  A"}
+  SODR: {F1AE: {F1AE: ["6120610050 AA"]}, F1AA: "8895036236  A"}
+  FSRL: {F1AE: {F1AE: ["6120610050 AA"]}, F1AA: "8895036236  A"}
+  FSRR: {F1AE: {F1AE: ["6120610050 AA"]}, F1AA: "8895036236  A"}
+  CD: {F1AE: {F1AE: ["6130310055 AB"]}, F1AA: "8895037286  A"}
+  VDDM: {F1AE: {F1AE: ["6150110055 AA","1250110055 AA","1350110055 AA"]}, F1AA: "8891983575  A"}
+  BBM: {F1AE: {F1AE: ["6150210055 AA","1250210055 AA"]}, F1AA: "8891380680  B"}
+  SRS: {F1AE: {F1AE: ["1150310055 AA","6150310055 AA","1250310055 AA","1350310055 AA","1450310055 AA"]}, F1AA: "8892577737  B"}
+  EGSM: {F1AE: {F1AE: ["1150410055 AB","6150410055 AC"]}, F1AA: "8894962027  A"}
+  BECM: {F1AE: {F1AE: ["6150510055 AB","1250510055 AB"]}, F1AA: "8894962056  A"}
+  SAS: {F1AE: {F1AE: ["1151210055 AA","6151210055 AA"]}, F1AA: "8894963292  A"}
+  RML: {F1AE: {F1AE: ["1151410055 AA","6151410055 AA","1251410055 AA"]}, F1AA: "8892730693  A"}
+  ECM3: {F1AE: {F1AE: ["6150910055 AA","1250910055 AA"]}, F1AA: "8894633056  A"}
+  DDM: {F1AE: {F1AE: ["6160210055 AA","1260210055 AA"]}, F1AA: "8892362682  A"}
+  SMD: {F1AE: {F1AE: ["6161210055 AA","1161210055 AA"]}, F1AA: "8891760535  A"}
+  SMP: {F1AE: {F1AE: ["6161310055 AA","1161310055 AA"]}, F1AA: "6608046475  A"}
+  PDM: {F1AE: {F1AE: ["1160310055 AA","6160310055 AA","1260310055 AA"]}, F1AA: "8892362699  A"}
+  HVCM: {F1AE: {F1AE: ["1150810055 AA","6150810055 AC"]}, F1AA: "8893502502  A"}
+  RLDM: {F1AE: {F1AE: ["1160410055 AA","6160410055 AA","1260410055 AA"]}, F1AA: "8892362716  A"}
+  RRDM: {F1AE: {F1AE: ["1160510055 AA","6160510055 AA","1260510055 AA"]}, F1AA: "8892362726  A"}
+  SUM4: {F1AE: {F1AE: ["1151310055 AA","6151310055 AA","1251310055 AA"]}, F1AA: "8894893213  A"}
+  PSCM1: {F1AE: {F1AE: ["6151010055 AA","1151010055 AA","1251010055 AA","1351010055 AA"]}, F1AA: "8894572752  A"}
+  PSCM2: {F1AE: {F1AE: ["1151110055 AA","6151110055 AA","1251110055 AA","1351110055 AA"]}, F1AA: "8894572818  A"}
+  HCML: {F1AE: {F1AE: ["1161410055 AB","6161410055 AB"]}, F1AA: "8895036220  A"}
+  HCMR: {F1AE: {F1AE: ["1161510055 AB","6161510055 AB"]}, F1AA: "8895036219  A"}
+  POT: {F1AE: {F1AE: ["1161110055 AA","6161110055 AA","1261110055 AA"]}, F1AA: "8895395447  A"}
+  DPOD: {F1AE: {F1AE: ["1160610055 AA","6160610055 AC"]}, F1AA: "8895036188  A"}
+  LPOD: {F1AE: {F1AE: ["1160810055 AA","6160810055 AC"]}, F1AA: "8895036191  A"}
+  PPOD: {F1AE: {F1AE: ["1160710055 AA","6160710055 AC"]}, F1AA: "8895036189  A"}
+  RPOD: {F1AE: {F1AE: ["1160910055 AA","6160910055 AC"]}, F1AA: "8895036192  A"}
+  CCM: {F1AE: {F1AE: ["1161010055 AB","6161010055 AB","1261010055 AB","1361010055 AA"]}, F1AA: "8895523727  A"}
+  AUD: {F1AE: {F1AE: ["1130210055 AA","6130210055 AA","1230210055 AA","1330210055 AA","1430210055 AA","1530210055 AA"]}, F1AA: "8895036224  A"}
+  DRMFL: {F1AE: {F1AE: ["6162010055 AC"]}, F1AA: "8895036199  B"}
+  DRMFR: {F1AE: {F1AE: ["6162010055 AC"]}, F1AA: "8895036199  B"}
+  DRMRL: {F1AE: {F1AE: ["6162010055 AC"]}, F1AA: "8895036199  B"}
+  DRMRR: {F1AE: {F1AE: ["6162010055 AC"]}, F1AA: "8895036199  B"}
+  RCML: {F1AE: {F1AE: ["1161710055 AB","6161710055 AB"]}, F1AA: "8895036205  A"}
+  RCMM: {F1AE: {F1AE: ["1161910055 AB","6161910055 AB"]}, F1AA: "8895036206  A"}
+  RCMR: {F1AE: {F1AE: ["1161810055 AB","6161810055 AB"]}, F1AA: "8895036207  A"}
+  SWTL: {F1AE: {F1AE: ["6130410055 AB"]}, F1AA: "8895036261  A"}
+  SWTR: {F1AE: {F1AE: ["6130510055 AB"]}, F1AA: "8895036262  A"}
+  DLC: {}
+
+dtc_code_table:
+  'CCM': {'AB1FD_SQUIB_DRIVER_FRONTAL_STAGE_1_SHORT_TO_GROUND': 'B150111'}
+
+dtc_snapshot_table:
+  'CCM': {'P16B308': [36, 0, 0, 1, 29, 5, 1, 33, 5, 2, 7, 5, 3, 35, 5, 4, 23, 5, 5, 4, 5, 6, 22, 5, 7, 0, 46]}
+
+dtc_extended_data_table:
+  CCM: {'U010087': [ 4, 1, 5, 21, 7, 24, 13, 34, 59, 0, 46, 172, 0, 0, 0 ],
+    'U101786': [ 4, 1, 1, 21, 7, 28, 10, 55, 37, 0, 47, 146, 0, 0, 0 ]}
+
+routine_control_table:
+  BGM: {"0206": { 1 : [0x10, 0x01] , 2 : [0x10, 0x01], 3 : [0x10, 0x01]},
+        "A100": { 1 : [0x10, 0x01] , 2 : [0x10, 0x01], 3 : [0x10, 0x01]},
+        "4289": { 1 : [0x10, 0x01] , 2 : [0x10, 0x01], 3 : [0x10, 0x01]}}

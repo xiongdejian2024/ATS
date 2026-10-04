@@ -1,0 +1,49 @@
+{
+    "domain": "x86",
+    "addr_in_domain": "ipc:///tmp/service_monitor_partner",
+    "addr_out_domain": "tcp://127.0.0.1:12345",
+    "remote_tcp_priority": [
+        "127.0.0.x"
+    ],
+    "sync_with_remote_domain": {
+        "local_sync_server_tcp": "tcp://127.0.0.1:22345",
+        "remote_domain": [
+            {
+                "domain": "bgm",
+                "domain_addr": "tcp://172.16.5.1:22345"
+            },
+            {
+                "domain": "cdcq",
+                "domain_addr": "tcp://172.16.5.11:22345"
+            },
+            {
+                "domain": "acu",
+                "domain_addr": "tcp://172.16.5.21:22345"
+            },
+            {
+                "domain": "tcam",
+                "domain_addr": "tcp://172.16.5.31:22345"
+            }
+        ]
+    },
+    "service_list": [
+        {
+            "service_id": "X86_UnitTestService",
+            "service_addr_zmq": "ipc:///tmp/X86_UnitTestService_partner",
+            "service_addr_tcp": [
+                "tcp://127.0.0.1:50000"
+            ],
+            "service_addr_rtps": "/SERVICE/X86_UnitTestService/SYSTEM_TOPIC",
+            "in_domain": "x86"
+        },
+        {
+            "service_id": "X86_BootesSampleService",
+            "service_addr_zmq": "ipc:///tmp/X86_BootesSampleService_partner",
+            "service_addr_tcp": [
+                "tcp://127.0.0.1:49999"
+            ],
+            "service_addr_rtps": "/SERVICE/X86_BootesSampleService/SYSTEM_TOPIC",
+            "in_domain": "x86"
+        }
+    ]
+}

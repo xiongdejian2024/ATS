@@ -1,0 +1,142 @@
+{
+    "domain": "x86",
+    "function_switch": {
+        "security_switch": true,
+        "msg_dump_switch": false,
+        "order_dispatch_by_service": false,
+        "service_event_config": {
+            "event_ack_switch": true,
+            "initial_value_enable": true
+        }
+    },
+    "zmq_config": {
+        "zmq_tcp_address": "127.0.0.1",
+        "zmq_ipc_address": "/tmp",
+        "zmq_socket_monitor_switch": true,
+        "zmq_recvhwm": 2000,
+        "zmq_sndhwm": 2000,
+        "zmq_sub_poll_timeout": 3000,
+        "zmq_monitor_poll_timeout": 3000,
+        "zmq_ctx_io_threads": 1,
+        "connect_timeout": 1000,
+        "zmq_reconnect_ivl": 100,
+        "zmq_reconnect_ivl_max": 300,
+        "bind_retry_count": 300,
+        "bind_retry_intvl": 100,
+        "zmq_tcp_maxrt": 5,
+        "pub_keepalive_config": {
+            "enable": true,
+            "keepalive": 1,
+            "tcp_keepalive_idle": 1,
+            "tcp_keepalive_intvl": 2,
+            "tcp_keepalive_cnt": 2
+        },
+        "sub_keepalive_config": {
+            "enable": true,
+            "keepalive": 1,
+            "tcp_keepalive_idle": 30,
+            "tcp_keepalive_intvl": 30,
+            "tcp_keepalive_cnt": 2
+        },
+        "pub_heartbeat_config": {
+            "enable": false,
+            "ttl": 6000,
+            "timeout": 2000,
+            "interval": 1000
+        },
+        "sub_heartbeat_config": {
+            "enable": false,
+            "ttl": 6000,
+            "timeout": 2000,
+            "interval": 1000
+        },
+        "ctx_thread_config": {
+            "enable": true,
+            "sched_policy": "SCHED_RR",
+            "sched_priority": 42,
+            "nice": 0
+        }
+    },
+    "threads_config": {
+        "threadpool_config": {
+            "threadpool_initia_size": 10,
+            "threadpool_max_size": 50,
+            "thread_config": {
+                "enable": true,
+                "sched_policy": "SCHED_OTHER",
+                "sched_priority": 0,
+                "nice": 0
+            }
+        },
+        "timer_thread_config": {
+            "enable": true,
+            "sched_policy": "SCHED_RR",
+            "sched_priority": 42,
+            "nice": 0
+        },
+        "subscriber_thread_config": {
+            "enable": true,
+            "sched_policy": "SCHED_RR",
+            "sched_priority": 42,
+            "nice": 0
+        },
+        "dispatch_thread_config": {
+            "enable": true,
+            "sched_policy": "SCHED_RR",
+            "sched_priority": 42,
+            "nice": 0
+        },
+        "send_thread_config": {
+            "enable": true,
+            "sched_policy": "SCHED_OTHER",
+            "sched_priority": 0,
+            "nice": -20
+        },
+        "socketmonitor_thread_config": {
+            "enable": true,
+            "sched_policy": "SCHED_OTHER",
+            "sched_priority": 0,
+            "nice": -20
+        }
+    },
+    "log_config": {
+        "logLevel": 4,
+        "recorderlogSize": 500,
+        "recorderflushNice": 2,
+        "logflushMaxTimeS": 5,
+        "logflushMaxTimeMs": 500,
+        "flushLogSwitch": true,
+        "eaLogAdapter": true,
+        "printConsole": true,
+        "spdlogConfig": {
+            "eaSpdlogFile": false,
+            "spdLogDir": "./logs/",
+            "spdLogFlushIntval": 1,
+            "spdLogMaxSize": 3,
+            "spdLogFileSize": 100,
+            "spdLogFileWithPid": false,
+            "spdLogRetryCreate": false
+        },
+        "threadpool_warning_log_thresholdus": {
+            "order_task_size": 3,
+            "order_task_running_time_ms": 20,
+            "thread_dispatch_time_ms": 200
+        }
+    },
+    "customized_config": {
+        "bootesid_config_vector": [],
+        "service_config_vector": []
+    },
+    "safety_config": {
+        "safety_enable": true,
+        "method_event_enable": false,
+        "safety_fault_debug_switch": false,
+        "heartbeat_period": 600,
+        "heartbeat_log_switch": false,
+        "loss_retry_count": 3,
+        "time_window": 5000,
+        "send_quene_size": 2500,
+        "deadline": 5000,
+        "blocktime": 1800
+    }
+}

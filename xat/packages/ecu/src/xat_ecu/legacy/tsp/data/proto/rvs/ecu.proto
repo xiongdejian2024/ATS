@@ -1,0 +1,24 @@
+syntax = "proto3";
+package vehiclestatus;
+import "block_head.proto";
+
+// =====================================================================
+// BLOCK ID BiEcuBlock
+// ecu信息块
+// =====================================================================
+
+message EcuBlock {
+  BlockHead              head       = 1 ; //公共头
+  repeated EcuVersion    ecuVersion = 2;
+  string baseline                   = 3 ; //整车版本号
+  string cdcModule                  = 4 ; //CDC版本信息 包含MPU/MCU/Switch/Honghu
+
+}
+
+message EcuVersion {
+  string ecuName  = 1; // ecu名称
+
+  string hwPn     = 2; // 硬件版本零件号
+  string swPn     = 3; // 软件版本零件号
+  string ecuId    = 4; // ecuId 4位数字
+}

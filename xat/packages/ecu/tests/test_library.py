@@ -216,6 +216,9 @@ from xat_ecu.vehicle.base import VehicleProfile
 with VehicleSDK("软件测试", "1", profile=VehicleProfile("软件测试", "1")) as sdk:
     sdk.simulator.start_simulation(ecus=["BGM"])
     assert sdk.simulator.get_response_for("BGM", 0x22) == b"\\x62"
+from xat_ecu.api import CommonBusComm, CommonSdTest, AbcBusComm
+assert hasattr(CommonBusComm, "__init__")
+assert not {"groot2", "paramiko", "scapy", "can"}.intersection(sys.modules)
 '''
     subprocess.run([sys.executable, "-I", "-c", script], check=True, capture_output=True, text=True)
 

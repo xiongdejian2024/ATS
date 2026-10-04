@@ -1,0 +1,45 @@
+{
+    "BgmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1361,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DLC",
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToBgmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1363,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

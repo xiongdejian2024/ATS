@@ -1,0 +1,211 @@
+{
+    "AswmCem_Lin4Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 28,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AswmCem_Lin4Fr02": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 26,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            128,
+            128,
+            0,
+            0
+        ]
+    },
+    "AswmCem_Lin4PartNrFr05": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 47,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AswmCem_Lin4PartNrFr08": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 20,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AswmCem_Lin4SerNrFr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 33,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin4Fr02": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 2,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin4Fr06": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            62,
+            0,
+            0,
+            128,
+            0,
+            128,
+            0
+        ]
+    },
+    "HodDim_Lin1Fr04": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 24,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "HodDim_Lin1PartNrFr02": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 7,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "HodDim_Lin1PartNrFr03": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 8,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "HodDim_Lin1SerNrFr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 22,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SwmCem_Lin4Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 2,
+        "msg_id": 36,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            16
+        ]
+    },
+    "SwmCem_Lin4Fr02": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 44,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            192,
+            0,
+            64
+        ]
+    },
+    "SwmCem_Lin4Fr05": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 10,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            32,
+            0,
+            4
+        ]
+    }
+}

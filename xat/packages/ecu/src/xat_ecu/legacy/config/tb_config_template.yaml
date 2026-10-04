@@ -1,0 +1,36 @@
+# quan.sun
+bus:
+  eth_obd: "enx000ec64a8e4c"
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+  propulsioncan: 'can3'
+  chassiscan2: 'can0'
+  chassiscan1: 'can2'
+  connectivitycanfd: 'can1'
+  bodycan: 'can4'
+  passivesafetycan: 'can5'
+  # bodycan: 'can0'
+  # passivesafetycan: 'can1'
+  # chassiscan1: 'can2'
+  # chassiscan2: 'can3'
+  # propulsioncan: 'can4'
+  # connectivitycanfd: 'can5'
+  
+usbrelay:
+  ur1: "6QMBS_1"
+  ur2: "6QMBS_2"
+  ur3: "6QMBS_3"
+  ur4: "6QMBS_4"
+  ur5: "6QMBS_5"
+  ur6: "6QMBS_6"
+  ur7: "6QMBS_7"
+  ur8: "6QMBS_8"
+
+adbdevice:
+  tcam: "8e27818c"
+  cdc: "1234567"
+
+
+
+
+

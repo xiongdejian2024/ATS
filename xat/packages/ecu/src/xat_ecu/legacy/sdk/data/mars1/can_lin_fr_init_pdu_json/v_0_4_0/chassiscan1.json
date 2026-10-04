@@ -1,0 +1,36 @@
+{
+    "BgmChas1Fr01": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 293,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmChas1Fr02": {
+        "msg_cycle": 0.06,
+        "msg_length": 8,
+        "msg_id": 294,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

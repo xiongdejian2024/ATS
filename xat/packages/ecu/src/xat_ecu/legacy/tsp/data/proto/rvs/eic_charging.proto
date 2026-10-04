@@ -1,0 +1,262 @@
+syntax = "proto3";
+package vehiclestatus;
+import "block_head.proto";
+
+// =====================================================================
+// BLOCK ID 10500
+// 充电三电信息块 发送类型：Event
+// @https://jama.jiduauto.com/perspective.req#/items/451854?projectId=46
+//  https://soa.jidudev.com/classjet_1_1vehicle_1_1HighVoltage.html
+// =====================================================================
+
+//充电三电信息块
+message EicChargingBlock {
+  BlockHead         head        = 1 ; //公共头
+  Charging          charging    = 2; // 充电信息
+  BatteryInfo       batteryInfo  = 3 ; //电池信息
+}
+
+message Charging {
+  ChargeLidStatus       lidStatus                 = 1; // 充电口盖子状态
+  PluggerStatus         pluggerStatus             = 2; // 充电枪状态
+  ChargingStatus        chargingStatus            = 3; // 充电状态
+  int32                 chargingSpeed             = 4; // 充电速度
+  int32                 remainChargingTime        = 5; // 剩余充电时长 单位min 默认值为0
+  float                 chargeTargetSoc           = 6; // 充电目标电量 % 50-100 //p
+  int32                 chargingPower             = 7; // 充电功率  范围0~204700，单位W 小于0.1kw，显示--kw；小于10kw，显示一位小数；大于等于10kw，四舍五入显示整数
+  int64                 totalChargeEgy            = 8; // 整车生命周期充电总量
+  int32                 chargeEgyThisTime         = 9; // 本次充电电量
+  int32                 incMileageThisTime        = 10; //本次充电增加的续航里程 km/h
+  uint64                recentChargeStartTime     = 11;// 最近一次充电开始时间
+  uint64                recentChargeEndTime       = 12;// 最近一次充电结束时间
+  ChargeLidLightStatus  lidLightStatus            = 13;// 充电口盖灯显示状态  （V1.0删除：车端未实现）
+  ChargingEquipmentInfo equipmentInfo             = 14;// 充电桩信息
+  ChargingBookInfo      bookInfo                  = 15; // 预约充电信息
+  int32                 chargeTargetMileage       = 16; // 目标里程 km
+  uint32                chargingLidPos            = 17; // 充电口盖位置百分比 范围0-100(0~5：全关，6~100：打开，100：全开)，单位%，default：255(Unknown)
+  float                 chargerInputPower         = 18; // 充电桩输入充电功率 充电桩给的电流和车端电池电压相乘 1.4添加
+  bool                  isCharging                = 19; // 是否正在充电 chargingstate = 15||24||2||28||30
+  bool                  isConnect                 = 20; // 是否连接枪 (交直流两个充电口至少连接一个充电或放电设备)
+  ChargingSlowRemind    chargingSlowRemind        = 21; // 充电慢原因及电池温度
+  float                 batteryReqCurrent         = 22; // 充电请求电流 0 - 819.1A  -1 代表默认无效值
+  FullChargingRemind    fullChargingRemind        = 23; // 磷酸铁锂电池需满充提醒
+  bool                  isDischarging             = 24; // 是否放电中 15||24||2||28||30  && DischargingFlag = true
+  ACDCType              acdcType                  = 25; // 充放电设备类型
+}
+
+// 电池信息
+//https://soa.jidudev.com/classjet_1_1vehicle_1_1LowVoltage.html
+message BatteryInfo {
+  //手机APP展示需注意，参考CDC显示逻辑：接收到充电电流为负电流，显示电流的绝对值；若收到的电流为正电流或零值，对应显示充电电流为“--”，意味着充电电流为0。
+  float                       current         = 1; // 电流 单位：A，范围： -1638~1638.7 A 正值代表用电，为负值代表充电，电流只显示整数部分，小数部分直接舍弃
+  float                       voltage	        = 2; // 电压 单位：V，范围：0-511 V 默认值：0.0 电压只有正值，只在>0的时候显示整数部分，小数部分直接舍弃，默认显示--
+  float 	                    calculatedSoc   = 3; // 主节点计算的小电池SOC值 0~100, 精度：0.1
+  float 	                    calculatedSoh   = 4; // 主节点计算的小电池SOH值 0~100, 精度：0.1
+}
+
+//充电桩信息
+//https://soa.jidudev.com/structjet_1_1vehicle_1_1HighVoltage_1_1ChargingEquipmentInfo.html
+message ChargingEquipmentInfo {
+  float                       maxCurrent      = 1; // 充电桩最大输出电流
+  float                       actualCurrent	  = 2; // 充电桩实际输出电流
+  repeated EquipmentType      type            = 3; // 充电桩特征列表（可多选）
+}
+
+// 充电预约信息
+// 如果没插枪，无论有预约事件还是没有预约事件，服务接口都会发bookChargests=0 默认值。
+// 如果已插枪，只要依然有预约事件存在，即使车辆进入了充电过程中，服务接口依然会发bookChargests=on预约开启。
+// 如果已插枪，用户取消了预约，则服务接口通知bookChargests=off预约关闭。
+message ChargingBookInfo {
+  ChargingBookStatus    bookStatus                = 1;// 预约充电状态
+//  ChargingBookTimeInfo  bookTimeInfo              = 2;// 预约充电时间信息 已废弃
+  ChargingBookType      bookType                  = 3; // 预约充电的类型
+  int32                 startHour                 = 4;// 预约充电开始时间-小时 有效值0-23 无效值24
+  int32                 startMinute               = 5;// 预约充电开始时间-分钟 有效值0-59 无效值60
+  int32                 endHour                   = 6;// 预约充电结束时间-小时 有效值0-23 无效值24
+  int32                 endMinute                 = 7;// 预约充电结束时间-分钟 有效值0-59 无效值60
+}
+
+// 预约充电时间信息
+message ChargingBookTimeInfo {
+  ChargingBookType          bookType        = 1; // 预约充电的类型
+  uint64                    startTime       = 2; // 开始时间 (时间戳)
+  uint64                    endTime         = 3; // 结束时间 (时间戳)
+}
+
+// 预约充电的类型
+enum ChargingBookType {
+  ChargingBookTypeLocal                   = 0; // 本地
+  ChargingBookTypeBluetooth               = 1; // 蓝牙
+  ChargingBookTypeRemote                  = 2; // 远程
+  ChargingBookTypeOthers                  = 3; // 其他
+  ChargingBookTypeEmpty                   = -1; // --
+}
+
+// 预约充电状态
+enum ChargingBookStatus {
+  ChargingBookStatusDefault           = 0; // 默认
+  ChargingBookStatusBookOn            = 1; // 预约开启
+  ChargingBookStatusBookOff           = 2; // 预约关闭
+  ChargingBookStatusBookReserve       = 3; // 预留
+  ChargingBookStatusEmpty             = -1;// --
+}
+
+// 充电口盖状态
+enum ChargeLidStatus {
+  LidStatusOpened                                           		= 0 ;//打开 运动行程在6%~100%均表示已打开 (kOpened)
+  LidStatusClosing                                          		= 1 ;//预留 (kClosing)
+  LidStatusClosed                                           		= 2 ;//关闭 运动行程在0%~5%均表示已关闭 (kClosed)
+  LidStatusLocked                                           		= 3 ;//预留 (kLocked)
+  LidStatusUnlocked                                         		= 4 ;//预留 (kUnlocked)
+  LidStatusOpening                                          		= 5 ;//预留 (kOpening)
+  LidStatusHover                                            		= 6 ;//预留 (kHover)
+  LidStatusNA                                               		= 7 ;//状态未知   (kNA)
+  LidStatusEmpty                                             		= -1 ;//-- (Empty)
+}
+//充电枪状态
+
+enum PluggerStatus	{
+  PsDisconnected                                			= 0 ;//未连接 (StatusDisconnected)
+  PsConnectedWithoutPower                       			= 1 ;//已连接，无低压电源输入 (StatusConnectedWithoutPower)
+  PsPowerAvailableButNotActivated               			= 2 ;//PowerAvailableButNotActivated (StatusPowerAvailableButNotActivated)
+  PsConnectedWithPower                          			= 3 ;//已连接，有低压电源输入 (StatusConnectedWithPower)
+  PsInit                                        			= 4 ;//Init (StatusInit)
+  PsFault                                        			= 5 ;//Fault (StatusFault)
+  PsStatusDefault                                     = 6 ;//Default (StatusDefault)
+  PsNotCompleteConnected                      		    = 7 ;//未完全连接（交流枪专有） (kStatusNotCompleteConnnected)
+  PsDischargeConnectWithoutPowerInCar          		    = 8 ;//车内放电器连接 未输出 (kStatusDischargeConnectWithoutPowerInCar)
+  PsDischargeConnectWithoutPowerOutCar         		    = 9 ;//车外放电枪连接 未输出（目前仅支持交流放电枪） (kStatusDischargeConnectWithoutPowerOutCar)
+  PsDischargeConnectWithPowerInCar             		    = 10 ;//车内放电器连接 有输出 (kStatusDischargeConnectwithPowerInCar)
+  PsDischargeConnectWithPowerOutCar            		    = 11 ;//车外放电枪连接 有输出（目前仅支持交流放电枪） (kStatusDischargeConnectwithPowerOutCar)
+  PsEmpty                                             = -1 ; //--
+}
+//充电状态
+//中文说明详细见：https://jama.jiduauto.com/perspective.req#/items/91235?projectId=46
+enum ChargingStatus	{
+  CsDefault                                           		= 0 ;//默认值(Default)
+  CsNoCharging                                        		= 1 ;//未充电(NoCharging)
+  CsACCharging                                        		= 2 ;//交流充电中(ACCharging)
+  CsACChargingEnd                                     		= 3 ;//交流充电结束(ACChargingEnd)
+  CsChargingCmpl                                      		= 4 ;//交流充电完成(ChargingCmpl)
+  CsHeating                                           		= 5 ;//直流充电预热状态(Heating)
+  CsBooking                                           		= 6 ;//充电预约中(Booking)
+  CsNoDischarging                                     		= 7 ;//无交流放电(NoDischarging)
+  CsDischarging                                       		= 8 ;//交流放电中(Discharging)
+  CsDischargingEnd                                    		= 9 ;//交流放电结束(DischargingEnd)
+  CsDischargingCmpl                                   		= 10 ;//交流放电完成(DischargingCmpl)
+  CsChargingfault                                     		= 11 ;//充电故障(Chargingfault)
+  CsDischargingFault                                  		= 12 ;//交流放电故障(DischargingFault)
+  CsACChrgnFltChrgrSide                               		= 14 ;//交流充电桩故障(ACChrgnFltChrgrSide)
+  CsDCCharging                                        		= 15 ;//直流充电中(DCCharging)
+  CsDCChrgnFltVehSide                                 		= 18 ;//直流充电车端故障(DCChrgnFltVehSide)
+  CsDCChrgnFltChrgrSideTempFlt                        		= 19 ;//直流充电桩过温故障(DCChrgnFltChrgrSideTempFlt)
+  CsDCChrgnFltChrgrSideConFlt                         		= 20 ;//直流充电桩连接器故障(DCChrgnFltChrgrSideConFlt)
+  CsDCChrgnFltChrgrSideHwFlt                          		= 21 ;//直流充电桩端故障(DCChrgnFltChrgrSideHwFlt)
+  CsDCChrgnFltChrgrSideEmgyFlt                        		= 22 ;//直流充电桩能量传输故障(DCChrgnFltChrgrSideEmgyFlt)
+  CsDCChrgnFltChrgrSideComFlt                         		= 23 ;//直流充电桩通讯故障(DCChrgnFltChrgrSideComFlt)
+  CsSuperCharging                                     		= 24 ;//超充中(SuperCharging)
+  CsACChargingSuspend                                 		= 25 ;//交流充电中止(ACChargingSuspend)
+  CsDCChargingEnd                                     		= 26 ;//直流充电结束(DCChargingEnd)
+  CsACChrgnFltVehSide                                 		= 27 ;//交流充电车辆故障(ACChrgnFltVehSide)
+  CsBoostcharging                                     		= 28 ;//增压充电中(Boostcharging)
+  CsBoostchargingFlt                                  		= 29 ;//增压充电故障(BoostchargingFlt)
+  CsWirelessCharging                                  		= 30 ;//无线充电中(WirelessCharging)
+  CsEmpty                                             		= -1 ;//-- (Empty)
+}
+//充电桩类型
+enum EquipmentType {
+  EtUnknownJiduCharger	       = 0 ; //是否集度桩未知
+  EtJiduCharger	               = 1 ; //	集度桩 (JiduCharger)
+  EtNotJiduCharger	       = 2 ; //	非集度桩 (NotJiduCharger)
+  EtPrivateCharger	       = 3 ; //	私桩 (PrivateCharger)
+  EtPublicCharger	       = 4 ; //	公桩 (PublicCharger)
+  EtFastCharger	               = 5 ; //	快充桩 (FastCharger)
+  EtSlowCharger	               = 6 ; //	慢充桩 (SlowCharger)
+  EtUnknownPriPublicCharger    = 7 ; //公私桩未知 (UnknownPriPublicCharger)
+  EtACCharger                  = 8 ; //交流桩 (ACCharger)
+  EtEmpty                      = -1; //--
+}
+//充电口盖灯显示状态
+enum ChargeLidLightStatus {
+  ChargeLightOff                        = 0 ;// 关闭 (kOff)
+  ChargeLightWhite                      = 1 ;// White (kWhite)
+  ChargeLightBlue                       = 2 ;// Blue (kBlue)
+  ChargeLightGreenBreath                = 3 ;// GreenBreath (kGreenBreath)
+  ChargeLightGreen                      = 4 ;// Green (kGreen)
+  ChargeLightBlueBreath                 = 5 ;// BlueBreath (kBlueBreath)
+  ChargeLightGreen5                     = 6 ;// Reserved (kReserved)
+  ChargeLightRed                        = 7 ;// Red (kRed)
+  ChargeLightEmpty                      = -1; // --
+}
+
+//// 预约充电
+//// @https://jama.jiduauto.com/perspective.req#/items/343855?projectId=46
+//message ChargingBooking {
+//  Bool                          isActive        = 1; // 充电预约开关设置
+//
+//  ChargingBookingStateFeedback     stateFeedback   = 2; // 预约充电状态反馈，当前无充电
+//  ChargingBookingSettingFeedback   settingFeedback = 3; // 预约充电设置反馈，充电过程中进行预约
+//
+//  int64 startTime  = 4; // 开始时间，BCD时间,如:0x201801061647 表示2018年1月6日16时47分
+//  int64 stopTime   = 5; // 结束时间，格式同上
+//}
+//
+//
+//// 充电状态
+//// @https://jama.jiduauto.com/perspective.req#/items/196499?projectId=46
+//enum ChargingState {
+//  CS_NO_TEXT        = 0;
+//  CS_CHARGING       = 1;
+//  CS_CHARGING_STOP  = 2;
+//  CS_BOOK_CHARGING  = 3;
+//  CS_PRE_HEATING    = 4;
+//  CS_SUPER_CHARGING = 5;
+//  CS_SUPER_CHARGING_END = 6;
+//  CS_CHARGING_FAILURE   = 7;
+//}
+//
+//// 预约充电状态反馈
+//enum ChargingBookingStateFeedback {
+//  CBF_DEFAULT   = 0;
+//  CBF_SUCCESS   = 1;
+//  CBF_FAIL      = 2;
+//  CBF_FINISHED  = 3;
+//}
+//
+//// 预约充电设置反馈
+//enum ChargingBookingSettingFeedback {
+//  CBSF_DEFAULT    = 0 ;
+//  CBSF_SUCCESS    = 1 ;
+//  CBSF_CANCELLED  = 2 ;
+//  CBSF_FAIL       = 3 ;
+//}
+
+//充电慢原因及电池温度
+message ChargingSlowRemind {
+  float  temperature                              = 1 ;//显示温度 65535 为无效值 显示 -- °C   -256~255.9 精度 0.1
+  repeated ChargingSlowReason  reason             = 2 ;//充电慢原因
+}
+
+//充电慢原因 提示优先级说明：充电桩功率受限>电量较高>电池温度低；
+enum ChargingSlowReason	{
+  CLReasonNone                                             		= 0 ;// 无原因 充电正常 (kNone)
+  CLReasonTemperatureLow                                   		= 1 ;// 电池温度低 (kTemperatureLow)
+  CLReasonSOCHigh                                          		= 2 ;//电量较高，充电功率下降  (kSOCHigh)
+  CLReasonEquipmentLimit                                   		= 3 ;//充电桩输出功率低  (kEquipmentLimit)
+  CLReasonEmpty                                             	= -1 ;//-- (Empty)
+}
+// 磷酸铁锂电池需满充提醒
+message FullChargingRemind {
+  bool remind                               = 1 ;//是否显示提醒
+  //  int64  energySinceLastFullCharge                    = 2 ;//未有需求 自上次满充后累计充入的电量 -1 代表默认无效值
+}
+
+//充放电设备类型（交流/直流）
+enum ACDCType	{
+  ACDCTypeDefault                                          		= 0 ;//Default 未连接 当前无 (kDefault)
+  ACDCTypeDC                                               		= 1 ;//直流枪连接 直流相关状态 (kDC)
+  ACDCTypeAC                                               		= 2 ;//交流枪连接 交流相关状态 (kAC)
+  ACDCTypeACDC                                             		= 3 ;//交流枪直流枪都连接（当前不支持） (kACDC)
+  ACDCTypeUnknown                                          		= 255 ;//未知设备类型 (kUnknown)
+  ACDCTypeEmpty                                             	= -1 ;//-- (Empty)
+}

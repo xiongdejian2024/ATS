@@ -1,0 +1,29 @@
+syntax = "proto3";
+package vehiclestatus;
+
+enum VIDBBlockID
+{
+  BlockStart = 0;
+  BlockEcu                         = 10101; // euc信息
+  BlockVehicleMode                 = 10102; // 车辆模式
+  BlockVehicleBody                 = 10103; // 车身状态
+  BlockCabinStatus                 = 10104; // 座舱状态
+  BlockGISAndTravel                = 10105; // 地理行驶信息; cycle
+  BlockDrivingStatus               = 10106; // 驾驶状态 手刹 挂档 方向盘 油门 力度
+  BlockEicCharging                 = 10107; // 充电三电信息
+  BlockWTI                         = 10108; // WTI报警  v1.0删除
+  BlockBusStatus                   = 10109; // 业务激活状态
+  BlockDeviceInfo                  = 10110; // 设备信息
+  BlockEolData                     = 10111; // 整车产线信息
+  BlockLight                       = 10112; // 灯信息
+  BlockGnss                        = 10113; // GNSS信息
+  BlockAVP                         = 19001; // 蓝牙专属模块AVP
+  BlockGeneralWTI                  = 10701;
+  BlockAutoDriveWTI                = 10702;
+}
+message BlockHead {
+    int32              version  = 1 ; // 版本
+    uint64             time     = 2 ; //时间戳
+    map<string,string> errors   = 3 ; //错误消息
+    int32              blockID  = 4 ; //数据块id
+}

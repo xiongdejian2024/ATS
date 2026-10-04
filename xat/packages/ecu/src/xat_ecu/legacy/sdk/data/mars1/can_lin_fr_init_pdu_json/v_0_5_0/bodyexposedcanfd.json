@@ -1,0 +1,2338 @@
+{
+    "CEMBodyExpoCommonFr06": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 512,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+        ]
+    },
+    "CEMBodyExpoCommonFr07": {
+        "msg_cycle": 0.06,
+        "msg_length": 8,
+        "msg_id": 544,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 82,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr02": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 768,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr04": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 80,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr05": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 384,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr08": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 128,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            188
+        ]
+    },
+    "CemBodyExpoCommonFr09": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 387,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr10": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 389,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            1,
+            144,
+            50,
+            1,
+            224,
+            120,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr11": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 390,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            1,
+            144,
+            50,
+            1,
+            224,
+            120,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr12": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 391,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            75,
+            90,
+            3,
+            32,
+            0,
+            2,
+            208,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr13": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 392,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            3,
+            32,
+            100,
+            3,
+            233,
+            244,
+            48
+        ]
+    },
+    "CemBodyExpoCommonFr14": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 393,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            3,
+            32,
+            100,
+            3,
+            233,
+            244,
+            48
+        ]
+    },
+    "CemBodyExpoCommonFr15": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 394,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            3,
+            32,
+            100,
+            3,
+            233,
+            244,
+            48
+        ]
+    },
+    "CemBodyExpoCommonFr16": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 395,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            3,
+            32,
+            100,
+            3,
+            233,
+            244,
+            48
+        ]
+    },
+    "CemBodyExpoCommonFr17": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 396,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            3,
+            32,
+            100,
+            3,
+            233,
+            244,
+            48
+        ]
+    },
+    "CemBodyExpoCommonFr18": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 397,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            3,
+            32,
+            100,
+            3,
+            233,
+            244,
+            48
+        ]
+    },
+    "CemBodyExpoCommonFr19": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 398,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            3,
+            32,
+            100,
+            3,
+            233,
+            244,
+            48
+        ]
+    },
+    "CemBodyExpoCommonFr20": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 399,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            3,
+            32,
+            100,
+            3,
+            233,
+            244,
+            48
+        ]
+    },
+    "CemBodyExpoCommonFr21": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 64,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoCommonFr22": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 400,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            16,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoDevFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1431,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 28,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 288,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 289,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr04": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 290,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr05": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 291,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr06": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 292,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr07": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 293,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr08": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 294,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr09": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 295,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr10": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 296,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr100": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 834,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr101": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 835,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr102": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 836,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr103": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 837,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr104": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 838,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr105": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 839,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr106": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 840,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr107": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 841,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr108": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 842,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr109": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 843,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 297,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr110": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 844,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr111": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 845,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr112": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 846,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr113": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 847,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr114": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 848,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr12": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 298,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr13": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 299,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr14": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 300,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr15": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 301,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr16": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 302,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr17": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 303,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr18": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 304,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr19": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 305,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr20": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 306,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr21": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 307,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr22": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 308,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr23": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 309,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr24": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 310,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr25": {
+        "msg_cycle": 0.085,
+        "msg_length": 8,
+        "msg_id": 120,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr26": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 311,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr27": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 312,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr28": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 313,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr29": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 314,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr30": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 315,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr31": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 316,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr32": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 317,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr33": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 318,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr34": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 319,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr35": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 320,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr36": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 321,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr37": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 322,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr38": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 323,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr41": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 377,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            255,
+            5,
+            0,
+            0,
+            128,
+            0,
+            9,
+            6
+        ]
+    },
+    "CemBodyExpoFr42": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 381,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            255,
+            5,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr45": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 612,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr48": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 324,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr49": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 325,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr50": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 522,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr51": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 538,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+        ]
+    },
+    "CemBodyExpoFr52": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 326,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr53": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 327,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr54": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 328,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr55": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 329,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr56": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 330,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr57": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 331,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr58": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 332,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr59": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 24,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr60": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 333,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr61": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 334,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr62": {
+        "msg_cycle": 0.94,
+        "msg_length": 8,
+        "msg_id": 788,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr63": {
+        "msg_cycle": 0.94,
+        "msg_length": 8,
+        "msg_id": 789,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr67": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 801,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr68": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 802,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr69": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 803,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr70": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 804,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr71": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 805,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr72": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 806,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr73": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 807,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr74": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 808,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr75": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 809,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr76": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 810,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr77": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 811,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr78": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 812,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr79": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 813,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr80": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 814,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr81": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 815,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr82": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 816,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr83": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 817,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr84": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 818,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr85": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 819,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr86": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 820,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr87": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 821,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr88": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 822,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr89": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 823,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr90": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 824,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr91": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 825,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr92": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 826,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr93": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 827,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr94": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 828,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr95": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 829,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr96": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 830,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr97": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 831,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr98": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 832,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyExpoFr99": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 833,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtctoHcmlXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1430,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtctoHcmrXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1428,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "HcmlBodyExpoFr02": {
+        "msg_cycle": 0.05,
+        "msg_length": 3,
+        "msg_id": 593,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0
+        ]
+    },
+    "HcmlBodyExpoFr04": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 124,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "HcmltoEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1424,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "HcmrBodyExpoFr02": {
+        "msg_cycle": 0.05,
+        "msg_length": 3,
+        "msg_id": 594,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0
+        ]
+    },
+    "HcmrBodyExpoFr04": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 127,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "HcmrtoEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1426,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RcmlBodyExpoFr01": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 592,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RcmmBodyExpoFr02": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 596,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RcmrBodyExpoFr01": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 608,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

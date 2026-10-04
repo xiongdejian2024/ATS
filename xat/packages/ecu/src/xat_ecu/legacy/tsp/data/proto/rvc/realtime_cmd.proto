@@ -1,0 +1,26 @@
+syntax="proto3";
+
+package cmd;
+
+option go_package="go/remote_vehicle_control/cmd";
+
+import "source/remote_vehicle_control/cmd/common.proto";
+
+/* 实时指令发送 */
+message RealtimeCmdReq{
+  string            execId            = 1; // 执行唯一ID
+  string            vid               = 2; // 车辆vid
+  EnumVehicleModel  vehicleModel      = 3; // 车型
+  EnumCmdCode       cmdCode           = 4; // 指令编码
+  CmdDetail         cmdDetail         = 5; // 指令项
+  int64             timestamp         = 6; // 发送时间戳 加密需要
+  int64             operateUserId     = 7; // 用户ID
+}
+
+message RealtimeCmdResp{
+  string              execId          = 1; // 执行唯一ID
+  int32               code            = 2; // 0 执行成功，非0失败
+  string              msg             = 3; // 具体原因
+  map<string, string> data            = 4; // 响应数据(可选),map格式
+  int32               execType        = 5; // 指令开始或者结束，  必传  1：ack，Tcm收到指令； 2：开始，执行前置条件满足且检验通过，执行器触发开始执行； 3：结束，指令执行的实际结果，执行器执行完成，反馈执行结果；
+}

@@ -1,0 +1,36 @@
+{
+    "BgmBodyALMCANFD1Fr01": {
+        "msg_cycle": 0.62,
+        "msg_length": 8,
+        "msg_id": 880,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmBodyALMCANFD1Fr02": {
+        "msg_cycle": 0.215,
+        "msg_length": 8,
+        "msg_id": 575,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            16,
+            0
+        ]
+    }
+}

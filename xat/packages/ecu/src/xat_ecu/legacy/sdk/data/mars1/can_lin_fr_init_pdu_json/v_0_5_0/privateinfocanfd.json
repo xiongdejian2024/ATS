@@ -1,0 +1,423 @@
+{
+    "AUDInfoCanFr03": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 944,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AUDInfoCanFr07": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 33,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AUDPrivateInfoCANFDFr10": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1360,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CDCPrivateInfoCANFDFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 32,
+        "msg_id": 512,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CDCPrivateInfoCANFDFr02": {
+        "msg_cycle": 0.02,
+        "msg_length": 32,
+        "msg_id": 528,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            14,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CDCPrivateInfoCANFDFr03": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 544,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CDCPrivateInfoCANFDFr04": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 800,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CDCPrivateInfoCANFDFr05": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1376,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            16,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CDPrivateInfoCANFDFr01": {
+        "msg_cycle": 0.1,
+        "msg_length": 16,
+        "msg_id": 576,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            80,
+            0,
+            0,
+            34,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CDPrivateInfoCANFDFr02": {
+        "msg_cycle": 8.0,
+        "msg_length": 16,
+        "msg_id": 1109,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            16,
+            0,
+            5,
+            48,
+            3,
+            19,
+            25,
+            165,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CDPrivateInfoCANFDFr03": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 96,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DhuInfoCanFr07": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 379,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DhuInfoCanFr08": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 399,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "IhuDhuInfoCanFr02": {
+        "msg_cycle": 0.2,
+        "msg_length": 8,
+        "msg_id": 913,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "IhuDhuInfoCanFr03": {
+        "msg_cycle": 0.2,
+        "msg_length": 8,
+        "msg_id": 336,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            15,
+            255,
+            252,
+            0
+        ]
+    },
+    "IhuDhuInfoCanFr07": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 344,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "IhuDhuInfoCanFr08": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 849,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "IhuDhuInfoCanFr09": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1104,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "IhuDhuInfoCanFr10": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 32,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            4
+        ]
+    },
+    "IhuDhuInfoCanFr19": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 85,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "IhuDhuInfoCanFr21": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 362,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

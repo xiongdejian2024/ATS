@@ -1,0 +1,13 @@
+{
+    "service_config_table": [
+        {
+            "service_name": "FullSampleService",
+            "safety_enable": true
+        },
+        {
+            "service_name": "BootesSampleService",
+            "safety_enable": false
+        }
+    ],
+    "request_event_config_table": []
+}

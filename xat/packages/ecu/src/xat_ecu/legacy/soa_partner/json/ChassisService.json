@@ -1,0 +1,1138 @@
+{
+    "ChassisService": [
+        {
+            "IF_ChassisService": [
+                {
+                    "GetSuspFailrStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "failSts": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetBrkFldLvlWarnMsgStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getBrkSysWarnIndicateReqSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "BrkSysWarnMsgDisplayReqSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getABSActInfo": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "flActSts": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getABSFailSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getABSWarnIndicateReqSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getDisplayReqSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "highPriSts": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getIndicatorLightReqSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getWarnChimeReqSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getBrkRelsWarnReqSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getHdcWorkSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetAutoHoldFunctionAvailable": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetEscSportMode": {
+                        "arg_in": [
+                            {
+                                "id": 0
+                            },
+                            {
+                                "isOpen": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getAvhDisplayReqSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetEscSportModeStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getESCWarnIndicateReqSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getESCOffIndicateLightSts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "getVehReadySts": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetAccrPedalPosRate": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "rate": 0.0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetBrakePedlPsdStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "isPressed": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "brkSysWarnIndicateReqSts": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "brkSysWarnMsgDisplayReqSts": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "absActSts": {
+                        "arg_in": [
+                            {
+                                "flActSts": false
+                            },
+                            {
+                                "frActSts": false
+                            },
+                            {
+                                "rlActSts": false
+                            },
+                            {
+                                "rrActSts": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "absFailSts": {
+                        "arg_in": [
+                            {
+                                "sts": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "absWarnIndicateReqSts": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "epbWorkSts": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "epbDisplayReqSts": {
+                        "arg_in": [
+                            {
+                                "highPriSts": 0
+                            },
+                            {
+                                "lowPriSts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "epbIndicatorLightReqSts": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "epbWarnChimeReqSts": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "brkRelsWarnReqSts": {
+                        "arg_in": [
+                            {
+                                "sts": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "hdcWorkSts": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "AutoHoldFunctionAvailable": {
+                        "arg_in": [
+                            {
+                                "sts": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "avhDisplayReqSts": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "escWarnIndicateReqSts": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "escOffIndicateLightSts": {
+                        "arg_in": [
+                            {
+                                "sts": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "vehicleReady": {
+                        "arg_in": [
+                            {
+                                "sts": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "NotifyBrkFldLvlWarnMsgStatus": {
+                        "arg_in": [
+                            {
+                                "msg": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "NotifyCrpModSts": {
+                        "arg_in": [
+                            {
+                                "sts": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "NotifySuspFailrStatus": {
+                        "arg_in": [
+                            {
+                                "failSts": false
+                            },
+                            {
+                                "factor": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "NotifyEscSportModeStatus": {
+                        "arg_in": [
+                            {
+                                "sts": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "Lock": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "Unlock": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetLockStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetDisplaySpeed": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "speed": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetSpeed": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "speed": 0.0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetTorqueMode": {
+                        "arg_in": [
+                            {
+                                "mode": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetTorqueMode": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetSuspensionLevel": {
+                        "arg_in": [
+                            {
+                                "level": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetSuspensionLevel": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetAutoHold": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetAutoHold": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetHDCFunctionAvailable": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetHDC": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetHDCOn": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetTowMode": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetCoastEnergyRegenerateMode": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetCreepMode": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetESC": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetESC": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetEPBOperationStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "EPBOperation": {
+                        "arg_in": [
+                            {
+                                "operate": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "SetGear": {
+                        "arg_in": [
+                            {
+                                "gear": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": "None"
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetGear": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetGearFault": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": [
+                                "0"
+                            ]
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetWheelSpeed": {
+                        "arg_in": [
+                            {
+                                "wheels": [
+                                    "1"
+                                ]
+                            }
+                        ],
+                        "arg_out": {
+                            "wheelId": 1
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetWheelImpluseCounter": {
+                        "arg_in": [
+                            {
+                                "wheels": [
+                                    "1"
+                                ]
+                            }
+                        ],
+                        "arg_out": {
+                            "wheelId": 1
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetVehicleMotionState": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "sts": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetSteerErrorReqStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetESCWorkStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetTraveledDistance": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetGearShiftParkStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "parkReq": false
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "GetSportModeAvailableStatus": {
+                        "arg_in": {},
+                        "arg_out": {
+                            "out": 0
+                        },
+                        "type": "method"
+                    }
+                },
+                {
+                    "ChassisFault": {
+                        "arg_in": [
+                            {
+                                "faults": [
+                                    "0"
+                                ]
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "DisplaySpeedChanged": {
+                        "arg_in": [
+                            {
+                                "speed": 0
+                            },
+                            {
+                                "speedUnit": 0
+                            },
+                            {
+                                "isvalid": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "SpeedChanged": {
+                        "arg_in": [
+                            {
+                                "speed": 0.0
+                            },
+                            {
+                                "isvalid": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "TorqueMode": {
+                        "arg_in": [
+                            {
+                                "mode": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "Gear": {
+                        "arg_in": [
+                            {
+                                "gear": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "GearFault": {
+                        "arg_in": [
+                            {
+                                "faults": [
+                                    "0"
+                                ]
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "WheelSpeed": {
+                        "arg_in": [
+                            {
+                                "wheelId": 1
+                            },
+                            {
+                                "speed": 0.0
+                            },
+                            {
+                                "isvalid": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "WheelImpluseCounter": {
+                        "arg_in": [
+                            {
+                                "wheelId": 1
+                            },
+                            {
+                                "wheelImpluseCounter": 0
+                            },
+                            {
+                                "isvalid": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "VehicleMotionState": {
+                        "arg_in": [
+                            {
+                                "sts": 0
+                            },
+                            {
+                                "isVaild": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "SteerErrorReqStatus": {
+                        "arg_in": [
+                            {
+                                "": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "ESCWorkStatus": {
+                        "arg_in": [
+                            {
+                                "": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "EPBOperationStatus": {
+                        "arg_in": [
+                            {
+                                "": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "HDCFunctionAvailableChanged": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "HDCChanged": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "ESCChanged": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "AutoHoldChanged": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "SuspensionLevel": {
+                        "arg_in": [
+                            {
+                                "level": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "TraveledDistance": {
+                        "arg_in": [
+                            {
+                                "value": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "CoastEnergyRegenerateMode": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "CreepMode": {
+                        "arg_in": [
+                            {
+                                "on": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "GearShiftParkStatus": {
+                        "arg_in": [
+                            {
+                                "parkReq": false
+                            },
+                            {
+                                "validSts": false
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                },
+                {
+                    "SportModeAvailableStatus": {
+                        "arg_in": [
+                            {
+                                "state": 0
+                            }
+                        ],
+                        "arg_out": {
+                            "out": null
+                        },
+                        "type": "event"
+                    }
+                }
+            ]
+        }
+    ]
+}

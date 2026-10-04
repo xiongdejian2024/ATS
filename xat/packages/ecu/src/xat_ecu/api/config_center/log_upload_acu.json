@@ -1,0 +1,632 @@
+{
+    "common.upload.cfg": {
+        "ecuName": "ACU",
+        "cfgVersion": "2023.11.16.v1.3_cloud",
+        "cfgExpiredTime": 1711865051
+    },
+    "file.autoUpload.cfg": {
+        "isUploadCalibrationFile": true,
+        "uploadTelemetry": 1
+    },
+    "log.periodUpload.cfg": {
+        "commonConfig": {
+            "uploadPeriodEnable": true,
+            "uploadPeriodSecond": 300,
+            "minSize": 100,
+            "maxSize": 12
+        },
+        "periodUploadConfig": [
+            {
+                "logType": [
+                    "l2c_service_"
+                ],
+                "logDir": "/opt/log/jidu_output/l2c_service",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "SoaMiningService_"
+                ],
+                "logDir": "/opt/log/jidu_output/SoaMiningService",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "config_server"
+                ],
+                "logDir": "/opt/log/jidu_output/config_server",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "DataClosedLoop"
+                ],
+                "logDir": "/opt/log/jidu_output/DataClosedLoop",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "update_agent."
+                ],
+                "logDir": "/opt/log/jidu_output/update_agent",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "diag_client"
+                ],
+                "logDir": "/opt/log/jidu_output/update_agent/doip",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "uds_server",
+                    "diagd_iautosar"
+                ],
+                "logDir": "/opt/log/udsServer",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "syslog",
+                    "kern.log"
+                ],
+                "logDir": "/opt/log/var_log",
+                "isUploadLog": false
+            },
+            {
+                "logType": [
+                    "kss.log"
+                ],
+                "logDir": "/opt/log/secure/kss",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "kss_service"
+                ],
+                "logDir": "/opt/log/secure/kss_service",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "updproc_mgmt.",
+                    "state_client",
+                    "phm_service"
+                ],
+                "logDir": "/opt/log/jidu_output/proc_mgmt",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "dyn_calib.log",
+                    "eol_calib.log",
+                    "com_calib.log",
+                    "mainboard.log"
+                ],
+                "logDir": "/opt/log/calib",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "data_recycle_daemon.log",
+                    "error.log"
+                ],
+                "logDir": "/opt/log/data_recycle_daemon/log",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "supervisor_master",
+                    "top.master",
+                    "mainboard.log",
+                    "supervisor_slave",
+                    "top.slave"
+                ],
+                "logDir": "/opt/log/sysinfo",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    ".anp3_supervisor"
+                ],
+                "logDir": "/opt/profile",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "anp3.",
+                    "auto_start.",
+                    "deploy."
+                ],
+                "logDir": "/opt/log/anp3",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "bootes_",
+                    "bootes."
+                ],
+                "logDir": "/opt/log/bootes",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "map.json"
+                ],
+                "logDir": "/opt/data/hdmap/SOPEnv-Jidu-GCJ02",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "acu_manager_",
+                    "acu_manager.AcuModeManager"
+                ],
+                "logDir": "/opt/log/jidu_output/acu_manager",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "acu_managerslave_",
+                    "acu_managerslave.AcuManagerSlave"
+                ],
+                "logDir": "/opt/log/jidu_output/acu_manager_slave",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "AcuFaultInfoServiceComponent",
+                    "AnpPatrolStatusComponent",
+                    "GaiaPatrolComponent",
+                    "PatrolBridgeService",
+                    "SensorSelfcleanServiceComponent",
+                    "mainboard",
+                    "patrolbridge.log"
+                ],
+                "logDir": "/opt/log/patrolbridge",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "avp_soa_status_forward.log",
+                    "mainboard.log",
+                    "master_status.log",
+                    "anp_state_info.log",
+                    "avp_soa_state_info.log",
+                    "avp_state_info.log",
+                    "calib_service_info.log",
+                    "canbus_state_info.log",
+                    "top_state_machine_acu_func.log",
+                    "top_state_machine_timer.log",
+                    "top_state_machine_timer_master.log",
+                    "top_state_machine_timer_slave.log"
+                ],
+                "logDir": "/opt/log/topmanage",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "gaia_gaia_bgm_monitor",
+                    "gaia_gaia_data",
+                    "gaia_gaia_iic_proxy",
+                    "gaia_gaia_mcu_logger",
+                    "gaia_gaia_mosaic",
+                    "gaia_gaia_reset_safe",
+                    "gaia_gaia_camera",
+                    "gaia_gaia_stat",
+                    "gaia_gaia_sys",
+                    "gaia_gaia_timesync",
+                    "gaia_mainboard",
+                    "gaia_pavaro",
+                    "gaia_gaia_diagnostic",
+                    "gaia_eda_start_automode",
+                    "gaia_gaia_rover_rtcm"
+                ],
+                "logDir": "/opt/log/acu",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "compute2d_sched",
+                    "data_recycle_sched",
+                    "dreamview_sched",
+                    "hmi_server_",
+                    "patrol_master_orinx_sched",
+                    "patrol_orinx_master_sched",
+                    "tool_sched"
+                ],
+                "logDir": "/opt/log/anp/stdout",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "perf_cpu",
+                    "status_machine.log",
+                    "patrol",
+                    "metric_compute2d_pnc_sched",
+                    "feeling_strategy",
+                    "ime.log.INFO",
+                    "ime.log.ERROR",
+                    "ime_client",
+                    "metatime_record",
+                    "datarecycle.log",
+                    "location_mapping.log",
+                    "/canbus_proxy.log"
+                ],
+                "logDir": "/opt/log/anp/nvme",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "soa_ccp.log",
+                    "soa_data_collection.log",
+                    "soa_data_pool.log",
+                    "soa_perception.log",
+                    "soa_time_sync.log",
+                    "topic-soa-master.log",
+                    "soa_acc.log",
+                    "soa_avnp.log",
+                    "soa_bgm.log",
+                    "soa_gnss.log",
+                    "soa_imu.log",
+                    "soa_mars_control.log",
+                    "soa_noa.log",
+                    "soa_radar.log",
+                    "soa_self_clean.log",
+                    "soa_wti.log",
+                    "topic-soa-slave.log",
+                    "adas_dow.log",
+                    "adas_lca.log",
+                    "adas_cmsf_service.log",
+                    "adas_cmsf_bgm_client.log",
+                    "adas_rcta.log",
+                    "adas_rcw.log",
+                    "adas_lka.log",
+                    "adas_sas.log",
+                    "adas_ahbc.log",
+                    "adas_main_switch.log",
+                    "dyn_calib.log",
+                    "eol_calib.log",
+                    "com_calib.log",
+                    "crs_calib.log",
+                    "bev_calib.log"
+                ],
+                "logDir": "/opt/log/apollo-master",
+                "isUploadLog": true
+            },
+            {
+                "logType": [
+                    "/fish_bev.jpg",
+                    "nfish_bev.jpg"
+                ],
+                "logDir": "/opt/profile/calibration/bev_image",
+                "isUploadLog": true
+            }
+        ]
+    },
+    "log.triggerUpload.cfg": {
+        "commonConfig": {
+            "minSize": 100,
+            "maxSize": 200
+        },
+        "triggerUploadConfig": [
+            {
+                "triggerType": 11,
+                "logType": [
+                    "ocean_master_",
+                    "ocean_master.SCENE",
+                    "ocean_master.SOASimulator",
+                    "ocean_soa",
+                    "stdout_kernel_master",
+                    "stdout_soa",
+                    "ocean_slave_",
+                    "ocean_slave.ALARM",
+                    "ocean_slave.DS_ULTR",
+                    "ocean_slave.imu_ds",
+                    "ocean_slave.MTRACE",
+                    "ocean_slave.PLANNING",
+                    "ocean_slave.SCENE",
+                    "ocean_slave.UltrasonicPpSender",
+                    "report_diagnosis",
+                    "stdout_kernel_slave",
+                    "start_script_detail"
+                ],
+                "logDir": "/opt/log/avp/HAVP",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 11,
+                "logType": [
+                    "perception_datarecycle",
+                    "perception_shadow",
+                    "perception_trafficlights",
+                    "perf_perception",
+                    "perception_carstatusmonitor"
+                ],
+                "logDir": "/opt/log/anp/nvme",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 12,
+                "logType": [
+                    "hmi_server",
+                    "lidar_pandar",
+                    "metric_compute2d",
+                    "parameter_server",
+                    "perception_datarecycle",
+                    "perception_shadow",
+                    "perception_trafficlights",
+                    "perf_cpu",
+                    "status_machine.log",
+                    "/planning.log",
+                    "scene_recognizer",
+                    "static_transform",
+                    "system_event_compute2d_sched",
+                    "adas.log",
+                    "anomalydetection_base.log",
+                    "camera",
+                    "canbus.log",
+                    "computron_interface",
+                    "cyber_control.log",
+                    "data_house",
+                    "datarecycle.log",
+                    "dreamview.log",
+                    "hdmap",
+                    "inference",
+                    "ime.log.ERROR",
+                    "latency_static",
+                    "latency_record",
+                    "localization.log",
+                    "localization_pose_jump.log",
+                    "mainboard",
+                    "metatime_record",
+                    "ime_client",
+                    "ime.log.INFO",
+                    "gnss_driver",
+                    "gnss_rtcm_base_parser",
+                    "metric_compute2d_pnc_sched",
+                    "orin_imu_driver",
+                    "patrol",
+                    "perception_carstatusmonitor",
+                    "prediction.log",
+                    "perf_cpu_slave",
+                    "perf_executor",
+                    "perf_perception",
+                    "roadbook.log",
+                    "routing.log",
+                    "noa.log",
+                    "/decider",
+                    "/canbus_proxy.log"
+                ],
+                "logDir": "/opt/log/anp/nvme",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 12,
+                "logType": [
+                    "compute2d_sched",
+                    "data_recycle_sched",
+                    "dreamview_sched",
+                    "hmi_server_",
+                    "patrol_master_orinx_sched",
+                    "patrol_orinx_master_sched",
+                    "tool_sched"
+                ],
+                "logDir": "/opt/log/anp/stdout",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 12,
+                "logType": [
+                    "patrolbridge.log"
+                ],
+                "logDir": "/opt/log/patrolbridge",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 13,
+                "logType": [
+                    "aeb_fusion_",
+                    "podom"
+                ],
+                "logDir": "/opt/log/jidu_output/aeb_fusion",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 15,
+                "logType": [
+                    "sentrymgr_"
+                ],
+                "logDir": "/opt/log/jidu_output/sentry/sentrymgr",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 15,
+                "logType": [
+                    "sentry_perception_"
+                ],
+                "logDir": "/opt/log/jidu_output/sentry/sentry_perception",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 15,
+                "logType": [
+                    ".dlt"
+                ],
+                "logDir": "/opt/log/jidu_output/exec",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 1,
+                "logType": [
+                    "syslog",
+                    "kern.log"
+                ],
+                "logDir": "/opt/log/var_log",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 1,
+                "logType": [
+                    "uds_server",
+                    "diagd_iautosar"
+                ],
+                "logDir": "/opt/log/udsServer",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 1,
+                "logType": [
+                    "update_agent."
+                ],
+                "logDir": "/opt/log/jidu_output/update_agent",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 1,
+                "logType": [
+                    "state_client",
+                    "phm_service",
+                    "updproc_mgmt."
+                ],
+                "logDir": "/opt/log/jidu_output/proc_mgmt",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 1,
+                "logType": [
+                    "kss.log"
+                ],
+                "logDir": "/opt/log/secure/kss",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 1,
+                "logType": [
+                    "kss_service"
+                ],
+                "logDir": "/opt/log/secure/kss_service",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 1,
+                "logType": [
+                    ".caros_history",
+                    ".root_history"
+                ],
+                "logDir": "/opt/log",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 1,
+                "logType": [
+                    "pavaro"
+                ],
+                "logDir": "/opt/log/gaia-service/diag",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 3,
+                "logType": [
+                    "syslog",
+                    "kern.log"
+                ],
+                "logDir": "/opt/log/var_log",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 3,
+                "logType": [
+                    "update_agent."
+                ],
+                "logDir": "/opt/log/jidu_output/update_agent",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 3,
+                "logType": [
+                    "diag_client"
+                ],
+                "logDir": "/opt/log/jidu_output/update_agent/doip",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 3,
+                "logType": [
+                    "uds_server",
+                    "diagd_iautosar"
+                ],
+                "logDir": "/opt/log/udsServer",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 3,
+                "logType": [
+                    "bootes_",
+                    "bootes."
+                ],
+                "logDir": "/opt/log/bootes",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 3,
+                "logType": [
+                    "kss.log"
+                ],
+                "logDir": "/opt/log/secure/kss",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 3,
+                "logType": [
+                    "kss_service"
+                ],
+                "logDir": "/opt/log/secure/kss_service",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 3,
+                "logType": [
+                    ".caros_history",
+                    ".root_history"
+                ],
+                "logDir": "/opt/log",
+                "traceCount": 2,
+                "isUploadLog": true
+            },
+            {
+                "triggerType": 3,
+                "logType": [
+                    "_dreamview"
+                ],
+                "logDir": "/opt/data/dv",
+                "traceCount": 2,
+                "isUploadLog": true
+            }
+        ]
+    }
+}

@@ -30,7 +30,7 @@ class CredentialProvider(ICredentialProvider):
 class EnvCredentialProvider(ICredentialProvider):
     """从环境变量加载凭证"""
     
-    def __init__(self, prefix: str = "AUTO_SDK_CRED_"):
+    def __init__(self, prefix: str = "XAT_CRED_"):
         self.prefix = prefix
         
     def get_credential(self, name: str) -> Dict[str, str]:
@@ -108,6 +108,7 @@ class LegacyCredentialProvider(ICredentialProvider):
                         self._credentials[ecu_name] = cred
                         
         except Exception as e:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/config/credentials.py")
             import logging
             logging.getLogger(__name__).warning(f"Failed to load legacy credentials: {e}")
 
@@ -117,6 +118,7 @@ class LegacyCredentialProvider(ICredentialProvider):
         try:
             return base64.b64encode(base64.b64decode(s)).decode('utf-8') == s
         except Exception:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/config/credentials.py")
             return False
 
     def get_credential(self, name: str) -> Dict[str, str]:

@@ -1,0 +1,376 @@
+{
+    "AlmCem_Lin1PartNrFr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 32,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "AlmCem_SerNrLin1Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 4,
+        "msg_id": 33,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 1,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ALM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr02": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 2,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ALM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr03": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 3,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ALM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr04": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 4,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ALM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr05": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 5,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ALM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr06": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ALM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr07": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 7,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ALM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr08": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 8,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "ALM1"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr10": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 16,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr11": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 17,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr12": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 18,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr13": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 19,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr14": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 20,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr15": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 21,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr16": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 22,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin5Fr17": {
+        "msg_cycle": 0.073,
+        "msg_length": 8,
+        "msg_id": 23,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ALM1",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

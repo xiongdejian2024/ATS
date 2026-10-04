@@ -1,0 +1,107 @@
+{
+    "CCUSRSToDLCOBDDiagnosticCANDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2041,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCUMCUCD",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CCUVCUToDLCOBDDiagnosticCANDiagRespFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2024,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCUMCUCD",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DLCToAllOBDDiagnosticCANDiagFuncReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2015,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "CCUMCUCD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DLCToCCUSRSOBDDiagnosticCANDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2033,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "CCUMCUCD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DLCToCCUVCUOBDDiagnosticCANDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2016,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "CCUMCUCD"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

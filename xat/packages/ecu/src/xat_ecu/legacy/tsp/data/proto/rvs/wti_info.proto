@@ -1,0 +1,1108 @@
+syntax = "proto3";
+package vehiclestatus;
+import "common.proto";
+import "block_head.proto";
+
+// =====================================================================
+// 报警信息块
+// =====================================================================
+
+// 报警信息
+message WtiInfoBlock {
+  BlockHead                       head          = 1 ; //公共头
+  repeated TyreFault              tireFault     = 2; // 轮胎报警信息
+  repeated LowVoltageFault        batteryFault  = 3; // 电池报警信息
+  WtiCharging                     charging      = 4; // 充电报警信息
+  AntiTheft                       antiTheft     = 5; // 防盗报警信息
+  BrakeWti                        brakeWti      = 6; // 运动控制
+//  map<string,string>              wtiStatus     = 7;  // 异常集合
+}
+// 轮胎报警信息
+message TyreFault {
+  TyreId 	        tyre           = 1; // 对应的轮胎
+  TyreFaultId     fault          = 2; // 故障Id
+  string          faultMsg       = 3; // 故障描述
+
+}
+
+// 电池报警信息
+message LowVoltageFault {
+  LowVoltageFaultId 	faultId = 1 ; //低压系统故障ID
+  string 	            faultMsg = 2 ; //故障描述信息
+}
+
+// --------------------------------------------------
+// 高压充电报警
+//https://jama.jiduauto.com/perspective.req#/items/196499?projectId=46
+message WtiCharging {
+  bool      isFail = 1; // 是否充电失败
+}
+
+
+// 防盗报警
+message AntiTheft {
+  AlarmState     state      = 1; //防盗报警状态
+  Bool           isAlarm    = 2; //防盗触发状态
+  string         alarmTime  = 4; //防盗触发时间
+}
+
+//运动控制异常
+message BrakeWti {
+    SteerErrorReqStatus   steerError           =  1;  //EPS转向错误响应状态
+}
+
+// 轮胎故障Id
+enum TyreFaultId {
+  TyreOk	                                     =	0	;     //	无故障
+  TyrePressureLow	                             =	1	;     //	胎压过低
+  TyrePressureHigh	                           =	2	;     //	胎压过高
+  TyreTemperatureHigh	                         =	3	;     //	胎温过高
+  TyreLeakFast	                               =	4	;     //	快速漏气
+  TyreMonitorFault	                           =	5	;     //	胎压检测器故障
+  TyreBatteryLow	                             =	6	;     //	传感器电池电量低
+  TyreMessageOld	                             =	7	;     //	报文过期(旧数据)
+  TyrePressureLost	                           =	8	;     //	胎压信息丢失
+  TyreFaultNA	                                 =	9	;     //	未知故障
+  TyreFaultEmpty                               =	-1	;     //	--
+}
+
+// 电池故障Id
+enum LowVoltageFaultId {
+  FaultVoltageOk                               =	0	;     //	正常（默认）
+  FaultVoltageHighDuringDriving                =	1	;     //	驾驶中供电电压高
+  FaultVoltageLowDuringDriving                 =	2	;     //	驾驶中供电电压低
+  FaultBatteryRelay                            =	3	;     //	电池继电器故障
+  FaultBatterySensorCommunication              =	4	;     //	电池传感器通信故障
+  FaultBatterySensorHardware                   =	5	;     //	电池传感器硬件故障
+  FaultDCDCCommunication                       =	6	;     //	DCDC通信故障
+  FaultDCDCHardware                            =	7	;     //	DCDC硬件故障
+  FaultDCDCTemperature                         =	8	;     //	DCDC温度异常
+  FaultLowPower                                =	9	;     //	小电池电量低
+  FaultDataInvalid                             =	10	;     //	底层数据不可用
+  FaultNA                                      =	11	;     //	未知故障
+  FaultEmpty                                   =	-1	;     //	--
+}
+
+enum AlarmState  {
+  AsDisarmd                                    = 0;//解防
+  AsArmd                                       = 1;//设防
+  AsActv                                       = 2;//报警
+  AsEmpty                                      = -1;//--
+}
+
+//EPS转向错误响应状态
+//https://soa.jidudev.com/classjet_1_1vehicle_1_1Car.html#a65451e703a03b1bb0a575819ce4d4e78
+enum SteerErrorReqStatus {
+  SteerErrorReqStatusNoReq	                   = 0 ; //	无响应
+  SteerErrorReqStatusAssiSrvRqrd	             = 1 ; //	AssiSrvRqrd.
+  SteerErrorReqStatusStopSfty	                 = 2 ; //	StopSfty.
+  SteerErrorReqStatusAssiUrgentSrvRqrd	       = 3 ; //	AssiUrgentSrvRqrd.
+  SteerErrorReqStatusAssiTmpRedn	             = 4 ; //	AssiTmpRedn.
+  SteerErrorReqStatusReserved1	               = 5 ; //	预留项1
+  SteerErrorReqStatusReserved2	               = 6 ; //	预留项2
+  SteerErrorReqStatusReserved3	               = 7 ; //	预留项3
+  SteerErrorEmpty                              = -1;//--
+}
+
+//jidl 1.0.14 变更
+
+// TO：车端RVS soa定义的JIDL WTI数据
+message WTISoaData {
+  // 标识全量、增量
+  WTIDataType dataType = 1;
+  // 所属领域
+  WTIField wtiField = 2;
+  // WTI的key、value与时间戳
+  repeated WTIOriginalData wtis = 3;
+  // 全量数据上传时 车端全量数据向云投递的毫秒时间戳. 1.3之前该字段无实际意义
+  int64 timestamp = 4;
+
+}
+
+// WTI原始数据
+message WTIOriginalData {
+  // 键的枚举
+  WTIKeyID keyID = 1;
+  // 值
+  string val = 2;
+  // 发生的时间戳
+  int64 timestamp = 3;
+  // 扩展字段
+  map<string, string> ext = 4;
+}
+
+// wti领域
+enum WTIField {
+    Unknown = 0;
+    // 通用域
+    General = 1;
+    // 智能驾驶域
+    AutoDrive = 2;
+    // CDC域
+    CDC = 3;
+    // 独立服务
+    IndependentServices = 4;
+}
+
+// wti数据类型
+enum WTIDataType {
+    WTIDataTypeUnknown = 0;
+    // 全量
+    All = 1;
+    // 增量
+    Timely = 2;
+}
+
+// WTIStatus wti状态
+enum WTIStatus {
+    // 未上报
+    WTIStatusDefault = 0;
+    // 告警中（或指示灯打开）
+    InAlarm = 1;
+    // 解除告警（或指示灯关闭）
+    AlarmRelease = 2;
+}
+
+/*
+    wti数据项的key的枚举，包括所有的wti项。
+    枚举值6位，例如：100100
+    第1位是"1"，代表通用域；第1位是"2"，代表智能驾驶域；第1位是"3"，代表CDC域； 第1位是"4"，代表独立服务；
+    第2、3、4位代表类别，每个域支持1000类
+    第5、6位代表该类别下的子定义，每个类支持100个子定义
+
+    PB按比特位序列化tag，采用定长6位的方式，可读性高，方便扩展，只增加1个字节
+    2的10次幂 1024—— 10位，2个字节
+    2 的16次幂 65536——16位，2个字节
+    2的20次幂 1048576——20位，3个字节
+*/
+
+enum WTIKeyID {
+    WTIKeyIDUnknown = 0;
+    // 通用域
+    // 充电枪
+    // 充电枪连接指示 "Charging Gun Connected"
+    TelltaleChargingGunConnected = 100100;
+    // 充电口盖信息 "Charge Lid"
+    WarningChargeLid = 100101;
+    // 充电口盖状态 "Charge Lid Status"
+    WarningChargeLidOpenSts = 100102;
+    // 充电口盖异常提示 "Charge Lid Abnormal"
+    WarningChargeLidAbnormal = 100103;
+    // 无线充电状态提示 "Wireless Charging Remind"
+    WarningWirelessChargingRemind = 100104;
+    // 充电故障 "Charging Failed Warning"
+    WarningChargingFailed = 100105;
+
+    // 启动
+    // Ready状态指示 "Car Ready"
+    TelltaleCarReady = 100200;
+    // 启动相关信息 "Starting"
+    WarningStarting = 100201;
+    // 车辆启动过程的信息提醒 "Vehicle Working"
+    WarningVehicleWorking = 100202;
+
+    // Autohold(自动保持)
+    // Autohold激活指示灯 "Autohold Active Green"
+    TelltaleAutoholdActiveGreen = 100300;
+    // Autohold待命指示灯 "Autohold Standby Grey"
+    TelltaleAutoholdStandbyGrey = 100301;
+    // Autohold警告信息 "Autohold Warning"
+    WarningAutohold = 100302;
+
+    // 陡坡缓降
+    // HDC陡坡缓降指示灯灰色 "HDC Grey"
+    TelltaleHDCGrey = 100400;
+    // HDC陡坡缓降指示灯绿色 "HDC Green"
+    TelltaleHDCGreen = 100401;
+    // HDC陡坡缓降指示灯黄色 "HDC Yellow"
+    TelltaleHDCYellow = 100402;
+
+    // ESC
+    // ESC故障指示灯 "ESC Failed"
+    TelltaleESCFailed = 100500;
+    // ESC关闭指示灯 "ESC Off"
+    TelltaleESCOff = 100501;
+
+    // 低压
+    // 低压蓄电池指示灯 "Low Voltage Battery"
+    TelltaleLowVolBatt = 100600;
+    // 低压系统故障信息1 "Low Battery Warning1"
+    WarningLowBatt1 = 100601;
+    // 低压系统故障信息2 "Low Battery Warning2"
+    WarningLowBatt2 = 100602;
+    // 低压系统故障信息3 "Low Battery Warning3"
+    WarningLowBatt3 = 100603;
+    // 备用低压电池系统异常 "IPM Battery Fault Waring"
+    WarningIPMBattFaultWarn = 100604;
+
+    // 近远光灯
+    // 近光指示灯 "LB"
+    TelltaleLightLB = 100700;
+    // 远光指示灯 "HB"
+    TelltaleLightHB = 100701;
+    // 自动远光灰色指示灯 "AHB Grey"
+    TelltaleLightAutoHBGrey = 100702;
+    // 自动远光蓝色指示灯 "AHB Blue"
+    TelltaleLightAutoHBBlue = 100703;
+    // 大灯高度调节电机故障信息 "Leveling Motor"
+    WarningLightLevelingMotor = 100704;
+    // 近光灯故障提示信息 "LB Failure"
+    WarningLBFailure = 100705;
+    // 远光灯故障提示信息 "HB Failure"
+    WarningHBFailure = 100706;
+    // 远光开启失败提示 "Cannot open"
+    WarningHighBeamOperationFailReminder = 100707;
+    // 后雾灯与近光灯联动关闭提示 "Rear Fog And Low Beam Off" [v1.3.0 add]
+    WarningRearFogAndLowBeamOff = 100708;
+
+    // 位置灯
+    // 位置灯指示灯 "PO"
+    TelltaleLightPO = 100800;
+    // 位置灯故障提示信息 "PO Failure"
+    WarningPOFailure = 100801;
+
+    // 后雾灯
+    // 后雾灯指示灯 "Rear Fog"
+    TelltaleLightRearFog = 100900;
+    // 后雾灯故障提示信息 "Rear Fog Failure"
+    WarningRearFogFailure = 100901;
+
+    // 小灯
+    // 蠕行开启指示灯 "Crawling Enable" [1.1.18 Not Supported]
+    TelltaleCrawlingEnable = 101000;
+    // 危险警告指示灯 "Hazard" [1.1.18 Not Supported]
+    TelltaleLightHazard = 101001;
+    // 超车灯故障提示信息 "Overtake Light Failure"
+    WarningOvertakeLightFailure = 101002;
+    // 倒车灯故障提示信息 "Reverse Light Failure"
+    WarningReverseLightFailure = 101003;
+
+    // 转向灯
+    // 左转向指示灯 "Left TI" [1.1.18 Not Supported]
+    TelltaleLightLeftTI = 101100;
+    // 右转向指示灯 "Right TI" [1.1.18 Not Supported]
+    TelltaleLightRightTI = 101101;
+    // 转向系统故障指示灯黄色 "Yellow Steering Failed"
+    TelltaleSteeringSysFailedYellow = 101102;
+    // 转向系统故障指示灯红色 "Red Steering Failed"
+    TelltaleSteeringSysFailedRed = 101103;
+    // 转向故障信息 "Steering Warning"
+    WarningSteeringSys = 101104;
+    // 左转向灯故障提示信息 "Left TI Failure"
+    WarningLeftTIFailure = 101105;
+    // 右转向灯故障提示信息 "Right TI Failure"
+    WarningRightTIFailure = 101106;
+
+    // 安全带
+    // 安全带指示灯 "Seat Belt"
+    TelltaleSeatBelt = 101200;
+    // 主驾驶安全带报警信息 "Driver Seat Belt Warning"
+    WarningDriverSeatBelt = 101201;
+    // 副驾驶安全带报警信息 "Passenger Seat Belt Warning"
+    WarningPassengerSeatBelt = 101202;
+    // 二排左安全带报警信息 "Second Row Left Seat Belt Warning"
+    WarningSecRowLeftSeatBelt = 101203;
+    // 二排中间安全带报警信息 "Second Row Middle Seat Belt Warning"
+    WarningSecRowMidSeatBelt = 101204;
+    // 二排右安全带报警信息 "Second Row Right Seat Belt Warning"
+    WarningSecRowRightSeatBelt = 101205;
+
+    // 安全气囊
+    // 安全气囊报警灯 "Airbag"
+    TelltaleAirbag = 101300;
+    // 安全气囊故障信息 "Airbag Failure"
+    WarningAirbagFailure = 101301;
+
+    // 动力
+    // 动力电池故障灯 "High Voltage Battery Failed"
+    TelltaleHighVoltBattFailed = 101400;
+    // 动力系统故障灯 "Power System Failed"
+    TelltalePowerSysFailed = 101401;
+    // 功率受限故障灯 "Power Limited"
+    TelltalePowerLimited = 101402;
+    // 动力系统故障信息 "Power System Failure"
+    WarningPowerSysFailure = 101403;
+    // 无动力输出 "No Power Output"
+    WarningNoPowerOutput = 101404;
+
+    // 电池
+    // 电池低温指示灯 "Battery Temp Low"
+    TelltaleBatteryTempLow = 101500;
+    // 低电量报警灯(高压蓄电池低压指示灯) "High Voltage Battery Low Telltale"
+    TelltaleHighVolBattLow = 101501;
+    // 低电量报警信息 "High Voltage Battery Low Warning"
+    WarningHighVolBattLow = 101502;
+    // 液位信息(电池系统的冷却液) "Coolant" [1.1.14 Not Support]
+    WarningCoolant = 101503;
+    // 液位信息1 "Coolant1"
+    WarningCoolantDriveSys = 101504;
+    // 液位信息2 "Coolant2"
+    WarningCoolantHighVolBatt = 101505;
+    // 电池热管理状态提示 "HV Battery Thermal Status" [v1.4.10 add]
+    MsgHVBatteryThermalSts = 101506;
+
+    // 悬架
+    // 悬架故障指示灯 "Suspension Failed Telltale"
+    TelltaleSuspensionFailed= 101600;
+    // 悬架故障信息 "Suspension Failed Warning"
+    WarningSuspensionFailed = 101601;
+
+    // 轮胎
+    // 胎压报警灯 "Tire Pressure"
+    TelltaleTirePressure = 101700;
+    // 左前轮胎胎压低警告信息 "Front Left Tire Pressure Low"，1.0已废弃，向后兼容，车控在用
+    WarningTireFLPressureLow = 101701;
+    // 左前轮胎胎压高警告信息 "Front Left Tire Pressure High"
+    WarningTireFLPressureHigh = 101702;
+    // 左前轮胎温度高警告信息 "Front Left Tire Temperature High"
+    WarningTireFLTempHigh = 101703;
+    // 左前轮胎快速漏气警告信息 "Front Left Tire Pressure Fast Lost"
+    WarningTireFLPressureFastLost = 101704;
+    // 左前轮胎传感器低电量警告信息 "Front Left Tire Sensor Batt Low"
+    WarningTireFLSensorBattLow = 101705;
+    // 右前轮胎胎压低警告信息 "Front Right Tire Pressure Low"，1.0已废弃，向后兼容，车控在用
+    WarningTireFRPressureLow = 101706;
+    // 右前轮胎胎压高警告信息 "Front Right Tire Pressure High"
+    WarningTireFRPressureHigh = 101707;
+    // 右前轮胎温度高警告信息 "Front Right Tire Temperature High"
+    WarningTireFRTempHigh = 101708;
+    // 右前轮胎快速漏气警告信息 "Front Right Tire Pressure Fast Lost"
+    WarningTireFRPressureFastLost = 101709;
+    // 右前轮胎传感器低电量警告信息 "Front Right Tire Sensor Batt Low"
+    WarningTireFRSensorBattLow = 101710;
+    // 左后轮胎胎压低警告信息 "Rear Left Tire Pressure Low"，1.0已废弃，向后兼容，车控在用
+    WarningTireRLPressureLow = 101711;
+    // 左后轮胎胎压高警告信息 "Rear Left Tire Pressure High"
+    WarningTireRLPressureHigh = 101712;
+    // 左后轮胎温度高警告信息 "Rear Left Tire Temperature High"
+    WarningTireRLTempHigh = 101713;
+    // 左后轮胎快速漏气警告信息 "Rear Left Tire Pressure Fast Lost"
+    WarningTireRLPressureFastLost = 101714;
+    // 左后轮胎传感器低电量警告信息 "Rear Left Tire Sensor Batt Low"
+    WarningTireRLSensorBattLow = 101715;
+    // 右后轮胎胎压低警告信息 "Rear Right Tire Pressure Low"，1.0已废弃，向后兼容，车控在用
+    WarningTireRRPressureLow = 101716;
+    // 右后轮胎胎压高警告信息 "Rear Right Tire Pressure High"
+    WarningTireRRPressureHigh = 101717;
+    // 右后轮胎温度高警告信息 "Rear Right Tire Temperature High"
+    WarningTireRRTempHigh = 101718;
+    // 右后轮胎快速漏气警告信息 "Rear Right Tire Pressure Fast Lost"
+    WarningTireRRPressureFastLost = 101719;
+    // 右后轮胎传感器低电量警告信息 "Rear Right Tire Sensor Batt Low"
+    WarningTireRRSensorBattLow = 101720;
+    // 左前胎胎压监测系统故障信息 "Left Front Tire System Failure"
+    WarningTirePressureSysFailureLF = 101721;
+    // 右前胎胎压监测系统故障信息 "Right Front Tire System Failure"
+    WarningTirePressureSysFailureRF = 101722;
+    // 左后胎胎压监测系统故障信息 "Rear Left Tire System Failure"
+    WarningTirePressureSysFailureLR = 101723;
+    // 右后胎胎压监测系统故障信息 "Rear Right Tire System Failure"
+    WarningTirePressureSysFailureRR = 101724;
+    // 左前轮胎胎压低一级警告信息 "Front Left Tire Pressure Low Level 1"
+    WarningTireFLPressureLowLevel1 = 101725;
+    // 左前轮胎胎压低二级警告信息 "Front Left Tire Pressure Low Level 2"
+    WarningTireFLPressureLowLevel2 = 101726;
+    // 右前轮胎胎压低一级警告信息 "Front Right Tire Pressure Low Level 1"
+    WarningTireFRPressureLowLevel1 = 101727;
+    // 右前轮胎胎压低二级警告信息 "Front Right Tire Pressure Low Level 2"
+    WarningTireFRPressureLowLevel2 = 101728;
+    // 左后轮胎胎压低一级警告信息 "Rear Left Tire Pressure Low Level 1"
+    WarningTireRLPressureLowLevel1 = 101729;
+    // 左后轮胎胎压低二级警告信息 "Rear Left Tire Pressure Low Level 2"
+    WarningTireRLPressureLowLevel2 = 101730;
+    // 右后轮胎胎压低一级警告信息 "Rear Right Tire Pressure Low Level 1"
+    WarningTireRRPressureLowLevel1 = 101731;
+    // 右后轮胎胎压低二级警告信息 "Rear Right Tire Pressure Low Level 2"
+    WarningTireRRPressureLowLevel2 = 101732;
+
+    // 热失控
+    // 热失控报警信息 "Thermal Out of Control"
+    WarningThermalOutOfControl = 101800;
+
+    // 能量回收
+    // 能量回收限制信息 "Energy Regen Limit"
+    WarningEnergyRegenLimit = 101900;
+
+    // 换挡
+    // 换挡失败信息 "Shift Gear"
+    WarningShiftGear = 102000;
+    // 换挡器故障信息 "Gear Failure"
+    WarningGearFailure = 102001;
+    // 触摸换挡器（实体换挡器）已激活 "Touch Shift Activated"
+    WarningTouchShiftActivated = 102002;
+
+    // EPB(电子驻车制动系统)
+    // EPB制动故障灯黄色 "Yellow Braking System Failed"
+    TelltaleBrakingSysFailedYellow = 102100;
+    // EPB制动故障灯红色 "Red Braking System Failed"
+    TelltaleBrakingSysFailedRed = 102101;
+    // EPB指示灯 "EPB Working"
+    TelltaleEPBWork = 102102;
+    // EPB警告信息 "EPB Warning1"
+    WarningEPB1 = 102103;
+    // EPB警告信息 "EPB Warning2"
+    WarningEPB2 = 102104;
+    // 释放EPB报警音 "EPB Chime Warning"
+    WarningEPBChime = 102105;
+    // EPB故障信息/驻车系统故障 "EPB Sys Failure"
+    WarningEPBFailure = 102106;
+    // 制动液位信息 "Braking Fluid"
+    WarningBrakingFluid = 102107;
+    // EBD警告信息(电子驻车制动) "EBD Warning"
+    WarningEBD = 102108;
+    // 未驻车提醒信息 "Not Parked"
+    WarningNotParked = 102109;
+    // ABS故障指示灯 (ABS:防抱死制动系统) "ABS Failed"
+    TelltaleABSFailed = 102110;
+
+    // 钥匙
+    // 无钥匙提醒信息 "No Key"
+    WarningNoKey = 102200;
+    // 钥匙断连提醒 "Key Disconnected"
+    WarningKeyDisconnectedReminder = 102201;
+    // 车外按钮锁车-蓝牙钥匙遗留提醒 "PE-BLE Key Legacy Reminder" [no longer support from v1.3.0]
+    WarningPEBLEKeyLegacyReminder = 102202;
+    // 车外按钮锁车-UWB钥匙遗留在主驾驶提醒 "PE-UWB Key Legacy On Driver Reminder" [no longer support from v1.3.0]
+    WarningPEUWBKeyLegacyOnDriverReminder = 102203;
+    // 车外按钮锁车-UWB钥匙遗留在副驾驶提醒 "PE-UWB Key Legacy On Passenger Reminder" [no longer support from v1.3.0]
+    WarningPEUWBKeyLegacyOnPassReminder = 102204;
+    // 车外按钮锁车-UWB钥匙遗留在二排左提醒 "PE-UWB Key Legacy On Rear Left Reminder" [no longer support from v1.3.0]
+    WarningPEUWBKeyLegacyOnReLeReminder = 102205;
+    // 车外按钮锁车-UWB钥匙遗留在二排右提醒 "PE-UWB Key Legacy On Rear Right Reminder" [no longer support from v1.3.0]
+    WarningPEUWBKeyLegacyOnReRiReminder = 102206;
+    // 车外按钮锁车-UWB钥匙遗留在后备箱提醒 "PE-UWB Key Legacy On Trunk Reminder" [no longer support from v1.3.0]
+    WarningPEUWBKeyLegacyOnTrunkReminder = 102207;
+    // NFC锁车-蓝牙钥匙遗留提醒 "NFC BLE Key Legacy Reminder" [no longer support from v1.3.0]
+    WarningNFCBLEKeyLegacyReminder = 102208;
+    // NFC锁车-UWB钥匙遗留在主驾驶提醒 "NFC UWB Key Legacy On Driver Reminder" [no longer support from v1.3.0]
+    WarningNFCUWBKeyLegacyOnDriverReminder = 102209;
+    // NFC锁车-UWB钥匙遗留在副驾驶提醒 "NFC UWB Key Legacy On Passenger Reminder" [no longer support from v1.3.0]
+    WarningNFCUWBKeyLegacyOnPassReminder = 102210;
+    // NFC锁车-UWB钥匙遗留在后排左提醒 "NFC UWB Key Legacy On Rear Left Reminder" [no longer support from v1.3.0]
+    WarningNFCUWBKeyLegacyOnReLeReminder = 102211;
+    // NFC锁车-UWB钥匙遗留在后排右提醒 "NFC UWB Key Legacy On Rear Right Reminder" [no longer support from v1.3.0]
+    WarningNFCUWBKeyLegacyOnReRiReminder = 102212;
+    // NFC锁车-UWB钥匙遗留在后备箱提醒 "NFC UWB Key Legacy On Trunk Reminder" [no longer support from v1.3.0]
+    WarningNFCUWBKeyLegacyOnTrunkReminder = 102213;
+    // 解闭锁提醒1 "Unlock Reminder"
+    WarningUnlockReminder = 102214;
+    // 解闭锁提醒2 "Door Cannot Closed Reminder"
+    WarningLockFailedReminder = 102215;
+    // 解闭锁提醒3 "Cannot unLock Reminder"
+    WarningCannotUnLockReminder = 102216;
+    // 解闭锁提醒4 "Cannot unLock"
+    WarningCloseDoorReminder = 102217;
+    // 车内NFC读卡故障 "WPC Warn"
+    WarningWPC = 102218;
+    // 车外NFC读卡故障 "NKR Warn"
+    WarningNKR = 102219;
+    // 数字钥匙模块故障 "BNCM Warn"
+    WarningBNCM = 102220;
+    // 数字钥匙天线故障 "BKA Warn"
+    WarningBKA = 102221;
+    // 实体钥匙电量低报警 "Entity Key battery Low"
+    WarningEntityKeyBattLow = 102222;
+    // 无钥匙驾驶已启动 "Remote Auth Start"
+    WarningRemoteAuthStart = 102223;
+    // 解闭锁提醒5 "No key Present"
+    WarningNoKeyPresent = 102224;
+    // 车外按钮锁车-蓝牙钥匙遗留提醒 "PE Key Legacy Reminder"  [v1.3.0 add]
+    WarningPEKeyLegacyReminder = 102225;
+    // NFC锁车-钥匙遗留提醒 "NFC Key Legacy Reminder" [v1.3.0 add]
+    WarningNFCKeyLegacyReminder = 102226;
+
+    // 防盗
+    // 防盗报警信息 "Anti Theft"
+    WarningAntiTheft = 102300;
+
+    // 门
+    // 主驾门开报警信息 "Driver Door"
+    WarningDoorDrv = 102400;
+    // 副驾门开报警信息 "Passenger Door"
+    WarningDoorPass = 102401;
+    // 左后门开报警信息 "Rear Left Door"
+    WarningDoorRearLeft = 102402;
+    // 右后门开报警信息 "Rear Right Door"
+    WarningDoorRearRight = 102403;
+    // 尾门开报警信息 "Tail"
+    WarningDoorTail = 102404;
+    // 尾门解锁故障 "Tail Gate Unlock Warning" [no longer support from v1.3.0]
+    WarningTailGateUnlock = 102405;
+    // 门雷达报警，主驾 "Driver Radar Warning"
+    WarningDriverRadar = 102406;
+    // 门雷达故障报警，副驾 "Passenger Radar Warning"
+    WarningPassengerRadar = 102407;
+    // 门雷达故障报警，左后 "Left Rear Radar Warning"
+    WarningLeftRearRadar = 102408;
+    // 门雷达故障报警，右后 "Right Rear Radar  Warning"
+    WarningRightRearRadar = 102409;
+    // 车门破冰提醒 "Door Ice Break Reminder"
+    WarningDoorIceBreakReminder = 102410;
+
+    // 电动门
+    // 主驾电动门故障报警 "Driver Electric Door Warning"
+    WarningDriverElectricDoor = 102500;
+    // 副驾电动门故障报警 "Passenger Electric Door Warning"
+    WarningPassengerElectricDoor = 102501;
+    // 后排左侧电动门故障报警 "Sec Left Electric Door Warning"
+    WarningSecLeftElectricDoor = 102502;
+    // 后排右侧电动门故障报警 "Sec Right Electric Door Warning"
+    WarningSecRightElectricDoor = 102503;
+    // 关门失败-请手动关门 "Please Manual Close Door" [v1.3.0 add]
+    WarningPleaseManualCloseDoor = 102504;
+    // 坡度过大开关门提醒 "Door Reminder Due To Large Slope" [v1.3.0 add]
+    WarningDoorReminderDueToLargeSlope = 102505;
+    // 电动门防玩和热保护提醒 "Door AntiPlay Reminder" [v1.3.0 add]
+    WarningDoorAntiPlayReminder = 102506;
+
+
+    // 前舱盖
+    // 前舱盖开报警信息 "Hood"
+    WarningDoorHood = 102600;
+    // 进气格栅异常 "Air Grille Abnormal" [v1.3.0 add]
+    WarningAirGrilleAbnormal = 102601;
+
+    // 尾翼
+    // 3D车模显示电动尾翼位置 "3D Model Shows Tail Position"
+    Warning3DModelShowsTailPosition = 102700;
+    // 尾翼报警信息 "Car Tail Failure"
+    WarningCarTail = 102701;
+
+    // 行人保护系统
+    // 行人保护系统故障信息 "Pedestrian System Failure"
+    WarningPedestrianProtectFailure = 102800;
+    // 行人保护系统激活信息 "Pedestrian System Enabled"
+    WarningPedestrianProtectEnabled = 102801;
+    // 行人保护装置故障指示灯 "Pedestrian Protection Error"
+    TelltalePedestrianProtectionError = 102802;
+
+    // 雨刷
+    // 雨刮洗涤液信息 "Wiper Liquid" [no longer support from v1.3.0]
+    WarningWiperWashingLiquid = 102900;
+    // 雨刮系统故障信息 "Wiper System Failure"
+    WarningWiperSysFailure = 102901;
+    // 雨量传感器故障信息 "Wiper Sensor Failure"
+    WarningWiperSensorFailure = 102902;
+    // 雨刮退出维修位置提醒 "Wiper Exit Repair Position"
+    WarningWiperExitRepairPosition = 102903;
+    // 雨刮开关使用提示 "Wiper Switch Use Prompt" [v1.3.0 add]
+    WarningWiperSwitchUsePrompt = 102904;
+
+    // 车窗
+    // 主驾车窗故障信息 "Driver Window Failure"
+    WarningDrvWindowFailure = 103000;
+    // 副驾车窗故障信息 "Passenger Window Failure"
+    WarningPassWindowFailure = 103001;
+    // 后排左车窗故障信息 "Rear Left Window Failure"
+    WarningRearLeWindowFailure = 103002;
+    // 后排右车窗故障信息 "Rear Right Window Failure"
+    WarningRearRiWindowFailure = 103003;
+    // 主驾车窗电机过热 "Driver Window Motor Overheating"
+    WarningDrvWindowMotorOverheating = 103004;
+    // 副驾车窗电机过热 "Passenger Window Motor Overheating"
+    WarningPassWindowMotorOverheating = 103005;
+    // 后排左车窗电机过热 "Rear Left Window Motor Overheating"
+    WarningReLeWindowMotorOverheating = 103006;
+    // 后排右车窗电机过热 "Rear Right Window Motor Overheating"
+    WarningReRiWindowMotorOverheating = 103007;
+
+    // 加热
+    // 方向盘加热故障 "Steer Wheel Heat Warning"
+    WarningSteerWheelHeat = 103100;
+    // 主驾驶座椅加热故障报警 "Driver Seat Heat Warning"
+    WarningDriverSeatHeat = 103101;
+    // 副驾驶座椅加热故障报警 "Passenger Seat Heat Warning"
+    WarningPassengerSeatHeat = 103102;
+    // 后排左座椅加热故障报警 "Rear Left Seat Heat Warning" [v1.4.10 add]
+    MsgReLeSeatHeatWarning = 103103;
+    // 后排右座椅加热故障报警 "Rear Right Seat Heat Warning" [v1.4.10 add]
+    MsgReRiSeatHeatWarning = 103104;
+
+    // 通风
+    // 主驾座椅通风故障报警 "Driver Seat Wind Warning"
+    WarningDriverSeatWind = 103200;
+    // 副驾座椅通风故障报警 "Passenger Seat Wind Warning";
+    WarningPassengerSeatWind = 103201;
+    // 后排左座椅通风故障报警 "Rear Left Seat Vent Warning" [v1.4.10 add]
+    MsgReLeSeatVentWarning = 103202;
+    // 后排右座椅通风故障报警 "Rear Right Seat Vent Warning" [v1.4.10 add]
+    MsgReRiSeatVentWarning = 103203;
+
+    // ETC
+    // ETC故障 "ETC Fault"
+    WarningETCFaultReminder = 103300;
+    // ETC设备被拆除 "ETC Remove Cannot Use"
+    WarningETCRemoveReminder = 103301;
+    // ETC认证失败 "ETC Authentication Failed"
+    WarningETCAuthenticationFailed = 103302;
+
+    // 高压
+    // 高压互锁状态信息 "High Voltage Inter Lock"
+    WarningHighVolInterLock = 103400;
+    // 高压绝缘信息 "High Voltage Isolation"
+    WarningHighVolIsolation = 103401;
+
+    // 后视镜
+    // 主驾后视镜展开回收故障 "Driver Mirror Fold Error"
+    WarningDriverMirrorFoldError = 103500;
+    // 副驾后视镜展开回收故障 "Passenger Mirror Fold Error"
+    WarningPassMirrorFoldError = 103501;
+    // 主驾后视镜镜面调节故障 "Driver Mirror Adjustment Error"
+    WarningDriverMirrorAdjError = 103502;
+    // 副驾后视镜镜面调节故障 "Passenger Mirror Adjustment Error "
+    WarningPassMirrorAdjError =  103503;
+
+    // 风
+    // 前排出风口调节故障 "Front Vent Adjustment Error"
+    WarningFrontVentAdjError = 103600;
+    // 后排出风口调节故障 "Rear Vent Adjustment Error"
+    WarningRearVentAdjError = 103601;
+    // 内外循环风门故障 "Circulation Motor Error"
+    WarningCirculationMotorError = 103602;
+    // 前排吹风模式故障 "Front Mode Motor Error"
+    WarningFrontModeMotorError = 103603;
+
+    // 空气与空调
+    // PM2.5系统故障 "PM2.5 System Error"
+    WarningPM25SystemError = 103700;
+    // 空气质量管理系统故障 "AQS System Error"
+    WarningAQSSystemError = 103701;
+    // 空调系统故障 "Climate System Error"
+    WarningClimateSystemError = 103702;
+    // 香氛系统故障 "Fragrance System Error"
+    WarningFragSystemError = 103703;
+
+    // 减速和滑行
+    // 减速和滑行提示信息 "EPedal Function Indication"
+    WarningEPedalFunIndcn = 103800;
+    // 弹射起步提示信息 Launch Mode Prompt
+    WarningLaunchModePrompt = 103801;
+    // 深踩制动和加速踏板激活弹射起步 "Press Brake And Acc Pedal Deeply"
+    MsgPressBrakeAndAccPedalDeeplyToActiveLaunchMode = 103802;
+    // 弹射起步引导提示信息 "Launch Mode Operation Reminder"
+    MsgLaunchModeReminder = 103803;
+
+    // 无线充电
+    // 主驾无线充电故障状态提示 "Driver Wireless Charging Remind"
+    MsgDrvWirelessChargingRemind = 103900;
+    // 副驾无线充电故障状态提示 "Passenger Wireless Charging Remind"
+    MsgPassWirelessChargingRemind = 103901;
+
+    // 智能驾驶域
+    // FCW
+    // FCW的报警指示灯黄色 "Yellow AEB and FCW"
+    TelltaleAEBandFCWYellow = 200100;
+    // FCW的报警指示灯红色 "Red AEB and FCW"
+    TelltaleAEBandFCWRed = 200101;
+
+    // APA
+    // APA运行状态信息 "APA Working Status"
+    WarningAPAWorkingSts = 200200;
+    // APA TTS 播报 "APA TTS"
+    WarningAPATTS = 200201;
+    // APA运行状态信息,周期性接口通知 "APA Working Status Cycle"
+    WarningAPAWorkingStsCycle = 200202;
+    // APA TTS 播报 "APA TTS Not Care Key"
+    WarningAPATTSNotCareKey = 200203;
+    // APA运行状态信息,同时依赖ACU和BACU的通知 "APA Working Status Both"
+    WarningAPAWorkingStsBoth = 200204;
+    // APA TTS 播报,同时依赖ACU和BACU的通知 "APA TTS Both"
+    WarningAPATTSBoth = 200205;
+
+    // HAVP
+    // HAVP提示信息 "HAVP Warn"
+    WarningHAVP = 200300;
+    // HAVP车外TTS播报 "HAVP TTS"
+    WarningHAVPTTS = 200301;
+    // HAVP车外chime音播报 "HAVP State Chime"
+    WarningHAVPStateChime = 200302;
+    // HAVP提示信息,周期性接口通知，依赖ACU的通知 "HAVP Cycle Warn" [no longer support from v1.3.0]
+    WarningHAVPCycle = 200303;
+    // HAVP提示信息,同时依赖ACU和BACU的通知 "HAVP Cycle Warn Both"
+    WarningHAVPCycleWarningBoth = 200304;
+
+    // ANP(阿波罗领航辅助驾驶) 车辆规划和控制
+    // 车辆规划和控制ANP_PNC提醒，依赖信号NotifyPNCReminder.reminder  "ANP PNC Remind"
+    WarningANPPNCRemind = 200400;
+    // 车辆规划和控制ANP_道路施工提醒，依赖信号NotifyBarrierPerception.constructionArea "ANP Barrier Construction Area Remind"
+    WarningANPBarrierConstructionAreaRemind = 200401;
+    // 车辆规划和控制ANP_三角警示牌提醒，依赖信号NotifyBarrierPerception.tripod "ANP Barrier Tripod Remind"
+    WarningANPBarrierTripodRemind = 200402;
+    // 车辆规划和控制ANP_LaneChange提醒1，依赖信号NotifyANPLaneChangeReminder.reminder和NotifyANPLaneChangeReminder.openSource "ANP Lane Change Remind1"
+    WarningANPLaneChangeRemind1 = 200403;
+    // 车辆规划和控制ANP_LaneChange提醒2，依赖信号NotifyANPLaneChangeReminder.reminder "ANP Lane Change Remind2"
+    WarningANPLaneChangeRemind2 = 200404;
+    // 车辆规划和控制ANP_LaneChange提醒3，依赖信号NotifyANPLaneChangeReminder.reminder和NotifyANPInformation.laneChangeCmdSource "ANP Lane Change Remind3"
+    WarningANPLaneChangeRemind3 = 200405;
+    // ANP_ANPStatusReminder&openSource，依赖信号NotifyANPStatus.ANPStatusReminder和NotifyANPStatus.openSource "ANP Status Open Source"
+    WarningANPStatusOpenSourceRemind = 200406;
+    // ANP_功能降级提示_SafetyBelt，依赖信号NotifyDriverDetection.safeBelt "ANP Degradation Safety Belt Remind"
+    WarningANPDegradationSafetyBeltRemind = 200407;
+    // ANP_功能降级提醒_driverOccupy，依赖信号NotifyDriverDetection.driverOccupyWarning "ANP Degradation Driver Occupy Warning"
+    WarningANPDegraDriverOccupy = 200408;
+    // ANP_功能降级提醒，依赖信号NotifyDriverDetection.handOff和NotifyANPInformation.mindsOffWarning "ANP Degradation Warning"
+    WarningANPDegradation = 200409;
+    // ANP_AdvancedDistance，依赖信号NotifyAdvancedDistanceReminder.reminder "ANP Advanced Distance Warning" 1.0.14废弃
+    WarningANPAdvancedDistance = 200410;
+    // ANP_ANPStatusReminder，依赖信号NotifyANPStatus.ANPStatusReminder "ANP PStatus Reminder"
+    WarningANPStatusReminder = 200411;
+    // ANP_功能状态机变化提示，依赖信号NotifyANPStatus.ANPStatusReminder和NotifyANPStatus.openSource "ANP SM Change Status Remind2"
+    WarningANPSMChangeStatusRemind = 200412;
+    // ANP_AccelerateIntervention，依赖信号NotifyAccelerateIntervention.reminder "ANP Accelerate Intervention Remind"
+    WarningANPAccelerateInterventionRemind = 200413;
+    // 依赖NotifyANPStatus.ANPStatusReminder和NotifyANPStatus.openSource,且CCP#953=3/4/5 "ANP Booked Remind"
+    WarningANPBookedRemind = 200414;
+    // ANP提醒 依赖信号CCP#953,NotifyANPStatus.ANPStatusReminder和NotifyANPStatus.openSource "ANP Remind"
+    WarningANPRemind = 200415;
+    // 依赖信号NotifyANPDegraedFault.ANPdegraedfault "ANP Degraed Fault Remind"
+    WarningANPDegraedFaultRemind = 200416;
+    // 依赖信号NotifyBarrierPerception.obstaclewarn "ANP Obstacle Remind" [no longer support from v1.3.0]
+    WarningANPObstacleRemind = 200417;
+    // 依赖信号NotifysMRCSts.MRCStatus "ANP MRC Remind"
+    WarningANPMRCRemind = 200418;
+    // 依赖信号NotifyDangerBehavior.Dangerbehavior,[1.1.14 Not Support],用MsgANPStatusReminder替代 "ANP Danger Remind"
+    WarningANPDangerRemind = 200419;
+    // 依赖信号NotifyANPDegraedFault.ANPdegraedfault和BACUService::NotifyBACUWTI.ANPReminder "ANP Degraed Fault Remind Both"
+    WarningANPDegraedFaultRemindBoth = 200420;
+    // MsgANPAvoidanceReminder 依赖 "ANP Avoidance Reminder"
+    MsgANPAvoidanceReminder = 200421;
+
+
+    // 预警
+    // 前方左侧来车预警 "FCTA Left Warning"
+    WarningFCTALeft = 200500;
+    // 前方右侧来车预警 "FCTA Right Warning"
+    WarningFCTARight = 200501;
+    // RCW,后向来车碰撞预警 "RCW Warning"
+    WarningRCW = 200502;
+    // AEBR,后向行人紧急制动预警 "AEBR Warning"
+    WarningAEBR = 200503;
+    // RCTA,后侧来车预警及制动 "RCTA Warning"
+    WarningRCTA = 200504;
+    // DOW,左侧开门预警 "DOW Left Warning"
+    WarningDOWLeft = 200505;
+    // DOW,右侧开门预警 "DOW Right Warning"
+    WarningDOWRight = 200506;
+    // LCA,左侧并线预警 "LCA Left Warning"
+    WarningLCALeft = 200507;
+    // LCA,右侧并线预警 "LCA Right Warning"
+    WarningLCARight = 200508;
+    // LDW,左侧压线预警 "LDW Left Warning"
+    WarningLDWLeft = 200509;
+    // LDW,右侧压线预警 "LDW Right Warning"
+    WarningLDWRight = 200510;
+    // 前向碰撞预警及制动FCW-AEB故障提示 "FCW_AEB Failed Warning"
+    WarningFCW_AEBFailed = 200511;
+    // 前向碰撞预警及制动FCW-AEB受限提示 "FCW_AEB Restricted Warning"
+    WarningFCW_AEBRestricted = 200512;
+    // 前侧来车预警及制动FCTA（B）故障 "FCTA Failed Warning"
+    WarningFCTAFailed = 200513;
+    // 前侧来车预警及制动FCTA（B）受限 "FCTA Restricted Warning"
+    WarningFCTARestricted = 200514;
+    // 后向碰撞预警 RCW故障 "RCW Failed Warning"
+    WarningRCWFailed = 200515;
+    // 后向碰撞预警 RCW受限 "RCW Restricted Warning"
+    WarningRCWRestricted = 200516;
+    // 侧方开门预警DOW故障 "DOW Failed Warning"
+    WarningDOWFailed = 200517;
+    // 侧方开门预警DOW受限 "DOW Restricted Failed Warning"
+    WarningDOWRestricted = 200518;
+    // 后侧来车预警及制动RCTA（B）故障 "RCTA Failed Warning"
+    WarningRCTAFailed = 200519;
+    // 后侧来车预警及制动RCTA（B）受限 "RCTA Restricted Failed Warning"
+    WarningRCTARestricted = 200520;
+    // 后向行人紧急制动AEB-R故障 "AEB_R Failed Warning"
+    WarningAEB_RFailed = 200521;
+    // 后向行人紧急制动AEB-R受限 "AEB_R Restricted Failed Warning"
+    WarningAEB_RRestricted = 200522;
+    // 盲区监测与变道预警BSD/LCA故障 "BSD_LCA Failed Warning"
+    WarningBSD_LCAFailed = 200523;
+    // 盲区监测与变道预警BSD/LCA受限 "BSD_LCA Restricted Failed Warning"
+    WarningBSD_LCARestricted = 200524;
+    // 车道偏离预警及自动保持LDW/LKA故障 "LDW_LKA Failed Warning"
+    WarningLDW_LKAFailed = 200525;
+    // 车道偏离预警及自动保持LDW/LKA受限 "LDW_LKA Restricted Failed Warning"
+    WarningLDW_LKARestricted = 200526;
+    // AEB警告信息 "AEB Warning"
+    WarningAEB = 200527;
+    // FCW警告信息 "FCW Warning"
+    WarningFCW = 200528;
+    // 前向碰撞预警及制动故障 "CMSF Warning"
+    WarningCMSF = 200529;
+
+    // 灯光
+    // 远光灯眩目提醒 "High Beam Glare Remind"
+    WarningHighBeamGlareRemind = 200600;
+    // 远近光自动切换（AHBC）故障，用MsgAHBCRemind替代。[1.1.14 Not Support] "AHBC Failed Warning"
+    WarningAHBCFailed = 200601;
+    // 远近光自动切换（AHBC）受限，用MsgAHBCRemind替代。[1.1.14 Not Support] "AHBC Restricted Failed Warning"
+    WarningAHBCRestricted = 200602;
+    // AHBC故障/受限 "AHBC Remind" [v1.3.0 add]
+    WarningAHBCRemind = 200603;
+    // 辅助驾驶控灯中，请勿操控转向灯 "Turn Lamp Ctrl Remind" [v1.4.10 add]
+    MsgTurnLampCtrlRemind = 200604;
+    // 自动转向灯功能故障 "Auto Turn Lamp Fault" [v1.4.10 add]
+    MsgAutoTurnLampFaultRemind = 200605;
+
+    // 摄像头
+    // 前视摄像头自清洁提示 "Front View Camera Cleaning Remind" [no longer support from v1.3.0]
+    WarningFrontViewCameraCleaningRemind = 200700;
+    // 前视摄像头自清洁失败提示 "Front View Camera Clean Failed Remind"
+    WarningFrontViewCameraCleanFailedRemind = 200701;
+    // 广角摄像头自清洁失败提示 "Wide Angle Camera Clean Failed Remind"
+    WarningWideAngleCameraCleanFailedRemind = 200702;
+    // backup摄像头自清洁失败提示 "Backup Camera Clean Failed Remind" [no longer support from v1.3.0]
+    WarningBackupCameraCleanFailedRemind = 200703;
+    // 前环视摄像头故障提示 "Front AVM Camera Fault Warning"
+    WarningFrontAVMCameraFault = 200704;
+    // 左环视摄像头故障提示 "Left AVM Camera Fault Warning"
+    WarningLeftAVMCameraFault = 200705;
+    // 右环视摄像头故障提示 "Right AVM Camera Fault Warning"
+    WarningRightAVMCameraFault = 200706;
+    // 后环视摄像头故障提示 "Rear AVM Camera Fault Warning"
+    WarningRearAVMCameraFault = 200707;
+    // 前视摄像头故障提示 "Front Camera Fault Warning"  [no longer support from v1.3.0]
+    WarningFrontCameraFault = 200708;
+    // 120_deg摄像头故障提示 "Wide Angle Camera Fault Warning"
+    WarningWideAngleCameraFault = 200709;
+    // 30_deg摄像头故障提示 "Narrow Angle Camera Fault Warning"
+    WarningNarrowAngleCameraFault = 200710;
+    // 后视摄像头故障提示 "Rear Camera Fault Warning"
+    WarningRearCameraFault = 200711;
+    // 前向左侧摄像头故障提示 "Front Left Camera Fault Warning"
+    WarningFrontLeftCameraFault = 200712;
+    // 前向右侧摄像头故障提示 "Front Right Camera Fault Warning"
+    WarningFrontRightCameraFault = 200713;
+    // 后向左侧摄像头故障提示 "Rear Left Camera Fault Warning"
+    WarningRearLeftCameraFault = 200714;
+    // 后向右侧摄像头故障提示 "Rear Right Camera Fault Warning"
+    WarningRearRightCameraFault = 200715;
+
+
+    // 未标定提示
+    // 车外摄像头未标定提示 "Camera Not Calibrated Warning"
+    WarningCameraNotCalibrated = 200800;
+    // 毫米波雷达未标定提示 "Radar Not Calibrated Warning"
+    WarningRadarNotCalibrated = 200801;
+    // 激光雷达未标定提示 "Lidar Not Calibrated Warning" [no longer support from v1.3.0]
+    WarningLidarNotCalibrated = 200802;
+    // 智驾惯性测量单元未标定提示 "AD IMU Cali Warning"
+    WarningADIMUCali = 200803;
+    // 座舱惯性测量单元未标定提示 "CDC IMU Cali Warning" [1.1.18 Not Supported]
+    WarningCDCIMUCali = 200804;
+
+    // 红绿灯
+    // 红绿灯识别及提醒 "Traffic Light Identification Remind"
+    WarningTrafficLightIdentificationRemind = 200900;
+    // 红绿灯识别与起步提醒故障 "TraLight Identify Failed Warning"
+    WarningTraLightIdentifyFailed = 200901;
+    // 红绿灯识别与起步提醒受限 "TraLight Restricted Failed Warning"
+    WarningTraLightIdentifyRestricted = 200902;
+
+    // 速度
+    // 限速识别及超速提醒SAS-SLIF故障 "SAS_SLIF Failed Warning"
+    WarningSAS_SLIFFailed = 201000;
+    // 限速识别及超速提醒SAS-SLIF受限 "SAS_SLIF Restricted Warning"
+    WarningSAS_SLIFRestricted = 201001;
+    // // 减速和滑行提示信息 "EPedal Function Indication"    占位，该wti key id已经给过车端了，但是发现定义错域了，为了向前兼容，该id保留
+    // WarningEPedalFunIndcn = 201002;
+
+    // 被遮挡提示
+    // 激光雷达被遮挡提示,仅提示，不会自动加热清洁，left "Left Lidar Clean Remind" [no longer support from v1.3.0]
+    WarningLeftLidarCleanRemind = 201100;
+    // 激光雷达被遮挡提示,仅提示，不会自动加热清洁，right "Right Lidar Clean Remind" [no longer support from v1.3.0]
+    WarningRightLidarCleanRemind = 201101;
+    // 激光雷达被遮挡提示,会自动加热清洁，在清洁失败时提示 "Lidar Auto Clean Remind" [no longer support from v1.3.0]
+    WarningLidarAutoCleanRemind = 201102;
+    // 其它摄像头被遮挡提示，front "Front AVMCamera Blocked Remind"
+    WarningFrontAVMCameraBlockedRemind = 201103;
+    // 其它摄像头被遮挡提示，left "Left AVMCamera Blocked Remind"
+    WarningLeftAVMCameraBlockedRemind = 201104;
+    // 其它摄像头被遮挡提示，right "Right AVMCamera Blocked Remind"
+    WarningRightAVMCameraBlockedRemind = 201105;
+    // 其它摄像头被遮挡提示，rear "Rear AVMCamera Blocked Remind"
+    WarningRearAVMCameraBlockedRemind = 201106;
+    // 其它摄像头被遮挡提示，rearCamera "Rear Camera Blocked Remind"
+    WarningRearCameraBlockedRemind = 201107;
+    // 其它摄像头被遮挡提示，frontSideLeftCamera "Front Side Left Camera Blocked Remind"
+    WarningFrontSideLeftCameraBlockedRemind = 201108;
+    // 其它摄像头被遮挡提示，frontSideRightCamera "Front Side Right Camera Blocked Remind"
+    WarningFrontSideRightCameraBlockedRemind = 201109;
+    // 其它摄像头被遮挡提示，rearSideLeftCamera "Rear Side Left Camera Blocked Remind"
+    WarningRearSideLeftCameraBlockedRemind = 201110;
+    // 其它摄像头被遮挡提示，rearSideRightCamera "Rear Side Right Camera Blocked Remind"
+    WarningRearSideRightCameraCameraBlockedRemind = 201111;
+    // 毫米波雷达被遮挡提示,Front "Front Radar Blocked Remind"
+    WarningFrontRadarBlockedRemind = 201112;
+    // 毫米波雷达被遮挡提示,FrontLeft "Front Left Radar Blocked Remind"
+    WarningFrontLeftRadarBlockedRemind = 201113;
+    // 毫米波雷达被遮挡提示,FrontRight "Front Right Radar Blocked Remind"
+    WarningFrontRightRadarBlockedRemind = 201114;
+    // 毫米波雷达被遮挡提示,RearLeft "Rear Left Radar Blocked Remind"
+    WarningRearLeftRadarBlockedRemind = 201115;
+    // 毫米波雷达被遮挡提示,RearRight "Rear Right Radar Blocked Remind"
+    WarningRearRightRadarBlockedRemind = 201116;
+
+    // 雷达
+    // 前毫米波雷达故障显示 "Front Radar Fault Warning"
+    WarningFrontRadarFault = 201200;
+    // 左前毫米波雷达故障显示 "Front Left Radar Fault Warning"
+    WarningFrontLeftRadarFault = 201201;
+    // 右前毫米波雷达故障显示 "Front Right Radar Fault Warning"
+    WarningFrontRightRadarFault = 201202;
+    // 左后毫米波雷达故障显示 "Rear Left Radar Fault Warning"
+    WarningRearLeftRadarFault = 201203;
+    // 右后毫米波雷达故障显示 "Rear Right Radar Fault Warning"
+    WarningRearRightRadarFault = 201204;
+    // 左激光雷达故障显示 "Left Lidar Fault Warning" [no longer support from v1.3.0]
+    WarningLeftLidarFault = 201205;
+    // 右激光雷达故障显示 "Right Lidar Fault Warning" [no longer support from v1.3.0]
+    WarningRightLidarFault = 201206;
+
+    // 方向盘
+    // 脱手检测HOD故障显示 "HOD Fault Warning"
+    WarningHODFault = 201300;
+
+    // 智能驾驶
+    // 智驾系统故障显示 "ACU Fault Warning"
+    WarningACUFault = 201400;
+    // BACU故障 "BACU Fault Warning"
+    WarningBACUFault = 201401;
+    // ACU通讯异常 "ACU Network Warning"
+    WarningACUNetwork = 201402;
+    // 驾驶员在位异常 "Driver Occupy Unusual Warning" [v1.3.0 add]
+    WarningDriverOccupyUnusual = 201403;
+    // 辅助驾驶退出提醒 "Take Over Remind" [v1.3.0 add]
+    WarningTakeOverRemind = 201404;
+
+    // 定位
+    // 定位系统故障显示 "IMU Fault Warning"
+    WarningIMUFault = 201500;
+
+    // 档位
+    // 自动换挡提示 "Auto Gear Remind"
+    WarningAutoGearRemind = 201600;
+
+    // 安全
+    // 功能安全故障提示 "FuncSafety Failure Remind"
+    WarningFuncSafetyFailureRemind = 201700;
+
+    // 道路
+    // 无法自动变道 "Lane Change Fault" [v1.4.10 add]
+    MsgLaneChangeFaultRemind = 201800;
+
+    // 超声波
+    // 右前外侧超声波雷达故障提示, FrontRightOutSide "Front Right Outside Ultrasonic Radar Fault Remind"
+    MsgFrontRightOutSideUltrasonicRadarFaultRemind = 201900;
+    // 右前边超声波雷达故障提示, FrontRight "Front Right Ultrasonic Radar Fault Remind"
+    MsgFrontRightUltrasonicRadarFaultRemind = 201901;
+    // 右前内测超声波雷达故障提示, FrontRightInside "Front Right Inside Ultrasonic Radar Fault Remind"
+    MsgFrontRightInsideUltrasonicRadarFaultRemind = 201902;
+    // 左前外侧超声波雷达故障提示, FrontLeftOutSide "Front Left Outside Ultrasonic Radar Fault Remind"
+    MsgFrontLeftOutSideUltrasonicRadarFaultRemind = 201903;
+    // 左前边超声波雷达故障提示, FrontLeft "Front Left Ultrasonic Radar Fault Remind"
+    MsgFrontLeftUltrasonicRadarFaultRemind = 201904;
+    // 左前内测超声波雷达故障提示, FrontLeftInside "Front Left Inside Ultrasonic Radar Fault Remind";
+    MsgFrontLeftInsideUltrasonicRadarFaultRemind = 201905;
+    // 左后外侧超声波雷达故障提示, RearLeftOutSide "Rear Left Outside Ultrasonic Radar Fault Remind"
+    MsgRearLeftOutSideUltrasonicRadarFaultRemind = 201906;
+    // 左后边超声波雷达故障提示, RearLeft "Rear Left Ultrasonic Radar Fault Remind"
+    MsgRearLeftUltrasonicRadarFaultRemind = 201907;
+    // 左后内测超声波雷达故障提示, RearLeftInside "Rear Left Inside Ultrasonic Radar Fault Remind"
+    MsgRearLeftInsideUltrasonicRadarFaultRemind = 201908;
+    // 右后外侧超声波雷达故障提示, RearRightOutSide "Rear Right Outside Ultrasonic Radar Fault Remind"
+    MsgRearRightOutSideUltrasonicRadarFaultRemind = 201909;
+    // 右后边超声波雷达故障提示, RearRight "Rear Right Ultrasonic Radar Fault Remind"
+    MsgRearRightUltrasonicRadarFaultRemind = 201910;
+    // 右后内测超声波雷达故障提示, RearRightInside "Rear Right Inside Ultrasonic Radar Fault Remind"
+    MsgRearRightInsideUltrasonicRadarFaultRemind = 201911;
+
+    // 危险
+    // 危险场景提示, DangerScenceReminder "Dangerous Scence Reminder"
+    MsgDangerScenceReminder = 202000;
+
+    // ACC
+    // ACC巡航车速提醒 "ACC Speed Remind"
+    MsgAccSpeedRemind = 202100;
+
+    // 环境 env
+    // 环境黑暗提示 "Dark Status Remind"
+    MsgDarkStsRemind = 202200;
+
+
+    // CDC 智舱域
+    // 警示音
+    // MSO-WTI-1052 avas function on/off 低速行人警示音功能开启关闭 "CDCWTIMsgAvasFunctionOn"
+    MsgAvasFunctionOn = 300100;
+    // MSO-WTI-1053 avas function fault 低速行人警示音功能故障 "CDCWTIMsgAvasFunctionFault"
+    MsgAvasFunctionFault = 300101;
+
+    // 硬件设备
+    // MSO-WTI-1599 DMS hardware device fault DMS故障（硬件故障） "CDCWTIMsgDmsDeviceFault"
+    MsgDmsDeviceFault = 300200;
+    // MSO-WTI-1600 OMS hardware device fault OMS故障（硬件故障） "CDCWTIMsgOmsDeviceFault"
+    MsgOmsDeviceFault = 300201;
+
+    // 麦克风
+    // MSO-WTI-1461 InSide Mic Fault 车内麦克风故障，请预约维修 "CDCWTIMsgInSideMicFault"
+    MsgInSideMicFault = 300300;
+    // MSO-WTI-1462 OutSide Mic Fault 车外麦克风故障，请预约维修 "CDCWTIMsgOutSideMicFault"
+    MsgOutSideMicFault = 300301;
+    // 麦克风系统链路故障 "CDCWTIMsgMicSysDataLinkFault" [v1.4.10 add]
+    MsgMicSysDataLinkFault = 300302;
+
+    // 扬声器
+    // MSO-WTI-1463 InSide Speaker Fault 车内扬声器故障，请预约维修 "CDCWTIMsgInSideSpeakerFault"
+    MsgInSideSpeakerFault = 300400;
+    // MSO-WTI-1464 OutSide Speaker Fault 车外扬声器故障，请预约维修 "CDCWTIMsgOutSideSpeakerFault"
+    MsgOutSideSpeakerFault = 300401;
+    // MSO-WTI-1465 Tweeter Up/Down Blocked 扬声器可升降机构故障，请预约维修 "CDCWTIMsgTweeterBlocked"
+    MsgTweeterBlocked = 300402;
+
+    // 冷却水泵
+    // MSO-WTI-1613 CDC Cooling Pump Fault 冷却水泵故障 "CDCWTIMsgPumpFault"
+    MsgPumpFault = 300500;
+
+    // 屏幕亮度调节受限
+    // MSO-WTI-1051 Front Screen(Primary) overtemperature protection of brightness decreases reminder 前排屏幕温度过高，亮度调节受限 "CDCWTIMsgPrimaryBrightnessLimited"
+    MsgPrimaryBrightnessLimited = 300600;
+    // MSO-WTI-1617 Rear Screen overtemperature protection of brightness decreases reminder 后排屏幕温度过高，亮度调节受限 "CDCWTIMsgRearBrightnessLimited"
+    MsgRearBrightnessLimited = 300601;
+
+    // 感知系统
+    // PerceptionWarning 感知告警 "CDCWTIMsgPerceptionWarning"
+    MsgPerceptionWarning = 300700;
+
+    // 舱内视觉感知系统异常 "CDCWTIMsgPerceptionServiceInvalid" [v1.4.10 add]
+    MsgPerceptionServiceInvalid = 300701;
+
+    // CDCWTIMsgBACUANPDegraedFaultRemindBoth ANP降级提示 [v1.3.0 add]
+    MsgBACUANPDegraedFaultRemindBoth = 300800;
+
+    // CDCWTIMsgBACUHAVPCycleWarningBoth AVP提示 [v1.3.0 add]
+    MsgBACUHAVPCycleWarningBoth = 300900;
+
+    // CDCWTIMsgBACUAPAWorkingStsBoth 车内APA提示 [v1.3.0 add]
+    MsgBACUAPAWorkingStsBoth = 301000;
+    // CDCWTITTSBACUAPAWorkingStsBoth APA提示，车外TTS [v1.3.0 add]
+    MsgTTSBACUAPAWorkingStsBoth = 301001;
+
+    // CDCWTIMsgChildSeatConnectionFault 儿童座椅连接异常提示 [v1.3.0 add]
+    MsgMsgChildSeatConnectionFault = 301100;
+
+    // 儿童座椅蓝牙连接失败 "CDCWTIMsgChildSeatBluetoothConnectionFailed" [v1.4.10 add]
+    MsgChildSeatBluetoothConnectionFailed = 301101;
+
+    // 独立服务域
+    // SRD：https://jama.jiduauto.com/perspective.req#/items/1345586?projectId=46
+    // WTI Value定义：https://wiki.jiduauto.com/pages/viewpage.action?pageId=412835778
+    // 文档：https://jama.jiduauto.com/perspective.req#/items/781461?projectId=46
+
+    // ECALL
+    // ECALL告警 "ECALL Warning"
+    WarningECALL = 400100;
+
+    // 里程
+    // 剩余里程为0 "Remaining Mileage Is Zero Warning"
+    WarningRemainingMileageIsZero = 400200;
+}

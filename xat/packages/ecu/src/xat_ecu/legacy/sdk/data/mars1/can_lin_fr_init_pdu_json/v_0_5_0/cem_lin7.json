@@ -1,0 +1,114 @@
+{
+    "CemCem_Lin7Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            255,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemCem_Lin7Fr02": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 13,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            64,
+            8,
+            121
+        ]
+    },
+    "DpodCem_Lin7Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 23,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            71,
+            10,
+            0,
+            0,
+            0
+        ]
+    },
+    "DrmCem_Lin7Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 14,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            98,
+            98,
+            98,
+            98,
+            0
+        ]
+    },
+    "LpodCem_Lin7Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 24,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            71,
+            10,
+            0,
+            0,
+            0
+        ]
+    },
+    "PpodCem_Lin7Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 34,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            71,
+            10,
+            0,
+            0,
+            0
+        ]
+    },
+    "RpodCem_Lin7Fr01": {
+        "msg_cycle": 0.073,
+        "msg_length": 7,
+        "msg_id": 42,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            71,
+            10,
+            0,
+            0,
+            0
+        ]
+    }
+}

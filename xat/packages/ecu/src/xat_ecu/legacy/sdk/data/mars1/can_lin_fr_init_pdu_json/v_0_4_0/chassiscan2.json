@@ -1,0 +1,19 @@
+{
+    "BgmChas2Fr01": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 96,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

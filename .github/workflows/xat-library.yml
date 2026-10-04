@@ -17,6 +17,6 @@ jobs:
         with:
           python-version: '3.11'
       - name: 仅安装库及测试依赖
-        run: python -m pip install -e 'xat/packages/ecu[test]'
+        run: python -m pip install -e 'xat/packages/ecu[test,protocols]'
       - name: 验证库功能及框架隔离
         run: python -m pytest xat/packages/ecu/tests --noconftest -q

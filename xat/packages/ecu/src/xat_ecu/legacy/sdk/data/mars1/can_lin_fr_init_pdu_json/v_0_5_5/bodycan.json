@@ -1,0 +1,2994 @@
+{
+    "BgmBodyFr01": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 560,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            3,
+            0,
+            32
+        ]
+    },
+    "BgmBodyFr02": {
+        "msg_cycle": 0.055,
+        "msg_length": 8,
+        "msg_id": 576,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            255,
+            0,
+            0,
+            0,
+            12,
+            64,
+            64,
+            0
+        ]
+    },
+    "BgmBodyFr04": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 608,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            255,
+            0,
+            255,
+            255,
+            0,
+            255,
+            0,
+            0
+        ]
+    },
+    "BgmBodyFr05": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 624,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            202,
+            203,
+            203,
+            203,
+            203,
+            203,
+            203,
+            203
+        ]
+    },
+    "BgmBodyFr06": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 640,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            63,
+            0,
+            0
+        ]
+    },
+    "BgmBodyFr08": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 613,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            255,
+            0,
+            255,
+            255,
+            0,
+            255,
+            0,
+            0
+        ]
+    },
+    "BgmBodyFr09": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 597,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+        ]
+    },
+    "BgmBodyFr10": {
+        "msg_cycle": 0.295,
+        "msg_length": 8,
+        "msg_id": 612,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            124,
+            7,
+            252
+        ]
+    },
+    "BgmBodyFr11": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 611,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            6,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmBodyFr12": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 610,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmBodyFr13": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 609,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmBodyFr14": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 614,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BgmBodyFr15": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 615,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CEMBodyFr11": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 224,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            200,
+            0,
+            44,
+            0,
+            48,
+            128,
+            0
+        ]
+    },
+    "CEMBodyFr12": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 240,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            1,
+            0,
+            0,
+            0,
+            128,
+            112,
+            32
+        ]
+    },
+    "CEMBodyFr13": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 256,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            128,
+            0,
+            128,
+            128,
+            3,
+            192,
+            0,
+            152
+        ]
+    },
+    "CEMBodyFr14": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 320,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            11,
+            248,
+            13,
+            32,
+            0,
+            56,
+            192,
+            57
+        ]
+    },
+    "CEMBodyFr15": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 384,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            14,
+            14,
+            14,
+            14,
+            128,
+            47,
+            14,
+            0
+        ]
+    },
+    "CEMBodyFr19": {
+        "msg_cycle": 0.235,
+        "msg_length": 8,
+        "msg_id": 528,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            50,
+            144,
+            0,
+            8,
+            0,
+            133
+        ]
+    },
+    "CEMBodyFr24": {
+        "msg_cycle": 0.445,
+        "msg_length": 8,
+        "msg_id": 656,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            16,
+            0,
+            0
+        ]
+    },
+    "CEMBodyFr26": {
+        "msg_cycle": 0.21,
+        "msg_length": 8,
+        "msg_id": 768,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            19
+        ]
+    },
+    "CEMBodyFr27": {
+        "msg_cycle": 0.175,
+        "msg_length": 8,
+        "msg_id": 784,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            32,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CEMBodyFr28": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 464,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            4,
+            0,
+            0,
+            64,
+            0,
+            0,
+            160,
+            0
+        ]
+    },
+    "CEMBodyFr30": {
+        "msg_cycle": 0.62,
+        "msg_length": 8,
+        "msg_id": 880,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            32,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CEMBodyFr32": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 896,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            104,
+            0,
+            0,
+            0
+        ]
+    },
+    "CEMBodyFr33": {
+        "msg_cycle": 0.215,
+        "msg_length": 8,
+        "msg_id": 816,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            64,
+            0,
+            0
+        ]
+    },
+    "CEMBodyFr34": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 832,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CEMBodyFr35": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 306,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CEMBodyFr36": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 849,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            208,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyDevFr02": {
+        "msg_cycle": 1.25,
+        "msg_length": 8,
+        "msg_id": 1435,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 177,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            160,
+            0,
+            128,
+            72
+        ]
+    },
+    "CcmBodyFr02": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 37,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            28,
+            0,
+            0,
+            12,
+            0,
+            128,
+            0
+        ]
+    },
+    "CcmBodyFr03": {
+        "msg_cycle": 0.09,
+        "msg_length": 8,
+        "msg_id": 512,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            24,
+            0,
+            0,
+            104,
+            0,
+            0,
+            24,
+            0
+        ]
+    },
+    "CcmBodyFr08": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 289,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            130,
+            88,
+            10,
+            88,
+            18,
+            88,
+            18,
+            0
+        ]
+    },
+    "CcmBodyFr11": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1029,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            192,
+            0,
+            0,
+            12,
+            0,
+            50,
+            160,
+            50
+        ]
+    },
+    "CcmBodyFr15": {
+        "msg_cycle": 0.25,
+        "msg_length": 8,
+        "msg_id": 1033,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            32,
+            0,
+            32,
+            0,
+            32,
+            0,
+            32,
+            0
+        ]
+    },
+    "CcmBodyFr16": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1034,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            32,
+            0,
+            32,
+            0,
+            32,
+            0,
+            32,
+            0
+        ]
+    },
+    "CcmBodyFr20": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 933,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            60,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr21": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1037,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            11,
+            0,
+            0,
+            0,
+            0,
+            240
+        ]
+    },
+    "CcmBodyFr22": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1040,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            179,
+            160,
+            0,
+            160,
+            0,
+            85
+        ]
+    },
+    "CcmBodyFr25": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1049,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            60,
+            120,
+            114,
+            88,
+            6,
+            171,
+            32,
+            42
+        ]
+    },
+    "CcmBodyFr27": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1145,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            112,
+            157,
+            0,
+            0,
+            32,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr28": {
+        "msg_cycle": 0.06,
+        "msg_length": 8,
+        "msg_id": 1168,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            194,
+            188,
+            0,
+            100,
+            100,
+            0,
+            0,
+            64
+        ]
+    },
+    "CcmBodyFr29": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1184,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            252,
+            96
+        ]
+    },
+    "CcmBodyFr30": {
+        "msg_cycle": 0.5,
+        "msg_length": 8,
+        "msg_id": 1025,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            160,
+            0,
+            0,
+            41,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr31": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 295,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            80,
+            7,
+            255
+        ]
+    },
+    "CcmBodyFr34": {
+        "msg_cycle": 0.2,
+        "msg_length": 8,
+        "msg_id": 831,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            44,
+            240,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr35": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 851,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ]
+    },
+    "CcmBodyFr36": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 856,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ]
+    },
+    "CcmBodyFr37": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 860,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ]
+    },
+    "CcmBodyFr38": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 865,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ]
+    },
+    "CcmBodyFr39": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 868,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224
+        ]
+    },
+    "CcmBodyFr40": {
+        "msg_cycle": 0.9,
+        "msg_length": 8,
+        "msg_id": 596,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            60,
+            0,
+            0,
+            32,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr41": {
+        "msg_cycle": 0.9,
+        "msg_length": 8,
+        "msg_id": 600,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            60,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr42": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 604,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            60,
+            0,
+            0,
+            48,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr43": {
+        "msg_cycle": 0.9,
+        "msg_length": 8,
+        "msg_id": 607,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            7,
+            215,
+            7,
+            212,
+            7,
+            208,
+            7,
+            208
+        ]
+    },
+    "CcmBodyFr44": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 593,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            10,
+            73,
+            81,
+            72,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr45": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1152,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr46": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1153,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr47": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1154,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr48": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1155,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr49": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1156,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr50": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1157,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr51": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1158,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr52": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1159,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr53": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1160,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr54": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1161,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr55": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1162,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr56": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1163,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr57": {
+        "msg_cycle": 0.135,
+        "msg_length": 8,
+        "msg_id": 805,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            32,
+            0,
+            10,
+            88,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyFr58": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 579,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            84,
+            32,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1346,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1409,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmToEtcXCPFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1410,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmToEtcXCPFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1411,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CcmToEtcXCPFr04": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1412,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyDevFr01": {
+        "msg_cycle": 1.0,
+        "msg_length": 8,
+        "msg_id": 1434,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 32,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            8,
+            16,
+            8,
+            11,
+            0,
+            0,
+            0,
+            97
+        ]
+    },
+    "CemBodyFr02": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 64,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            64,
+            64,
+            104,
+            17,
+            32,
+            2
+        ]
+    },
+    "CemBodyFr03": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 118,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            16
+        ]
+    },
+    "CemBodyFr04": {
+        "msg_cycle": 0.14,
+        "msg_length": 8,
+        "msg_id": 1072,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            51,
+            51,
+            188,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr06": {
+        "msg_cycle": 0.19,
+        "msg_length": 8,
+        "msg_id": 1120,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            8,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr08": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 1171,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            165,
+            40,
+            145,
+            165,
+            162,
+            194,
+            188,
+            40
+        ]
+    },
+    "CemBodyFr09": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 65,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            3,
+            207,
+            60,
+            243,
+            207,
+            60,
+            244,
+            32
+        ]
+    },
+    "CemBodyFr10": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1196,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr103": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 91,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            36,
+            152,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr107": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 960,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr109": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 818,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            24,
+            0,
+            213,
+            11,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr121": {
+        "msg_cycle": 0.075,
+        "msg_length": 8,
+        "msg_id": 276,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            16
+        ]
+    },
+    "CemBodyFr131": {
+        "msg_cycle": 0.085,
+        "msg_length": 8,
+        "msg_id": 280,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            229,
+            229,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr44": {
+        "msg_cycle": 1.3,
+        "msg_length": 8,
+        "msg_id": 937,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            19,
+            79,
+            217,
+            0,
+            38,
+            159,
+            178,
+            0
+        ]
+    },
+    "CemBodyFr46": {
+        "msg_cycle": 0.285,
+        "msg_length": 8,
+        "msg_id": 928,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            16,
+            255,
+            0,
+            12,
+            0,
+            48
+        ]
+    },
+    "CemBodyFr47": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 645,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            40,
+            14,
+            0,
+            0,
+            0,
+            72,
+            0,
+            124
+        ]
+    },
+    "CemBodyFr48": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 855,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            192,
+            128,
+            248,
+            0
+        ]
+    },
+    "CemBodyFr49": {
+        "msg_cycle": 0.285,
+        "msg_length": 8,
+        "msg_id": 944,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr51": {
+        "msg_cycle": 0.285,
+        "msg_length": 8,
+        "msg_id": 951,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            100,
+            100,
+            100,
+            100,
+            100,
+            32,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr52": {
+        "msg_cycle": 0.285,
+        "msg_length": 8,
+        "msg_id": 356,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            60,
+            0,
+            75,
+            24,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr54": {
+        "msg_cycle": 0.645,
+        "msg_length": 8,
+        "msg_id": 151,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            192,
+            0,
+            0,
+            0,
+            0,
+            30
+        ]
+    },
+    "CemBodyFr55": {
+        "msg_cycle": 0.545,
+        "msg_length": 8,
+        "msg_id": 153,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            179,
+            252,
+            0
+        ]
+    },
+    "CemBodyFr60": {
+        "msg_cycle": 0.08,
+        "msg_length": 8,
+        "msg_id": 300,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            80,
+            128,
+            0,
+            0,
+            0,
+            75,
+            26,
+            138
+        ]
+    },
+    "CemBodyFr63": {
+        "msg_cycle": 0.275,
+        "msg_length": 8,
+        "msg_id": 447,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            64,
+            144
+        ]
+    },
+    "CemBodyFr67": {
+        "msg_cycle": 0.035,
+        "msg_length": 8,
+        "msg_id": 570,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            50,
+            132,
+            0,
+            8
+        ]
+    },
+    "CemBodyFr68": {
+        "msg_cycle": 0.035,
+        "msg_length": 8,
+        "msg_id": 178,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            8,
+            5,
+            0,
+            7,
+            4,
+            4
+        ]
+    },
+    "CemBodyFr69": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 196,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            32,
+            0,
+            64,
+            15,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr70": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 257,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            16,
+            0,
+            1,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr71": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 853,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            12,
+            0
+        ]
+    },
+    "CemBodyFr73": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 152,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            96
+        ]
+    },
+    "CemBodyFr74": {
+        "msg_cycle": 0.135,
+        "msg_length": 8,
+        "msg_id": 309,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            255,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr78": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 180,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            255,
+            0,
+            0,
+            255,
+            0,
+            5
+        ]
+    },
+    "CemBodyFr79": {
+        "msg_cycle": 0.05,
+        "msg_length": 8,
+        "msg_id": 184,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            255,
+            0,
+            0,
+            255,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr80": {
+        "msg_cycle": 0.6,
+        "msg_length": 8,
+        "msg_id": 1045,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            15
+        ]
+    },
+    "CemBodyFr84": {
+        "msg_cycle": 0.18,
+        "msg_length": 8,
+        "msg_id": 468,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            24,
+            0,
+            0,
+            0,
+            0,
+            0,
+            255,
+            0
+        ]
+    },
+    "CemBodyFr86": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 956,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            252
+        ]
+    },
+    "CemBodyFr87": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 958,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            224,
+            0
+        ]
+    },
+    "CemBodyFr88": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 963,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            192,
+            0
+        ]
+    },
+    "CemBodyFr89": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 967,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            142,
+            0,
+            50,
+            50
+        ]
+    },
+    "CemBodyFr90": {
+        "msg_cycle": 0.285,
+        "msg_length": 8,
+        "msg_id": 971,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            135,
+            40,
+            0,
+            0
+        ]
+    },
+    "CemBodyFr91": {
+        "msg_cycle": 0.285,
+        "msg_length": 8,
+        "msg_id": 975,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            201,
+            0,
+            32,
+            0
+        ]
+    },
+    "CemBodyFr92": {
+        "msg_cycle": 0.015,
+        "msg_length": 8,
+        "msg_id": 952,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            136,
+            0,
+            0,
+            192
+        ]
+    },
+    "CemBodyFr99": {
+        "msg_cycle": 0.24,
+        "msg_length": 8,
+        "msg_id": 827,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            40,
+            37,
+            30,
+            0,
+            0
+        ]
+    },
+    "DdmBodyFr01": {
+        "msg_cycle": 0.07,
+        "msg_length": 8,
+        "msg_id": 48,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            28,
+            132,
+            3,
+            130,
+            0,
+            2,
+            1,
+            0
+        ]
+    },
+    "DdmBodyFr02": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 480,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            87,
+            128,
+            0,
+            0,
+            64,
+            48,
+            0,
+            0
+        ]
+    },
+    "DdmBodyFr03": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 291,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            68,
+            43,
+            192
+        ]
+    },
+    "DdmBodyFr04": {
+        "msg_cycle": 0.025,
+        "msg_length": 8,
+        "msg_id": 5,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            148,
+            0,
+            188,
+            138,
+            4,
+            0,
+            0,
+            255
+        ]
+    },
+    "DdmBodyFr07": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 192,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DdmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1347,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DdmtoEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1417,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DpodBodyFr01": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 535,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            10,
+            143,
+            168,
+            0,
+            3,
+            203,
+            203,
+            8
+        ]
+    },
+    "EtcSmdBodyCanDevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1426,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcSmpBodyCanDevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1427,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToCcmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1526,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToCcmXCPFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1527,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToCcmXCPFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1528,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToCcmXCPFr04": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1529,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToDdmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1522,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToPdmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1523,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToPotXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1467,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToRldmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1524,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToRrdmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1525,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcmBodyFr01": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 581,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            32,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcmBodyFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 565,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "LpodBodyFr01": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 536,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            71,
+            160,
+            0,
+            1,
+            243,
+            203,
+            203,
+            8
+        ]
+    },
+    "PdmBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 16,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            4,
+            17,
+            1,
+            18,
+            29,
+            164,
+            28,
+            0
+        ]
+    },
+    "PdmBodyFr03": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 293,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            17,
+            66,
+            188,
+            40,
+            43,
+            192
+        ]
+    },
+    "PdmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1348,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PdmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1424,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PotBodyFr01": {
+        "msg_cycle": 0.3,
+        "msg_length": 8,
+        "msg_id": 416,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PotBodyFr02": {
+        "msg_cycle": 0.045,
+        "msg_length": 8,
+        "msg_id": 149,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            112,
+            26,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PotBodyFr03": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 578,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            223,
+            229,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PotBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1351,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PotToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1466,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PpodBodyFr01": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 546,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            10,
+            71,
+            0,
+            1,
+            243,
+            203,
+            203,
+            8
+        ]
+    },
+    "RldmBodyFr01": {
+        "msg_cycle": 0.03,
+        "msg_length": 8,
+        "msg_id": 112,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            144,
+            160,
+            4,
+            135,
+            129,
+            50,
+            128,
+            56
+        ]
+    },
+    "RldmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1353,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RldmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1418,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RpodBodyFr01": {
+        "msg_cycle": 0.065,
+        "msg_length": 8,
+        "msg_id": 554,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            10,
+            71,
+            0,
+            1,
+            243,
+            203,
+            203,
+            8
+        ]
+    },
+    "RrdmBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 117,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            144,
+            160,
+            4,
+            71,
+            129,
+            44,
+            128,
+            56
+        ]
+    },
+    "RrdmBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1360,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "RrdmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1419,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmblBodyFr02": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 1059,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            32,
+            0,
+            0,
+            32,
+            0,
+            0
+        ]
+    },
+    "SmbrBodyFr02": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 301,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            32,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmdBodyDevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1430,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmdBodyFr01": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 105,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            92,
+            0,
+            192,
+            0,
+            0,
+            128,
+            0,
+            0
+        ]
+    },
+    "SmdBodyFr02": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 864,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            32,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmdBodyFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1193,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmdBodyFr04": {
+        "msg_cycle": 0.095,
+        "msg_length": 8,
+        "msg_id": 665,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            136,
+            0,
+            0,
+            228,
+            0,
+            24,
+            0,
+            0
+        ]
+    },
+    "SmdBodyFr05": {
+        "msg_cycle": 0.07,
+        "msg_length": 8,
+        "msg_id": 272,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            17,
+            250,
+            23,
+            232,
+            250,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmdBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1362,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmpBodyDevFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1431,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmpBodyFr01": {
+        "msg_cycle": 0.035,
+        "msg_length": 8,
+        "msg_id": 304,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            224,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            58
+        ]
+    },
+    "SmpBodyFr02": {
+        "msg_cycle": 0.07,
+        "msg_length": 8,
+        "msg_id": 275,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            1,
+            250,
+            23,
+            232,
+            250,
+            0,
+            1,
+            0
+        ]
+    },
+    "SmpBodyFr03": {
+        "msg_cycle": 0.15,
+        "msg_length": 8,
+        "msg_id": 1063,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            192,
+            192,
+            36,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SmpBodyVFCVectorFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1363,
+        "tx_flag": null,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SwtlBodyFr01": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 616,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SwtlBodyFr02": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 617,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "SwtrBodyFr01": {
+        "msg_cycle": 0.1,
+        "msg_length": 8,
+        "msg_id": 625,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            15,
+            128,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "bootes": [
+        {
+            "bootes_id": "X86_BootesSampleService",
+            "node_config": [
+                {
+                    "node_id": "JUNode",
+                    "port_config": [
+                        {
+                            "type": "PBZMQ",
+                            "address": "ipc:///tmp/X86_BootesSampleService_partner",
+                            "portNumber": "5555"
+                        },
+                        {
+                            "type": "PBZMQ",
+                            "address": "tcp://127.0.0.1:49999",
+                            "portNumber": "5555"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,553 @@
+{
+    "BCFVLCUR_LIN1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 0,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BCFV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BCFVLCUR_LIN1Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 1,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BCFV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BCFVLCUR_LIN1Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 2,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BCFV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BCTVLCUR_LIN1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 3,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BCTVLCUR_LIN1Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 4,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BCTVLCUR_LIN1Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 5,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CCTVLCUR_LIN1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CCTVLCUR_LIN1Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 7,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CCTVLCUR_LIN1Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 8,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DCTVLCUR_LIN1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 9,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DCTVLCUR_LIN1Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 10,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DCTVLCUR_LIN1Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 11,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "DCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DiagRequest1": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 60,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "LCUR",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DiagResponse1": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 61,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "ECTVLCUR_LIN1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 12,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "ECTVLCUR_LIN1Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 13,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "ECTVLCUR_LIN1Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 14,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "HCTVLCUR_LIN1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 15,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "HCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "HCTVLCUR_LIN1Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 16,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "HCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "HCTVLCUR_LIN1Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 17,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "HCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "LCTVLCUR_LIN1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 18,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "LCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "LCTVLCUR_LIN1Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 19,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "LCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "LCTVLCUR_LIN1Fr03": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 20,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "LCTV",
+        "rx_nodes": [
+            "LCUR"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "LCURLCUR_LIN1Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 21,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "LCUR",
+        "rx_nodes": [
+            "DCTV",
+            "BCFV",
+            "CCTV",
+            "BCTV"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "LCURLCUR_LIN1Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 22,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "LCUR",
+        "rx_nodes": [
+            "ECTV",
+            "HCTV",
+            "LCTV"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    }
+}

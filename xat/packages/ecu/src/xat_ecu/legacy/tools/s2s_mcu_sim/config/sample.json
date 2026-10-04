@@ -1,0 +1,50 @@
+{
+  "payload": [
+    {
+      "signal": [
+        "bodyalmcanfd2",
+        "BgmBodyALMCANFD2Fr02",
+        "VehBattUSysUQf_2_BgmBodyALMCANFD2SignalIPdu02",
+        "GenQf1_TmpUndefdData"
+      ]
+    },
+    {
+      "sleep": 5
+    },
+    {
+      "signal": [
+        "bodyalmcanfd2",
+        "BgmBodyALMCANFD2Fr02",
+        "VehBattUSysUQf_2_BgmBodyALMCANFD2SignalIPdu02",
+        "GenQf1_UndefindDataAccur"
+      ]
+    },
+    {
+      "signal": [
+        "cem_lin1",
+        "RlsmCem_Lin1Fr03",
+        "RainSnsrDiagcRainSnsrHiTDetd",
+        "OnOff1_Off"
+      ]
+    },
+    {
+      "signal": [
+        "backbonefr",
+        "ACUBackBoneVFCVectorFr",
+        "VFCVectorACUVFCid0",
+        "VFCOnOff_Off"
+      ]
+    },
+    {
+      "signal": [
+        "backbonefr",
+        "ACUBackBoneVFCVectorFr",
+        "VFCVectorACUBlockID",
+        1
+      ]
+    },
+    {
+      "sleep": 5
+    }
+  ]
+}

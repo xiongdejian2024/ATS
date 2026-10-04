@@ -1,0 +1,143 @@
+{
+    "LowVoltageService测试用例": [
+        "6971a77a-34c3-4778-95d9-60626e99c9e9"
+    ],
+    "CarConfigService测试用例": [
+        "cada1af8-55b2-4672-8de1-ec5a85b3ba45"
+    ],
+    "CTDService测试用例": [
+        "36c0ec33-b0f3-418c-a41a-167d49aa69a8"
+    ],
+    "VehicleModeService测试用例": [
+        "c9f8b2a1-219b-4047-9d65-82908adc3bf4"
+    ],
+    "GloveBoxService测试用例": [
+        "9403d669-dddf-4bbe-86ce-0e535ce3ecd6"
+    ],
+    "HighVoltageService测试用例": [
+        "26d53fe3-3921-4327-aa3e-b96c7f2edd54"
+    ],
+    "PedalService测试用例": [
+        "e89b78d7-1c45-4a99-950a-ba6b832056ee"
+    ],
+    "WirelessPhoneChargingService测试用例": [
+        "d70c41d4-0430-4c41-aefe-284844fca987"
+    ],
+    "OuterRearViewService测试用例": [
+        "96b6527e-16df-4686-82d1-db5ed2fe787c"
+    ],
+    "ChassisService测试用例": [
+        "223d9563-0796-4eae-ae32-da5ec3aef67c"
+    ],
+    "ClimateControlService测试用例": [
+        "e8bf077c-0152-4f37-9bc7-9fec3da29df8"
+    ],
+    "SteerWheelService测试用例": [
+        "1c61e852-569b-4d34-8df8-155d2c96febd"
+    ],
+    "WirelessChargingService测试用例": [
+        "5f9e3885-d89c-4f72-9027-2f197ae9b896"
+    ],
+    "WindowService测试用例": [
+        "4b7a4a1e-75c6-48d7-97c1-4d015124b93f"
+    ],
+    "PassiveSafetyService测试用例": [
+        "6b28af01-9fc4-4ca4-9140-18021d081951"
+    ],
+    "EntryControlService测试用例": [
+        "fbb8fd1e-9bd3-4789-b874-70aca766d2b3"
+    ],
+    "ClimateService测试用例": [
+        "9f448cf1-8750-4aee-b876-a18ca9448ece"
+    ],
+    "BodyComfortService测试用例": [
+        "dfa3e67d-5d10-403d-b24a-961462a2c362"
+    ],
+    "DoorService测试用例": [
+        "f202cbae-52b4-4312-98a2-e610fd24f18f"
+    ],
+    "SeatService测试用例": [
+        "2ec2b90a-aae1-463b-9d73-b8c1adbed354"
+    ],
+    "WTIService测试用例": [
+        "ccfd4ead-fce3-4e81-bace-8e1a401da9ba"
+    ],
+    "TailGateService测试用例": [
+        "12bb19ce-0193-4263-a31b-48db4d937deb"
+    ],
+    "CentralLockService测试用例": [
+        "46a56373-fcdd-40d3-a639-15faf6c8f46c"
+    ],
+    "KeyService测试用例": [
+        "c7d3c20e-149b-454d-933b-81d2976c02f5"
+    ],
+    "HornService测试用例": [
+        "73d1ca20-f9ca-4ce2-8ddb-e7a7d5f12c3e"
+    ],
+    "InnerRearViewService测试用例": [
+        "f28ed9c3-0859-4a26-8d08-a1e93e60f123"
+    ],
+    "TailWingService测试用例": [
+        "e1756985-d147-438b-a13f-01b045f15c75"
+    ],
+    "LightService测试用例": [
+        "57f72707-501e-4fea-b7f0-8470ca54effa"
+    ],
+    "ChargeLidService测试用例": [
+        "6edf42b3-e3f7-4141-b721-2f10d89da94a"
+    ],
+    "ShieldWindowService测试用例": [
+        "c9155a68-6c28-44fb-8dda-fa2b1fbc08c4"
+    ],
+    "TyreService测试用例": [
+        "3b350f3c-379a-4d01-a4ba-7da37f46daf4"
+    ],
+    "WiperService测试用例": [
+        "0471f632-4fae-492e-804d-a945b1c228cc"
+    ],
+    "WTIAutoService测试用例": [
+        "5405b403-f19b-4060-910f-0694539659de"
+    ],
+    "TweeterService测试用例": [
+        "b8abb25d-44a0-46d6-a71e-aeaa1c51b404"
+    ],
+    "BonnetService测试用例": [
+        "ab1c63d7-9183-4d59-b328-74547cfde1b5"
+    ],
+    "其他s2s测试用例": [
+        "3d27ad8c-9373-4481-b863-0b7156c6d894",
+        "c403a414-dd50-4f94-af45-0855a754b0a6",
+        "87e15d9e-e15f-44fa-9f3e-d315cd0c3583",
+        "7470140f-eccf-4f9a-823f-0d5b6d487fe6",
+        "4ba6b0bd-4baa-443b-91a5-2da8f4c3aa23",
+        "c69a037f-b1c7-420d-994e-87567116a90a",
+        "37edde3c-a396-4e69-a6fa-18c770620ae6",
+        "e4bfa5a1-ec6a-4426-887f-609dca89f915",
+        "e0a5be63-07dc-48a0-b24b-f3534daa78b0",
+        "84ed867d-7249-421e-8dda-3544cb228f29",
+        "41d68647-64db-4fb5-b05e-433af92f67d0",
+        "8ac6549f-7c1f-43ad-ab56-2219bcced0b3",
+        "7c1695cd-dd4a-4177-9e70-c51e1c83468a",
+        "423d554f-3e9a-485f-aa3e-c9f3643f6a2f",
+        "9b36e404-a71c-4247-a048-71c5a2027f65",
+        "660fc74b-69c8-4d94-9af4-8be1901b643a",
+        "0c8f3ae8-1909-48f2-83e9-c2be8f077e12",
+        "01459c25-d6ae-4af0-979a-b23deae06d52",
+        "d8558c53-7aeb-4300-8756-7a72c8e61a13",
+        "ae80e7ab-4b45-4028-a325-00178bd393dd",
+        "f1407db0-6851-46bf-a1a8-678d7c891828",
+        "546d5116-39d3-4376-bd92-a71865ea6e25",
+        "9ad946c7-d2d2-49e8-b5db-ec1af9197ad0",
+        "4394c447-2904-47de-aa68-b459a40bca00",
+        "ea0ba010-61e8-4f42-8d85-5c0f06c2e841",
+        "3c96ff86-9629-4f6a-a76d-a072dd99aee5",
+        "fca7f4e3-41cd-4443-9c17-fd9b0cfa19e0",
+        "2946ebbc-a7f0-421e-8f23-3296ec69535b",
+        "bb86f639-38d9-46d9-82fd-09b6a244d818",
+        "5e15727e-3830-4605-9965-efe904343fab",
+        "00d8b271-d04f-413d-8253-b03dff9ced9c"
+    ],
+    "RPAAPAService测试用例": [
+        "425048e0-92d3-476a-8c7f-870fee9533a5"
+    ]
+}

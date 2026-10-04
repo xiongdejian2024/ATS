@@ -1,0 +1,132 @@
+{
+  "用户选择": "以现有车型为主，历史工具保留源码归档",
+  "缺失引用": [
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/signal_generator_sa.py",
+      "模块": "xat_ecu.legacy.sdk.dbc_cls.force.v1_0_0.bta",
+      "行": 12
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/signal_generator_sa.py",
+      "模块": "xat_ecu.legacy.sdk.dut.sa.bta_not_sa_sim",
+      "行": 14
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/bus_type_files_parser.py",
+      "模块": "xat_ecu.legacy.sdk.dut.cgw.cgw_pcan",
+      "行": 3
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can_protection_signals_generator.py",
+      "模块": "xat_ecu.legacy.sdk.dut.cgw.cgw_pcan",
+      "行": 16
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can_protection_signals_generator.py",
+      "模块": "xat_ecu.legacy.sdk.dut.bgm.bgm_pcan",
+      "行": 17
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/signal_generator_ecu.py",
+      "模块": "xat_ecu.legacy.ecu_sim.ecu_sim_auto",
+      "行": 13
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can_and_lin_routing_test_generator.py",
+      "模块": "xat_ecu.legacy.sdk.dut.cgw.cgw_pcan",
+      "行": 12
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can_and_lin_routing_test_generator.py",
+      "模块": "xat_ecu.legacy.sdk.dut.bgm.bgm_pcan",
+      "行": 13
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can2lin_lin2can_routing_generator.py",
+      "模块": "xat_ecu.legacy.sdk.dut.cgw.cgw_pcan",
+      "行": 16
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can2lin_lin2can_routing_generator.py",
+      "模块": "xat_ecu.legacy.sdk.dut.bgm.bgm_pcan",
+      "行": 17
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/s2s_mcu_sim/signal2service_ergodic_test.py",
+      "模块": "xat_ecu.legacy.sdk.auto.ecu_sig_auto",
+      "行": 23
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/auto_generate_and_upload_cases/keyword_driven.py",
+      "模块": "xat_ecu.legacy.ecu_sim.ecu_sim",
+      "行": 15
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/auto_generate_and_upload_cases/keyword_driven.py",
+      "模块": "xat_ecu.legacy.sdk.dut.bgm.bgm_nuc_app",
+      "行": 16
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/auto_generate_and_upload_cases/keyword_driven.py",
+      "模块": "xat_ecu.legacy.sdk.dut.bgm.bgm_tsp",
+      "行": 17
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/tools/auto_generate_and_upload_cases/keyword_driven.py",
+      "模块": "xat_ecu.legacy.sdk.dut.bgm.bgm_app_sim",
+      "行": 18
+    }
+  ],
+  "归档文件": [
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/auto_generate_and_upload_cases/auto_generate_script_case.py",
+      "归档目标": "xat/tools/archive/ecu/auto_generate_and_upload_cases/auto_generate_script_case.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    },
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/auto_generate_and_upload_cases/keyword_driven.py",
+      "归档目标": "xat/tools/archive/ecu/auto_generate_and_upload_cases/keyword_driven.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    },
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/s2s_mcu_sim/signal2service_ergodic_test.py",
+      "归档目标": "xat/tools/archive/ecu/s2s_mcu_sim/signal2service_ergodic_test.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    },
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/bus_type_files_parser.py",
+      "归档目标": "xat/tools/archive/ecu/scripts_generator/bus_type_files_parser.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    },
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can2lin_lin2can_routing_generator.py",
+      "归档目标": "xat/tools/archive/ecu/scripts_generator/can2lin_lin2can_routing_generator.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    },
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can_and_lin_routing_test_generator.py",
+      "归档目标": "xat/tools/archive/ecu/scripts_generator/can_and_lin_routing_test_generator.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    },
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can_protection_signals_generator.py",
+      "归档目标": "xat/tools/archive/ecu/scripts_generator/can_protection_signals_generator.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    },
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/can_routing_case_generator.py",
+      "归档目标": "xat/tools/archive/ecu/scripts_generator/can_routing_case_generator.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    },
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/signal_generator_ecu.py",
+      "归档目标": "xat/tools/archive/ecu/scripts_generator/signal_generator_ecu.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    },
+    {
+      "原目标": "xat/packages/ecu/src/xat_ecu/legacy/tools/scripts_generator/signal_generator_sa.py",
+      "归档目标": "xat/tools/archive/ecu/scripts_generator/signal_generator_sa.py",
+      "原因": "原项目缺失车型依赖，或仅引用这些历史工具；用户选择源码归档"
+    }
+  ]
+}

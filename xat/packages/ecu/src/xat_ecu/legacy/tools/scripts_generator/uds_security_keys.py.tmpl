@@ -1,0 +1,40 @@
+import logging
+
+from .uds_const import EcuCanId
+
+
+def getSecretMSB(candidateSecurityAccessLevel, ecuCanId: int):
+    msb = {
+% for ecuId in data['ecuId']:
+        EcuCanId.${ecuId}: {  \
+% for security_level in data['ecuId'][ecuId]:
+<% msb = (data['ecuId'][ecuId][security_level] & 0xFF00) >> 8 %>
+            ${security_level}: ${msb},
+% endfor
+        },
+% endfor
+    }
+    try:
+        return msb[ecuCanId][candidateSecurityAccessLevel]
+    except KeyError:
+        logging.error("Unable to determine secret for SecurityAccess for 0x{:03X}, level {}".format(ecuCanId, candidateSecurityAccessLevel))
+        return 0
+
+
+def getSecretLSB(candidateSecurityAccessLevel, ecuCanId: int):
+    lsb = {
+% for ecuId in data['ecuId']:
+        EcuCanId.${ecuId}: {  \
+% for security_level in data['ecuId'][ecuId]:
+<% lsb = (data['ecuId'][ecuId][security_level] & 0xFF) %>
+            ${security_level}: ${lsb},
+% endfor
+        },
+% endfor
+    }
+    try:
+        return lsb[ecuCanId][candidateSecurityAccessLevel]
+    except KeyError:
+        logging.error("Unable to determine secret for SecurityAccess for 0x{:03X}, level {}".format(ecuCanId, candidateSecurityAccessLevel))
+        return 0
+

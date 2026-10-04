@@ -1,0 +1,54 @@
+syntax="proto3";
+
+package cmd;
+
+option go_package="go/remote_vehicle_control/cmd";
+
+import "source/remote_vehicle_control/cmd/common.proto";
+
+/** 1、设置预约     TSP->车  2、预约列表上报    车-> TSP  共用一个结构体**/
+message SubscribeTaskReq{
+  string                         execId                  = 1; // 执行唯一ID
+  uint64                         execTime                = 2; // 执行时间，TSP->车 为云端时间（车端可以校验时间是否准确）， 车-> TSP为车端时间（云端可以校验车端时间是否准确）精确到秒
+
+  string                         subscribeId             = 3; // 预约ID 仅车-> TSP有赋值，空表示车端没有预约列表，
+  int64                          operateUserId           = 4; // 操作人ID
+
+  EnumVehicleModel               vehicleModel            = 5; // 车型
+
+  repeated TaskDetail            taskDetail              = 6; // 指令项 有指令项为设置与更新，没有指令项为取消
+}
+
+message TaskDetail{
+  EnumSubscribeCyclesType        cyclesType              = 1; // 1:单次 2:每天 3:工作日(预留)4:周一到周日可选
+  string                         appointWeekday          = 2; // 只有在周一到周日可选时本参数有效   weekday时间序列 1111000，代表周一到周四预约
+  uint64                         useVehicleTime          = 3; // UTC时间戳，用车时间，通过年月日判断首次执行时间， 通过时分设置定时
+  repeated TaskCmdDetail         taskCmdDetail           = 4; // 指令项
+}
+
+message SubscribeTaskResp{
+  string                         execId                  = 1; // 执行唯一ID
+
+  int32                          code                    = 2; // 0 执行成功，非0失败
+  string                         msg                     = 3; // 具体原因
+  string                         subscribeId             = 4; // 预约ID
+}
+
+
+/** 2、预约任务执行**/
+message SubscribeTaskExec {
+  string                         execId                  = 1; // 执行ID
+  string                         subscribeId             = 2; // 预约ID
+
+  repeated ExecDetail            execDetail              = 3; // 指令详情
+  uint64                         execTime                = 4; // 指令开始执行时间  UTC时间戳， 精确到秒，取年月日时分秒
+}
+
+/* 预约循环设置 */
+enum EnumSubscribeCyclesType {
+  SctUnknown                           = 0; // 空档
+  SctOnce                              = 1; // 一次
+  SctDaily                             = 2; // 每日
+  SctWorkDay                           = 3; // 工作日
+  SctWeekDay                           = 4; // 周一到周日可选
+}

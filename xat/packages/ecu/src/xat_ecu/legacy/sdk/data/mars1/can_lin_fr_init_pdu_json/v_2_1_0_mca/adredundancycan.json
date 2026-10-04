@@ -1,0 +1,736 @@
+{
+    "AcuADRedundancyCANFr04": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 100,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ACU",
+        "rx_nodes": [
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            193,
+            0
+        ],
+        "tx_change": true
+    },
+    "AcuADRedundancyCANFr05": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 129,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ACU",
+        "rx_nodes": [
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            93,
+            197,
+            220,
+            116,
+            1,
+            0
+        ],
+        "tx_change": true
+    },
+    "AcuADRedundancyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1286,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "ACU",
+        "rx_nodes": [
+            "PSCM2"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BbmADRedundancyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1284,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BbmAdRedundancyFr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 69,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            17,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr02": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 64,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "PSCM2",
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            64,
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr03": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 72,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr04": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 82,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr07": {
+        "msg_cycle": 0.04,
+        "msg_length": 8,
+        "msg_id": 260,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "PSCM2"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr13": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 87,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "PSCM2",
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr14": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 86,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr15": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 88,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            255,
+            5,
+            15,
+            160,
+            15,
+            164,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr16": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 89,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr18": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 113,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            144,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr19": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 90,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "PSCM2",
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            128,
+            1,
+            0,
+            0,
+            0,
+            0,
+            128,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmAdRedundancyFr20": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 97,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            128,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BbmToAllADRedundancyCANDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2047,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "PSCM2"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BbmToPscm2ADRedundancyCANDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1824,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "PSCM2"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "BbmtoEtcXcpFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1365,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BBM",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CdcADRedundancyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1297,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CDC",
+        "rx_nodes": [
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "CdcADRedundancyFr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 130,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CDC",
+        "rx_nodes": [
+            "ACU"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            0
+        ],
+        "tx_change": true
+    },
+    "CdcADRedundancyFr02": {
+        "msg_cycle": 0.06,
+        "msg_length": 8,
+        "msg_id": 304,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CDC",
+        "rx_nodes": [
+            "ACU"
+        ],
+        "pdu_data": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EtcToPscmAdRedXcpFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1418,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "CCM",
+        "rx_nodes": [
+            "PSCM2"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "FlcAdRedundancyFr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 121,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CDC",
+        "rx_nodes": [
+            "PSCM2"
+        ],
+        "pdu_data": [
+            186,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "FlcAdRedundancyFr03": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 295,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CDC",
+        "rx_nodes": [
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            93,
+            197,
+            220,
+            128,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "FlcAdRedundancyFr08": {
+        "msg_cycle": 0.02,
+        "msg_length": 8,
+        "msg_id": 65,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CDC",
+        "rx_nodes": [
+            "BBM",
+            "PSCM2"
+        ],
+        "pdu_data": [
+            0,
+            18,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "ImuAdRedundancyFr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 336,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "IMU",
+        "rx_nodes": [
+            "BBM",
+            "CDC"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            128,
+            1,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "ImuAdRedundancyFr02": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 337,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "IMU",
+        "rx_nodes": [
+            "BBM",
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            128,
+            1,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "Pscm2ADRedundancyCANNmFr": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1281,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PSCM2",
+        "rx_nodes": [
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "Pscm2ToBbmADRedundancyCANDiagReqFrame": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1568,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PSCM2",
+        "rx_nodes": [
+            "BBM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "PscmAdRedundancyFr01": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 133,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSCM2",
+        "rx_nodes": [
+            "ACU",
+            "CDC"
+        ],
+        "pdu_data": [
+            0,
+            5,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1
+        ],
+        "tx_change": true
+    },
+    "PscmAdRedundancyFr02": {
+        "msg_cycle": 0.01,
+        "msg_length": 8,
+        "msg_id": 48,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "PSCM2",
+        "rx_nodes": [
+            "CDC"
+        ],
+        "pdu_data": [
+            128,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "PscmToEtcAdRedXcpFr03": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1419,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "PSCM2",
+        "rx_nodes": [
+            "CCM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

@@ -44,6 +44,7 @@ class SSHTransport(ITransport):
             self.is_connected = True
             logger.info(f"SSHTransport connected to {self.host}:{self.port}")
         except Exception as e:
+            __import__("logging").getLogger(__name__).exception("XAT 捕获异常：xat/packages/ecu/src/xat_ecu/transport/ssh.py")
             logger.error(f"Failed to connect SSHTransport: {e}")
             raise
 

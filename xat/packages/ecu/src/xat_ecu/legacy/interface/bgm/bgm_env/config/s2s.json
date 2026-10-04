@@ -1,0 +1,75 @@
+{
+    "mcuIpTcp" : "172.16.5.2",
+    "mpuIpTcp" : "172.16.5.1",
+    "mcuIpUdp" : "172.16.5.21",
+    "mpuIpUdp" : "172.16.5.1",
+    "tcpReqClientPort" : 30500,
+    "tcpReqServerPort" : 30500,
+    "tcpResClientPort" : 30501,
+    "tcpResServerPort" : 30501,
+    "udpResClientPort" : 30502,
+    "udpResServerPort" : 30502,
+    "waitTime" : 4,
+    "E2ECheckFlag" : true,
+    "TimeOutCheckFlag" : true,
+    "FrameCountFlag" : true,
+    "SyncTCPFlag" : true,
+    "LogStorageFlag" : true,
+    "Threads" : {
+        "ServerStartPool" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        },
+        "TimerLoop" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        },
+        "S2sTimer0" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        },
+        "S2sTimer1" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        },
+        "S2sParse" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        },
+        "Internal" : {
+            "policy" : 0,
+            "priority" : 255,
+            "nice" : -20
+        },
+        "S2storage" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        },
+        "ReqLoop" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        },
+        "ResLoop" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        },
+        "RecLoop" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        },
+        "s2s_service" : {
+            "policy" : 2,
+            "priority" : 20,
+            "nice" : 255
+        }
+    }
+}

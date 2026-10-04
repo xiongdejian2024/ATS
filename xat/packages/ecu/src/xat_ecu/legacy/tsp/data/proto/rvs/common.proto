@@ -1,0 +1,232 @@
+syntax = "proto3";
+package vehiclestatus;
+
+// 车门位置
+// https://soa.jidudev.com/classjet_1_1vehicle_1_1Door.html#a90307adde34da099ae1fde1fad285128a72bcfa55529731259ef11ee8d5f1848e
+enum DoorId {
+  DoorFrontLeft                       = 0; // 左前方 (kDoorFrontLeft)
+  DoorFrontRight                      = 1; // 右前方 (kDoorFrontRight)
+  DoorRearLeft                        = 2; // 左后方 (kDoorRearLeft)
+  DoorRearRight                       = 3; // 右后方 (kDoorRearRight)
+  DoorAll                             = 4; // 所有 (kDoorAll)
+  DoorEmpty                           = -1; // --
+}
+//车门状态
+enum DoorStatus {
+  DoorStatusOpened                    = 0;  //	打开至最大 (kOpened)
+  DoorStatusClosing                   = 1;  //	正在关闭 (kClosing)
+  DoorStatusClosed                    = 2;  //	关闭 (kClosed)
+  DoorStatusLocked                    = 3;  //	上锁 (kLocked) 不用这个枚举值
+  DoorStatusUnlocked                  = 4;  //	解锁 (kUnlocked)
+  DoorStatusOpening                   = 5;  //	打开 (kOpening)
+  DoorStatusHover                     = 6;  //	悬停 (kHover)
+  DoorStatusNA                        = 7;  //	状态未知 (kNA)
+  DoorStatusClosingBreak              = 8 ; //  关闭过程中减速 (kClosingBreak)
+  DoorStatusOpeningBreak              = 9 ; //  打开过程中减速 (kOpeningBreak)
+  DoorStatusHalfClosed                = 10 ; // 半锁 (kHalfClosed)
+  DoorInvalid                         = 65535; // kInvalid
+  DoorStatusEmpty                     = -1; // --
+}
+//尾门状态
+enum TailGateStatus {
+  TgsOpened                           =	0;  //	打开至最大 (kOpened)
+  TgsClosing                          =	1;  //	正在关闭 (kClosing)
+  TgsClosed                           =	2;  //	关闭 (kClosed)
+  TgsOpening                          =	3;  //	打开 (kOpening)
+  TgsHover                            =	4;  //	悬停 (kHover)
+  TgsNA                               =	5;  //	状态未知 (kNA)
+  TgsClosingBreak                     = 6 ; // 关闭过程中减速  (kClosingBreak)
+  TgsOpeningBreak                     = 7 ; // 打开过程中减速  (kOpeningBreak)
+  TgsHalfClosed                       = 8 ; // 半锁  (kHalfClosed)
+  TgsInvalid                          = 65535 ;//无效 (kInvalid)
+  TgsEmpty                            = -1; // --
+}
+//前引擎盖状态
+enum BonnetStatus {
+  BonnetStatusOpen 	                  =	0;  //	开启 (kOpen)
+  BonnetStatusClose                   =	1;  //	关闭 (kClose)
+  BonnetStatusInvalid	                =	65535;  //	状态未知 (kInvalid)
+  BonnetStatusEmpty                   = -1; // --
+}
+
+//车窗Id
+enum WindowId {
+  WindowFrontLeft	                    =	0;  //	左前窗 (kWindowFrontLeft)
+  WindowFrontRight                	  =	1;  //	右前窗 (kWindowFrontRight)
+  WindowRearLeft	                    =	2;  //	左后窗 (kWindowRearLeft)
+  WindowRearRight	                    =	3;  //	右后窗 (kWindowRearRight)
+  WindowAll	                          =	4;  //	全部 (kWindowAll)
+  WindowEmpty                         = -1; // --
+}
+
+//车窗
+enum WindowStatus {
+  WindowStatusOpened	                =	0	; //	完全打开 (kStatusOpened)
+  WindowStatusClosed	                =	1	; //	完全关闭 (kStatusClosed)
+  WindowStatusOpening	                =	2	; //	正在打开 (kStatusOpening)
+  WindowStatusClosing	                =	3	; //	正在关闭 (kStatusClosing)
+  WindowStatusOpenFail	              =	4	; //	打开失败 (kStatusOpenFail)
+  WindowStatusCloseFail	              =	5	; //	关闭失败 (kStatusCloseFail)
+  WindowStatusNA	                    =	6	; //	状态未知 (kStatusNa)
+  WindowStatusEmpty                   = -1; // --
+}
+
+//车灯类型
+//车灯类型,类型定义: LightType
+enum LightType	{
+  LightBrake                                       		= 0 ;//刹车灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightBrake)  （V1.0保留）
+  LightEyebrow                                     		= 1 ;//轮眉灯 对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight,kLightZoneRearLeft,kLightZoneRearRight,可用kLightZoneAllOrSingle 开启全部 (kLightEyebrow)
+  LightHazard                                      		= 2 ;//报警灯 对应LightZoneId取值范围 kLightZoneLeft, kLightZoneRight可用kLightZoneAllOrSingle 开启全部 (kLightHazard)
+  LightDaytime                                     		= 3 ;//日间行车灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightDaytime)  （V1.0保留）
+  LightFog                                         		= 4 ;//雾灯 对应LightZoneId取值范围 kLightZoneFront, kLightZoneRear 可用kLightZoneAllOrSingle 开启全部 (kLightFog)  （V1.0保留）
+  LightHighBeam                                    		= 5 ;//远光灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightHighBeam)
+  LightLowBeam                                     		= 6 ;//近光灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightLowBeam)  （V1.0保留）
+  LightOutLine                                     		= 7 ;//示廓灯 对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight, kLightZoneRearLeft, kLightZoneRearRight, 可用kLightZoneAllOrSingle 开启全部 (kLightOutLine)
+  LightReverse                                     		= 8 ;//倒车灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightReverse)  （V1.0保留）
+  LightHeadLamp                                    		= 9 ;//前大灯 对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight 可用kLightZoneAllOrSingle 开启全部 (kLightHeadLamp)
+  LightSteer                                       		= 10 ;//转向灯 对应LightZoneId取值范围 kLightZoneLeft, kLightZoneRight, 可用kLightZoneAllOrSingle 开启全部 (kLightSteer)
+  LightPosition                                    		= 11 ;//位置灯 对应LightZoneId取值范围 kLightZoneFront, kLightZoneRear 可用kLightZoneAllOrSingle 开启全部 (kLightPosition)  （V1.0保留）  kLightZoneRear：车尾牌照灯
+  LightWelcome                                     		= 12 ;//迎宾灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightWelcome)  rvs不再上报
+  LightPixel                                       		= 13 ;//像素灯 对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight, kLightZoneRearLeft, kLightZoneRearRight, 可用kLightZoneAllOrSingle 开启全部 (kLightPixel)
+  LightDidrl                                       		= 14 ;//DIDRL灯 对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight 可用kLightZoneAllOrSingle 开启全部 (kLightDidrl)
+  LightLicense                                     		= 15 ;//牌照灯 对应LightZoneId取值范围 kLightZoneFront, kLightZoneRear 可用kLightZoneAllOrSingle 开启全部 (kLightLicense)
+  LightSteerMirror                                 		= 16 ;//外后视镜灯 对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight 可用kLightZoneAllOrSingle 开启全部 (kLightSteerMirror)
+  LightDoorAlarm                                   		= 17 ;//车门报警灯 对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight, kLightZoneRearLeft, kLightZoneRearRight, 可用kLightZoneAllOrSingle 开启全部 (kLightDoorAlarm)
+  LightCorner                                      		= 18 ;//角灯 对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight, kLightZoneRearLeft, kLightZoneRearRight, 可用kLightZoneAllOrSingle 开启全部 (kLightCorner)
+  LightPuddle                                      		= 19 ;//地面照明灯（水坑照明灯）对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight, kLightZoneRearLeft, kLightZoneRearRight, 可用kLightZoneAllOrSingle 开启全部 (kLightPuddle)
+  LightBlind                                       		= 21 ;//盲区灯(弯道灯) 对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight 可用kLightZoneAllOrSingle 开启全部 (kLightBlind)
+  LightReading                                     		= 22 ;//阅读灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightReading)
+  LightBackground                                  		= 23 ;//背光灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightBackground)
+  LightFoot                                        		= 24 ;//脚灯  对应LightZoneId取值范围  kLightZoneAllOrSingle (kLightFoot)
+  LightSmartAmbient                                		= 25 ;//智能氛围灯  对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight, kLightZoneRearLeft, kLightZoneRearRight, kLightIpLeft, kLightIpRight (kLightSmartAmbient)
+  LightCourtesy                                    		= 26 ;//礼貌灯  对应LightZoneId取值范围  kLightZoneAllOrSingle (kLightCourtesy)
+  LightTrunk                                       		= 27 ;//行李箱灯 对应LightZoneId取值范围  kLightZoneAllOrSingle (kLightTrunk)
+  LightArmRestBox                                  		= 28 ;//扶手箱灯 对应LightZoneId取值范围  kLightZoneAllOrSingle (kLightArmRestBox)
+  LightRoof                                        		= 29 ;//顶灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightRoof)
+  LightSide                                        		= 30 ;//侧灯 对应LightZoneId取值范围 kLightZoneLeft, kLightZoneRight 可用kLightZoneAllOrSingle 开启全部 (kLightSide)
+  LightGlove                                       		= 31 ;//手套箱灯 kLightZoneAllOrSingle (kLightGlove)
+  LightOvertake                                    		= 32 ;//超车灯 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightOvertake)
+  LightSteerWheel                                  		= 33 ;//方向盘灯 对应LightZoneId取值范围 kLightZoneLeft, kLightZoneRight, kLightZoneRing(用于灯带), 可用kLightZoneAllOrSingle 开启全部 (kLightSteerWheel)
+  AILight                                          		= 34 ;//AI交互灯 对应LightZoneId取值范围 kleftY和krightY,可用kLightZoneAllOrSingle 开启全部 (kAILight)
+  LightGeneralAmbient                              		= 35 ;//普通氛围灯  对应LightZoneId取值范围 kLightZoneFrontLeft, kLightZoneFrontRight, kLightZoneRearLeft, kLightZoneRearRight, kLightTweeterLeft, kLightTweeterRight， kLightConsoleLeft，kLightConsoleRight (kLightGeneralAmbient)
+  LightAFS                                         		= 36 ;//自适应前照灯系统(功能激活) 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightAFS)
+  LightAHL                                         		= 37 ;//大灯水平高度调节(功能激活) 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightAHL)
+  LightPositionPattern                             		= 38 ;//位置灯图案切换 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightPositionPattern)
+  LightCross                                       		= 39 ;//一字眉灯 对应LightZoneId取值范围kLightZoneFront,kLightZoneRearLeft, kLightZoneRearRight, kZoneMiddleRear,可用kLightZoneAllOrSingle 开启全部 (kLightCross)
+  LightSystem                                      		= 100 ;//灯光系统 对应LightZoneId取值范围 kLightZoneAllOrSingle (kLightSystem)
+  LightEmpty                                          = -1 ;//-- (Empty)
+}
+//车灯位置索引
+enum LightZoneId {
+  LightZoneAllOrSingle                =	0	; // 全部/全车唯一的灯 (kLightZoneAllOrSingle)
+  LightZoneFrontLeft                  =	1	; // 左前灯 (kLightZoneFrontLeft)
+  LightZoneFrontRight                 =	2	; // 右前灯 (kLightZoneFrontRight)
+  LightZoneRearLeft                   =	3	; // 左后灯 (kLightZoneRearLeft)
+  LightZoneRearRight                  =	4	; // 右后灯 (kLightZoneRearRight)
+  ZoneMiddleRear                      =	5	; // 中后灯 (kZoneMiddleRear)
+  LightZoneThreeRowLeft               =	6	; // 三排左 (kLightZoneThreeRowLeft)
+  LightZoneThreeRowRight              =	7	; // 三排右 (kLightZoneThreeRowRight)
+  LightZoneMiddleThreeRow             =	8	; // 三排中 (kLightZoneMiddleThreeRow)
+  LightZoneFront                      =	9	; // 前灯 (kLightZoneFront)
+  LightZoneRear                       =	10 ; //后灯 (kLightZoneRear)
+  LightZoneThreeRow                   =	11 ; // 三排 (kLightZoneThreeRow)
+  LightZoneLeft                       =	12 ; // 左灯 (kLightZoneLeft)
+  LightZoneRight                      =	13 ; // 右灯 (kLightZoneRight)
+  LightZoneRing                       =	14 ; // 环 (kLightZoneRing)
+  LightIpLeft                         =	15 ; // 仪表左侧 (kLightIpLeft)
+  LightIpRight                        =	16 ; // 仪表右侧 (kLightIpRight)
+  LightTweeterLeft                    =	17 ; // 可升降扬声器左侧 (kLightTweeterLeft)
+  LightTweeterRight                   =	18 ; // 可升降扬声器右侧 (kLightTweeterRight)
+  LightConsoleLeft                    =	19 ; // 中控左侧 (kLightConsoleLeft)
+  LightConsoleRight                   =	20 ; // 中控右侧 (kLightConsoleRight)
+  LightLeftY1Sts                      = 21 ; // 左侧AI指示灯LY1 (kleftY1Sts)
+  LightLeftY2Sts                      = 22 ; // 左侧AI指示灯LY2 (kleftY2Sts)
+  LightLeftY3Sts                      = 23 ; // 左侧AI指示灯LY3 (kleftY3Sts)
+  LightLeftY4Sts                      = 24 ; // 左侧AI指示灯LY4 (kleftY4Sts)
+  LightRightY1Sts                     = 25 ; // 右侧AI指示灯LY1 (krightY1Sts)
+  LightRightY2Sts                     = 26 ; // 右侧AI指示灯LY2 (krightY2Sts)
+  LightRightY3Sts                     = 27 ; // 右侧AI指示灯LY3 (krightY3Sts)
+  LightRightY4Sts                     = 28 ; // 右侧AI指示灯LY4 (krightY4Sts)
+  LightZoneEmpty                      =	-1	;   //	--
+}
+
+//车灯id
+enum LightId {
+  LiUnknown                           =	0	      ;     //	占位
+  LiLightHighBeam                     =	100005	;     //	远光灯
+  LiLightDaytime                      =	100003	;     //	日行灯
+  LiLightSteerLeft                    =	101010	;     //	左转向灯状态
+  LiLightSteerRight                   =	102010	;     //	右转向灯状态
+}
+//灯光模式
+enum LightMode {
+  LightModeOff	                        =	0	;     //	关  车灯关闭，所有灯都支持 (kModeOff)
+  LightModeOn	                          =	1	;     //	开 车灯打开，所有灯都支持 (kModeOn)
+  LightModeAuto	                        =	2	;     //	自动  目前只有近光灯支持该模式 (kModeAuto)
+  LightModeFlash	                      =	3	;     //	闪烁  目前之后转向灯支持 (kModeFlash)
+  LightModeAdasStatus1                  = 4 ;     // ModeAdasStatus1  于kLightZoneLeft, kLightZoneRing方向盘灯, MD_READY (kModeAdasStatus1)
+  LightModeAdasStatus2                  = 5  ;    // ModeAdasStatus2  于kLightZoneLeft, kLightZoneRing方向盘灯, MP_READY (kModeAdasStatus2)
+  LightModeAdasStatus3                  = 6  ;    // ModeAdasStatus3  于kLightZoneLeft, kLightZoneRing方向盘灯, MP_ACTIV (kModeAdasStatus3)
+  LightModeAdasStatus4                  = 7  ;    // ModeAdasStatus4  于kLightZoneLeft, kLightZoneRing方向盘灯, ACC_ACTI (kModeAdasStatus4)
+  LightModeAdasStatus5                  = 8  ;    // ModeAdasStatus5  用于kLightZoneLeft, kLightZoneRing方向盘灯, MD_ACTI (kModeAdasStatus5)
+  LightModeAdasStatus6                  = 9  ;    // ModeAdasStatus6  用于kLightZoneLeft, kLightZoneRing方向盘灯, AVP_ACT (kModeAdasStatus6)
+  LightModeAdasStatus7                  = 10 ;    // ModeAdasStatus7  用于kLightZoneLeft, kLightZoneRing方向盘灯, AVP_REA (kModeAdasStatus7)
+  LightModeAdasStatus8                  = 11 ;    // ModeAdasStatus8  用于kLightZoneRing方向盘灯, HOD_WARNING_1 (kModeAdasStatus8)
+  LightModeAdasStatus9                  = 12 ;    // ModeAdasStatus9  用于kLightZoneRing方向盘灯, HOD_WARNING_2 (kModeAdasStatus9)
+  LightModeAdasStatus10                 = 13 ;    // ModeAdasStatus10 用于kLightZoneRing方向盘灯, AVP_ACTIVETOEND (kModeAdasStatus10)
+  LightModeAdasStatus11                 = 14 ;    // ModeAdasStatus11 用于kLightZoneRing方向盘灯, AVP_FUNTION_DEGRADE (kModeAdasStatus11)
+  LightModeNA	                          =	255	;   // 未知	设置时可用于不修改模式，维持原有模式；获取时表示未获取到底层模式 (kModeNA)
+  LightModeEmpty	                      =	-1	;   //	--
+}
+
+//轮胎位置
+enum TyreId {
+  TyreFrontLeft                         = 0;      // 左前轮胎 (kTyreFrontLeft)
+  TyreFrontRight                        = 1;      // 右前轮胎 (kTyreFrontRight)
+  TyreRearLeft                          = 2;      // 左后轮胎 (kTyreRearLeft)
+  TyreRearRight                         = 3;      // 右后轮胎 (kTyreRearRight)
+  TyreAll                               = 4;      // 全部 (kTyreAll)
+  TyreEmpty                             = -1;      // --
+}
+
+//中控锁状态
+enum CentralLockStatus	{
+  ClsUnknown                            = 0 ;//状态未知 中控锁状态 (kUndef)
+  ClsUnlock                             = 1 ;//中控解锁 即4个门和尾门都处于解锁状态 (kUnlocked)
+  ClsTailUnlock                         = 2 ;//中控上锁尾门解锁 即4个门处于闭锁状态，尾门处于解锁状态 (kFourDoorLockedTailUnlocked)
+  ClsLocked                             = 3 ;//中控上锁 即4个门和尾门都处于闭锁状态 (kAllLocked)
+  ClsEmpty                              = -1 ;//-- (Empty)
+}
+
+enum Bool {
+  FALSE                                 = 0; // 否
+  TRUE                                  = 1; // 是
+  BoolEmpty                             = -1; // --
+}
+//鸣笛状态
+enum HornStatus {
+  HsHornOn                              = 0 ; //鸣笛中 (kHornOn)
+  HsHornOff                             = 1 ; //未鸣笛 (kHornOff)
+  HsHornNa                              = 2 ; //状态未知 (kHornNa)
+  HsEmpty                               = -1 ;//--
+}
+
+//外后视镜ID
+enum ViewId {
+  WiRearViewRight                     = 0;  // 右后视镜 (kRearViewRight)
+  WiRearViewLeft                      = 1 ; //左后视镜 (kRearViewLeft)
+  WiRearViewAll                       = 2 ; //全部外后视镜 (kRearViewAll)  （V1.0逻辑：当前实现只会传All,左和右不传）
+  WiRearEmpty                         = -1; //--
+}
+
+enum BlockVersion {
+  StartVersion  = 0;
+  MarsOne06     = 61000001;               //MarsOne0.6上报
+  MarsOne065    = 61000002;               //MarsOne0.65上报
+  MarsOne1_0    = 61000003;               //MarsOne1.0上报
+  MarsOne1_1    = 61000004;               //MarsOne1.1上报
+  MarsOne1_3    = 61000005;               //MarsOne1.3上报
+  MarsOne1_4    = 61000006;               //MarsOne1.4上报
+  BlockVersion07    = 61000007;               //增加12V电源延时模式、远程启动，车端2.0
+}
+

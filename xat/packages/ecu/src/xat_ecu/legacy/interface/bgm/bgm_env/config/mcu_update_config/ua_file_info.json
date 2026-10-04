@@ -1,0 +1,21 @@
+{
+        "file_num": 2,
+		"pn_boot": "8895036214  B",
+        "version_boot": "2960110065 AG",
+        "file_name_boot": "2960110065AG.bin",
+        "size_boot": 300848,
+        "url_boot": "https://t-ivs-fota.cdn.bcebos.com/staging/encrypt/1044/artifactory-ha/filestore/df/dfc4b7f42c39e68fbe83d05f4e5bee27ee297d2b/2960110065AG.bin?authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2023-03-02T13%3A50%3A13Z%2F-1%2F%2F358405786ab2008465cd87ea523aa14d765e74ae24125762e62ea7c9e500a7e2",
+        "signature_boot": "MEQCIGcI5OsZrqEDsh+HPWlRJZ/8tj/xTXCZY4RQy2Y89k3aAiARE4umqGxrRPwT3Mnihi8lmwNjyllQMj/NOkORznbbig==",
+        "key_id_boot": "eef124250bc14f24ab3270d9d70f3067",
+        "enc_key_boot": "iJHA54HBR4nP6XH7KzttPTyUge7pzmMufOmOriD9HqWhDMVUp/sHpjUzLCkLj99VGUGsqd7o9nLuEtpzy5b5frS1JHUwea4bOUWmiDnx0wq+tewJ/xqO+72sRxVvSH0tIdaAOprllZPy8XQ5qyEDmH+fwf8sVYgi89BwnvgOxr3yttSK7UpZTQY8nhNDYclAsyUt39gc1stl6K6BjgM5kO+EIE/2vqxVQxbOvOtujss8GtpV4PIupV5J2Xmwi8YvL9ueRT4ukH7rwBsTqBdmg42pbBZJ2ohTAzEdpT7q584VBB8L0vvtC114CYu8KSmK4O9eSK0H79sfrL7blIF8bg==",
+		
+        "pn": "8895036214  B",
+        "version": "6160110100 AD",
+        "file_name": "6160110100AD.bin",
+        "size": 479181808,
+        "url": "https://t-ivs-fota.cdn.bcebos.com/staging/encrypt/1043/artifactory-ha/filestore/37/3735331a1351d11ff669acd912e24387605ab787/6160110100AD.bin?authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2023-03-02T13%3A50%3A13Z%2F-1%2F%2F7a1b462ae5ef1ee571f968f8a77f5ac7e5fe27c7b0e70de1f0bf9398e7e14831",
+        "signature": "MEYCIQCkdwLgsDaHc6JYiZQp3lykvUmvd5wgIZ8hQNmLuC9R+QIhAMjeLXA5LIVelAiXVfzvYTRv3uOs6Gh6euma1ytJTzfR",
+        "key_id": "3ed2aced442a4c59a8934d9b1535c6e9",
+        "enc_key": "${XAT_CREDENTIAL_SCAN_55B6750CE35102FFACDB}",
+        "mode": 0
+}

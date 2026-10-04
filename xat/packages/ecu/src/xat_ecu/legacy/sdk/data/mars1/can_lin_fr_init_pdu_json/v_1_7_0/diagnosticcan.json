@@ -1,0 +1,359 @@
+{
+    "BgmToEtcXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1361,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToAllJ1979OBDDiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2015,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToBgmXCPFr01": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 1363,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToVgmBecmJ1979OBDDiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2018,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToVgmEcmJ1979OBDDiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2016,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToVgmHvcmJ1979OBDDiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2021,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToVgmIemJ1979OBDDiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2019,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToVgmMgmJ1979OBDDiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2020,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToVgmSrsISO26021DiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2033,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EtcToVgmVddmJ1979OBDDiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2022,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "DLC",
+        "rx_nodes": [
+            "BGM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmBecmToEtcJ1979OBDDiagCanResFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2026,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmEcmToEtcJ1979OBDDiagCanResFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2024,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmHvcmToEtcJ1979OBDDiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2029,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmIemToEtcJ1979OBDDiagCanResFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2027,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmMgmToEtcJ1979OBDDiagCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2028,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmSrsToEtcISO26021DiagCanResFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2041,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmVddmToEtcJ1979OBDDiagCanResFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2030,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "BGM",
+        "rx_nodes": [
+            "DLC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

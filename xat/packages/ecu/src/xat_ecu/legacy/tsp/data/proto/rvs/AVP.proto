@@ -1,0 +1,105 @@
+syntax = "proto3";
+package vehiclestatus;
+import "block_head.proto";
+
+// AVP功能块
+message AVPBlock {
+    BlockHead           head                = 1; // 公共头
+    AVPButtonStatus     button              = 2; // AVP相关控制按键显示状态
+    int32               timeCount           = 3; // HAVP暂停倒计时（HAVP/APA共用）
+    ParkLotType         parkLotType         = 4; // 目标车位类型
+    PARemoteStatus      paRemoteStatus      = 5; // 远程APA_RPA 状态
+    APAReminder         APARemoteReminder   = 6; // APA车外提醒
+    ParkingLotDirection direction           = 7; // 目标车位方向   
+    int32               remoteInfo          = 8; // APA远程信息
+    int32               BACUAPAOutReminder  = 9; // APA模式下BACU车外提醒 0=NoReq(default)默认值 1=BACU_Receive_Person_In_Car人在车外BACU接管 2=BACU_Finish_Quit人在车外BACU完成退握手 
+}
+
+message AVPButtonStatus {
+    ButtonStatus RPAFront           = 1;  // RPA前进控制按键显示状态
+    ButtonStatus RPARear            = 2;  // RPA后退控制按键显示状态
+    ButtonStatus RPALeftTurn        = 3;  // RPA左转控制按键显示状态
+    ButtonStatus RPARightTurn       = 4;  // RPA右转控制按键显示状态
+    ButtonStatus parkOutFrontLeft   = 5;  // 泊出车位控制前左控制按键显示状态
+    ButtonStatus parkOutFrontRight  = 6;  // 泊出车位控制前右控制按键显示状态
+    ButtonStatus parkOutRearLeft    = 7;  // 泊出车位控制后左控制按键显示状态
+    ButtonStatus parkOutRearRight   = 8;  // 泊出车位控制后右控制按键显示状态
+    ButtonStatus parkOutLeftFront   = 9;  // 泊出车位控制左前控制按键显示状态
+    ButtonStatus parkOutRightFront  = 10; // 泊出车位控制右前控制按键显示状态
+    ButtonStatus parkOutFront       = 11; // 泊出车位控制直前控制按键显示状态
+    ButtonStatus parkOutRear        = 12; // 泊出车位控制直后控制按键显示状态
+    ButtonStatus button1            = 13; // 预留按键状态
+    ButtonStatus button2            = 14; // 预留按键状态
+    ButtonStatus button3            = 15; // 预留按键状态
+    ButtonStatus button4            = 16; // 预留按键状态
+}
+
+enum ButtonStatus {
+    BsIdle      = 0; // 按键不显示
+	BsActive    = 1; // 按键不置灰
+	BsInactive  = 2; // 按键置灰
+	BsRecommond = 3; // 按键高亮
+    BsEmpty     = -1; // --
+}
+
+enum ParkLotType {
+    PltVertical = 0; // 垂直车位
+    PltLatitude = 1; // 水平车位
+    PltIncline  = 2; // 斜列车位
+    PltEmpty    = -1; //--
+}
+
+message PARemoteStatus {
+    PAStatus        paStatus        = 1; // PA功能状态
+    LastHandleType  lastHandleType  = 2; // 上次控制方式
+    uint64          lastHandleUid   = 3; // 上次功能控制账号
+}
+
+enum PAStatus {
+    OFF                     = 0;
+    APAInPausing            = 1;
+    APAInActive             = 2;
+    APAInCompleted          = 3;
+    APAInTerminated         = 4;
+    APAOutEnable            = 5;
+    APAOutActive            = 6;
+    APAOutPausing           = 7;
+    APAOutCompleted         = 8;
+    APAOutTerminated        = 9;
+    RPAControlEnable        = 10;
+    RPAControlActive        = 11;
+    RPAControlTerminated    = 12;
+    RPAControlPausing       = 13;
+    APARPAFailure           = 14;
+    PAStsEmpty              = -1;
+}
+
+enum LastHandleType {
+    Default         = 0;
+    CDCSoftSwitch   = 1;
+    CDCInsideVoice  = 2;
+    CDCOutsideVoice = 3;
+    BlueTooth       = 4;
+    LhtEmpty        = -1;
+}
+
+message APAReminder {
+    SourceType  source  = 1;
+    uint32      type    = 2;
+}
+
+enum SourceType {
+    stDefault           = 0;
+    stCDCSoftSwitch     = 1;
+    stCDCInsideVoice    = 2;
+    stCDCOutsideVoice   = 3;
+    stBlueTooth         = 4;
+    stEmpty             = -1;
+}
+
+enum ParkingLotDirection {
+    NoInfo      = 0;
+    Left        = 1;
+    Right       = 2;
+    PldEmpty    = -1;
+}

@@ -1,0 +1,172 @@
+{
+    "EcmToVgmJ1979OBDPropCanResFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2024,
+        "tx_flag": null,
+        "rx_flag": false,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VcuPropFr02": {
+        "msg_cycle": 0.4,
+        "msg_length": 8,
+        "msg_id": 919,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmPropFr01": {
+        "msg_cycle": 0.6,
+        "msg_length": 8,
+        "msg_id": 786,
+        "tx_flag": true,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmToAllJ1979OBDPropCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2015,
+        "tx_flag": false,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmToBecmJ1979OBDPropCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2018,
+        "tx_flag": false,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmToEcmJ1979OBDPropCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2016,
+        "tx_flag": false,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmToHvcmJ1979OBDPropCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2021,
+        "tx_flag": false,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmToIemJ1979OBDPropCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2019,
+        "tx_flag": false,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmToMgmJ1979OBDPropCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2020,
+        "tx_flag": false,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "VgmToVddmJ1979OBDPropCanReqFrame11": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 2022,
+        "tx_flag": false,
+        "rx_flag": null,
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    }
+}

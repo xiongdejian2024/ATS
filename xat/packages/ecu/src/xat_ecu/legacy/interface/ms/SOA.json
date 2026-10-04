@@ -1,0 +1,70 @@
+{
+    "BGM应用": [
+        "55c9787f-3fd6-477d-be8e-1cc1707b2923",
+        "ebab6f0e-d48b-4d23-82c3-61630d1776f2",
+        "b50f4fd4-8b62-4f8b-b01e-e60c0491076e",
+        "541acd84-284a-41fb-a32b-e97b362e3674",
+        "1e5f78b1-1a2d-4886-b949-63be241ae87c",
+        "3aa69b6c-10e4-4b99-b6cf-cf128bc9fae7"
+    ],
+    "整车控制": [
+        "59686c3a-c13a-486c-9b99-c92f760bc29f",
+        "ab377f37-8372-40cf-ae33-bc366af8e723",
+        "d64e66eb-c1a6-49fc-ab16-185a0a18e367"
+    ],
+    "Seatservice": [
+        "f639b8e2-656c-4dc3-8944-44e491a031fc"
+    ],
+    "Hornservice-TailWing": [
+        "07cbf784-7206-4bfa-b74d-5898c462dfad",
+        "4607424b-8d17-4cef-a4ae-f34f93f29cf0"
+    ],
+    "WTI": [
+        "13da6151-0ff2-4120-bbbe-eb949a8c99eb"
+    ],
+    "GloveBox-Wireless": [
+        "7fddf8b8-8cf3-4726-99b4-bfb964483ea6",
+        "e1883c98-e6e2-4d96-8e83-7986d7604cba",
+        "0d31ac7a-801f-4548-b57f-f97ad4aa242c",
+        "359742c3-c814-4486-a0b6-55132e3f61f0",
+        "7d61c378-8565-4774-be7c-a97d7170ea4c",
+        "fa302e7d-c054-4b27-91eb-6dbe40003faa",
+        "1eaf40d4-9c0e-4241-aa35-ffd6b672cf56",
+        "61b34737-4ce7-4f6f-b8b9-1e342d87d4b1",
+        "c44eef9a-96ab-4af5-ac7d-58c93ea03475",
+        "751d40fa-af74-4d70-be3a-d288ae8cdc67",
+        "04f3ef9e-200b-4438-9505-366eaf070e69",
+        "00803e19-d2dc-4563-87ad-5773574c7486",
+        "09e413f7-679b-4c2b-938a-643e9b68e4d5",
+        "b7b5f5b4-3b41-4756-9c4b-eb663a8f0987",
+        "ea632e62-7609-45ab-b8e6-93d9fa17d6b6",
+        "df8674f6-f636-4e0c-9ff5-b94fac12c4e2",
+        "0df95131-2da3-4dc0-810b-f91311651ea0"
+    ],
+    "HighVol": [
+        "41c60629-db26-4d03-a551-d0ba7224bae1"
+    ],
+    "WTIAuto-Door": [
+        "0c24d5ea-41db-4d82-a912-32d569449065",
+        "5a4fe21d-35fc-438a-b2da-5389f75b6edf",
+        "73186ae0-af2c-489d-a5da-ba3ade31017c"
+    ],
+    "互联服务": [
+        "15e63c37-53e0-4073-a45a-9cbbd96834a9",
+        "68bad0da-3388-4d43-bb43-23be44ffcdbf",
+        "5e7e5f8e-5632-4a65-8cec-5efa65a6204b",
+        "ec08914d-3b08-47d0-87b2-6c8a91145e51"
+    ],
+    "反向代理": [
+        "979db667-54e4-4e26-8b8a-9f09b599ae0e"
+    ],
+    "架构基础": [
+        "f756a5c4-0205-4e65-b04d-961a1951e97d",
+        "808343ef-7dbb-4ebe-8024-2cc52e64d555",
+        "7bcb362d-2a93-4509-9094-777819bb6a2f",
+        "7ee41f67-d503-4562-9eae-91846e5ccbdf"
+    ],
+    "运动控制": [
+        "98b08c3c-f87e-4aea-9bd7-516b2b44490e"
+    ]
+}

@@ -1,0 +1,398 @@
+{
+    "BexvEcm_Lin3Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 31,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BexvEcm_Lin3PartNrFr04": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 13,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BexvEcm_Lin3PartNrFr08": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 45,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "BexvEcm_Lin3SerNrFr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 4,
+        "msg_id": 18,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "BEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CexvEcm_Lin3Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 14,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CexvEcm_Lin3PartNrFr04": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 16,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CexvEcm_Lin3PartNrFr08": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 47,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "CexvEcm_Lin3SerNrFr08": {
+        "msg_cycle": 0.039,
+        "msg_length": 4,
+        "msg_id": 33,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "CEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "DiagRequest8": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 60,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "DiagResponse8": {
+        "msg_cycle": null,
+        "msg_length": 8,
+        "msg_id": 61,
+        "tx_flag": null,
+        "rx_flag": null,
+        "tx_node": null,
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "EcmEcm_Lin3Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 11,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "CEXV",
+            "BEXV",
+            "ETC",
+            "EEXV"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EcmEcm_Lin3Fr05": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 6,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ECM",
+        "rx_nodes": [
+            "ETC"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            48,
+            2
+        ],
+        "tx_change": true
+    },
+    "EexvCcm_Lin2Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 36,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "EEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EexvCcm_Lin2PartNrFr04": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 32,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "EEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EexvCcm_Lin2PartNrFr08": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 52,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "EEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "EexvCcm_Lin2SerNrFr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 4,
+        "msg_id": 34,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "EEXV",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "HvscEcm_Lin3Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 3,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ETC",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            4,
+            16,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "HvscEcm_Lin3Fr02": {
+        "msg_cycle": 0.039,
+        "msg_length": 8,
+        "msg_id": 5,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ETC",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    },
+    "RexvEcm_Lin3Fr01": {
+        "msg_cycle": 0.039,
+        "msg_length": 7,
+        "msg_id": 27,
+        "tx_flag": true,
+        "rx_flag": null,
+        "tx_node": "ETC",
+        "rx_nodes": [
+            "ECM"
+        ],
+        "pdu_data": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "tx_change": true
+    }
+}

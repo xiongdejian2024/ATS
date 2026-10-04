@@ -1,0 +1,766 @@
+[
+  {
+    "session": "default",
+    "apps": [
+      {
+        "name": "seco_daemon",
+        "path": "/app/bin/",
+        "type": "app",
+        "prior": -15,
+        "needNotify": false
+      },
+      {
+        "name": "vehInfoServer",
+        "path": "/app/bin/",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "jetlogd",
+        "path": "/app/bin/",
+        "uid": 1001,
+        "type": "app",
+        "cpuLimit": 30,
+        "needNotify": false
+      },
+      {
+        "name": "jetcrashd",
+        "path": "/app/bin/",
+        "uid": 1002,
+        "type": "app",
+        "delay": 3000,
+        "needNotify": false
+      },
+      {
+        "name": "service_monitor",
+        "path": "/app/bin/",
+        "uid": 1004,
+        "cmd": "-c /app/etc/service_monitor.json",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "s2s_service",
+        "path": "/app/bin/",
+        "uid": 1006,
+        "type": "app",
+        "prior": -15,
+        "needNotify": true
+      },
+      {
+        "name": "SOAApp",
+        "path": "/app/bin/",
+        "uid": 1005,
+        "type": "app",
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "rke",
+        "path": "/app/bin/",
+        "uid": 1028,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "prop",
+        "path": "/app/service/prop/",
+        "uid": 1007,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "powerMgr",
+        "path": "/app/bin/",
+        "uid": 1009,
+        "type": "app",
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "network_manager",
+        "path": "/app/bin/",
+        "type": "app",
+        "uid": 1010,
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "vehicle_time",
+        "path": "/app/bin/",
+        "uid": 1011,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "config_service",
+        "path": "/app/bin/",
+        "uid": 1012,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "certificate_service",
+        "path": "/app/bin/",
+        "uid": 1016,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "udsServer",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "diagd_iautosar",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "arbitrateMgr",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "syncengine",
+        "path": "/app/bin/",
+        "uid": 1008,
+        "type": "app",
+        "cpuLimit": 15,
+        "needNotify": true
+      },
+      {
+        "name": "remote_vehicle_status",
+        "path": "/app/bin/",
+        "uid": 1026,
+        "type": "app",
+        "cpuLimit": 30,
+        "needNotify": true
+      },
+      {
+        "name": "ua_server_app",
+        "path": "/data/uatest/",
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "fota",
+        "path": "/app/bin/fota/",
+        "uid": 1018,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "fod",
+        "path": "/app/bin/",
+        "uid": 1022,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "nids",
+        "path": "/app/bin/",
+        "uid": 1031,
+        "type": "app",
+        "delay": 3000,
+        "cpuLimit": 5,
+        "needNotify": false
+      },
+      {
+        "name": "calibration",
+        "path": "/app/bin/",
+        "uid": 1019,
+        "type": "app",
+        "delay": 3000,
+        "needNotify": true
+      },
+      {
+        "name": "edr_service",
+        "path": "/app/bin/",
+        "uid": 1031,
+        "type": "app",
+        "delay": 3000,
+        "needNotify": true
+      },
+      {
+        "name": "vehicle_setting_service",
+        "path": "/app/bin/",
+        "uid": 1029,
+        "type": "app",
+        "delay": 3000,
+        "needNotify": true
+      },
+      {
+        "name": "vehicle_data_mining_engine",
+        "path": "/app/bin/",
+        "uid": 1021,
+        "type": "app",
+        "delay": 3000,
+        "cpuLimit": 10,
+        "needNotify": true
+      },
+      {
+        "name": "remote_diag",
+        "path": "/app/bin/",
+        "uid": 1025,
+        "type": "app",
+        "delay": 3000,
+        "needNotify": true
+      },
+      {
+        "name": "security_alarm",
+        "path": "/app/bin/",
+        "uid": 1024,
+        "type": "app",
+        "delay": 3000,
+        "needNotify": true
+      },
+      {
+        "name": "remote_log",
+        "path": "/app/bin/",
+        "uid": 1023,
+        "type": "app",
+        "delay": 5000,
+        "cpuLimit": 30,
+        "needNotify": true
+      },
+      {
+        "name": "app_service_manager",
+        "path": "/app/bin/",
+        "uid": 1020,
+        "type": "app",
+        "delay": 5000,
+        "needNotify": true
+      },
+      {
+        "name": "IntelligentChargeService",
+        "path": "/app/lib/",
+        "type": "service",
+        "delay": 5000,
+        "needNotify": true
+      },
+      {
+        "name": "sys_monitor",
+        "path": "/app/bin/",
+        "type": "app",
+        "delay": 3000,
+        "needNotify": false
+      },
+      {
+        "name": "log_master",
+        "path": "/app/bin/",
+        "uid": 1034,
+        "type": "app",
+        "delay": 5000,
+        "needNotify": true
+      },
+      {
+        "name": "fs_verify",
+        "path": "/app/bin/",
+        "type": "app",
+        "delay": 300000,
+        "lifecycle": 1,
+        "cpuLimit": 5,
+        "needNotify": false
+      },
+      {
+        "name": "monitor_agent",
+        "path": "/app/bin/",
+        "uid": 1035,
+        "type": "app",
+        "cpuLimit": 10,
+        "needNotify": false
+      },
+      {
+        "name": "s2s_MCULog",
+        "path": "/app/bin/",
+        "uid": 1006,
+        "type": "app",
+        "cpuLimit": 10,
+        "needNotify": false
+      }
+    ]
+  },
+  {
+    "session": "snapshot",
+    "next_session": "default",
+    "apps": [
+      {
+        "name": "service_monitor",
+        "path": "/app/bin/",
+        "uid": 1004,
+        "cmd": "-c /app/etc/service_monitor.json",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "s2s_service",
+        "path": "/app/bin/",
+        "uid": 1006,
+        "type": "app",
+        "prior": -15,
+        "needNotify": true
+      },
+      {
+        "name": "SOAApp",
+        "path": "/app/bin/",
+        "uid": 1005,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "rke",
+        "path": "/app/bin/",
+        "uid": 1028,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "syncengine",
+        "path": "/app/bin/",
+        "uid": 1008,
+        "type": "app",
+        "cpuLimit": 15,
+        "needNotify": true
+      },
+      {
+        "name": "remote_vehicle_status",
+        "path": "/app/bin/",
+        "uid": 1026,
+        "type": "app",
+        "cpuLimit": 30,
+        "needNotify": true
+      },
+      {
+        "name": "udsServer",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "arbitrateMgr",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "fota",
+        "path": "/app/bin/fota/",
+        "uid": 1018,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "network_manager",
+        "path": "/app/bin/",
+        "type": "app",
+        "uid": 1010,
+        "delay": 1000,
+        "needNotify": true
+      }
+    ]
+  },
+  {
+    "session": "fota_mode",
+    "apps": [
+      {
+        "name": "jetlogd",
+        "path": "/app/bin/",
+        "uid": 1001,
+        "type": "app",
+        "prior": 20,
+        "needNotify": false
+      },
+      {
+        "name": "jetcrashd",
+        "path": "/app/bin/",
+        "uid": 1002,
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "service_monitor",
+        "path": "/app/bin/",
+        "uid": 1004,
+        "cmd": "-c /app/etc/service_monitor.json",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "s2s_service",
+        "path": "/app/bin/",
+        "uid": 1006,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "network_manager",
+        "path": "/app/bin/",
+        "uid": 1010,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "udsServer",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "diagd_iautosar",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "arbitrateMgr",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "vehInfoServer",
+        "path": "/app/bin/",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "seco_daemon",
+        "path": "/app/bin/",
+        "type": "app",
+        "prior": -15,
+        "needNotify": false
+      },
+      {
+        "name": "fota",
+        "path": "/app/bin/fota/",
+        "uid": 1018,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "certificate_service",
+        "path": "/app/bin/",
+        "uid": 1016,
+        "type": "app",
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "ua_server_app",
+        "path": "/data/uatest/",
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "SOAApp",
+        "path": "/app/bin/",
+        "uid": 1005,
+        "type": "app",
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "prop",
+        "path": "/app/service/prop/",
+        "uid": 1007,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "syncengine",
+        "path": "/app/bin/",
+        "uid": 1008,
+        "type": "app",
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "powerMgr",
+        "path": "/app/bin/",
+        "uid": 1009,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "vehicle_time",
+        "path": "/app/bin/",
+        "uid": 1011,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "remote_log",
+        "path": "/app/bin/",
+        "type": "app",
+        "uid": 1023,
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "app_service_manager",
+        "path": "/app/bin/",
+        "type": "app",
+        "uid": 1020,
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "IntelligentChargeService",
+        "path": "/app/lib/",
+        "type": "service",
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "sys_monitor",
+        "path": "/app/bin/",
+        "type": "app",
+        "delay": 1000,
+        "needNotify": false
+      },
+      {
+        "name": "log_master",
+        "path": "/app/bin/",
+        "uid": 1034,
+        "type": "app",
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "monitor_agent",
+        "path": "/app/bin/",
+        "uid": 1035,
+        "type": "app",
+        "cpuLimit": 10,
+        "needNotify": false
+      }
+    ]
+  },
+  {
+    "session": "programming",
+    "next_session": "default",
+    "apps": [
+      {
+        "name": "jetlogd",
+        "path": "/app/bin/",
+        "uid": 1001,
+        "type": "app",
+        "prior": 20,
+        "needNotify": false
+      },
+      {
+        "name": "jetcrashd",
+        "path": "/app/bin/",
+        "uid": 1002,
+        "type": "app",
+        "delay": 1000,
+        "needNotify": false
+      },
+      {
+        "name": "service_monitor",
+        "path": "/app/bin/",
+        "uid": 1004,
+        "cmd": "-c /app/etc/service_monitor.json",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "diagd_iautosar",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "prop",
+        "path": "/app/service/prop/",
+        "uid": 1007,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "powerMgr",
+        "path": "/app/bin/",
+        "uid": 1009,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "certificate_service",
+        "path": "/app/bin/",
+        "uid": 1016,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "network_manager",
+        "path": "/app/bin/",
+        "uid": 1010,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "vehicle_time",
+        "path": "/app/bin/",
+        "uid": 1011,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "udsServer",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "arbitrateMgr",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "ua_server_app",
+        "path": "/data/uatest/",
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "vehInfoServer",
+        "path": "/app/bin/",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "seco_daemon",
+        "path": "/app/bin/",
+        "type": "app",
+        "prior": -15,
+        "needNotify": false
+      },
+      {
+        "name": "app_service_manager",
+        "path": "/app/bin/",
+        "type": "app",
+        "uid": 1020,
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "IntelligentChargeService",
+        "path": "/app/lib/",
+        "type": "service",
+        "delay": 1000,
+        "needNotify": true
+      },
+      {
+        "name": "sys_monitor",
+        "path": "/app/bin/",
+        "type": "app",
+        "delay": 1000,
+        "needNotify": false
+      },
+      {
+        "name": "monitor_agent",
+        "path": "/app/bin/",
+        "uid": 1035,
+        "type": "app",
+        "cpuLimit": 10,
+        "needNotify": false
+      }
+    ]
+  },
+  {
+    "session": "shutdown",
+    "apps": [
+      {
+        "name": "jetlogd",
+        "path": "/app/bin/",
+        "uid": 1001,
+        "type": "app",
+        "prior": 20,
+        "needNotify": false
+      },
+      {
+        "name": "jetcrashd",
+        "path": "/app/bin/",
+        "uid": 1002,
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "s2s_service",
+        "path": "/app/bin/",
+        "uid": 1006,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "powerMgr",
+        "path": "/app/bin/",
+        "uid": 1009,
+        "type": "app",
+        "needNotify": true
+      },
+      {
+        "name": "vehInfoServer",
+        "path": "/app/bin/",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "seco_daemon",
+        "path": "/app/bin/",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "diagd_iautosar",
+        "path": "/app/bin/",
+        "uid": 1014,
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "sys_monitor",
+        "path": "/app/bin/",
+        "type": "app",
+        "cpuLimit": 5,
+        "needNotify": false
+      },
+      {
+        "name": "service_monitor",
+        "path": "/app/bin/",
+        "uid": 1004,
+        "cmd": "-c /app/etc/service_monitor.json",
+        "type": "app",
+        "needNotify": false
+      },
+      {
+        "name": "monitor_agent",
+        "path": "/app/bin/",
+        "uid": 1035,
+        "type": "app",
+        "cpuLimit": 10,
+        "needNotify": false
+      }
+    ]
+  },
+  {
+    "session": "shutdown2",
+    "apps": []
+  }
+]
