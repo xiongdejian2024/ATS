@@ -1,0 +1,10 @@
+{
+  "target_ecu": {
+    "ecu_ip": "169.254.241.168",
+    "ecu_logical_address": "1001",
+    "tester_ip": "169.254.4.218",
+    "tester_logical_address": "0E80",
+    "logical_functional_address": "1FFF",
+    "suppress_positive_response": "0"
+  }
+}

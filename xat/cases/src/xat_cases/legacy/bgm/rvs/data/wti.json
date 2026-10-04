@@ -1,0 +1,928 @@
+{"WTI":{
+    "TelltaleNode":{
+        "TelltaleChargingGunConnected":{"Charging Gun Connected":["0", "1"]},
+        "TelltaleHighVoltBattFailed":{"High Voltage Battery Failed":["0", "1"]},
+        "TelltalePowerSysFailed":{"Power System Failed":["0", "1"]},
+        "TelltalePowerLimited":{"Power Limited":["0", "1"]},
+        "TelltaleHighVolBattLow":{"High Voltage Battery Low Telltale":["0", "1","2"]},
+        "TelltaleCarReady":{"Car Ready":["0", "1"]},
+        "TelltaleEPBWork":{"EPB Working":["0", "1","2"]},
+        "TelltaleBrakingSysFailedYellow":{"Yellow Braking System Failed":["0", "1"]},
+        "TelltaleBrakingSysFailedRed":{"Red Braking System Failed":["0", "1"]},
+        "TelltaleAutoholdActiveGreen":{"Autohold Active Green":["0", "1"]},
+        "TelltaleAutoholStandbyGrey":{"Autohold Standby Grey":["0", "1"]},
+        "TelltaleHDCGrey":{"HDC Grey":["0", "1","2"]},
+        "TelltaleHDCGreen":{"HDC Green":["0", "1","2"]},
+        "TelltaleHDCYellow":{"HDC Yellow":["0", "1","2"]},
+        "TelltaleABSFailed":{"ABS Failed":["0", "1","2"]},
+        "TelltaleESCFailed":{"ESC Failed":["0", "1","2"]},
+        "TelltaleESCOff":{"ESC Off":["0", "1","2"]},
+        "TelltaleSteeringSysFailedYellow":{"Yellow Steering Failed":["0", "1"]},
+        "TelltaleSteeringSysFailedRed":{"Red Steering Failed":["0", "1"]},
+        "TelltaleCrawlingEnable":{"Crawling Enable":["0", "1"]},
+        "TelltaleSuspensionFailed":{"Suspension Failed Telltale":["0", "1"]},
+        "TelltaleLowVolBatt":{"Low Voltage Battery":["0", "1"]},
+        "TelltaleLightLB":{"LB":["0", "1"]},
+        "TelltaleLightHB":{"HB":["0", "1"]},
+        "TelltaleLightAutoHBGrey":{"AHB Grey":["0", "1"]},
+        "TelltaleLightAutoHBBlue":{"AHB Blue":["0", "1"]},
+        "TelltaleLightPO":{"PO":["0", "1"]},
+        "TelltaleLightRearFog":{"Rear Fog":["0", "1"]},
+        "TelltaleLightLeftTI":{"Left TI":["0", "1"]},
+        "TelltaleLightRightTI":{"Right TI":["0", "1"]},
+        "TelltaleLightHazard":{"Hazard":["0", "1"]},
+        "TelltaleSeatBelt":{"Seat Belt":["0", "1", "2"]},
+        "TelltaleAirbag":{"Airbag":["0", "1"]},
+        "TelltaleTirePressure":{"Tire Pressure":["0", "1", "2"]},
+        "TelltaleBatteryTempLow":{"Battery Temp Low":["0", "1"]}
+    },        
+    "WarningMsgNode":{
+        "MsgThermalOutOfControl":{
+            "Thermal Out of Control":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "ThermalOutOfControl":"1"
+                }
+            }
+        },
+        "MsgPowerSysFailure":{
+            "Power System Failure":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "PowerCannotDrive": "1",
+                    "PowerStopDriving": "2",
+                    "PowerCannotRestart": "3",
+                    "PowerDriveCarefully": "4",
+                    "PowerCannotCharge": "5",
+                    "PowerContactDealer": "6"
+                }
+            }
+        },
+        "MsgHighVolBattLow":{
+            "High Voltage Battery Low Warning":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "HighVolBattLowLevel1": "1",
+                    "HighVolBattLowLevel2": "2"
+                }
+            }
+        },
+        "MsgHighVolInterLock":{
+            "High Voltage Inter Lock":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "HighVolInterLockFailure": "1"
+                }
+            }
+        },
+        "MsgHighVolIsolation":{
+            "High Voltage Isolation":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "HighVolIsolationFailure": "1"
+                }
+            }
+        },
+        "MsgChargeLidOpenSts":{
+            "Charge Lid Status":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "ChargeLidOpene": "1",
+                    "ChargeLidClose": "2"
+                }
+            }
+        },
+        "MsgChargeLid":{
+            "Charge Lid":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "ChargeLidFailure": "1"
+                }
+            }
+        },
+        "MsgChargeLidAbnormal":{
+            "Charge Lid Abnormal":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "ChargeLidAbnormal": "1"
+                }
+            }
+        },
+        "MsgEnergyRegenLimit":{
+            "Energy Regen Limit":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "EnergyRegenLimited": "1"
+                }
+            }
+        },
+        "MsgShiftGear":{
+            "Shift Gear":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "GearTouchpadFailure": "1",
+                    "GearSpeedTooHigh": "2",
+                    "GearPushBrakPedal": "3",
+                    "GearRemoveChargingGun": "4"
+                }
+            }
+        },
+        "MsgGearFailure":{
+            "Gear Failure":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "GearUseTouchpad": "1",
+                    "GearScreenNeedRepair": "2",
+                    "GearUseScreen": "3",
+                    "GearTouchpadNeedRepair": "4",
+                    "GearScreenAndTouchpadNeedRepair": "5"
+                }
+            }
+        },
+        "MsgBrakingFluid":{
+            "Gear Failure":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "BrakingFluidLow": "1"
+                }
+            }
+        },
+        "MsgEPBWarning1":{
+            "EPB Warning1":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "ParkBrakNotFullyReleased": "1",
+                    "ParkBrakNotReleased": "2",
+                    "ParkBrakNotApplied": "3",
+                    "ParkBrakSysHot": "4",
+                    "ParkBrakServiceRequired": "5",
+                    "UseParkBrakCtrlToRelease": "6",
+                    "ReleaseParkBrakOrFastenBelt": "7",
+                    "TemporaryInterruptParkSys": "8",
+                    "ParkBrakCannotHoldVehicle": "9",
+                    "ParkBrakRollerBechTest": "10",
+                    "PressBrakPedalToRelease": "11",
+                    "ParkBrakAutoApplied": "12",
+                    "DynamicBrakeActive": "13"
+                }
+            }
+        },
+        "MsgEPBWarning2":{
+            "EPB Warning2":{
+                "info":{
+                    "CommonMsgStateNoDisplay": "0",
+                    "ParkBrakNotFullyReleased": "1",
+                    "ParkBrakNotReleased": "2",
+                    "ParkBrakNotApplied": "3",
+                    "ParkBrakSysHot": "4",
+                    "ParkBrakServiceRequired": "5",
+                    "UseParkBrakCtrlToRelease": "6",
+                    "ReleaseParkBrakOrFastenBelt": "7",
+                    "TemporaryInterruptParkSys": "8",
+                    "ParkBrakCannotHoldVehicle": "9",
+                    "ParkBrakRollerBechTest": "10",
+                    "PressBrakPedalToRelease": "11",
+                    "ParkBrakAutoApplied": "12",
+                    "DynamicBrakeActive": "13"
+                }
+            }
+        },
+        "MsgEPBWarningChime":{
+            "EPB Chime Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "EPBChimeAlertLevel1": "1",
+                "EPBChimeAlertLevel2": "2"
+            }
+        },
+        "MsgEPBFailure":{
+            "EPB Sys Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "EPBSysFailure": "1"
+            }
+        },
+        "MsgEBDWaring":{
+            "EPB Sys Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "BrakeFailStopSafely": "1",
+                "ABSorESCServiceRequired": "2",
+                "ABSorESCTempOff": "3",
+                "ESCServiceRequired": "4",
+                "ESCTempOff": "5",
+                "TractionCtrlTempOff": "6",
+                "EBDReserved": "7"
+            }
+        },
+        "MsgAutoholdWarning":{
+            "Autohold Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "AutoholdReservedSts1": "1",
+                "AutoholdServiceRequired": "2",
+                "AutoholdToDisable": "3",
+                "AutoholToEnable": "4",
+                "AutoholdReservedSts5": "5"
+            }
+        },
+        "MsgSteeringSysWarning":{
+            "Steering Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SteeringSysNeedRepair": "1",
+                "SteeringSysStopSafely": "2",
+                "SteeringSysRepairImme": "3",
+                "SteeringSysLimited": "4",
+                "SteeringSysNeedMaintain5": "5",
+                "SteeringSysNeedMaintain6": "6",
+                "SteeringSysNeedMaintain7": "7"
+            }
+        },
+        "MsgSuspensionFailed":{
+            "Suspension Failed Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SuspensionFailed": "1"
+            }
+        },
+        "MsgNoKey":{
+            "No Key":{
+                "CommonMsgStateNoDisplay": "0",
+                "KeyNotFound": "1"
+            }
+        },
+        "MsgStarting":{
+            "Starting":{
+                "CommonMsgStateNoDisplay": "0",
+                "StartingShiftToP": "1",
+                "StartingSelfChecking": "7",
+                "StartingRemoveChargeGun": "A"
+            }
+        },
+        "MsgVehicleWorking":{
+            "Vehicle Working":{
+                "CommonMsgStateNoDisplay": "0",
+                "VehicleWorkingPowertrainStarting": "2"
+            }
+        },
+        "MsgNotParked":{
+            "Not Parked":{
+                "CommonMsgStateNoDisplay": "0",
+                "NotParkedShiftToP": "1",
+                "NotParkedNotInP": "2"
+            }
+        },
+        "MsgLowBattWarning1":{
+            "Low Battery Warning1":{
+                "CommonMsgStateNoDisplay": "0",
+                "LowBattLimited": "1",
+                "LowBattChargeFailed1": "2"
+            }
+        },
+        "MsgLowBattWarning2":{
+            "Low Battery Warning1":{
+                "CommonMsgStateNoDisplay": "0",
+                "LowBattChargeFailed2": "1",
+                "LowBattSysFailure4": "4",
+                "LowBattVolLow": "F"
+            }
+        },
+        "MsgAntiTheft":{
+            "Low Battery Warning1":{
+                "CommonMsgStateNoDisplay": "0",
+                "AntiTheftWarning": "1"
+            }
+        },
+        "MsgCoolant":{
+            "Coolant":{
+                "CommonMsgStateNoDisplay": "0",
+                "CoolantDriveSysRepair": "1",
+                "CoolantHighVolBattRepair": "2"
+            }
+        },
+        "MsgLightLevelingMotor":{
+            "Leveling Motor":{
+                "CommonMsgStateNoDisplay": "0",
+                "LightLevelingMotorWarning": "1"
+            }
+        },
+        "MsgLBFailure":{
+            "LB Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "LightFailureLB": "1"
+            }
+        },
+        "MsgHBFailure":{
+            "HB Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "LightFailureHB": "1"
+            }
+        },
+        "MsgOvertakeLightFailure":{
+            "Overtake Light Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "LightFailureOvertake": "1"
+            }
+        },
+        "MsgReverseLightFailure":{
+            "Reverse Light Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "LightFailureReverse": "1"
+            }
+        },
+        "MsgPOFailure":{
+            "PO Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "LightFailurePO": "1"
+            }
+        },
+        "MsgRearFogFailure":{
+            "Rear Fog Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "LightFailureRearFog": "1"
+            }
+        },
+        "MsgLeftTIFailure":{
+            "Left TI Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "LightFailureLeftTI": "1"
+            }
+        },
+        "MsgRightTIFailure":{
+            "Right TI Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "LightFailureRightTI": "1"
+            }
+        },
+        "MsgDoorHood":{
+            "Hood":{
+                "CommonMsgStateNoDisplay": "0",
+                "DoorAlertDefault": "1",
+                "DoorAlertLevel1": "2",
+                "DoorAlertLevel2": "3"
+            }
+        },
+        "MsgDoorDrv":{
+            "Driver Door":{
+                "CommonMsgStateNoDisplay": "0",
+                "DoorAlertDefault": "1",
+                "DoorAlertLevel1": "2",
+                "DoorAlertLevel2": "3"
+            }
+        },
+        "MsgDoorPass":{
+            "Passenger Door":{
+                "CommonMsgStateNoDisplay": "0",
+                "DoorAlertDefault": "1",
+                "DoorAlertLevel1": "2",
+                "DoorAlertLevel2": "3"
+            }
+        },
+        "MsgDoorRearLeft":{
+            "Rear Left Door":{
+                "CommonMsgStateNoDisplay": "0",
+                "DoorAlertDefault": "1",
+                "DoorAlertLevel1": "2",
+                "DoorAlertLevel2": "3"
+            }
+        },
+        "MsgDoorRearRight":{
+            "Rear Right Door":{
+                "CommonMsgStateNoDisplay": "0",
+                "DoorAlertDefault": "1",
+                "DoorAlertLevel1": "2",
+                "DoorAlertLevel2": "3"
+            }
+        },
+        "MsgDoorTail":{
+            "Tail":{
+                "CommonMsgStateNoDisplay": "0",
+                "DoorAlertDefault": "1"
+            }
+        },
+        "MsgDriverSeatBeltWarning":{
+            "Driver Seat Belt Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SeatBeltAlertLevel1": "1",
+                "SeatBeltAlertLevel2Low": "2",
+                "SeatBeltAlertLevel2High": "3",
+                "SeatBeltFailure": "4"
+            }
+        },
+        "MsgPassengerSeatBeltWarning":{
+            "Passenger Seat Belt Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SeatBeltAlertLevel1": "1",
+                "SeatBeltAlertLevel2Low": "2",
+                "SeatBeltAlertLevel2High": "3",
+                "SeatBeltFailure": "4"
+            }
+        },
+        "MsgSecRowLeftSeatBeltWarning":{
+            "Second Row Left Seat Belt Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SeatBeltAlertLevel1": "1",
+                "SeatBeltAlertLevel2Low": "2",
+                "SeatBeltFailure": "4"
+            }
+        },
+        "MsgSecRowMidSeatBeltWarning":{
+            "Second Row Left Seat Belt Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SeatBeltAlertLevel1": "1",
+                "SeatBeltAlertLevel2Low": "2",
+                "SeatBeltFailure": "4"
+            }
+        },
+        "MsgSecRowRightSeatBeltWarning":{
+            "Second Row Left Seat Belt Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SeatBeltAlertLevel1": "1",
+                "SeatBeltAlertLevel2Low": "2",
+                "SeatBeltFailure": "4"
+            }
+        },
+        "MsgAirbagFailure":{
+            "Second Row Left Seat Belt Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "AirbagFailed": "1"
+            }
+        },
+        "MsgTireFLPressureLow":{
+            "Front Left Tire Pressure Low":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureLow": "1"
+            }
+        },
+        "MsgTireFLPressureHigh":{
+            "Front Left Tire Pressure High":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureHigh": "1"
+            }
+        },
+        "MsgTireFLTempHigh":{
+            "Front Left Tire Temperature High":{
+                "CommonMsgStateNoDisplay": "0",
+                "TireTemperatureHigh": "1"
+            }
+        },
+        "MsgTireFLPressureFastLost":{
+            "Front Left Tire Pressure Fast Lost":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureFastLost": "1"
+            }
+        },
+        "MsgTireFLSensorBattLow":{
+            "Front Left Tire Sensor Batt Low":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureSensorBattLow": "1"
+            }
+        },
+        "MsgTireFRPressureLow":{
+            "Front Right Tire Pressure Low":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureLow": "1"
+            }
+        },
+        "MsgTireFRPressureHigh":{
+            "Front Right Tire Pressure High":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureHigh": "1"
+            }
+        },
+        "MsgTireFRTempHigh":{
+            "Front Right Tire Temperature High":{
+                "CommonMsgStateNoDisplay": "0",
+                "TireTemperatureHigh": "1"
+            }
+        },
+        "MsgTireFRPressureFastLost":{
+            "Front Right Tire Pressure Fast Lost":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureFastLost": "1"
+            }
+        },
+        "MsgTireFRSensorBattLow":{
+            "Front Right Tire Sensor Batt Low":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureSensorBattLow": "1"
+            }
+        },
+        "MsgTireRLPressureLow":{
+            "Rear Left Tire Pressure Low":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureLow": "1"
+            }
+        },
+        "MsgTireRLPressureHigh":{
+            "Rear Left Tire Pressure High":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureHigh": "1"
+            }
+        },
+        "MsgTireRLTempHigh":{
+            "Rear Left Tire Temperature High":{
+                "CommonMsgStateNoDisplay": "0",
+                "TireTemperatureHigh": "1"
+            }
+        },
+        "MsgTireRLPressureFastLost":{
+            "Rear Left Tire Pressure Fast Lost":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureFastLost": "1"
+            }
+        },
+        "MsgTireRLSensorBattLow":{
+            "Rear Left Tire Sensor Batt Low":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureSensorBattLow": "1"
+            }
+        },
+        "MsgTireRRPressureLow":{
+            "Rear Right Tire Pressure Low":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureLow": "1"
+            }
+        },
+        "MsgTireRRPressureHigh":{
+            "Rear Right Tire Pressure High":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureHigh": "1"
+            }
+        },
+        "MsgTireRRTempHigh":{
+            "Rear Right Tire Temperature High":{
+                "CommonMsgStateNoDisplay": "0",
+                "TireTemperatureHigh": "1"
+            }
+        },
+        "MsgTireRRPressureFastLost":{
+            "Rear Right Tire Pressure Fast Lost":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureFastLost": "1"
+            }
+        },
+        "MsgTireRRSensorBattLow":{
+            "Rear Right Tire Sensor Batt Low":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureSensorBattLow": "1"
+            }
+        },
+        "MsgTirePressureSysFailureLF":{
+            "Left Front Tire System Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureSysFailed": "1"
+            }
+        },
+        "MsgTirePressureSysFailureRF":{
+            "Right Front Tire System Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureSysFailed": "1"
+            }
+        },
+        "MsgTirePressureSysFailureLR":{
+            "Rear Left Tire System Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureSysFailed": "1"
+            }
+        },
+        "MsgTirePressureSysFailureRR":{
+            "Rear Right Tire System Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "TirePressureSysFailed": "1"
+            }
+        },
+        "MsgPedestrianProtectFailure":{
+            "Pedestrian System Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "PedestrianProtectEnabled": "1"
+            }
+        },
+        "MsgWiperWashingLiquid":{
+            "Wiper Liquid":{
+                "CommonMsgStateNoDisplay": "0",
+                "WiperWashingLiquidLow": "1"
+            }
+        },
+        "MsgWiperSysFailure":{
+            "Wiper System Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "WiperSysFailed": "1"
+            }
+        },
+        "MsgWiperSensorFailure":{
+            "Wiper Sensor Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "WiperSensorFailed": "1"
+            }
+        },
+        "MsgWiperExitRepairPosition":{
+            "Wiper Exit Repair Position":{
+                "CommonMsgStateNoDisplay": "0",
+                "WiperExitRepairPosition": "1"
+            }
+        },
+        "MsgDrvWindowFailure":{
+            "Driver Window Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "DrvWindowFailed": "1"
+            }
+        },
+        "MsgPassWindowFailure":{
+            "Passenger Window Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "PassWindowFailure": "1"
+            }
+        },
+        "MsgRearLeWindowFailure":{
+            "Rear Left Window Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "RearLeWindowFailure": "1"
+            }
+        },
+        "MsgRearRiWindowFailure":{
+            "Rear Right Window Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "RearRiWindowFailure": "1"
+            }
+        },
+        "Msg3DModelShowsTailPosition":{
+            "3D Model Shows Tail Position":{
+                "CommonMsgStateNoDisplay": "0",
+                "ThreeDModelShowsTailPositionNotSpread": "1",
+                "ThreeDModelShowsTailPositionSpreadLevel1": "2",
+                "ThreeDModelShowsTailPositionSpreadLevel2": "3",
+                "ThreeDModelShowsTailPositionSpreadFully": "4",
+                "ThreeDModelShowsTailPositionReserved": "5"
+            }
+        },
+        "MsgCarTailWarning":{
+            "Car Tail Failure":{
+                "CommonMsgStateNoDisplay": "0",
+                "MotionBlocked": "3",
+                "IceBreak": "4",
+                "TrunkOpen": "5",
+                "Trailer": "6",
+                "SystemError": "7"
+            }
+        },
+        "MsgWirelessChargingRemind":{
+            "Wireless Charging Remind":{
+                "CommonMsgStateNoDisplay": "0",
+                "WirelessCharginging": "2",
+                "WirelessChargingAbnormal3": "3",
+                "WirelessChargingAbnormal4": "4",
+                "WirelessChargingAbnormal5": "5",
+                "WirelessChargingAbnormal6": "6"
+            }
+        },
+        "MsgSteerWheelHeatWarning":{
+            "Steer Wheel Heat Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SteerWheelHeatWarning": "1"
+            }
+        },
+        "MsgDriverSeatHeatWarning":{
+            "Driver Seat Heat Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "DriverSeatHeatWarning": "1"
+            }
+        },
+        "MsgPassengerSeatHeatWarning":{
+            "Passenger Seat Heat Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "PassengerSeatHeatWarning": "1"
+            }
+        },
+        "MsgDriverSeatWindWarning":{
+            "Driver Seat Wind Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "DriverSeatWindWarning": "1"
+            }
+        },
+        "MsgPassengerSeatWindWarning":{
+            "Passenger Seat Wind Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "PassengerSeatWindWarning": "1"
+            }
+        },
+        "MsgDriverElectricDoorWarning":{
+            "Driver Electric Door Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "DriverElectricDoorWarning": "1"
+            }
+        },
+        "MsgPassengerElectricDoorWarning":{
+            "Passenger Electric Door Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "PassengerElectricDoorWarning": "1"
+            }
+        },
+        "MsgSecLeftElectricDoorWarning":{
+            "Sec Left Electric Door Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SecLeftElectricDoorWarning": "1"
+            }
+        },
+        "MsgSecRightElectricDoorWarning":{
+            "Sec Right Electric Door Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "SecRightElectricDoorWarning": "1"
+            }
+        },
+        "MsgNoPowerOutput":{
+            "No Power Output":{
+                "CommonMsgStateNoDisplay": "0",
+                "NoPowerOutputWarning": "1"
+            }
+        },
+        "MsgKeyDisconnectedReminder":{
+            "Key Disconnected":{
+                "CommonMsgStateNoDisplay": "0",
+                "KeyDisconnectedReminder": "1"
+            }
+        },
+        "MsgPEBLEKeyLegacyReminder":{
+            "PE-BLE Key Legacy Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "PEBLEKeyLegacyReminder": "1"
+            }
+        },
+        "MsgPEUWBKeyLegacyOnDriverReminder":{
+            "PE-UWB Key Legacy On Driver Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "PEUWBKeyLegacyOnDriverReminder": "1"
+            }
+        },
+        "MsgPEUWBKeyLegacyOnPassReminder":{
+            "PE-UWB Key Legacy On Passenger Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "PEUWBKeyLegacyOnPassReminder": "1"
+            }
+        },
+        "MsgPEUWBKeyLegacyOnReLeReminder":{
+            "PE-UWB Key Legacy On Rear Left Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "PEUWBKeyLegacyOnReLeReminder": "1"
+            }
+        },
+        "MsgPEUWBKeyLegacyOnReRiReminder":{
+            "PE-UWB Key Legacy On Rear Right Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "PEUWBKeyLegacyOnReRiReminder": "1"
+            }
+        },
+        "MsgPEUWBKeyLegacyOnTrunkReminder":{
+            "PE-UWB Key Legacy On Trunk Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "PEUWBKeyLegacyOnTrunkReminder": "1"
+            }
+        },
+        "MsgNFCBLEKeyLegacyReminder":{
+            "NFC BLE Key Legacy Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "NFCBLEKeyLegacyReminder": "1"
+            }
+        },
+        "MsgNFCUWBKeyLegacyOnDriverReminder":{
+            "NFC UWB Key Legacy On Driver Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "NFCUWBKeyLegacyOnDriverReminder": "1"
+            }
+        },
+        "MsgNFCUWBKeyLegacyOnPassReminder":{
+            "NFC UWB Key Legacy On Passenger Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "NFCUWBKeyLegacyOnPassReminder": "10"
+            }
+        },
+        "MsgNFCUWBKeyLegacyOnReLeReminder":{
+            "NFC UWB Key Legacy On Rear Left Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "NFCUWBKeyLegacyOnReLeReminder": "11"
+            }
+        },
+        "MsgNFCUWBKeyLegacyOnReRiReminder":{
+            "NFC UWB Key Legacy On Rear Right Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "NFCUWBKeyLegacyOnReRiReminder": "12"
+            }
+        },
+        "MsgNFCUWBKeyLegacyOnTrunkReminder":{
+            "NFC UWB Key Legacy On Trunk Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "NFCUWBKeyLegacyOnTrunkReminder": "13"
+            }
+        },
+        "MsgUnlockReminder":{
+            "Unlock Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "LockCarFailedWarning": "1"
+            }
+        },
+        "MsgLockFailedReminder":{
+            "Door Cannot Closed Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "LockFailedReminderWarning": "1"
+            }
+        },
+        "MsgCannotUnLockReminder":{
+            "Cannot unLock Reminder":{
+                "CommonMsgStateNoDisplay": "0",
+                "CannotUnLockReminderWarning": "1"
+            }
+        },
+        "MsgCloseDoorReminder":{
+            "Cannot unLock":{
+                "CommonMsgStateNoDisplay": "0",
+                "CloseDoorReminderWarning": "1"
+            }
+        },
+        "MsgHighBeamOperationFailReminder":{
+            "Cannot open":{
+                "CommonMsgStateNoDisplay": "0",
+                "HighBeamOperationFailReminder": "1"
+            }
+        },
+        "MsgETCFaultReminder":{
+            "ETC Fault":{
+                "CommonMsgStateNoDisplay": "0",
+                "ETCFaultWarning": "1"
+            }
+        },
+        "MsgETCRemoveReminder":{
+            "ETC Remove Cannot Use":{
+                "CommonMsgStateNoDisplay": "0",
+                "ETCRemoveWarning": "1"
+            }
+        },
+        "MsgTailGateUnlockWarning":{
+            "Tail Gate Unlock Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "TailGateUnlockWarning": "1"
+            }
+        },
+        "MsgDriverRadarFaultWarning":{
+            "Driver Radar Fault Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "DriverRadarFaultWarning": "1"
+            }
+        },
+        "MsgPassengerRadarFaultWarning":{
+            "Passenger Radar Fault Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "PassengerRadarFaultWarning": "1"
+            }
+        },
+        "MsgLeftRearRadarFaultWarning":{
+            "Left Rear Radar Fault Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "LeftRearRadarFaultWarning": "1"
+            }
+        },
+        "MsgRightRearRadarFaultWarning":{
+            "Right Rear Radar Fault Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "RightRearRadarFaultWarning": "1"
+            }
+        },
+        "MsgDriverRadarBlockedWarning":{
+            "Driver Radar Blocked Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "DriverRadarBlockedWarning": "1"
+            }
+        },
+        "MsgPassengerRadarBlockedWarning":{
+            "Passenger Radar Blocked Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "PassengerRadarBlockedWarning": "1"
+            }
+        },
+        "MsgLeftRearRadarBlockedWarning":{
+            "Left Rear Radar Blocked Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "LeftRearRadarBlockedWarning": "1"
+            }
+        },
+        "MsgRightRearRadarBlockedWarning":{
+            "Right Rear Radar Blocked Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "RightRearDoorRadarBlockedWarning": "1"
+            }
+        },
+        "MsgChargingFailedWarning":{
+            "Right Rear Radar Blocked Warning":{
+                "CommonMsgStateNoDisplay": "0",
+                "ChargingSystemFailedContactCenter": "1",
+                "ChargingPileFailedContactCenter": "2",
+                "ChargingPileFailedChange": "3"
+            }
+        },
+        "MsgPM25SystemError":{
+            "PM2.5 System Error":{
+                "PM25SystemError": "1"
+            }
+        },
+        "MsgNoKeyPresent":{
+            "No key Present":{
+                "NoKeyPresent": "1"
+            }
+        }
+    }
+}
+}

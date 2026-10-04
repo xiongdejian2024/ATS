@@ -1,0 +1,371 @@
+BGM_Download_Req:
+  downloadReq:
+    fileInformations:
+    - encKey: ${XAT_CREDENTIAL_SCAN_8A903F13F1D443B1FC06}
+      fileName: 2960110130AD.bin
+      keyId: 091f1b0bc1ee4aa5bf3d4e1a03218b69
+      pn: 8895036214  G
+      signature: MEYCIQDcLzWPct7NqR695we+xgNXBHHI/zhKvqCOlkOdCrWVAAIhANh92eWia06nQSkpne9TTaaaHpwqn8UrsefZiH2Gi1kv
+      size: 286256
+      url: https://t-ivs-fota.cdn.bcebos.com/ofm/dc1314eea02a3451b544f3abdfb279af2d7f70c0/bbf099c6-5024-474a-2bd7-7357af7767e0/2960110130AD.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-01-24T09%3A43%3A25Z%2F-1%2F%2F5b8c15e276a054366060cf91550a8eb02f42d6aa9bcd19999fc43b1566e4dea1
+      version: 2960110130 AD
+    - encKey: ${XAT_CREDENTIAL_SCAN_1BB5B1E9007E78DF382F}
+      fileName: 6160110140AM.bin
+      keyId: 8157ee43730e45d4997581f5c8dc7fe7
+      pn: 8895036214  G
+      signature: MEUCIAnVcQxUbhQTd6FIMfFc3v3Nt0oXzK0J25aYj/pHFLrpAiEAjNuFG3TygRhA76FC2RvrEm8XsqZlHh9raC/uIe14Bpk=
+      size: 647472544
+      url: https://t-ivs-fota.cdn.bcebos.com/ofm/7d0e1fbb35c914aa5b408fb19f3cd8256bb8521c/bbf099c6-5024-474a-2bd7-b9031cd6a6e3/6160110140AM.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-01-24T09%3A43%3A25Z%2F-1%2F%2F5d00d87697ad82dff1e04160014013b4bb2b1bb2ad84a4bb2d760f5a22a76159
+      version: 6160110140 AM
+    fileNumber: 2
+    keyInformation:
+      encKey: ${XAT_CREDENTIAL_SCAN_8A903F13F1D443B1FC06}
+      keyId: 091f1b0bc1ee4aa5bf3d4e1a03218b69
+    mode: 0
+    downloadNetworkMode: 1
+TCAM_Download_Req:
+  downloadReq:
+    fileInformations:
+    - encKey: ${XAT_CREDENTIAL_SCAN_CA7859953FBA7326F86E}
+      fileName: 6110110200AY.bin
+      keyId: 8e454805ac454742a70dfd36ca3fc504
+      pn: 8895036217  B
+      signature: MEQCIFZt86H76LMA76XfmSUIspuY6LfX0eJZ68H+eAyStR5+AiANTwbydngpznkaX2oA/qbvu66KLVJNd4CVa6VFyStEIw==
+      size: 199531648
+      url: https://t-ivs-fota.cdn.bcebos.com/ofm/4e259c23d8096e1a71a73c5168d5e61176175927/9bc54e5e-61a1-4c1b-45eb-1563f85f16de/6110110200AY.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-06-04T06%3A35%3A53Z%2F-1%2F%2Fc3a9e989424e2481013feea788cfd9d2bf6ed8e4fa1b50f58f63ecd2ffe31634
+      version: 6110110200 AY
+    fileNumber: 1
+    keyInformation:
+      encKey: ${XAT_CREDENTIAL_SCAN_CA7859953FBA7326F86E}
+      keyId: 8e454805ac454742a70dfd36ca3fc504
+    mode: 0
+Version_Debug_BGM:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: ''
+      SWPN: 6160110140 AA,2960110140 AA
+      ecuId: '6011'
+      name: BGM
+    taskId: 0
+  type: 40
+Version_Debug_Non_Domian:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: 8895036232  C
+      SWPN: 6120410100AGA
+      ecuId: '2041'
+      name: FLR
+    - HWPN: 8895036210  D
+      SWPN: 6110310100 AA
+      ecuId: '1031'
+      name: WPC
+    - HWPN: 8895036223  C
+      SWPN: 6210410100 AA
+      ecuId: '1041'
+      name: NKR
+    taskId: 0
+  type: 40
+Version_Debug_TCAM:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: ''
+      SWPN: 6110110065 NA
+      ecuId: '1011'
+      name: TCAM
+    taskId: 0
+  type: 40
+Version_Debug_Two_Domain:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: ''
+      SWPN: 6160110140 AA,2960110140 AA
+      ecuId: '6011'
+      name: BGM
+    - HWPN: ''
+      SWPN: 6110110140 AA
+      ecuId: '1011'
+      name: TCAM
+    taskId: 0
+  type: 40
+Version_Debug_CDC:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: 6608010818  F
+      SWPN: ''
+      ecuId: '3011'
+      name: CDC
+    taskId: 0
+  type: 40
+Version_rescueErrorHWPN_BGM:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: 8895036214  B
+      SWPN: 6160110140 AA,2960110140 AA
+      ecuId: '6011'
+      name: BGM
+    taskId: 0
+  type: 40
+Version_rescue_BGM:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: ''
+      SWPN: ''
+      ecuId: '6011'
+      name: BGM
+    taskId: 0
+  type: 40  
+Task_Info_Type50:
+  code: 1
+  data:
+    baseLineVer: 6100000200 DZ
+    batterySoc: 0
+    config: https://t-ivs-fota.cdn.bcebos.com/v1/vehicle/configs/3e8ce389664d56900504cdde618a6be0/6100000140ARL/config.json?authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-02-04T04%3A57%3A51Z%2F3600%2F%2F4addd49364daa466ee5308ec8b1515f6178e4c93592b939140a4af2adc2d97d0
+    displayVersion: V1.4.0
+    downloadNetType: 1
+    dstBaseLineVer: 6100000140ARL
+    ecusInfo:
+    - appPkg:
+      - dstName: 6160110140AP.bin
+        dstVer: 6160110140 AP
+        keyId: 5e5fa8f140594cd18f85014e11201bc3
+        keyInfo: ${XAT_CREDENTIAL_SCAN_B0FA46F415EFBEBC879E}
+        packageType: 1
+        signature: MEUCIB1vPYF2X3Y2WakvN4TGafjt4SDrWrwo/V0CraXTp3ifAiEA2JXhDPWlVVlcVglZI0XRaXPjZCa2RqXAejCjtG/b3yA=
+        size: 651645152
+        urlHash: afe3457cc775b9f66fa6def36014b77d
+        verUrl: https://t-ivs-fota.cdn.bcebos.com/ofm/91da72ad1bb9ac4823a7072a8f847eca4a7784cb/e43efe1c-c75d-82be-56d3-23d4bfc894a8/6160110140AP.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-02-04T04%3A57%3A51Z%2F-1%2F%2Fcce9f1a9d87ab0171c5f1d7ecad91692a1722dd469f83fb6a88c5a4db4a32754
+      ecuGroup: 1
+      ecuHWpn: 8895036214  G
+      ecuId: '6011'
+      ecuName: BGM
+      ecuOrder: 1
+      ecuUpgradeTime: '14'
+      essPkg: []
+      orderList:
+      - - dstVer: 2960110130 AD
+          fileName: 2960110130AD.bin
+          fileType: PBL
+          keyId: 091f1b0bc1ee4aa5bf3d4e1a03218b69
+          keyInfo: ${XAT_CREDENTIAL_SCAN_8A903F13F1D443B1FC06}
+          signature: MEYCIQDWoSnAK4LQoel20eIyEaD+KeQKGaLjQQ3Df/gorBfpNAIhAPmXnhfCLEniZu58eMwmK3rNtJaWEJlKt3RKgdCtqpnY
+          size: 286256
+          urlHash: 4693efd60d20658a806177d84add9b51
+          verUrl: https://t-ivs-fota.cdn.bcebos.com/ofm/dc1314eea02a3451b544f3abdfb279af2d7f70c0/e43efe1c-c75d-82be-56d3-7357af7767e0/2960110130AD.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-02-04T04%3A57%3A51Z%2F-1%2F%2F0900a92421cd405ba588d67ea17cbe33abc207623c9bd2e83bce5e34084c6db6
+      - - dstVer: 6160110140 AP
+          fileName: 6160110140AP.bin
+          fileType: APP
+          keyId: 5e5fa8f140594cd18f85014e11201bc3
+          keyInfo: ${XAT_CREDENTIAL_SCAN_B0FA46F415EFBEBC879E}
+          signature: MEUCIB1vPYF2X3Y2WakvN4TGafjt4SDrWrwo/V0CraXTp3ifAiEA2JXhDPWlVVlcVglZI0XRaXPjZCa2RqXAejCjtG/b3yA=
+          size: 651645152
+          urlHash: afe3457cc775b9f66fa6def36014b77d
+          verUrl: https://t-ivs-fota.cdn.bcebos.com/ofm/91da72ad1bb9ac4823a7072a8f847eca4a7784cb/e43efe1c-c75d-82be-56d3-23d4bfc894a8/6160110140AP.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-02-04T04%3A57%3A51Z%2F-1%2F%2Fcce9f1a9d87ab0171c5f1d7ecad91692a1722dd469f83fb6a88c5a4db4a32754
+      otherPkg: []
+      sblPkg: []
+    installMode: 1
+    releaseNote: https://m-staging.jiduapp.cn/release-notes/pages/vehicle/index?uuid=6f080e5b-0e39-4db0-b619-209524529a3a
+    sessionId: 17070226719762wj6sr5l
+    sign: '-'
+    smallBatterySoc: 0
+    taskId: 1
+    taskName: yangtest 170AP
+    taskPushTime: '2024-02-02'
+    type: 50
+    upgradeEstimatedTime: 14
+  type: 50
+Version_Debug_PDM:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: 8892362699  A
+      SWPN: 6160310130 AA
+      ecuId: '6031'
+      name: PDM
+    taskId: 0
+  type: 40
+Version_Debug_DDM:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: 8892362682  A
+      SWPN: 6160210140 AA
+      ecuId: '6021'
+      name: DDM
+    taskId: 0
+  type: 40
+Version_Debug_SRS:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: 8894521092  A
+      SWPN: 6150310100 AA
+      ecuId: '5031'
+      name: SRS
+    taskId: 0
+  type: 40  
+Task_Info_Type50_NKR:
+  code: 1
+  data:
+    baseLineVer: 6100000200 DZ
+    batterySoc: 0
+    config: https://t-ivs-fota.cdn.bcebos.com/v1/vehicle/configs/a94183d0a7920802ea0c760c011cd3ea/6100000200CKH/config.json?authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-07-16T08%3A55%3A13Z%2F3600%2F%2F3c796c5ef732117b0dd3f2575e3225f9a037cf0e373ea0e3676d50e7dc485f83
+    displayVersion: V2.0.0
+    downloadNetType: 1
+    appointPatchTime: 0
+    dstBaseLineVer: 6100000200CKH
+    ecusInfo:
+    - appPkg:
+      - dstName: 6110410200AA.bin
+        dstVer: 6110410200 AA
+        keyId: dc7ab266e7aa4371a78f1146e876b132
+        keyInfo: ${XAT_CREDENTIAL_SCAN_9658BF47AABC95276B73}
+        packageType: 1
+        signature: MEYCIQDNpE4hUoQHvEWh9C14yUi28BgfkxYcalXkxxavQ9tCVQIhANl2HXc0cFO/LqzIVpRUBvu0Y7oPWdrMQI5ORC89AX8m
+        size: 93232
+        urlHash: 9c05b45a5d8ac49d64d3f207328ebbdb
+        verUrl: https://t-ivs-fota.cdn.bcebos.com/ofm/f5f4c0bc76a8008c052ad939dc4235f22dfa04eb/bcc670f5-375c-4803-8220-d0f2f1009944/6110410200AA.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-07-16T08%3A55%3A15Z%2F-1%2F%2F33e2214417e8d812803daca21c3b9f09ea3878b3914f6e1b637ee9013884c821
+      ecuGroup: 2
+      ecuHWpn: 8895036223  C
+      ecuId: '1041'
+      ecuName: NKR
+      ecuOrder: 22
+      ecuUpgradeTime: '0.2'
+      essPkg: []
+      orderList:
+      - - dstVer: 6110410200 AA
+          fileName: 6110410200AA.bin
+          fileType: APP
+          keyId: dc7ab266e7aa4371a78f1146e876b132
+          keyInfo: ${XAT_CREDENTIAL_SCAN_9658BF47AABC95276B73}
+          signature: MEYCIQDNpE4hUoQHvEWh9C14yUi28BgfkxYcalXkxxavQ9tCVQIhANl2HXc0cFO/LqzIVpRUBvu0Y7oPWdrMQI5ORC89AX8m
+          size: 93232
+          urlHash: 9c05b45a5d8ac49d64d3f207328ebbdb
+          verUrl: https://t-ivs-fota.cdn.bcebos.com/ofm/f5f4c0bc76a8008c052ad939dc4235f22dfa04eb/bcc670f5-375c-4803-8220-d0f2f1009944/6110410200AA.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-07-16T08%3A55%3A15Z%2F-1%2F%2F33e2214417e8d812803daca21c3b9f09ea3878b3914f6e1b637ee9013884c821
+      otherPkg: []
+      sblPkg: []
+    installMode: 1
+    releaseNote: https://m-staging.jiduapp.cn/release-notes/pages/vehicle/index?uuid=982374a7-94b1-4bca-962d-479c64598dde
+    sessionId: 1721120115103w1iu95gj
+    sign: '-'
+    smallBatterySoc: 0
+    taskId: 19700
+    taskName: 018FS
+    taskPushTime: '2024-07-15'
+    type: 50
+    upgradeEstimatedTime: 5
+  type: 50
+  writeDidTask: 0
+Version_Debug_OtherEcu:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: 8894521092  A
+      SWPN: 6150310100 AA
+      ecuId: '5031'
+      name: SRS
+    - HWPN: 8895036232  C
+      SWPN: 6120410100AGA
+      ecuId: '2041'
+      name: FLR
+    - HWPN: 8895036210  D
+      SWPN: 6110310100 AA
+      ecuId: '1031'
+      name: WPC
+    - HWPN: 8895036223  C
+      SWPN: 6210410100 AA
+      ecuId: '1041'
+      name: NKR
+    - HWPN: 8892362682  A
+      SWPN: 6160210140 AA
+      ecuId: '6021'
+      name: DDM
+    - HWPN: 8891380680  B
+      SWPN: 6150210100 AB
+      ecuId: '5021'
+      name: BBM
+    - HWPN: 8891983575  A
+      SWPN: 6150110100 AC
+      ecuId: '5011'
+      name: VDDM
+    taskId: 0
+  type: 40 
+Version_Debug_ACU:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: 8895037358  B
+      SWPN: ''
+      ecuId: '2011'
+      name: ACU
+    taskId: 0
+  type: 40
+
+Task_Info_Type50_CDC:
+  code: 1
+  data:
+    baseLineVer: 6100000200 DZ
+    batterySoc: 0
+    config: https://t-ivs-fota.cdn.bcebos.com/v1/vehicle/configs/eb814455379437054b7594512b17fb14/6100000220AFI/config.json?authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-11-03T09%3A20%3A09Z%2F3600%2F%2F05a05a4da38838c65ab7756b7193a2202f834aa52405b1e7d2628a2cc8e79ace
+    displayVersion: V2.2.0
+    downloadNetType: 1
+    dstBaseLineVer: 6100000220AFI
+    ecusInfo:
+      - appPkg:
+          - dstName: 6130110220AF.bin
+            dstVer: 6130110220 AF
+            keyId: 5ad6cae802b845a8ba9ca2a5e478c10b
+            keyInfo: ${XAT_CREDENTIAL_SCAN_3C5C386C40EA244FCD35}
+            packageType: 1
+            signature: MEQCIBRQ+piOwZGBbLGsPk/OdJhTPnsG1eOIT4eUJqdsBNx2AiBX/PTWHJibml0Ehy46Xp1kJMbloAUKWEy1kWXpkM8LHg==
+            size: 4614575632
+            urlHash: dcf1724d9639581a05b9be3c1a5b599b
+            verUrl: https://t-ivs-fota.cdn.bcebos.com/ofm/36f75ce40e2f0d51684b2595142175f4d737a02e/75083b38-b4d1-3a8a-bcfe-20773152ec60/6130110220AF.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-11-03T09%3A20%3A10Z%2F-1%2F%2Fa138fa49393865a731428e134efd9e6830d7ebd1b9fffd49b6923e6368e9542f
+        ecuGroup: 1
+        ecuHWpn: 6608010818  F
+        ecuId: '3011'
+        ecuName: CDC
+        ecuOrder: 1
+        ecuUpgradeTime: '15'
+        essPkg: []
+        orderList:
+          - - dstVer: 6130110220 AF
+              fileName: 6130110220AF.bin
+              fileType: APP
+              keyId: 5ad6cae802b845a8ba9ca2a5e478c10b
+              keyInfo: ${XAT_CREDENTIAL_SCAN_3C5C386C40EA244FCD35}
+              signature: MEQCIBRQ+piOwZGBbLGsPk/OdJhTPnsG1eOIT4eUJqdsBNx2AiBX/PTWHJibml0Ehy46Xp1kJMbloAUKWEy1kWXpkM8LHg==
+              size: 4614575632
+              urlHash: dcf1724d9639581a05b9be3c1a5b599b
+              verUrl: https://t-ivs-fota.cdn.bcebos.com/ofm/36f75ce40e2f0d51684b2595142175f4d737a02e/75083b38-b4d1-3a8a-bcfe-20773152ec60/6130110220AF.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-11-03T09%3A20%3A10Z%2F-1%2F%2Fa138fa49393865a731428e134efd9e6830d7ebd1b9fffd49b6923e6368e9542f
+        otherPkg: []
+        sblPkg: []
+    installMode: 1
+    releaseNote: https://m-staging.jiduapp.cn/release-notes/pages/vehicle/index?uuid=85afd582-e603-4bd9-bad2-0ebc4829d6eb
+    sessionId: 1730625610219slt66zfu
+    sign: '-'
+    smallBatterySoc: 0
+    taskId: 27263
+    taskName: 170-220-AH
+    taskPushTime: '2024-10-31'
+    type: 50
+    upgradeEstimatedTime: 15
+  type: 50
+  writeDidTask: 0
+
+Version_Debug_CD:
+  data:
+    baseLineVer: 6100000200 DZ
+    ecu:
+    - HWPN: 8895037286  C
+      SWPN: ''
+      ecuId: '3031'
+      name: CD
+    taskId: 0
+  type: 40

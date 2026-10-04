@@ -58,7 +58,7 @@ def test_xat_hardware_gate_is_checked_before_imports(tmp_path):
         tmp_path, "--mode", "sat", "--sat-root", str(tmp_path / "missing-sat")
     )
     assert result.returncode == 2
-    assert "真实 SAT 台架执行已关闭" in result.stderr
+    assert "真实 XAT 台架执行已关闭" in result.stderr
     assert "Traceback" in result.stderr
     assert not rows
 
@@ -168,7 +168,6 @@ def test_beta(value): assert value == 1
     ]
 
 
-@pytest.mark.xat_external
 def test_xat_cli_uses_real_sat_ecu_fixtures_and_cleans_each_case(tmp_path, sat_config):
     result, rows = run_xat(
         tmp_path,
@@ -187,8 +186,8 @@ def test_xat_cli_uses_real_sat_ecu_fixtures_and_cleans_each_case(tmp_path, sat_c
     source = tmp_path / "test_lifecycle.py"
     source.write_text("""import pytest
 def test_caseid_first(ecu_simulator, pytestconfig, sat_runtime):
-    assert "sat_framework/utils/data_type.py" in sat_runtime.types.__file__.replace("\\\\", "/")
-    assert "automotive_sdk.services.simulator" == type(ecu_simulator).__module__
+    assert "framework/automotive/utils/data_type.py" in sat_runtime.types.__file__.replace("\\\\", "/")
+    assert "xat_ecu.services.simulator" == type(ecu_simulator).__module__
     ecu_simulator.start_simulation(ecus=["ECU"])
     pytestconfig.previous_simulator = ecu_simulator
     with pytest.raises(ValueError, match="台架模式"):
@@ -251,13 +250,9 @@ assert ecu_simulator is not None and sat_types is not None
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-@pytest.mark.xat_external
 def test_xat_sat_yaml_configuration_and_invalid_yaml_traceback(tmp_path, sat_config):
     sat_root = tmp_path / "sat"
     sat_root.mkdir()
-    (sat_root / "sat_framework").symlink_to(
-        Path(sat_config.sat_root) / "sat_framework", target_is_directory=True
-    )
     (sat_root / "bench.yaml").write_text("node: offline\necus: [ECU]\n")
     (sat_root / "cases.yaml").write_text("requirement: XAT-SAT-001\n")
     source = tmp_path / "test_configured.py"
@@ -292,4 +287,4 @@ def test_xat_sat_yaml_configuration_and_invalid_yaml_traceback(tmp_path, sat_con
         assert len(rows) == 1 and rows[0]["status"] == expected
         if expected == "error":
             assert "Traceback" in rows[0]["log"]
-            assert "SAT YAML 配置必须是对象" in rows[0]["error"]
+            assert "XAT YAML 配置必须是对象" in rows[0]["error"]

@@ -1,0 +1,60 @@
+# -*- coding: utf-8 -*-
+
+"""
+@Time    : 2024/06/25 08:55
+@Author  : lei.tao
+@Email   : lei.tao@jiduauto.com
+"""
+import time
+import pytest
+import allure
+from ecu_simulator.common.data_type_handing import logger
+from test_case.soa.case_helper.test_base import TestBase
+from ecu_simulator.soa_partner.src.base_partner import S2sBaseClass
+from ecu_simulator.soa_partner.src.partner_const import *
+
+
+@pytest.mark.full
+class Test{service}SignalE2EAndLoss(TestBase):            
+    def before_class(self, ecu):
+        super().before_class(self, ecu, udp_mcu_ip='172.16.5.21')
+        self.partner = S2sBaseClass([({service_name}, 'client')])
+        self.partner_key = {service_name} + '_client'
+        {before_class_info}
+        time.sleep(15)
+
+    def after_class(self, ecu):
+        self.partner.stop_operators()
+        super().after_class(self, ecu)
+                
+    def before_each_func(self, ecu):
+        super().before_each_func(ecu) 
+
+    def after_each_func(self, ecu):
+        self.partner.empty_all()
+        # 防止报错造成总线恢复失败
+        self.ipdu.resume_all_bus_send()
+        super().after_each_func(ecu)
+
+    @allure.title({case_name})
+    def test_caseid_{ID}(self):
+        {before_info}
+        msg_id = self.ipdu.get_signal_message({network_name}, {message_id})
+        try:
+            self.ipdu.set_no_crc(eval(f"self.ipdu.{network_name}.{msg_id}"), {signal})
+            self.partner.{ck_s2s}(self.partner_key, {interface_name}{}, {out1}, timeout=3)
+            self.partner.empty_all(1)
+            self.ipdu.stop_send_pdu({network_name}, f"{msg_id}")
+            time.sleep({timeout})
+            self.partner.{ck_s2s}(self.partner_key, {interface_name}{}{out2})
+            self.ipdu.resume_send_pdu({network_name}, f"{msg_id}")
+            self.partner.{ck_s2s}(self.partner_key, {interface_name}{}{out3})
+            self.ipdu.restore_crc(eval(f"self.ipdu.{network_name}.{msg_id}"), {signal})
+            self.partner.{ck_s2s}(self.partner_key, {interface_name}{}, {out4}, timeout=3)
+            {after_info}
+        except Exception as e:
+            {after_info}
+            self.ipdu.resume_send_pdu({network_name}, f"{msg_id}")
+            self.ipdu.restore_crc(eval(f"self.ipdu.{network_name}.{msg_id}"), {signal})
+            logger.info(f"故障清除或信号丢失报错{e}")
+            assert False,f"故障清除或信号丢失报错{e}"

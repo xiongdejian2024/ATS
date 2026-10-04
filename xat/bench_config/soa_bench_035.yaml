@@ -1,0 +1,32 @@
+bus:
+  # eth_obd: "enx207bd2339026"   
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+#  connectivitycanfd: 'can0'
+
+serial: ["USB_DO", "USB_DI", "USB_PWM", "USB_BGM", "USB_TCAM"]
+
+eth_vlan: "enx207bd2339026"
+eth_obd: "172.16.9.200"
+wifi_localhost: "172.18.41.142"
+# 当前连接的域控，例如BGM、TCAM、CDC、ACU
+domain:
+  - TCAM
+
+# usbrelay:
+#   TCAM_P: 2
+#   TCAM_KL15: 5
+
+# adbdevice:
+#   tcam: "a3e41149"
+
+# vid: "0f98d132b68fc59e47a88042c831ab9a"
+# vin: "LSTEST6R9F2086644"
+# tel: "18501735541"
+
+# sec_con:
+#   TCAM: [0xFFFFFFFFFF, 0x19B834DCA2, 0xF56B94CD8A, "9c121c16bca957c759701493b409853c", 0xFFFFFFFFFF]
+#   BGM: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2, "9c121c16bca957c759701493b409853c", 0xFFFFFFFFFF]
+#   CDC: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2, "9c121c16bca957c759701493b409853c", 0xFFFFFFFFFF]
+#   ACU: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2, "9c121c16bca957c759701493b409853c", 0xFFFFFFFFFF]
+

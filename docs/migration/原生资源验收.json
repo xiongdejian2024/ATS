@@ -1,0 +1,1093 @@
+{
+  "扫描资源数": 217,
+  "扫描方式": "Gitleaks 目录扫描，归档递归深度3；不执行二进制",
+  "归档扫描匹配数": 0,
+  "Git处理": "原仓库通用忽略规则过滤了原生驱动；按迁移清单显式纳入版本控制",
+  "文件": [
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/interface/bgm/bgm_env/config/mcu_update_config/v130/libua_service.so",
+      "字节": 55990376,
+      "SHA256": "a3e132e5bfba96cd4f734fe56166a5189457808e2a34126a7809bf2e51eacbef"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/interface/bgm/bgm_env/config/mcu_update_config/v140/libua_service.so",
+      "字节": 60764920,
+      "SHA256": "ff1d6950f7e88fe011237ebe96ecccf3e76edf0153a3dded9d4dfaf14922bd72"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/interface/bgm/bgm_env/config/mcu_update_config/v200/libua_service.so",
+      "字节": 60752504,
+      "SHA256": "9ed12b41213ed4171c0b147de0607256275c220e763e45e02ee94771231bc921"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/aarch64/libUSB2XXX.so",
+      "字节": 297608,
+      "SHA256": "008a3b199b3c9798f5af77a2d7e664b3b704de43d387eb0e591a32da83261b3f"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/aarch64/libusb-1.0.so",
+      "字节": 420832,
+      "SHA256": "78fa97f91c728933f08fedf13337912bed6ddb5f7c3e8e84b37c2a37df80cd39"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/arm64/libUSB2XXX.so",
+      "字节": 240880,
+      "SHA256": "244cb02aa2913fb0baea2012f71749e2da20e2ca5fd2a5fbc35aa2ef97996bcc"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/arm64/libusb-1.0.so",
+      "字节": 398760,
+      "SHA256": "385b957d7627ed67232a96be9e0b663998b8a6c1d0144ceaa980ba67750b1a4f"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/armv7/libUSB2XXX.so",
+      "字节": 196996,
+      "SHA256": "da7f856d1156eb51e90f67f5e830ce2d6da156a30e7f5a1c15dd30aa78f03b7d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/armv7/libusb-1.0.so",
+      "字节": 323088,
+      "SHA256": "395b60bd1383df9335c49cf95c23b7e6f9ca796c28ea8478805df72287a0ae9e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/mips64/libUSB2XXX.so",
+      "字节": 327983,
+      "SHA256": "1e9ed3743392cede58a00712bfd0f7f448e9b57f63cc7ccc8f6929cf937a0cec"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/mips64/libusb-1.0.so",
+      "字节": 435055,
+      "SHA256": "8079f0c22d07520e9d41b41bea3aebdc4f356805828916303cecc2f8bfeb018d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/x86/libUSB2XXX.so",
+      "字节": 280115,
+      "SHA256": "5eb54c8484cd89f63d1a45fdbd042969bad383a82850405b1d70b6d2423466b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/x86/libusb-1.0.so",
+      "字节": 337852,
+      "SHA256": "7454234dea974382ff64f4d071cad96dbd74757dafd315236c2dc266740a9bc4"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/x86_64/libUSB2XXX.so",
+      "字节": 301240,
+      "SHA256": "c4a387330f7c4fa02136ea2788538dc3c5fb6ecfbacdead5f418c1d85ef344fb"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/LinuxGccPublicFiles/libs/linux/x86_64/libusb-1.0.so",
+      "字节": 498256,
+      "SHA256": "abd5fe5423c62879f36b11918d4ab8830632c5f56296b032db21b1dc35c5b10d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/C&C++/USB2IIC/USB2XXX_IIC_H3LIS331DL/doc/Accelerometer_H3LIS331DL-master.zip",
+      "字节": 16850,
+      "SHA256": "11eb493982268a143543cb566aff8bab0c1e62a39aa2f2b82eb0ec4365ce6d19"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/CSharp/USB2PWM/USB2XXXPWMTest.zip",
+      "字节": 9685,
+      "SHA256": "602c9d00aafb868138eee2e628cb65ef18e9130bb592d8c66018a229c5bc537d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/Labview/USB2CANFD.rar",
+      "字节": 225151,
+      "SHA256": "12123e87eaa6a090951c487e37a487029710fffd2763788c700467071e46f7a3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/arm64-v8a/libUSB2XXX.so",
+      "字节": 166216,
+      "SHA256": "4190da75c59c005f068c7f4a8da992fe63da198a323e0fa6afd9a2af04e330c1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/arm64-v8a/libjnidispatch.so",
+      "字节": 101976,
+      "SHA256": "e404663510ed10b8eced8f4282cc6b978a701d87ea92304c77f4db3554dcb2b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/arm64-v8a/libusb.so",
+      "字节": 100232,
+      "SHA256": "d92efbbf67b1d663707ccb43680c16cc3e91c1bc24c6a53ed38bd4b7046e46d0"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/armeabi/libUSB2XXX.so",
+      "字节": 124964,
+      "SHA256": "c7d8c3479a6f6a3a70ffd0ab163f340c13a4512930d7db5354ae3dec63f908c3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/armeabi/libjnidispatch.so",
+      "字节": 106176,
+      "SHA256": "0b6e9efa3aaf8b98a27be2e0d744447f61994219529e0ee18212918ad6604622"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/armeabi/libusb.so",
+      "字节": 75332,
+      "SHA256": "aa5a141d7076eaad0db162db8c60bf7227a4179080906d5cf3eaa95225981d30"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/armeabi-v7a/libUSB2XXX.so",
+      "字节": 120868,
+      "SHA256": "6b3b4a683f9c6747edc2aed1745fd33c30c028d59b88a6b0a84fef12b2d951b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/armeabi-v7a/libjnidispatch.so",
+      "字节": 101596,
+      "SHA256": "524d09103dda986683a12548a7a57faab7f51a47ed1ec23a7666e899d81a1665"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/armeabi-v7a/libusb.so",
+      "字节": 75332,
+      "SHA256": "5c0185545219d1a052367547f1780c5cc1cc0ef1d1bf98f5c26392071173c65a"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/mips/libUSB2XXX.so",
+      "字节": 235876,
+      "SHA256": "c305aa4e24bd08bb77195423754cb464f8275c4606127ae491ceb8d99574ba06"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/mips/libusb.so",
+      "字节": 142656,
+      "SHA256": "821018baeedac929c3f20dddac8162d6f7cf1e9ebb20ac9618e5407b83ead012"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/mips64/libUSB2XXX.so",
+      "字节": 209200,
+      "SHA256": "90d4c10b27f4fa499c06f6fccb58fef96600398b9f25c4757bdbfec6a56c1cbf"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/mips64/libusb.so",
+      "字节": 123344,
+      "SHA256": "94a359a4fa3e368e197f186428b3cef788d6a5874377f0ea49483fedd65dbdcc"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/x86/libUSB2XXX.so",
+      "字节": 161544,
+      "SHA256": "4f0e9da9360f3716b6b581a28443daf2bb8cab967da500b5479333f048cd80aa"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/x86/libusb.so",
+      "字节": 91652,
+      "SHA256": "c6b9ffa4a4540d16f346d2d1abdaac6aae566f536c4f2c6ded893a7e63b73792"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/x86_64/libUSB2XXX.so",
+      "字节": 166504,
+      "SHA256": "cb79c231844dc13745eda669794d8a890bebe221a39084514e25861bb02d56fb"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/android/USB2CANQtDemo/USB2XXXDemo/libs/x86_64/libusb.so",
+      "字节": 96400,
+      "SHA256": "9a12e7ef382192736892e57261e3817f623f04d004fefb6501c935d362cf13e3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/java/USB2XXX/.project",
+      "字节": 387,
+      "SHA256": "635f9c78d895c5436491808694e15379cbd56b70b5771978b0e95c77030c4d65"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/java/USB2XXX/lib/JNA/jna-4.2.1.jar",
+      "字节": 1137285,
+      "SHA256": "edc2a2c4f9b0b55fdc66aef3c9a9ddfff97e4b892842d4c0e1bc6eaff704abcb"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/java/USB2XXX/lib/JNA/jna-platform-4.2.1.jar",
+      "字节": 1854630,
+      "SHA256": "342e00bc658bc46990f6a8935ada4d8fcdb3cdfdff0c88169debd04043bb6bee"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/arm64-v8a/libUSB2XXX.so",
+      "字节": 1310600,
+      "SHA256": "fe1aed22c8c59cae32cfaf6075153fabcc8171926469655f6443ebff36932997"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/arm64-v8a/libc++_shared.so",
+      "字节": 1014664,
+      "SHA256": "8bae265500d9f68669ba17339fba96bb87e6eeb5e98050301d3bbcc68dfe9a16"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/arm64-v8a/libjnidispatch.so",
+      "字节": 101976,
+      "SHA256": "e404663510ed10b8eced8f4282cc6b978a701d87ea92304c77f4db3554dcb2b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/arm64-v8a/libusb.so",
+      "字节": 97896,
+      "SHA256": "ac71b239c351dfb45efc71353bdcd7be8ebc0daaf5eeaba3d07cfe9f2465799d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/armeabi-v7a/libUSB2XXX.so",
+      "字节": 817236,
+      "SHA256": "ca8625704fffd24721e357fad75b99dbecaed01bef5ead27c0a93c73dcc31e7e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/armeabi-v7a/libc++_shared.so",
+      "字节": 605336,
+      "SHA256": "acce821fbcbc60d9ff02f6a26f052040fb2a3eec86fd3f96dc267aa08ff14816"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/armeabi-v7a/libjnidispatch.so",
+      "字节": 101596,
+      "SHA256": "524d09103dda986683a12548a7a57faab7f51a47ed1ec23a7666e899d81a1665"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/armeabi-v7a/libusb.so",
+      "字节": 68628,
+      "SHA256": "3e315cd4b21b4738bda6a289500c83352b61910e623e89f1cf605d566dea2115"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/x86/libUSB2XXX.so",
+      "字节": 1344840,
+      "SHA256": "0b58863abc95dca2d55460a7990414e57c946d8fd566c0833e5af1a083809823"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/x86/libc++_shared.so",
+      "字节": 1008900,
+      "SHA256": "dbaf83caa9db0f8edbe042197c567a65fdbd9dd2df0028aa0ae3aaa3a9e2c32c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/x86/libusb.so",
+      "字节": 93188,
+      "SHA256": "1cc81a72eb4f40bdc1a8e5e3d2886162f8946a548e4c89ceb23c3034f989ce58"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/x86_64/libUSB2XXX.so",
+      "字节": 1391720,
+      "SHA256": "9f18d236bcfa6b63bca7dafeb6a0e6a7c7d086c6f65054986602e525dd240a8a"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/x86_64/libc++_shared.so",
+      "字节": 1050904,
+      "SHA256": "094359d337f339ac4eec61e7edc65db950bfdb69fb5c2cec9ac0e69ac076aa7c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/android/libs/x86_64/libusb.so",
+      "字节": 100976,
+      "SHA256": "eb2fc38341bb29ae00f354e927b00379fce9a52d85eac6c951a2b9c2821558ff"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/aarch64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/aarch64/libusb-1.0.so",
+      "字节": 420832,
+      "SHA256": "78fa97f91c728933f08fedf13337912bed6ddb5f7c3e8e84b37c2a37df80cd39"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/arm64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/arm64/libusb-1.0.so",
+      "字节": 398760,
+      "SHA256": "385b957d7627ed67232a96be9e0b663998b8a6c1d0144ceaa980ba67750b1a4f"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/armv7/libUSB2XXX.so",
+      "字节": 293576,
+      "SHA256": "acc1f73b5b1046fcb9af7094da013f696ffc5a1e1e80cd22cd8c9ca269747754"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/armv7/libusb-1.0.so",
+      "字节": 323088,
+      "SHA256": "395b60bd1383df9335c49cf95c23b7e6f9ca796c28ea8478805df72287a0ae9e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/mips64/libUSB2XXX.so",
+      "字节": 327983,
+      "SHA256": "1e9ed3743392cede58a00712bfd0f7f448e9b57f63cc7ccc8f6929cf937a0cec"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/mips64/libusb-1.0.so",
+      "字节": 435055,
+      "SHA256": "8079f0c22d07520e9d41b41bea3aebdc4f356805828916303cecc2f8bfeb018d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/x86/libUSB2XXX.so",
+      "字节": 280115,
+      "SHA256": "5eb54c8484cd89f63d1a45fdbd042969bad383a82850405b1d70b6d2423466b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/x86/libusb-1.0.so",
+      "字节": 337852,
+      "SHA256": "7454234dea974382ff64f4d071cad96dbd74757dafd315236c2dc266740a9bc4"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/x86_64/libUSB2XXX.so",
+      "字节": 547480,
+      "SHA256": "e9b51a1250bc13b23365cac9fbe43b15787735e79b66b5966453bb33b41a795d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CAN/USB2CAN_Test/libs/linux/x86_64/libusb-1.0.so",
+      "字节": 539224,
+      "SHA256": "61e923a15cc650cdf6c68bf0c3555dc2e0e0240ca8a2c2d3a2051c76fc82881e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/arm64-v8a/libUSB2XXX.so",
+      "字节": 1310600,
+      "SHA256": "fe1aed22c8c59cae32cfaf6075153fabcc8171926469655f6443ebff36932997"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/arm64-v8a/libc++_shared.so",
+      "字节": 1014664,
+      "SHA256": "8bae265500d9f68669ba17339fba96bb87e6eeb5e98050301d3bbcc68dfe9a16"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/arm64-v8a/libjnidispatch.so",
+      "字节": 101976,
+      "SHA256": "e404663510ed10b8eced8f4282cc6b978a701d87ea92304c77f4db3554dcb2b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/arm64-v8a/libusb.so",
+      "字节": 97896,
+      "SHA256": "ac71b239c351dfb45efc71353bdcd7be8ebc0daaf5eeaba3d07cfe9f2465799d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/armeabi-v7a/libUSB2XXX.so",
+      "字节": 817236,
+      "SHA256": "ca8625704fffd24721e357fad75b99dbecaed01bef5ead27c0a93c73dcc31e7e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/armeabi-v7a/libc++_shared.so",
+      "字节": 605336,
+      "SHA256": "acce821fbcbc60d9ff02f6a26f052040fb2a3eec86fd3f96dc267aa08ff14816"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/armeabi-v7a/libjnidispatch.so",
+      "字节": 101596,
+      "SHA256": "524d09103dda986683a12548a7a57faab7f51a47ed1ec23a7666e899d81a1665"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/armeabi-v7a/libusb.so",
+      "字节": 68628,
+      "SHA256": "3e315cd4b21b4738bda6a289500c83352b61910e623e89f1cf605d566dea2115"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/x86/libUSB2XXX.so",
+      "字节": 1344840,
+      "SHA256": "0b58863abc95dca2d55460a7990414e57c946d8fd566c0833e5af1a083809823"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/x86/libc++_shared.so",
+      "字节": 1008900,
+      "SHA256": "dbaf83caa9db0f8edbe042197c567a65fdbd9dd2df0028aa0ae3aaa3a9e2c32c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/x86/libusb.so",
+      "字节": 93188,
+      "SHA256": "1cc81a72eb4f40bdc1a8e5e3d2886162f8946a548e4c89ceb23c3034f989ce58"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/x86_64/libUSB2XXX.so",
+      "字节": 1391720,
+      "SHA256": "9f18d236bcfa6b63bca7dafeb6a0e6a7c7d086c6f65054986602e525dd240a8a"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/x86_64/libc++_shared.so",
+      "字节": 1050904,
+      "SHA256": "094359d337f339ac4eec61e7edc65db950bfdb69fb5c2cec9ac0e69ac076aa7c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/android/libs/x86_64/libusb.so",
+      "字节": 100976,
+      "SHA256": "eb2fc38341bb29ae00f354e927b00379fce9a52d85eac6c951a2b9c2821558ff"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/aarch64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/aarch64/libusb-1.0.so",
+      "字节": 420832,
+      "SHA256": "78fa97f91c728933f08fedf13337912bed6ddb5f7c3e8e84b37c2a37df80cd39"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/arm64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/arm64/libusb-1.0.so",
+      "字节": 398760,
+      "SHA256": "385b957d7627ed67232a96be9e0b663998b8a6c1d0144ceaa980ba67750b1a4f"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/armv7/libUSB2XXX.so",
+      "字节": 293576,
+      "SHA256": "acc1f73b5b1046fcb9af7094da013f696ffc5a1e1e80cd22cd8c9ca269747754"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/armv7/libusb-1.0.so",
+      "字节": 323088,
+      "SHA256": "395b60bd1383df9335c49cf95c23b7e6f9ca796c28ea8478805df72287a0ae9e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/mips64/libUSB2XXX.so",
+      "字节": 327983,
+      "SHA256": "1e9ed3743392cede58a00712bfd0f7f448e9b57f63cc7ccc8f6929cf937a0cec"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/mips64/libusb-1.0.so",
+      "字节": 435055,
+      "SHA256": "8079f0c22d07520e9d41b41bea3aebdc4f356805828916303cecc2f8bfeb018d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/x86/libUSB2XXX.so",
+      "字节": 280115,
+      "SHA256": "5eb54c8484cd89f63d1a45fdbd042969bad383a82850405b1d70b6d2423466b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/x86/libusb-1.0.so",
+      "字节": 337852,
+      "SHA256": "7454234dea974382ff64f4d071cad96dbd74757dafd315236c2dc266740a9bc4"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/x86_64/libUSB2XXX.so",
+      "字节": 580080,
+      "SHA256": "56bad9437d42a579a12ae925d163b59dad587e551f9d82df74a2807a8176515e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2CANFD/USB2CANFD_TwoChannelTest/libs/linux/x86_64/libusb-1.0.so",
+      "字节": 539224,
+      "SHA256": "61e923a15cc650cdf6c68bf0c3555dc2e0e0240ca8a2c2d3a2051c76fc82881e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/arm64-v8a/libUSB2XXX.so",
+      "字节": 1310600,
+      "SHA256": "fe1aed22c8c59cae32cfaf6075153fabcc8171926469655f6443ebff36932997"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/arm64-v8a/libc++_shared.so",
+      "字节": 1014664,
+      "SHA256": "8bae265500d9f68669ba17339fba96bb87e6eeb5e98050301d3bbcc68dfe9a16"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/arm64-v8a/libjnidispatch.so",
+      "字节": 101976,
+      "SHA256": "e404663510ed10b8eced8f4282cc6b978a701d87ea92304c77f4db3554dcb2b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/arm64-v8a/libusb.so",
+      "字节": 97896,
+      "SHA256": "ac71b239c351dfb45efc71353bdcd7be8ebc0daaf5eeaba3d07cfe9f2465799d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/armeabi-v7a/libUSB2XXX.so",
+      "字节": 817236,
+      "SHA256": "ca8625704fffd24721e357fad75b99dbecaed01bef5ead27c0a93c73dcc31e7e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/armeabi-v7a/libc++_shared.so",
+      "字节": 605336,
+      "SHA256": "acce821fbcbc60d9ff02f6a26f052040fb2a3eec86fd3f96dc267aa08ff14816"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/armeabi-v7a/libjnidispatch.so",
+      "字节": 101596,
+      "SHA256": "524d09103dda986683a12548a7a57faab7f51a47ed1ec23a7666e899d81a1665"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/armeabi-v7a/libusb.so",
+      "字节": 68628,
+      "SHA256": "3e315cd4b21b4738bda6a289500c83352b61910e623e89f1cf605d566dea2115"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/x86/libUSB2XXX.so",
+      "字节": 1344840,
+      "SHA256": "0b58863abc95dca2d55460a7990414e57c946d8fd566c0833e5af1a083809823"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/x86/libc++_shared.so",
+      "字节": 1008900,
+      "SHA256": "dbaf83caa9db0f8edbe042197c567a65fdbd9dd2df0028aa0ae3aaa3a9e2c32c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/x86/libusb.so",
+      "字节": 93188,
+      "SHA256": "1cc81a72eb4f40bdc1a8e5e3d2886162f8946a548e4c89ceb23c3034f989ce58"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/x86_64/libUSB2XXX.so",
+      "字节": 1391720,
+      "SHA256": "9f18d236bcfa6b63bca7dafeb6a0e6a7c7d086c6f65054986602e525dd240a8a"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/x86_64/libc++_shared.so",
+      "字节": 1050904,
+      "SHA256": "094359d337f339ac4eec61e7edc65db950bfdb69fb5c2cec9ac0e69ac076aa7c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/android/libs/x86_64/libusb.so",
+      "字节": 100976,
+      "SHA256": "eb2fc38341bb29ae00f354e927b00379fce9a52d85eac6c951a2b9c2821558ff"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/aarch64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/aarch64/libusb-1.0.so",
+      "字节": 420832,
+      "SHA256": "78fa97f91c728933f08fedf13337912bed6ddb5f7c3e8e84b37c2a37df80cd39"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/arm64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/arm64/libusb-1.0.so",
+      "字节": 398760,
+      "SHA256": "385b957d7627ed67232a96be9e0b663998b8a6c1d0144ceaa980ba67750b1a4f"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/armv7/libUSB2XXX.so",
+      "字节": 293576,
+      "SHA256": "acc1f73b5b1046fcb9af7094da013f696ffc5a1e1e80cd22cd8c9ca269747754"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/armv7/libusb-1.0.so",
+      "字节": 323088,
+      "SHA256": "395b60bd1383df9335c49cf95c23b7e6f9ca796c28ea8478805df72287a0ae9e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/mips64/libUSB2XXX.so",
+      "字节": 327983,
+      "SHA256": "1e9ed3743392cede58a00712bfd0f7f448e9b57f63cc7ccc8f6929cf937a0cec"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/mips64/libusb-1.0.so",
+      "字节": 435055,
+      "SHA256": "8079f0c22d07520e9d41b41bea3aebdc4f356805828916303cecc2f8bfeb018d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/x86/libUSB2XXX.so",
+      "字节": 280115,
+      "SHA256": "5eb54c8484cd89f63d1a45fdbd042969bad383a82850405b1d70b6d2423466b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/x86/libusb-1.0.so",
+      "字节": 337852,
+      "SHA256": "7454234dea974382ff64f4d071cad96dbd74757dafd315236c2dc266740a9bc4"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/x86_64/libUSB2XXX.so",
+      "字节": 547480,
+      "SHA256": "e9b51a1250bc13b23365cac9fbe43b15787735e79b66b5966453bb33b41a795d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_EX_Test/libs/linux/x86_64/libusb-1.0.so",
+      "字节": 539224,
+      "SHA256": "61e923a15cc650cdf6c68bf0c3555dc2e0e0240ca8a2c2d3a2051c76fc82881e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/arm64-v8a/libUSB2XXX.so",
+      "字节": 1310600,
+      "SHA256": "fe1aed22c8c59cae32cfaf6075153fabcc8171926469655f6443ebff36932997"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/arm64-v8a/libc++_shared.so",
+      "字节": 1014664,
+      "SHA256": "8bae265500d9f68669ba17339fba96bb87e6eeb5e98050301d3bbcc68dfe9a16"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/arm64-v8a/libjnidispatch.so",
+      "字节": 101976,
+      "SHA256": "e404663510ed10b8eced8f4282cc6b978a701d87ea92304c77f4db3554dcb2b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/arm64-v8a/libusb.so",
+      "字节": 97896,
+      "SHA256": "ac71b239c351dfb45efc71353bdcd7be8ebc0daaf5eeaba3d07cfe9f2465799d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/armeabi-v7a/libUSB2XXX.so",
+      "字节": 817236,
+      "SHA256": "ca8625704fffd24721e357fad75b99dbecaed01bef5ead27c0a93c73dcc31e7e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/armeabi-v7a/libc++_shared.so",
+      "字节": 605336,
+      "SHA256": "acce821fbcbc60d9ff02f6a26f052040fb2a3eec86fd3f96dc267aa08ff14816"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/armeabi-v7a/libjnidispatch.so",
+      "字节": 101596,
+      "SHA256": "524d09103dda986683a12548a7a57faab7f51a47ed1ec23a7666e899d81a1665"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/armeabi-v7a/libusb.so",
+      "字节": 68628,
+      "SHA256": "3e315cd4b21b4738bda6a289500c83352b61910e623e89f1cf605d566dea2115"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/x86/libUSB2XXX.so",
+      "字节": 1344840,
+      "SHA256": "0b58863abc95dca2d55460a7990414e57c946d8fd566c0833e5af1a083809823"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/x86/libc++_shared.so",
+      "字节": 1008900,
+      "SHA256": "dbaf83caa9db0f8edbe042197c567a65fdbd9dd2df0028aa0ae3aaa3a9e2c32c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/x86/libusb.so",
+      "字节": 93188,
+      "SHA256": "1cc81a72eb4f40bdc1a8e5e3d2886162f8946a548e4c89ceb23c3034f989ce58"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/x86_64/libUSB2XXX.so",
+      "字节": 1391720,
+      "SHA256": "9f18d236bcfa6b63bca7dafeb6a0e6a7c7d086c6f65054986602e525dd240a8a"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/x86_64/libc++_shared.so",
+      "字节": 1050904,
+      "SHA256": "094359d337f339ac4eec61e7edc65db950bfdb69fb5c2cec9ac0e69ac076aa7c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/android/libs/x86_64/libusb.so",
+      "字节": 100976,
+      "SHA256": "eb2fc38341bb29ae00f354e927b00379fce9a52d85eac6c951a2b9c2821558ff"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/aarch64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/aarch64/libusb-1.0.so",
+      "字节": 420832,
+      "SHA256": "78fa97f91c728933f08fedf13337912bed6ddb5f7c3e8e84b37c2a37df80cd39"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/arm64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/arm64/libusb-1.0.so",
+      "字节": 398760,
+      "SHA256": "385b957d7627ed67232a96be9e0b663998b8a6c1d0144ceaa980ba67750b1a4f"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/armv7/libUSB2XXX.so",
+      "字节": 293576,
+      "SHA256": "acc1f73b5b1046fcb9af7094da013f696ffc5a1e1e80cd22cd8c9ca269747754"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/armv7/libusb-1.0.so",
+      "字节": 323088,
+      "SHA256": "395b60bd1383df9335c49cf95c23b7e6f9ca796c28ea8478805df72287a0ae9e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/mips64/libUSB2XXX.so",
+      "字节": 327983,
+      "SHA256": "1e9ed3743392cede58a00712bfd0f7f448e9b57f63cc7ccc8f6929cf937a0cec"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/mips64/libusb-1.0.so",
+      "字节": 435055,
+      "SHA256": "8079f0c22d07520e9d41b41bea3aebdc4f356805828916303cecc2f8bfeb018d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/x86/libUSB2XXX.so",
+      "字节": 280115,
+      "SHA256": "5eb54c8484cd89f63d1a45fdbd042969bad383a82850405b1d70b6d2423466b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/x86/libusb-1.0.so",
+      "字节": 337852,
+      "SHA256": "7454234dea974382ff64f4d071cad96dbd74757dafd315236c2dc266740a9bc4"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/x86_64/libUSB2XXX.so",
+      "字节": 547480,
+      "SHA256": "e9b51a1250bc13b23365cac9fbe43b15787735e79b66b5966453bb33b41a795d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/examples/python/USB2LIN/USB2LIN_Test/libs/linux/x86_64/libusb-1.0.so",
+      "字节": 539224,
+      "SHA256": "61e923a15cc650cdf6c68bf0c3555dc2e0e0240ca8a2c2d3a2051c76fc82881e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/api/Labview/ldf_parser.zip",
+      "字节": 135471,
+      "SHA256": "2d71aebf4e4d8baa76ff1dc4d56be2632651e001d015ffb6ebf5fb8a4171599f"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/api/Labview/mlx_programer.zip",
+      "字节": 17939,
+      "SHA256": "6c2fe0ef1d618cc1ba417569a0d07db5339f5674704230cd41fb12cf53a6101c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/arm64-v8a/libUSB2XXX.so",
+      "字节": 1336568,
+      "SHA256": "00a35661d3706aed633a89bfce537f36256cc9192199dd3d02f50f8446bbfee2"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/arm64-v8a/libc++_shared.so",
+      "字节": 1014664,
+      "SHA256": "8bae265500d9f68669ba17339fba96bb87e6eeb5e98050301d3bbcc68dfe9a16"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/arm64-v8a/libjnidispatch.so",
+      "字节": 101976,
+      "SHA256": "e404663510ed10b8eced8f4282cc6b978a701d87ea92304c77f4db3554dcb2b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/arm64-v8a/libusb.so",
+      "字节": 97896,
+      "SHA256": "ac71b239c351dfb45efc71353bdcd7be8ebc0daaf5eeaba3d07cfe9f2465799d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/armeabi/libUSB2XXX.so",
+      "字节": 832800,
+      "SHA256": "7105da60989833f7c21c06923ce5443916c334862b22160897688af852b4b1d9"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/armeabi/libc++_shared.so",
+      "字节": 605336,
+      "SHA256": "acce821fbcbc60d9ff02f6a26f052040fb2a3eec86fd3f96dc267aa08ff14816"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/armeabi/libjnidispatch.so",
+      "字节": 101596,
+      "SHA256": "524d09103dda986683a12548a7a57faab7f51a47ed1ec23a7666e899d81a1665"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/armeabi/libusb.so",
+      "字节": 68628,
+      "SHA256": "3e315cd4b21b4738bda6a289500c83352b61910e623e89f1cf605d566dea2115"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/armeabi-v7a/libUSB2XXX.so",
+      "字节": 833828,
+      "SHA256": "793b5465befe9e4c6c639f777000885967f46d3c1998de03a8bd7a1f4f0925c0"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/armeabi-v7a/libc++_shared.so",
+      "字节": 605336,
+      "SHA256": "acce821fbcbc60d9ff02f6a26f052040fb2a3eec86fd3f96dc267aa08ff14816"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/armeabi-v7a/libjnidispatch.so",
+      "字节": 101596,
+      "SHA256": "524d09103dda986683a12548a7a57faab7f51a47ed1ec23a7666e899d81a1665"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/armeabi-v7a/libusb.so",
+      "字节": 68628,
+      "SHA256": "3e315cd4b21b4738bda6a289500c83352b61910e623e89f1cf605d566dea2115"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/x86/libUSB2XXX.so",
+      "字节": 1374968,
+      "SHA256": "0f37fcfb57ba340d2d4ce92dcbae131c1035460cf61615a839a2cb5db4c8d70a"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/x86/libc++_shared.so",
+      "字节": 1008900,
+      "SHA256": "dbaf83caa9db0f8edbe042197c567a65fdbd9dd2df0028aa0ae3aaa3a9e2c32c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/x86/libusb.so",
+      "字节": 93188,
+      "SHA256": "1cc81a72eb4f40bdc1a8e5e3d2886162f8946a548e4c89ceb23c3034f989ce58"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/x86_64/libUSB2XXX.so",
+      "字节": 1419688,
+      "SHA256": "07a36e3d9393de15b60725e42d208c6e729f8a02ea57997e6022b949c146d64c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/x86_64/libc++_shared.so",
+      "字节": 1050904,
+      "SHA256": "094359d337f339ac4eec61e7edc65db950bfdb69fb5c2cec9ac0e69ac076aa7c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/android/libs/x86_64/libusb.so",
+      "字节": 100976,
+      "SHA256": "eb2fc38341bb29ae00f354e927b00379fce9a52d85eac6c951a2b9c2821558ff"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/aarch64/libUSB2XXX.so",
+      "字节": 580192,
+      "SHA256": "47d26f1aec43a69a085112350eccff5835c0ac6b8543cb49581ddcbab00fbdb7"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/aarch64/libusb-1.0.so",
+      "字节": 420832,
+      "SHA256": "78fa97f91c728933f08fedf13337912bed6ddb5f7c3e8e84b37c2a37df80cd39"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/arm64/libUSB2XXX.so",
+      "字节": 540720,
+      "SHA256": "56a33efa96f9e8a6046b25e0768dcb299a06eeabc481fab8c8d03ea4a99c304c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/arm64/libusb-1.0.so",
+      "字节": 398760,
+      "SHA256": "385b957d7627ed67232a96be9e0b663998b8a6c1d0144ceaa980ba67750b1a4f"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/armv7/libUSB2XXX.so",
+      "字节": 460788,
+      "SHA256": "dcb732152fb205f36fb284e125d50c90355239cc79ad323991068eb49dab42b7"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/armv7/libusb-1.0.so",
+      "字节": 435768,
+      "SHA256": "91d4b718975af44ccb89674aa3685d418111f1e25849917f904ce988214ce344"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/mips64/libUSB2XXX.so",
+      "字节": 327983,
+      "SHA256": "1e9ed3743392cede58a00712bfd0f7f448e9b57f63cc7ccc8f6929cf937a0cec"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/mips64/libusb-1.0.so",
+      "字节": 435055,
+      "SHA256": "8079f0c22d07520e9d41b41bea3aebdc4f356805828916303cecc2f8bfeb018d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/x86/libUSB2XXX.so",
+      "字节": 280115,
+      "SHA256": "5eb54c8484cd89f63d1a45fdbd042969bad383a82850405b1d70b6d2423466b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/x86/libusb-1.0.so",
+      "字节": 337852,
+      "SHA256": "7454234dea974382ff64f4d071cad96dbd74757dafd315236c2dc266740a9bc4"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/x86_64/libUSB2XXX.so",
+      "字节": 588848,
+      "SHA256": "c1113c2a3c14a22d4110ecf771ae4231c0ac4bc9157421ab7c8ae97f581f9275"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk/libs/linux/x86_64/libusb-1.0.so",
+      "字节": 472768,
+      "SHA256": "b01d9c2c7782097415c121882224e50c88e36a15e9394bd50e6c25a7ab69b966"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/api/Labview/can_uds.zip",
+      "字节": 17003,
+      "SHA256": "34f7cb035d3618d7d3ed8ab4f279ec521bba36ef53d85820c10f17d02eb41f45"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/api/Labview/usb2bmm_lin.zip",
+      "字节": 27039,
+      "SHA256": "f0efcb43ad883d2cbe92f49063e7f49d803ae74ebd1a8db919bf5a09a9f71e03"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/api/Labview/usb2can.rar",
+      "字节": 124204,
+      "SHA256": "27e267919ca1e34ac91c0aac4adeb0ded22ac5c9d332e4593bcc9b5b49e2701e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/api/Labview/usb2can.zip",
+      "字节": 170257,
+      "SHA256": "58165a66437b2284da1e2a6ce732b1e2b1f5ba4cb3e23e45ccedc714a8c2edc0"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/api/Labview/usb2canfd.zip",
+      "字节": 126657,
+      "SHA256": "ebc205dd9a7c0197385ee436c8d292a733fc467c663dff441c53a6e3d48515ec"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/api/Labview/usb2lin_ex.rar",
+      "字节": 90623,
+      "SHA256": "109f5b043ce1297b043319b53f341176538505f3efaf6558ca8eb17d51e85077"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/api/Labview/usb2pwm.zip",
+      "字节": 72671,
+      "SHA256": "cc04b82c0b3230394bdf8bce3ae542a0c509e6fb111c63f9e3e31c79b3151d90"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/api/Labview/usb2spi.zip",
+      "字节": 263815,
+      "SHA256": "39f58082781e0ab02d7390b1697bb61da953990e0e876ec04f0de2ca55e9d5af"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/api/Labview/usb_device.zip",
+      "字节": 59737,
+      "SHA256": "c9c7733066bb8fb6b63180595bcd4266ca4902875c7ae2f1e871e85a3fadca17"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/arm64-v8a/libUSB2XXX.so",
+      "字节": 1310600,
+      "SHA256": "fe1aed22c8c59cae32cfaf6075153fabcc8171926469655f6443ebff36932997"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/arm64-v8a/libc++_shared.so",
+      "字节": 1014664,
+      "SHA256": "8bae265500d9f68669ba17339fba96bb87e6eeb5e98050301d3bbcc68dfe9a16"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/arm64-v8a/libjnidispatch.so",
+      "字节": 101976,
+      "SHA256": "e404663510ed10b8eced8f4282cc6b978a701d87ea92304c77f4db3554dcb2b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/arm64-v8a/libusb.so",
+      "字节": 97896,
+      "SHA256": "ac71b239c351dfb45efc71353bdcd7be8ebc0daaf5eeaba3d07cfe9f2465799d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/armeabi-v7a/libUSB2XXX.so",
+      "字节": 817236,
+      "SHA256": "ca8625704fffd24721e357fad75b99dbecaed01bef5ead27c0a93c73dcc31e7e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/armeabi-v7a/libc++_shared.so",
+      "字节": 605336,
+      "SHA256": "acce821fbcbc60d9ff02f6a26f052040fb2a3eec86fd3f96dc267aa08ff14816"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/armeabi-v7a/libjnidispatch.so",
+      "字节": 101596,
+      "SHA256": "524d09103dda986683a12548a7a57faab7f51a47ed1ec23a7666e899d81a1665"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/armeabi-v7a/libusb.so",
+      "字节": 68628,
+      "SHA256": "3e315cd4b21b4738bda6a289500c83352b61910e623e89f1cf605d566dea2115"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/x86/libUSB2XXX.so",
+      "字节": 1344840,
+      "SHA256": "0b58863abc95dca2d55460a7990414e57c946d8fd566c0833e5af1a083809823"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/x86/libc++_shared.so",
+      "字节": 1008900,
+      "SHA256": "dbaf83caa9db0f8edbe042197c567a65fdbd9dd2df0028aa0ae3aaa3a9e2c32c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/x86/libusb.so",
+      "字节": 93188,
+      "SHA256": "1cc81a72eb4f40bdc1a8e5e3d2886162f8946a548e4c89ceb23c3034f989ce58"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/x86_64/libUSB2XXX.so",
+      "字节": 1391720,
+      "SHA256": "9f18d236bcfa6b63bca7dafeb6a0e6a7c7d086c6f65054986602e525dd240a8a"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/x86_64/libc++_shared.so",
+      "字节": 1050904,
+      "SHA256": "094359d337f339ac4eec61e7edc65db950bfdb69fb5c2cec9ac0e69ac076aa7c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/android/libs/x86_64/libusb.so",
+      "字节": 100976,
+      "SHA256": "eb2fc38341bb29ae00f354e927b00379fce9a52d85eac6c951a2b9c2821558ff"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/aarch64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/aarch64/libusb-1.0.so",
+      "字节": 420832,
+      "SHA256": "78fa97f91c728933f08fedf13337912bed6ddb5f7c3e8e84b37c2a37df80cd39"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/arm64/libUSB2XXX.so",
+      "字节": 518560,
+      "SHA256": "c8ac37ee3e4f9c3222bfc470f3d5a981f84084d310c9cd1808b26668f3334cd3"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/arm64/libusb-1.0.so",
+      "字节": 398760,
+      "SHA256": "385b957d7627ed67232a96be9e0b663998b8a6c1d0144ceaa980ba67750b1a4f"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/armv7/libUSB2XXX.so",
+      "字节": 293576,
+      "SHA256": "acc1f73b5b1046fcb9af7094da013f696ffc5a1e1e80cd22cd8c9ca269747754"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/armv7/libusb-1.0.so",
+      "字节": 323088,
+      "SHA256": "395b60bd1383df9335c49cf95c23b7e6f9ca796c28ea8478805df72287a0ae9e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/mips64/libUSB2XXX.so",
+      "字节": 327983,
+      "SHA256": "1e9ed3743392cede58a00712bfd0f7f448e9b57f63cc7ccc8f6929cf937a0cec"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/mips64/libusb-1.0.so",
+      "字节": 435055,
+      "SHA256": "8079f0c22d07520e9d41b41bea3aebdc4f356805828916303cecc2f8bfeb018d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/x86/libUSB2XXX.so",
+      "字节": 280115,
+      "SHA256": "5eb54c8484cd89f63d1a45fdbd042969bad383a82850405b1d70b6d2423466b1"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/x86/libusb-1.0.so",
+      "字节": 337852,
+      "SHA256": "7454234dea974382ff64f4d071cad96dbd74757dafd315236c2dc266740a9bc4"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/x86_64/libUSB2XXX.so",
+      "字节": 547480,
+      "SHA256": "e9b51a1250bc13b23365cac9fbe43b15787735e79b66b5966453bb33b41a795d"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/toomoss/sdk_old/libs/linux/x86_64/libusb-1.0.so",
+      "字节": 539224,
+      "SHA256": "61e923a15cc650cdf6c68bf0c3555dc2e0e0240ca8a2c2d3a2051c76fc82881e"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/tosun/libTSCANAPI/linux/libASCLog.so",
+      "字节": 33192,
+      "SHA256": "2175f8ee40f53816d4a2c28b04dd7e4964dfd1fa6deb97e4913143c464dd936c"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/tosun/libTSCANAPI/linux/libTSCANApiOnLinux.so",
+      "字节": 7375280,
+      "SHA256": "8360b2ffa6afe0c96902056345a7b07807d3e83324d0badf2a958a7a907d2b29"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/tosun/libTSCANAPI/linux/libTSH.so",
+      "字节": 123088,
+      "SHA256": "5f3d86eb8d4b6e5b01646cfb7064dc2178299da4e9eda81c100f9a1a630f13fa"
+    },
+    {
+      "路径": "xat/packages/ecu/src/xat_ecu/legacy/sdk/driver/tosun/libTSCANAPI/linux/libbinlog.so",
+      "字节": 891872,
+      "SHA256": "dfa373e12901348298028d187081556e44dedfe7c9b52be58edeb565f085e5db"
+    },
+    {
+      "路径": "xat/cases/src/xat_cases/legacy/abc_demo/data/sl.tar.gz",
+      "字节": 6828966,
+      "SHA256": "4f0317599582d980856b4d4cd7a860c87e005fb7d171984c0f0ae5b71ba7277f"
+    },
+    {
+      "路径": "xat/tools/det_parser/dist/det_parser.exe",
+      "字节": 6191099,
+      "SHA256": "de635582ff7e7cadeff3f38da99eea4579fbd15eb1f55cbf15eb8fe934fe245f"
+    },
+    {
+      "路径": "xat/tools/monitor/envir_init.tar.gz",
+      "字节": 288822,
+      "SHA256": "bd642afd3810a2673a0e1b183861ca5195c0f7aa0a6c89fcf4b9a2137f765b30"
+    },
+    {
+      "路径": "xat/tools/monitor/report.tar.gz",
+      "字节": 149217,
+      "SHA256": "a9fc77040a855ccbcc9629ead0b343ab77c7a753121e05a77d8a35130d308ca5"
+    }
+  ]
+}

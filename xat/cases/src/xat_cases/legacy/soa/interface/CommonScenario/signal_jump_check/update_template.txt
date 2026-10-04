@@ -1,0 +1,40 @@
+# -*- coding: utf-8 -*-
+
+"""
+@Time    : 2024/06/05 08:55
+@Author  : lei.tao
+@Email   : lei.tao@jiduauto.com
+"""
+import time
+import pytest
+import allure
+from ecu_simulator.common.data_type_handing import logger
+from test_case.soa.case_helper.test_base import TestBase
+from ecu_simulator.soa_partner.src.base_partner import S2sBaseClass
+from ecu_simulator.soa_partner.src.partner_const import *
+
+
+@pytest.mark.full
+class Test{service}SignalJumpMockMcu(TestBase):            
+    def before_class(self, ecu):
+        super().before_class(self, ecu, udp_mcu_ip='172.16.5.21')
+        self.partner = S2sBaseClass([({service_name}, 'client')])
+        self.partner_key = {service_name} + '_client'
+        time.sleep(8)
+
+    def after_class(self, ecu):
+        self.partner.stop_operators()
+        super().after_class(self, ecu)
+                
+    def before_each_func(self, ecu):
+        super().before_each_func(ecu) 
+        self.partner.empty_all()
+
+    def after_each_func(self, ecu):
+        self.ipdu.stop_special_message_send()
+        super().after_each_func(ecu)
+
+    @allure.title({case_name})
+    def test_caseid_{ID}(self):
+        self.ipdu.filter_special_message_send(bus_name={network_name}, message={message_ID}, no_opera_signal={signal_list}{UB_Flag})
+        self.partner.ck_no_{eventorreq}(self.partner_key, {interface_name}, timeout=0.2)

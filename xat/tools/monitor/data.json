@@ -1,0 +1,18 @@
+{
+  "script": "jidu",
+  "xAxisdata": ["10:52:38","10:52:48"],
+  "cpuUser": [4,2.2],
+  "cpuSys": [1,0.8],
+  "cpuIdle": [1,0.8],
+  "memfree": [430.2,419.5],
+  "active": [4051,4051],
+  "memtotal": [15666.9,15666.9],
+  "NetRead": [12.7,10.7],
+  "NetWrite": [-10,-8.6],
+  "DiskRead": [0,0],
+  "DiskWrite": [-305.6,-747.8],
+  "updateSpace": [4,2.2],
+  "logSpace": [1,0.8],
+  "dataSpace": [1,0.8]
+}
+

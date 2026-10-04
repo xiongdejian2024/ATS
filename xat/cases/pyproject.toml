@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "xat-cases"
+version = "0.1.0"
+description = "XAT 独立用例与数据资源"
+requires-python = ">=3.10"
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["xat_cases*"]
+[tool.setuptools.package-data]
+xat_cases = ["**/*.yaml", "**/*.yml", "**/*.json", "**/*.csv", "**/*.xlsx", "**/*.xls", "**/*.png", "**/*.proto", "**/*.asc", "**/*.sh", "**/*.txt", "**/*.h", "**/*.md", "**/*.toml", "**/*.tar.gz"]

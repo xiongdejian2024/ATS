@@ -1,0 +1,194 @@
+{
+  "bgm": [
+    {
+      "version": "v1.0.0",
+      "conn_method": "ssh",
+      "ipinfo": {
+        "dport": 22,
+        "destination": null,
+        "check_connection_for_ssh": null
+      },
+      "userinfo": {
+        "user": "root",
+        "passwd": "${XAT_CREDENTIAL____SOA_CASE_HELPER_CODESRC_COMPONENTS_PRESSURE_CONF_CUSTOM_SETTINGS_JSON__BGM_0_USERINFO_PASSWD}"
+      },
+      "remote_settings": {
+        "tools_path": "/update/tools",
+        "get_version_method": "cat /app/etc/build.prop",
+        "ld_library_path": "/app/lib",
+        "use_sftp": false,
+        "log_path": [
+          "/log/"
+        ]
+      },
+      "local_settings": {
+        "endecrypt_test_path": ""
+      }
+    },
+    {
+      "version": "v1.1.0",
+      "conn_method": "ssh",
+      "ipinfo": {
+        "dport": 22,
+        "destination": null,
+        "check_connection_for_ssh": null
+      },
+      "userinfo": {
+        "user": "jiduer",
+        "passwd": "${XAT_CREDENTIAL____SOA_CASE_HELPER_CODESRC_COMPONENTS_PRESSURE_CONF_CUSTOM_SETTINGS_JSON__BGM_1_USERINFO_PASSWD}"
+      },
+      "remote_settings": {
+        "uoload_path": "/tmp/jiduer",
+        "tools_path": "/tmp/jiduer",
+        "get_version_method": "cat /app/etc/build.prop",
+        "ld_library_path": "/app/lib",
+        "use_sftp": false,
+        "log_path": [
+          "/log/"
+        ]
+      },
+      "local_settings": {
+        "endecrypt_test_path": ""
+      }
+    }
+  ],
+  "cdcq": [
+    {
+      "version": "v1.0.0",
+      "conn_method": "ssh",
+      "ipinfo": {
+        "dport": 11222,
+        "destination": "172.16.9.11:22",
+        "check_connection_for_ssh": "172.16.5.11"
+      },
+      "userinfo": {
+        "user": "root",
+        "passwd": ""
+      },
+      "remote_settings": {
+        "tools_path": "/data/tools",
+        "get_version_method": "/mnt/bin/cat /mnt/etc/build.prop",
+        "ld_library_path": "/mnt/lib64",
+        "use_sftp": false,
+        "log_path": [
+          "/data/log",
+          "/var/log",
+          "/data/bootes"
+        ]
+      },
+      "local_settings": {
+        "endecrypt_test_path": ""
+      }
+    }
+  ],
+  "cdca": [
+    {
+      "version": "v1.0.0",
+      "conn_method": "adb",
+      "ipinfo": {
+        "dport": 1313,
+        "destination": "172.16.9.13:5555",
+        "check_connection_for_ssh": "172.16.5.13"
+      },
+      "userinfo": {
+        "user": "root",
+        "passwd": ""
+      },
+      "remote_settings": {
+        "tools_path": "/data/tools",
+        "get_version_method": "getprop | grep bootes",
+        "ld_library_path": "/system/lib64",
+        "use_sftp": true,
+        "log_path": [
+          "/data/log",
+          "/data/tombstones",
+          "/data/bootes"
+        ]
+      },
+      "local_settings": {
+        "endecrypt_test_path": ""
+      }
+    }
+  ],
+  "tcam": [
+    {
+      "version": "v1.0.0",
+      "conn_method": "adb",
+      "ipinfo": {
+        "dport": 3131,
+        "destination": "172.16.9.31:5555",
+        "check_connection_for_ssh": "172.16.5.31"
+      },
+      "userinfo": {
+        "user": "root",
+        "passwd": "${XAT_CREDENTIAL____SOA_CASE_HELPER_CODESRC_COMPONENTS_PRESSURE_CONF_CUSTOM_SETTINGS_JSON__TCAM_0_USERINFO_PASSWD}"
+      },
+      "remote_settings": {
+        "tools_path": "/oemdata/tools",
+        "get_version_method": "cat /oemapp/etc/build.prop",
+        "ld_library_path": "/oemapp/lib/bootes:/oemapp/lib:/umdp/lib",
+        "use_sftp": false,
+        "log_path": [
+          "/mnt/sdcard/log",
+          "/mnt/sdcard/coredump"
+        ]
+      },
+      "local_settings": {
+        "endecrypt_test_path": ""
+      }
+    },
+    {
+      "version": "v1.1.0",
+      "conn_method": "ssh",
+      "ipinfo": {
+        "dport": 31222,
+        "destination": "172.16.9.31:22",
+        "check_connection_for_ssh": "172.16.5.31"
+      },
+      "userinfo": {
+        "user": "root",
+        "passwd": "${XAT_CREDENTIAL____SOA_CASE_HELPER_CODESRC_COMPONENTS_PRESSURE_CONF_CUSTOM_SETTINGS_JSON__TCAM_1_USERINFO_PASSWD}"
+      },
+      "remote_settings": {
+        "tools_path": "/oemdata/tools",
+        "get_version_method": "cat /oemapp/etc/build.prop",
+        "ld_library_path": "/oemapp/lib/bootes:/oemapp/lib:/umdp/lib",
+        "use_sftp": false,
+        "log_path": [
+          "/mnt/sdcard/log",
+          "/mnt/sdcard/coredump"
+        ]
+      },
+      "local_settings": {
+        "endecrypt_test_path": ""
+      }
+    }
+  ],
+  "acu": [
+    {
+      "version": "v1.0.0",
+      "conn_method": "ssh",
+      "ipinfo": {
+        "dport": 21222,
+        "destination": "172.16.9.21:22",
+        "check_connection_for_ssh": "172.16.5.21"
+      },
+      "userinfo": {
+        "user": "caros",
+        "passwd": "${XAT_CREDENTIAL____SOA_CASE_HELPER_CODESRC_COMPONENTS_PRESSURE_CONF_CUSTOM_SETTINGS_JSON__ACU_0_USERINFO_PASSWD}"
+      },
+      "remote_settings": {
+        "tools_path": "/update/tools",
+        "get_version_method": "cat /opt/jidu_output/acu_adapter/version",
+        "ld_library_path": "/opt/jidu_output/acu_adapter/bootes/lib:/opt/certs_key/lib:/opt/data/safety/usr/lib",
+        "use_sftp": false,
+        "log_path": [
+          "/opt/log/bootes"
+        ]
+      },
+      "local_settings": {
+        "endecrypt_test_path": ""
+      }
+    }
+  ]
+}

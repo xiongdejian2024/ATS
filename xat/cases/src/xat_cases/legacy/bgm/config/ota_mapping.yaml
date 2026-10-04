@@ -1,0 +1,248 @@
+baseLine: V2.0.0
+baseLineVer: 6100000200 BW
+displayVersion: V2.0.0
+ecu:
+- bomEcuName: ECM3
+  ecuGroup: 2
+  ecuId: '5091'
+  ecuName: ECM3
+  ecuOrder: 5
+  packages:
+  - appPkg:
+    - dstVer: 6150910200 AB
+      filename: 6150910200AB.bin
+      keyId: dba4441a986f429f89c793128ce5d94f
+      keyinfo: ${XAT_CREDENTIAL_SCAN_6F9056875CD7929637FF}
+      signature: MEUCIFvjyZPAaARvAOvzlZ61xIOcjMtbYWt3F2jr/ddnrvnGAiEA9qKB8N3S8IlpeMW0riNUz5Yz21aEVgUCAEXPKfdw3cA=
+      size: 1164016
+    ccpCode: ''
+    ccpId: -100
+    essPkg: []
+    hwpn: 8893013714  B
+    orderList:
+    - - dstVer: 1150910200 AB
+        fileName: 1150910200AB.bin
+        fileType: SBL
+        filename: 1150910200AB.bin
+        keyId: dba4441a986f429f89c793128ce5d94f
+        keyinfo: ${XAT_CREDENTIAL_SCAN_77C84F3F93F2D0DF4B0D}
+        signature: MEUCIQDSEJS/TZGQta9PbhmeY9C5+oOd5Rvh6vh7iYjH9ivCZwIgY6NXJGu7Tk4aivZXbELhg1s8bUcml246vN7IRokBFtA=
+        size: 54496
+        version: 1150910200 AB
+      - dstVer: 6150910200 AB
+        fileName: 6150910200AB.bin
+        fileType: APP
+        filename: 6150910200AB.bin
+        keyId: dba4441a986f429f89c793128ce5d94f
+        keyinfo: ${XAT_CREDENTIAL_SCAN_6F9056875CD7929637FF}
+        signature: MEUCIFvjyZPAaARvAOvzlZ61xIOcjMtbYWt3F2jr/ddnrvnGAiEA9qKB8N3S8IlpeMW0riNUz5Yz21aEVgUCAEXPKfdw3cA=
+        size: 1164016
+        version: 6150910200 AB
+      - dstVer: 1250910200 AB
+        fileName: 1250910200AB.bin
+        fileType: DATA
+        filename: 1250910200AB.bin
+        keyId: 8ac1d37190df4b1ba780016976d11848
+        keyinfo: ${XAT_CREDENTIAL_SCAN_16FEDBABBA81E7ECFD2A}
+        signature: MEUCIQCsgY8U3gmvWyDORF9zi4dQBI9BsjTMhOHFAjIEKwlSOgIgTxBfkWBtycSf63cUGGfloVuvAp4KWTy/g1yOqcR5Zqc=
+        size: 182352
+        version: 1250910200 AB
+    otherHwList: []
+    otherPkg:
+    - dstVer: 1250910200 AB
+      filename: 1250910200AB.bin
+      keyId: 8ac1d37190df4b1ba780016976d11848
+      keyinfo: ${XAT_CREDENTIAL_SCAN_16FEDBABBA81E7ECFD2A}
+      signature: MEUCIQCsgY8U3gmvWyDORF9zi4dQBI9BsjTMhOHFAjIEKwlSOgIgTxBfkWBtycSf63cUGGfloVuvAp4KWTy/g1yOqcR5Zqc=
+      size: 182352
+    sblPkg:
+    - dstVer: 1150910200 AB
+      filename: 1150910200AB.bin
+      keyId: dba4441a986f429f89c793128ce5d94f
+      keyinfo: ${XAT_CREDENTIAL_SCAN_77C84F3F93F2D0DF4B0D}
+      signature: MEUCIQDSEJS/TZGQta9PbhmeY9C5+oOd5Rvh6vh7iYjH9ivCZwIgY6NXJGu7Tk4aivZXbELhg1s8bUcml246vN7IRokBFtA=
+      size: 54496
+    selfEcuSWCheck:
+    - - fileType: SBL
+        version: 1150910200 AA
+      - fileType: APP
+        version: 6150910200 AA
+      - fileType: DATA
+        version: 1250910200 AA
+  - appPkg:
+    - dstVer: 6150910200 AB
+      filename: 6150910200AB.bin
+      keyId: dba4441a986f429f89c793128ce5d94f
+      keyinfo: ${XAT_CREDENTIAL_SCAN_6F9056875CD7929637FF}
+      signature: MEUCIFvjyZPAaARvAOvzlZ61xIOcjMtbYWt3F2jr/ddnrvnGAiEA9qKB8N3S8IlpeMW0riNUz5Yz21aEVgUCAEXPKfdw3cA=
+      size: 1164016
+    ccpCode: ''
+    ccpId: -100
+    essPkg: []
+    hwpn: 6608105114  A
+    orderList:
+    - - dstVer: 1150910200 AB
+        fileName: 1150910200AB.bin
+        fileType: SBL
+        filename: 1150910200AB.bin
+        keyId: dba4441a986f429f89c793128ce5d94f
+        keyinfo: ${XAT_CREDENTIAL_SCAN_77C84F3F93F2D0DF4B0D}
+        signature: MEUCIQDSEJS/TZGQta9PbhmeY9C5+oOd5Rvh6vh7iYjH9ivCZwIgY6NXJGu7Tk4aivZXbELhg1s8bUcml246vN7IRokBFtA=
+        size: 54496
+        version: 1150910200 AB
+      - dstVer: 6150910200 AB
+        fileName: 6150910200AB.bin
+        fileType: APP
+        filename: 6150910200AB.bin
+        keyId: dba4441a986f429f89c793128ce5d94f
+        keyinfo: ${XAT_CREDENTIAL_SCAN_6F9056875CD7929637FF}
+        signature: MEUCIFvjyZPAaARvAOvzlZ61xIOcjMtbYWt3F2jr/ddnrvnGAiEA9qKB8N3S8IlpeMW0riNUz5Yz21aEVgUCAEXPKfdw3cA=
+        size: 1164016
+        version: 6150910200 AB
+      - dstVer: 1250910200 AB
+        fileName: 1250910200AB.bin
+        fileType: DATA
+        filename: 1250910200AB.bin
+        keyId: 8ac1d37190df4b1ba780016976d11848
+        keyinfo: ${XAT_CREDENTIAL_SCAN_16FEDBABBA81E7ECFD2A}
+        signature: MEUCIQCsgY8U3gmvWyDORF9zi4dQBI9BsjTMhOHFAjIEKwlSOgIgTxBfkWBtycSf63cUGGfloVuvAp4KWTy/g1yOqcR5Zqc=
+        size: 182352
+        version: 1250910200 AB
+    otherHwList: []
+    otherPkg:
+    - dstVer: 1250910200 AB
+      filename: 1250910200AB.bin
+      keyId: 8ac1d37190df4b1ba780016976d11848
+      keyinfo: ${XAT_CREDENTIAL_SCAN_16FEDBABBA81E7ECFD2A}
+      signature: MEUCIQCsgY8U3gmvWyDORF9zi4dQBI9BsjTMhOHFAjIEKwlSOgIgTxBfkWBtycSf63cUGGfloVuvAp4KWTy/g1yOqcR5Zqc=
+      size: 182352
+    sblPkg:
+    - dstVer: 1150910200 AB
+      filename: 1150910200AB.bin
+      keyId: dba4441a986f429f89c793128ce5d94f
+      keyinfo: ${XAT_CREDENTIAL_SCAN_77C84F3F93F2D0DF4B0D}
+      signature: MEUCIQDSEJS/TZGQta9PbhmeY9C5+oOd5Rvh6vh7iYjH9ivCZwIgY6NXJGu7Tk4aivZXbELhg1s8bUcml246vN7IRokBFtA=
+      size: 54496
+    selfEcuSWCheck:
+    - - fileType: SBL
+        version: 1150910200 AA
+      - fileType: APP
+        version: 6150910200 AA
+      - fileType: DATA
+        version: 1250910200 AA
+- bomEcuName: DDM
+  ecuGroup: 2
+  ecuId: '6021'
+  ecuName: DDM
+  ecuOrder: 10
+  packages:
+  - appPkg:
+    - dstVer: 6160210140 AA
+      filename: 6160210140AA.bin
+      keyId: eeaca403ba5a4f25af703bca7553bf0d
+      keyinfo: ${XAT_CREDENTIAL_SCAN_0FBD40F60AF2681D22DC}
+      signature: MEUCIQD8BTlEcgY/MWuuo6mx8lO+q7hQTLXR48Nexe3squCdgAIgBV/R4rdwNOjn4sKTaO3/Yd1va3zUO42Wgzmam8SVyco=
+      size: 305312
+    ccpCode: ''
+    ccpId: -100
+    essPkg: []
+    hwpn: 8892362682  A
+    orderList:
+    - - dstVer: 1160210060 AB
+        fileName: 1160210060AB.bin
+        fileType: SBL
+        filename: 1160210060AB.bin
+        keyId: 3b15a54255cc4b6eb6741e7f40e96ece
+        keyinfo: ${XAT_CREDENTIAL_SCAN_711E77A5AAEB62AA926C}
+        signature: MEQCIA/ZinmQGmD5+D4kpxVI1xMxNWaLmmXwkaK0t1rXeaimAiAVSD4yQ9F7ipd8NNm2AwyWWUL8bVT9P8EQTKU3IUq2tg==
+        size: 28016
+        version: 1160210060 AB
+      - dstVer: 6160210140 AA
+        fileName: 6160210140AA.bin
+        fileType: APP
+        filename: 6160210140AA.bin
+        keyId: eeaca403ba5a4f25af703bca7553bf0d
+        keyinfo: ${XAT_CREDENTIAL_SCAN_0FBD40F60AF2681D22DC}
+        signature: MEUCIQD8BTlEcgY/MWuuo6mx8lO+q7hQTLXR48Nexe3squCdgAIgBV/R4rdwNOjn4sKTaO3/Yd1va3zUO42Wgzmam8SVyco=
+        size: 305312
+        version: 6160210140 AA
+      - dstVer: 1260210110 AB
+        fileName: 1260210110AB.bin
+        fileType: DATA
+        filename: 1260210110AB.bin
+        keyId: a4d2d130ac4046f3a23acde1f194e7ec
+        keyinfo: Z5+HgpMIFfBS+lzHMp09t7+7+946k8XBtpu+ND8neWQYBaYI0qaa1j1g2lG5RI5w//FgvTz1c3va6/OSIlU8WEYGffDHopDIptcKWFEw6HoStHYWOwIliOnIORmyL0035IcWFtWZqursHdjtp3ZQztTiS13Sulumf7Ejjqyoj23ztEYMapjPCbpYOBnDmsHJX84RC81DwcVkkKl4GyfX2FDdr7nw48894IXwz8VrrgaDl91DwLVzUQT/3XwcMw6IWzahChB9iCgXxrS0gsjEPCu4h8h3cKfSCZSI5lR7XtSkG1Iptxw7ze/V2NRX6u82OCF0B9fyjSu7K16y/DNT+A==
+        signature: MEYCIQCr76rOA1TQLByc8Hg4Yr3oJLYI2Fb3Cm/Rsj3LJHl6xAIhAMeFkVOYzKrltzMhM4/VG1hYYcp0ONtesBYW//cVLJ+H
+        size: 2912
+        version: 1260210110 AB
+    otherHwList: []
+    otherPkg:
+    - dstVer: 1260210110 AB
+      filename: 1260210110AB.bin
+      keyId: a4d2d130ac4046f3a23acde1f194e7ec
+      keyinfo: Z5+HgpMIFfBS+lzHMp09t7+7+946k8XBtpu+ND8neWQYBaYI0qaa1j1g2lG5RI5w//FgvTz1c3va6/OSIlU8WEYGffDHopDIptcKWFEw6HoStHYWOwIliOnIORmyL0035IcWFtWZqursHdjtp3ZQztTiS13Sulumf7Ejjqyoj23ztEYMapjPCbpYOBnDmsHJX84RC81DwcVkkKl4GyfX2FDdr7nw48894IXwz8VrrgaDl91DwLVzUQT/3XwcMw6IWzahChB9iCgXxrS0gsjEPCu4h8h3cKfSCZSI5lR7XtSkG1Iptxw7ze/V2NRX6u82OCF0B9fyjSu7K16y/DNT+A==
+      signature: MEYCIQCr76rOA1TQLByc8Hg4Yr3oJLYI2Fb3Cm/Rsj3LJHl6xAIhAMeFkVOYzKrltzMhM4/VG1hYYcp0ONtesBYW//cVLJ+H
+      size: 2912
+    sblPkg:
+    - dstVer: 1160210060 AB
+      filename: 1160210060AB.bin
+      keyId: 3b15a54255cc4b6eb6741e7f40e96ece
+      keyinfo: ${XAT_CREDENTIAL_SCAN_711E77A5AAEB62AA926C}
+      signature: MEQCIA/ZinmQGmD5+D4kpxVI1xMxNWaLmmXwkaK0t1rXeaimAiAVSD4yQ9F7ipd8NNm2AwyWWUL8bVT9P8EQTKU3IUq2tg==
+      size: 28016
+    selfEcuSWCheck: []
+  - appPkg:
+    - dstVer: 6160210140 AA
+      filename: 6160210140AA.bin
+      keyId: eeaca403ba5a4f25af703bca7553bf0d
+      keyinfo: ${XAT_CREDENTIAL_SCAN_0FBD40F60AF2681D22DC}
+      signature: MEUCIQD8BTlEcgY/MWuuo6mx8lO+q7hQTLXR48Nexe3squCdgAIgBV/R4rdwNOjn4sKTaO3/Yd1va3zUO42Wgzmam8SVyco=
+      size: 305312
+    ccpCode: ''
+    ccpId: -100
+    essPkg: []
+    hwpn: 6608044178  A
+    orderList:
+    - - dstVer: 1160210060 AB
+        fileName: 1160210060AB.bin
+        fileType: SBL
+        filename: 1160210060AB.bin
+        keyId: 3b15a54255cc4b6eb6741e7f40e96ece
+        keyinfo: ${XAT_CREDENTIAL_SCAN_711E77A5AAEB62AA926C}
+        signature: MEQCIA/ZinmQGmD5+D4kpxVI1xMxNWaLmmXwkaK0t1rXeaimAiAVSD4yQ9F7ipd8NNm2AwyWWUL8bVT9P8EQTKU3IUq2tg==
+        size: 28016
+        version: 1160210060 AB
+      - dstVer: 6160210140 AA
+        fileName: 6160210140AA.bin
+        fileType: APP
+        filename: 6160210140AA.bin
+        keyId: eeaca403ba5a4f25af703bca7553bf0d
+        keyinfo: ${XAT_CREDENTIAL_SCAN_0FBD40F60AF2681D22DC}
+        signature: MEUCIQD8BTlEcgY/MWuuo6mx8lO+q7hQTLXR48Nexe3squCdgAIgBV/R4rdwNOjn4sKTaO3/Yd1va3zUO42Wgzmam8SVyco=
+        size: 305312
+        version: 6160210140 AA
+      - dstVer: 1260210110 AB
+        fileName: 1260210110AB.bin
+        fileType: DATA
+        filename: 1260210110AB.bin
+        keyId: a4d2d130ac4046f3a23acde1f194e7ec
+        keyinfo: Z5+HgpMIFfBS+lzHMp09t7+7+946k8XBtpu+ND8neWQYBaYI0qaa1j1g2lG5RI5w//FgvTz1c3va6/OSIlU8WEYGffDHopDIptcKWFEw6HoStHYWOwIliOnIORmyL0035IcWFtWZqursHdjtp3ZQztTiS13Sulumf7Ejjqyoj23ztEYMapjPCbpYOBnDmsHJX84RC81DwcVkkKl4GyfX2FDdr7nw48894IXwz8VrrgaDl91DwLVzUQT/3XwcMw6IWzahChB9iCgXxrS0gsjEPCu4h8h3cKfSCZSI5lR7XtSkG1Iptxw7ze/V2NRX6u82OCF0B9fyjSu7K16y/DNT+A==
+        signature: MEYCIQCr76rOA1TQLByc8Hg4Yr3oJLYI2Fb3Cm/Rsj3LJHl6xAIhAMeFkVOYzKrltzMhM4/VG1hYYcp0ONtesBYW//cVLJ+H
+        size: 2912
+        version: 1260210110 AB
+    otherHwList: []
+    otherPkg:
+    - dstVer: 1260210110 AB
+      filename: 1260210110AB.bin
+      keyId: a4d2d130ac4046f3a23acde1f194e7ec
+      keyinfo: Z5+HgpMIFfBS+lzHMp09t7+7+946k8XBtpu+ND8neWQYBaYI0qaa1j1g2lG5RI5w//FgvTz1c3va6/OSIlU8WEYGffDHopDIptcKWFEw6HoStHYWOwIliOnIORmyL0035IcWFtWZqursHdjtp3ZQztTiS13Sulumf7Ejjqyoj23ztEYMapjPCbpYOBnDmsHJX84RC81DwcVkkKl4GyfX2FDdr7nw48894IXwz8VrrgaDl91DwLVzUQT/3XwcMw6IWzahChB9iCgXxrS0gsjEPCu4h8h3cKfSCZSI5lR7XtSkG1Iptxw7ze/V2NRX6u82OCF0B9fyjSu7K16y/DNT+A==
+      signature: MEYCIQCr76rOA1TQLByc8Hg4Yr3oJLYI2Fb3Cm/Rsj3LJHl6xAIhAMeFkVOYzKrltzMhM4/VG1hYYcp0ONtesBYW//cVLJ+H
+      size: 2912
+    sblPkg:
+    - dstVer: 1160210060 AB
+      filename: 1160210060AB.bin
+      keyId: 3b15a54255cc4b6eb6741e7f40e96ece
+      keyinfo: ${XAT_CREDENTIAL_SCAN_711E77A5AAEB62AA926C}
+      signature: MEQCIA/ZinmQGmD5+D4kpxVI1xMxNWaLmmXwkaK0t1rXeaimAiAVSD4yQ9F7ipd8NNm2AwyWWUL8bVT9P8EQTKU3IUq2tg==
+      size: 28016
+    selfEcuSWCheck: []

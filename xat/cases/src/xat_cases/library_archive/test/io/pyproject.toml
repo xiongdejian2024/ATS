@@ -1,0 +1,271 @@
+# console log config
+[tool.pytest.ini_options]
+addopts = "-sv"
+
+# NI-cDAQ9189 config
+[tool.pytest.ini_options.io.dev]
+host = "cDAQ9189-2107B26"
+ip_addr = "169.255.1.1"
+
+# IO config
+[tool.pytest.ini_options.io.signal]
+  # Indentation (tabs and/or spaces) is allowed but not required
+  [tool.pytest.ini_options.io.signal.driver_door_ajar]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line0"
+
+  [tool.pytest.ini_options.io.signal.passenger_door_ajar]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line1"
+
+  [tool.pytest.ini_options.io.signal.left_rear_door_ajar]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line2"
+
+  [tool.pytest.ini_options.io.signal.right_rear_door_ajar]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line3"
+
+  [tool.pytest.ini_options.io.signal.hood_ajar_1]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line4"
+
+  [tool.pytest.ini_options.io.signal.hood_ajar_2]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line5"
+
+  [tool.pytest.ini_options.io.signal.trunk_ajar]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line6"
+
+  [tool.pytest.ini_options.io.signal.charge_lid_switch]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line7"
+
+  [tool.pytest.ini_options.io.signal.trunk_unlock_ext_button]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line8"
+
+  [tool.pytest.ini_options.io.signal.driver_door_handle]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line9"
+
+  [tool.pytest.ini_options.io.signal.passenger_door_handle]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line10"
+
+  [tool.pytest.ini_options.io.signal.left_rear_door_handle]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line11"
+
+  [tool.pytest.ini_options.io.signal.right_rear_door_handle]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line12"
+
+  [tool.pytest.ini_options.io.signal.driver_occupy_sensor]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line13"
+
+  [tool.pytest.ini_options.io.signal.hazard_switch]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line14"
+
+  [tool.pytest.ini_options.io.signal.horn_switch]
+  enable = true
+  type = "DO"
+  channel = "Mod1/port0/line15"
+
+  [tool.pytest.ini_options.io.signal.crash_signal_1]
+  enable = true
+  type = "DO"
+  channel = "Mod2/port0/line0"
+
+  [tool.pytest.ini_options.io.signal.crash_signal_2]
+  enable = true
+  type = "DO"
+  channel = "Mod2/port0/line1"
+
+  [tool.pytest.ini_options.io.signal.brake_pedal_switch]
+  enable = true
+  type = "DO"
+  channel = "Mod3/port0/line0"
+
+  [tool.pytest.ini_options.io.signal.hazard_backlight]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line0"
+
+  [tool.pytest.ini_options.io.signal.Interior_light]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line1"
+
+  [tool.pytest.ini_options.io.signal.trunk_unlock]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line2"
+
+  [tool.pytest.ini_options.io.signal.wheel_heater]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line3"
+
+  [tool.pytest.ini_options.io.signal.camera_heater]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line4"
+
+  [tool.pytest.ini_options.io.signal.glove_box_unlock]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line5"
+
+  [tool.pytest.ini_options.io.signal.vehicle_switch_backlight]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line6"
+
+  [tool.pytest.ini_options.io.signal.trunk_light]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line7"
+
+  [tool.pytest.ini_options.io.signal.ECM_wakeup]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line8"
+
+  [tool.pytest.ini_options.io.signal.chsml]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line9"
+
+  [tool.pytest.ini_options.io.signal.license_lamp]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line10"
+
+  [tool.pytest.ini_options.io.signal.driver_welcome_light]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line11"
+
+  [tool.pytest.ini_options.io.signal.pass_welcome_light]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line12"
+
+  [tool.pytest.ini_options.io.signal.wpc_backlight]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line13"
+
+  [tool.pytest.ini_options.io.signal.left_storage_light]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line14"
+
+  [tool.pytest.ini_options.io.signal.right_storage_light]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line15"
+
+  [tool.pytest.ini_options.io.signal.b_pillar_left_switch_backlight]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line16"
+
+  [tool.pytest.ini_options.io.signal.b_pillar_right_switch_backlight]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line17"
+
+  [tool.pytest.ini_options.io.signal.c_pillar_left_switch_backlight]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line18"
+
+  [tool.pytest.ini_options.io.signal.c_pillar_right_switch_backlight]
+  enable = true
+  type = "DI"
+  channel = "Mod4/port0/line19"
+
+  [tool.pytest.ini_options.io.signal.kl15_relay_1]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line0"
+
+  [tool.pytest.ini_options.io.signal.kl15_relay_2]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line1"
+
+  [tool.pytest.ini_options.io.signal.kl15_relay_3]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line2"
+
+  [tool.pytest.ini_options.io.signal.battery_saver_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line3"
+
+  [tool.pytest.ini_options.io.signal.comfort_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line4"
+
+  [tool.pytest.ini_options.io.signal.horn_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line5"
+
+  [tool.pytest.ini_options.io.signal.blower_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line6"
+
+  [tool.pytest.ini_options.io.signal.crash_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line7"
+
+  [tool.pytest.ini_options.io.signal.rear_defrost_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line8"
+
+  [tool.pytest.ini_options.io.signal.rcm_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line9"
+
+  [tool.pytest.ini_options.io.signal.lowbeam_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line10"
+
+  [tool.pytest.ini_options.io.signal.front_wash_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line11"
+
+  [tool.pytest.ini_options.io.signal.power_outlet_relay]
+  enable = true
+  type = "DI"
+  channel = "Mod5/port0/line12"

@@ -1,0 +1,36 @@
+{
+  "relay_ip": "169.254.1.200",
+  "pcap_length": 10000,
+  "threshold_gb": 3,
+  "bgm_uname": "jiduer",
+  "bgm_pwd": "bgm@Axzfr778",
+  "acu_pwd": "Csec@keyL7256",
+  "acu_name": "caros",
+  "tcam_username": "root",
+  "tcam_pwd": "tcam@rWh0bhf",
+  "cdcq_uname": "root",
+  "cdcq_pwd": "6R%30XNxVYof",
+  "cdcq_ip": "172.16.5.11",
+  "acu_ip": "172.16.5.23",
+  "cdca_ip": "172.16.5.13",
+  "tcam_ip": "172.16.5.31",
+  "bgm_ip": "172.16.5.1",
+  "times": "2",
+  "space": "20",
+  "title": "test",
+  "wiki_uname": "bGVpLnRhbw==",
+  "wiki_pwd": "VGwxMTIyMTEyMg==",
+  "chrome_path": "/root/TestDev/sat/soa_lib/codesrc/chrome/opt/google/chrome/chromedriver",
+  "strategy": [
+    {
+      "poweroff": [
+        "bgm",
+        "cdc",
+        "tcam",
+        "acu"
+      ],
+      "times": 1,
+      "space": 6
+    }
+  ]
+}

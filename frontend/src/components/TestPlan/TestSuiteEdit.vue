@@ -129,13 +129,13 @@
         </div>
       </a-form-item>
 
-      <a-form-item label="XAT / SAT / ECU 集成">
+      <a-form-item label="XAT 框架与 ECU 库">
         <a-space>
           <a-button @click="formData.executionCommand = 'xat --mode offline'">使用 XAT 软件验收</a-button>
-          <a-button @click="formData.executionCommand = 'xat --mode sat --tests test_case --bench-config bench_config/your_bench.yaml --case-config config/your_case.yaml'">使用 SAT 台架模板</a-button>
+          <a-button @click="formData.executionCommand = 'xat --mode hardware --tests cases/src/xat_cases/legacy --bench-config bench_config/your_bench.yaml --case-config config/your_case.yaml'">使用 XAT 台架模板</a-button>
         </a-space>
         <div style="color: #8c8c8c; margin-top: 6px; font-size: 12px">
-          由 XAT 执行 SAT/ECU。离线用例编号：sat_import、ecu_positive、ecu_negative、ecu_lifecycle。台架需在 Agent 配置中启用并填写实际配置路径。
+          使用 XAT 自有 pytest 框架和 ECU 库。离线用例编号：sat_import、ecu_positive、ecu_negative、ecu_lifecycle。台架需在 Agent 配置中启用并填写实际配置路径。
         </div>
       </a-form-item>
 
@@ -687,4 +687,3 @@ watch(() => props.visible, (val) => {
   font-weight: 500;
 }
 </style>
-

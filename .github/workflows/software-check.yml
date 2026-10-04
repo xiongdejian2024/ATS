@@ -2,7 +2,9 @@ name: 软件功能检查
 on:
   push:
     branches: [main, 'codex/**']
+    paths: ['backend/**', 'agent/**', 'frontend/**', 'tests/**', 'xat/framework/**', 'requirements-integration.txt', '.github/workflows/software-check.yml']
   pull_request:
+    paths: ['backend/**', 'agent/**', 'frontend/**', 'tests/**', 'xat/framework/**', 'requirements-integration.txt', '.github/workflows/software-check.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,7 +20,7 @@ jobs:
       - name: 安装现有集成依赖
         run: python -m pip install -r requirements-integration.txt
       - name: 校验 XAT 插件、原示例结果、硬件关闭及 Agent 结果恢复
-        run: python -m pytest tests/test_sat_adapter.py tests/test_xat_integration.py -m 'not xat_external' -q -o addopts=''
+        run: python -m pytest tests -q -o addopts=''
   frontend:
     name: 前端检查
     runs-on: ubuntu-latest

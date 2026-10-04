@@ -1,0 +1,241 @@
+mars1:
+  AUD:
+     ecuid: '3021'
+  SODL:
+     ecuid: '2081'
+  CDC:
+     ecuid: '3011'
+  TCAM:
+     ecuid: '1011'
+  ACU:  
+     ecuid: '2011'
+  BGM:
+     ecuid: '6011'
+  CD:
+      ecuid: '3031'
+  FLR:
+      ecuid: '2041'
+  FSRL:
+      ecuid: '2061'
+  FSRR:
+      ecuid: '2071'
+  SODR:
+     ecuid: '2091'
+  VDDM:
+     ecuid: '5011'
+  BBM:
+     ecuid: '5021'
+  SRS:
+     ecuid: '5031'
+  BECM1:
+      ecuid: '5051'
+  EGSM:
+     ecuid: '5041'
+  MGM:
+     ecuid: '5061'
+  IEM:   
+     ecuid: '5071'
+  HVCM:
+     ecuid: '5081'
+  ECM3:
+     ecuid: '5091'
+  BECM2:
+     ecuid: '5055'
+  MGM2:
+     ecuid: '5062'
+  IEM2:
+     ecuid: '5073'
+  HVCM2:
+     ecuid: '5082'
+  VCU:
+     ecuid: '5092'
+  SAS:
+     ecuid: '5121'
+  PSCM_1:
+     ecuid: '5101'
+  PSCM_2:
+     ecuid: '5111'
+  SUM1:
+     ecuid: '5131'
+  RML:
+      ecuid: '5141'
+  WPC:
+      ecuid: '1031'
+  WPC3:
+      ecuid: '1072'
+  BNCM:
+     ecuid: '1021'
+  NKR:
+     ecuid: '1041'
+  DRM_FL:
+     ecuid: '6201'
+  DRM_FR:
+     ecuid: '6211'
+  DRM_RL:
+     ecuid: '6221'
+  DRM_RR:
+     ecuid: '6231'
+  DPOD:
+     ecuid: '6061'
+  PPOD:
+     ecuid: '6071'
+  LPOD:
+     ecuid: '6081'
+  RPOD:
+     ecuid: '6091'
+  DDM:
+     ecuid: '6021'
+  PDM:
+     ecuid: '6031'
+  RLDM:
+     ecuid: '6041'
+  RRDM:
+     ecuid: '6051'
+  POT:
+     ecuid: '6111'
+  SMP:
+     ecuid: '6131'
+  SWTL:
+     ecuid: '3041'
+  SWTR:
+     ecuid: '3051'
+  SMD:
+     ecuid: '6121'
+  CCM:
+     ecuid: '6101'
+  IPM:
+     ecuid: '6241'
+  HCML:
+     ecuid: '6141'
+  HCMR:
+     ecuid: '6151'
+  RCML:
+     ecuid: '6171'
+  RCMR:
+     ecuid: '6181'
+  RCMM:
+     ecuid: '6191'
+  SMB:
+     ecuid: '6252'
+venus:
+  AUD:
+     ecuid: '3021'
+  SODL:
+     ecuid: '2081'
+  CDC:
+     ecuid: '3011'
+  TCAM:
+     ecuid: '1011'
+  ACU:
+     ecuid: '2011'
+  BGM:
+     ecuid: '6011'
+  CD:
+      ecuid: '3031'
+  FLR:
+      ecuid: '2041'
+  FSRL:
+     ecuid: '2061'
+  FSRL:
+      ecuid: '2061'
+  FSRR:
+      ecuid: '2071'
+  SODR:
+     ecuid: '2091'
+  VDDM:
+     ecuid: '5011'
+  BBM:
+     ecuid: '5021'
+  SRS:
+     ecuid: '5032'
+  BECM1:
+      ecuid: '5051'
+  EGSM:
+     ecuid: '5042'
+  MGM:
+     ecuid: '5061'
+  IEM:
+     ecuid: '5072'
+  HVCM:
+     ecuid: '5081'
+  ECM3:
+     ecuid: '5091'
+  BECM2:
+     ecuid: '5055'
+  MGM2:
+     ecuid: '5062'
+  IEM2:
+     ecuid: '5073'
+  HVCM2:
+     ecuid: '5082'
+  VCU:
+     ecuid: '5092'
+  SAS:
+     ecuid: '5121'
+  PSCM_1:
+     ecuid: '5101'
+  PSCM_2:
+     ecuid: '5111'
+  SUM1:
+     ecuid: '5132'
+  RML:
+      ecuid: '5142'
+  WPC2:
+      ecuid: '1032'
+  WPC3:
+      ecuid: '1072'
+  BNCM:
+     ecuid: '1022'
+  NKR:
+     ecuid: '1041'
+  DRM_FL:
+     ecuid: '6201'
+  DRM_RR:
+     ecuid: '6231'
+  DRM_RL:
+    ecuid: '6221'
+  DRM_FR:
+     ecuid: '6211'
+  DPOD:
+     ecuid: '6061'
+  PPOD:
+     ecuid: '6071'
+  LPOD:
+     ecuid: '6081'
+  RPOD:
+     ecuid: '6091'
+  DDM:
+     ecuid: '6022'
+  PDM:
+     ecuid: '6032'
+  RLDM:
+     ecuid: '6042'
+  RRDM:
+     ecuid: '6052'
+  POT:
+     ecuid: '6111'
+  SMP:
+     ecuid: '6131'
+  SWTL:
+     ecuid: '3041' 
+  SWTR:
+     ecuid: '3051'
+  SMD:
+     ecuid: '6121'
+  CCM:
+     ecuid: '6101'
+  IPM:
+     ecuid: '6242'
+  HCML:
+     ecuid: '6141'
+  HCMR:
+     ecuid: '6151'
+  RCML:
+     ecuid: '6172'
+  RCMR:
+     ecuid: '6182'
+  RCMM:
+     ecuid: '6192'
+  SMB:
+     ecuid: '6252'
+

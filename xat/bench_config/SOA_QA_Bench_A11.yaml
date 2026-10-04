@@ -1,0 +1,672 @@
+#二域台架：172.18.128.197
+bus:
+  eth_obd: "enp114s0"
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+
+  bodycan: ["E99F383B263B8B29", 0]
+  propulsioncan: ["E99F383B263B8B29", 1]
+  chassiscan1: ["E99F383B263B8B29", 2]
+  chassiscan2: ["E99F383B263B8B29", 3]
+  passivesafetycan: ["E99F383B263B8B29", 4]
+  diagnosticcan: ["E99F383B263B8B29", 5]
+  infocanfd: ["E99F383B263B8B29", 6]
+  bodyexposedcanfd: ["E99F383B263B8B29", 7]
+  adcanfd: ["E99F383B263B8B29", 8]
+  connectivitycanfd: ["E99F383B263B8B29", 9]
+  bodyalmcanfd1: ["E99F383B263B8B29", 10]
+  bodyalmcanfd2: ["E99F383B263B8B29", 11]
+
+
+  cem_lin1: [1392511945, 0]
+  cem_lin2: [1392511945, 1]
+  cem_lin3: [1392512082, 0]
+  cem_lin4: [1392512082, 1]
+  cem_lin5: [1392511932, 0]
+  cem_lin6: [1392511932, 1]
+  backbonefr: ["C788383B26486905", 0]
+
+serial: ["USB_DO", "USB_DI", "USB_PWM", "USB_TCAM"]
+
+eth_vlan: "enx68da73a2a9ff"
+eth_obd: "169.254.1.200"
+wifi_localhost: "172.18.128.197"
+# 当前连接的域控，例如BGM、TCAM、CDC、ACU
+domain:
+  - BGM
+  # - TCAM
+# 继电器接线 说明
+# ur1 -- BGM               默认接通
+# ur2 -- TCAM              默认接通
+# ur3 -- BGM 诊断激活线     默认断开
+# ur4 -- PCAN              默认接通
+# ur5 -- CDC               默认接通
+# ur6 -- ACU               默认接通
+# ur7 -- Toomoss           默认接通
+# ur8 -- TCAM KL15         默认断开
+
+power_control_type: jydam0800
+jydam0800:
+  BGM_P: "COM1"
+  TCAM_P: "COM2"
+  BGM_D: "COM3"
+  PCAN_P: "COM4"
+  CDC_P: "COM5"
+  ACU_P: "COM6"
+  Toomoss_P: "COM7"
+  TCAM_KL15: "COM8"
+
+
+adbdevice:
+  tcam: "ea784e61"
+
+  
+vid: "73b47ce20d3da351edf45e91173d4ffe"
+vin: "JDS0ATESTBENCH070"
+tel: "15396878309"
+
+sec_con:
+  TCAM: [0xFFFFFFFFFF, 0x19B834DCA2, 0xF56B94CD8A,"b90013812978819d8a003f9f9deb86f3", "f9b08e6fee3f0136585e6eacbe6a5c36",0xFFFFFFFFFF,0xFFFFFFFFFF,0xFFFFFFFFFF]
+  BGM: [0xFFFFFFFFFF, 0x19B834DCA2,0x19B834DCA2, "b90013812978819d8a003f9f9deb86f3", "f9b08e6fee3f0136585e6eacbe6a5c36",0xFFFFFFFFFF,0xFFFFFFFFFF,0xFFFFFFFFFF]
+ 
+BNCM_KEY: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+
+# NI 板卡 的 IO config 仅限于 台架 71 和72
+dev:
+  ip_addr : "com"
+
+signal:
+  # Indentation (tabs and/or spaces) is allowed but not required
+  diag_active_switch:
+    enable: true
+    type: "DO"
+    channel: "/dev/USB_DO/line1"
+
+  brake_pedal_switch:
+    enable: true
+    desc : "J2-32	刹车踏板开关"
+    type: "DO"
+    channel: "/dev/USB_DO/line2"
+
+
+  ecall_switch:
+    enable: true
+    desc : "TCAM J1-11	SOS_BCALL_BUTTON"
+    type: "DO"
+    channel: "/dev/USB_DO/line16"
+
+  driver_occupy_sensor:
+    enable: true
+    desc : "J3-35	驾驶员占位传感器"
+    type: "DO"
+    channel: "/dev/USB_DO/line17"
+
+  passenger_door_ajar:
+    desc : "J3-08	右前门状态开关"
+    enable: true
+    type: "DO"
+    channel: "/dev/USB_DO/line18"
+
+  driver_door_ajar:
+      desc : "J3-21	左前门状态开关"
+      enable : true
+      type : "DO"
+      channel : "/dev/USB_DO/line19"
+
+  right_rear_door_handle:
+      enable : true
+      desc : "J3-38	右后门把手开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line20"
+
+  left_rear_door_ajar:
+      desc : "J3-12	左后门状态开关"
+      enable : true
+      type : "DO"
+      channel : "/dev/USB_DO/line21"
+
+  trunk_ajar:
+      enable : true
+      desc : "J3-34	行李箱状态开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line22"
+
+  right_rear_door_ajar:
+      enable : true
+      desc : "J3-09	右后门状态开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line23"
+
+  driver_door_handle:
+      enable : true
+      desc : "J3-41	左前门把手开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line24"
+
+  passenger_door_handle:
+      enable : true
+      desc : "J3-40	右前门把手开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line25"
+
+  left_rear_door_handle:
+      enable : true
+      desc : "J3-39	左后门把手开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line26"
+
+  charge_lid_switch:
+      enable : true
+      desc : "J3-26	充电口盖位状态开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line27"
+
+  hood_ajar_1:
+      enable : true
+      desc : "J3-37	引擎盖状态开关1"
+      type : "DO"
+      channel : "/dev/USB_DO/line28"
+
+  hazard_switch:
+      enable : true
+      desc : "J3-07	危险警报灯开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line15"
+
+  trunk_unlock_ext_button:
+      enable : true
+      desc : "J3-31	外部尾门解锁开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line30"
+
+  horn_switch:
+      enable : true
+      desc : "J3-20	喇叭开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line31"
+
+  hood_ajar_2:
+      enable : true
+      desc : "J3-36	引擎盖状态开关2"
+      type : "DO"
+      channel : "/dev/USB_DO/line32"
+
+  dtc_relay1_ch1_switch:
+      enable : true
+      desc : "J1-1 GloveboxUnlockSupply 手套箱开启供电"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line1"
+
+  dtc_relay1_ch2_switch:
+      enable : true
+      desc : "J1-1 GloveboxUnlockSupply 手套箱开启供电"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line2"
+
+  dtc_relay1_ch3_switch:
+      enable : true
+      desc : "J1-1 GloveboxUnlockSupply 手套箱开启供电"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line3"
+
+  dtc_relay1_ch4_switch:
+      enable : true
+      desc : "J1-2 Camara_FCMHeatSupply 相机三角形区域加热"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line4"
+
+  dtc_relay1_ch5_switch:
+      enable : true
+      desc : "J1-2 Camara_FCMHeatSupply 相机三角形区域加热"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line5"
+
+  dtc_relay1_ch6_switch:
+      enable : true
+      desc : "J1-2 Camara_FCMHeatSupply 相机三角形区域加热"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line6"
+
+  dtc_relay1_ch7_switch:
+      enable : true
+      desc : "J1-6 充电照明灯"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line7"
+
+  dtc_relay1_ch8_switch:
+      enable : true
+      desc : "J1-11 KL30_2 EXT_Supply_2"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line8"
+
+  dtc_relay1_ch9_switch:
+      enable : true
+      desc : "J1-11 KL30_2 EXT_Supply_2"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line9"
+
+  dtc_relay1_ch10_switch:
+      enable : true
+      desc : "J1-12 KL30_1 EXT_Supply_1"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line10"
+
+  dtc_relay1_ch11_switch:
+      enable : true
+      desc : "J1-12 KL30_1 EXT_Supply_1"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line11"
+
+  dtc_relay1_ch12_switch:
+      enable : true
+      desc : "J1-14 KL30_4 Internal_Supply_2"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line12"
+
+  dtc_relay1_ch13_switch:
+      enable : true
+      desc : "J1-14 KL30_4 Internal_Supply_2"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line13"
+
+  dtc_relay1_ch14_switch:
+      enable : true
+      desc : "J1-16 SteeringWheelHeat 加热方向盘"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line14"
+
+  dtc_relay1_ch15_switch:
+      enable : true
+      desc : "J1-16 SteeringWheelHeat 加热方向盘"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line15"
+
+  dtc_relay1_ch16_switch:
+      enable : true
+      desc : "J1-26 清洗供应"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line16"
+
+  dtc_relay1_ch17_switch:
+      enable : true
+      desc : "J1-26 清洗供应"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line17"
+
+  dtc_relay1_ch18_switch:
+      enable : true
+      desc : "J1-28 KL30_7 Internal_Supply_3"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line18"
+
+  dtc_relay1_ch19_switch:
+      enable : true
+      desc : "J1-28 KL30_7 Internal_Supply_3"
+      type : "DO"
+      channel : "/dev/USB_DO_1/line19"
+
+  dtc_relay2_ch1_switch:
+      enable : true
+      desc : "J2-5 FanRelayCtrl 鼓风机继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line1"
+
+  dtc_relay2_ch2_switch:
+      enable : true
+      desc : "J2-5 FanRelayCtrl 鼓风机继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line2"
+
+  dtc_relay2_ch3_switch:
+      enable : true
+      desc : "J2-6 PoweroutletRelayCtrl 电源插座"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line3"
+
+  dtc_relay2_ch4_switch:
+      enable : true
+      desc : "J2-6 PoweroutletRelayCtrl 电源插座"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line4"
+
+  dtc_relay2_ch5_switch:
+      enable : true
+      desc : "J2-8 HornRelayCtrl 喇叭继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line5"
+
+  dtc_relay2_ch6_switch:
+      enable : true
+      desc : "J2-8 HornRelayCtrl 喇叭继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line6"
+
+  dtc_relay2_ch7_switch:
+      enable : true
+      desc : "J2-9 CrashRelayCtrl 碰撞继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line7"
+
+  dtc_relay2_ch8_switch:
+      enable : true
+      desc : "J2-9 CrashRelayCtrl 碰撞继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line8"
+
+  dtc_relay2_ch9_switch:
+      enable : true
+      desc : "J2-11 HCMRelayCtrl 前控制模块控制继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line9"
+
+  dtc_relay2_ch10_switch:
+      enable : true
+      desc : "J2-11 HCMRelayCtrl 前控制模块控制继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line10"
+
+  dtc_relay2_ch11_switch:
+      enable : true
+      desc : "J2-12 IgnRelay2 KL_15-2点火扩展继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line11"
+
+  dtc_relay2_ch12_switch:
+      enable : true
+      desc : "J2-12 IgnRelay2 KL_15-2点火扩展继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line12"
+
+  dtc_relay2_ch13_switch:
+      enable : true
+      desc : "J2-15 CHMSLSupply 高位刹车灯控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line13"
+
+  dtc_relay2_ch14_switch:
+      enable : true
+      desc : "J2-15 CHMSLSupply 高位刹车灯控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line14"
+
+  dtc_relay2_ch15_switch:
+      enable : true
+      desc : "J2-20 DefrosterRelayCtrl 后窗除霜器继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line15"
+
+  dtc_relay2_ch16_switch:
+      enable : true
+      desc : "J2-20 DefrosterRelayCtrl 后窗除霜器继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line16"
+
+  dtc_relay2_ch17_switch:
+      enable : true
+      desc : "J2-23 FrontWashRelayCtrl 前挡风玻璃清洗继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line17"
+
+  dtc_relay2_ch18_switch:
+      enable : true
+      desc : "J2-23 FrontWashRelayCtrl 前挡风玻璃清洗继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line18"
+
+  dtc_relay2_ch19_switch:
+      enable : true
+      desc : "J2-24 Comfor_ACCRelayCtrl 舒适继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line19"
+
+  dtc_relay2_ch20_switch:
+      enable : true
+      desc : "J2-24 Comfor_ACCRelayCtrl 舒适继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line20"
+
+  dtc_relay2_ch21_switch:
+      enable : true
+      desc : "J2-26 RCMRelayCtrl 后控制模块控制继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line21"
+
+  dtc_relay2_ch22_switch:
+      enable : true
+      desc : "J2-26 RCMRelayCtrl 后控制模块控制继电器"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line22"
+
+  dtc_relay2_ch23_switch:
+      enable : true
+      desc : "J2-27 IgnRelay1 KL_15_1点火功率继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line23"
+
+  dtc_relay2_ch24_switch:
+      enable : true
+      desc : "J2-27 IgnRelay1 KL_15_1点火功率继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line24"
+
+  dtc_relay2_ch25_switch:
+      enable : true
+      desc : "J2-30 ECM_WakeupSupply ECM唤醒"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line25"
+
+  dtc_relay2_ch26_switch:
+      enable : true
+      desc : "J2-30 ECM_WakeupSupply ECM唤醒"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line26"
+
+  dtc_relay2_ch27_switch:
+      enable : true
+      desc : "J2-33 HazardSwitchIllumination 危险报警灯开关照明"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line27"
+
+  dtc_relay2_ch28_switch:
+      enable : true
+      desc : "J2-33 HazardSwitchIllumination 危险报警灯开关照明"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line28"
+
+  dtc_relay2_ch29_switch:
+      enable : true
+      desc : "J2-37 TrunkLightSupply 启动/后备箱灯"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line29"
+
+  dtc_relay2_ch30_switch:
+      enable : true
+      desc : "J2-37 TrunkLightSupply 启动/后备箱灯"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line30"
+
+  dtc_relay2_ch31_switch:
+      enable : true
+      desc : "J2-41 BatteryPowerSaverRelayCtrl 电池-通用电气故障保护继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line31"
+
+  dtc_relay2_ch32_switch:
+      enable : true
+      desc : "J2-41 BatteryPowerSaverRelayCtrl 电池-通用电气故障保护继电器控制"
+      type : "DO"
+      channel : "/dev/USB_DO_2/line32"
+
+  dtc_relay3_ch1_switch:
+      enable : true
+      desc : "J3-1 DriverDoor_Welcom_light FL门显示灯"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line1"
+
+  dtc_relay3_ch2_switch:
+      enable : true
+      desc : "J3-1 DriverDoor_Welcom_light FL门显示灯"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line2"
+
+  dtc_relay3_ch3_switch:
+      enable : true
+      desc : "J3-2 PassengerDoor_Welcom_light FR门显示灯"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line3"
+
+  dtc_relay3_ch4_switch:
+      enable : true
+      desc : "J3-2 PassengerDoor_Welcom_light FR门显示灯"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line4"
+
+  dtc_relay3_ch6_switch:
+      enable : true
+      desc : "J3-16 USB_WPCIndicator 四号门符号和后方USB背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line6"
+
+  dtc_relay3_ch7_switch:
+      enable : true
+      desc : "J3-16 USB_WPCIndicator 四号门符号和后方USB背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line7"
+
+  dtc_relay3_ch8_switch:
+      enable : true
+      desc : "J3-17 LeftRightFootlights 脚灯/存储灯"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line8"
+
+  dtc_relay3_ch9_switch:
+      enable : true
+      desc : "J3-17 LeftRightFootlights 脚灯/存储灯"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line9"
+
+  dtc_relay3_ch11_switch:
+      enable : true
+      desc : "J3-23 SteeringwheeltempSensor 方向盘温度传感器"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line11"
+
+  dtc_relay3_ch12_switch:
+      enable : true
+      desc : "J3-23 SteeringwheeltempSensor 方向盘温度传感器"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line12"
+
+  dtc_relay3_ch13_switch:
+      enable : true
+      desc : "J3-23 SteeringwheeltempSensor 方向盘温度传感器"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line13"
+
+  dtc_relay3_ch15_switch:
+      enable : true
+      desc : "J3-32 LFDoorButtonIndicator 左B柱门开左键背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line15"
+
+  dtc_relay3_ch16_switch:
+      enable : true
+      desc : "J3-32 LFDoorButtonIndicator 左B柱门开左键背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line16"
+
+  dtc_relay3_ch17_switch:
+      enable : true
+      desc : "J3-33 RRDoorButtonIndicator 右C柱门打开按钮背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line17"
+
+  dtc_relay3_ch18_switch:
+      enable : true
+      desc : "J3-33 RRDoorButtonIndicator 右C柱门打开按钮背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line18"
+
+  dtc_relay3_ch24_switch:
+      enable : true
+      desc : "J3-46 RFDoorButtonIndicator 右B柱门打开按钮背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line24"
+
+  dtc_relay3_ch25_switch:
+      enable : true
+      desc : "J3-46 RFDoorButtonIndicator 右B柱门打开按钮背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line25"
+
+  dtc_relay3_ch26_switch:
+      enable : true
+      desc : "J3-47 LRDoorButtonIndicator 左C柱门打开按钮背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line26"
+
+  dtc_relay3_ch27_switch:
+      enable : true
+      desc : "J3-47 LRDoorButtonIndicator 左C柱门打开按钮背光"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line27"
+
+  dtc_relay3_ch28_switch:
+      enable : true
+      desc : "J4-06 KL15_1 /点火功率继电器反馈"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line28"
+
+  dtc_relay3_ch29_switch:
+      enable : true
+      desc : "J4-28 KL15_2RelayFB KL15_2功率继电器反馈"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line29"
+
+  dtc_relay3_ch31_switch:
+      enable : true
+      desc : "J2-52 LicensePlateLightSupply 牌照灯电源电压"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line31"
+
+  dtc_relay3_ch32_switch:
+      enable : true
+      desc : "J2-52 LicensePlateLightSupply 牌照灯电源电压"
+      type : "DO"
+      channel : "/dev/USB_DO_3/line32"
+
+  #  di
+
+  blower_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line0"
+
+  horn_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line1"
+
+  crash_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line2"
+  hcm_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line3"
+
+  rear_defrost_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line4"
+
+  front_wash_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line5"
+
+  rcm_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line6"

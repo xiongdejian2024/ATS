@@ -12,9 +12,9 @@ from .integrations.runtime import IntegrationSettings
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="XAT 的 SAT / ECU 执行入口")
-    parser.add_argument("--mode", choices=["offline", "sat"], default="offline")
-    parser.add_argument("--sat-root")
+    parser = argparse.ArgumentParser(description="XAT 自有 pytest 框架与 ECU 库执行入口")
+    parser.add_argument("--mode", choices=["offline", "sat", "hardware"], default="offline")
+    parser.add_argument("--project-root", "--sat-root", dest="sat_root", help="XAT 配置与用例资源根目录")
     parser.add_argument("--ecu-root")
     parser.add_argument("--allow-hardware", action="store_true", default=None)
     parser.add_argument("--tests")
@@ -40,8 +40,8 @@ def main(argv=None):
         os.environ["TEST_LOG_FILE_DIR"] = str(directory / "logs")
         os.environ["ALLURE_RESULTS_DIR"] = str(directory / "allure-results")
         test_path = (
-            str(settings.sat_path(options.tests or "test_case"))
-            if options.mode == "sat"
+            str(settings.sat_path(options.tests or "cases/src/xat_cases/legacy"))
+            if options.mode in {"sat", "hardware"}
             else str(
                 Path(options.tests).resolve()
                 if options.tests

@@ -1,0 +1,28 @@
+dut_ecu: ["BGM"]
+com_mock_ecu: []
+gateway_ip: "169.254.1.1"
+
+bus:
+  eth_obd: "enx000ec64a8e4c"
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+  bodycan: 'can0'
+
+veh_type: 'mars1'
+veh_gen: ''
+bl_ver: 'v_1_3_0'
+
+ecu_mock_cfg:
+  ecu_name: "ALL"
+  p_n_res: True
+  nrc_code: 0x22
+  diag_mode: "ALL"
+  server_doip_id: 0x1002
+  server_ip: "172.16.9.222"
+
+sd_tester_cfg:
+  diag_mode: "doip"
+  is_via_gateway: True
+  ecu_name: "BNCM"
+  dig_bus: "diagnosticcan"
+  server_ip: "169.254.1.1"

@@ -1,0 +1,73 @@
+ip_benchconfig:
+  "172.18.128.71": "SOA_QA_Bench_C02.yaml"
+  "172.18.128.72": "soa_test_cabinet02.yaml"
+  "172.18.128.5": "SOA_QA_Bench_C03.yaml"
+#  "172.18.128.7": "soa_bench_002.yaml"
+  "172.18.4.180": "DP2_SOA_QA_Bench_A02.yaml"
+  "172.18.128.73": "SOA_QA_Bench_C07.yaml"
+  "172.18.128.74": "SOA_QA_Bench_C08.yaml"
+  "172.18.128.75": "soa_bench_005.yaml"
+  "172.18.128.76": "SOA_QA_Bench_C04.yaml"
+  "172.18.128.77": "soa_bench_007.yaml"
+  "172.18.128.6": "soa_bench_013.yaml"
+  "172.23.21.3":   "soa_bench_018.yaml"
+  "172.18.128.177": "SOA_QA_Bench_A01.yaml"
+  "172.18.128.70": "soa_bench_017.yaml"
+  "172.18.128.138": "soa_bench_020.yaml"
+  "172.18.128.171": "SOA_QA_Bench_B01.yaml"
+  "172.18.128.178": "SOA_QA_Bench_A02.yaml"
+  "172.23.21.9":    "SOA_QA_Bench_A03.yaml"
+  "172.23.20.14":    "SOA_QA_Bench_C05.yaml"
+  "172.18.128.173": "SOA_QA_Bench_B02.yaml"
+  "172.18.128.183": "SOA_QA_Bench_A04.yaml"
+  "172.18.128.169": "SOA_QA_Bench_B03.yaml"
+  "172.18.128.186": "SOA_QA_Bench_A05.yaml"
+  "172.18.128.185": "SOA_QA_Bench_A06.yaml"
+  "172.18.129.146": "SOA_QA_Bench_A07.yaml"
+  "172.18.128.184": "SOA_QA_Bench_A08.yaml"
+  "172.18.128.189": "SOA_QA_Bench_A09.yaml"
+  "172.18.128.212": "SOA_QA_Bench_B04.yaml"
+  "172.18.128.176": "SOA_QA_Bench_A10.yaml"
+  "172.18.128.197": "SOA_QA_Bench_A11.yaml"
+  "172.18.128.174": "SOA_QA_Bench_A12.yaml"
+  "172.18.128.170": "SOA_QA_Bench_A13.yaml"
+  "172.18.128.172": "SOA_QA_Bench_A14.yaml"
+  "172.18.128.79": "SOA_QA_Bench_B05.yaml"
+  "172.18.128.213": "SOA_QA_Bench_B06.yaml"
+  "172.18.128.167": "soa_bench_024.yaml"
+  "172.18.128.214": "SOA_QA_Bench_C01.yaml"
+  "172.18.128.8"  : "soa_bench_030.yaml"
+  "172.18.128.181": "soa_bench_031.yaml"
+  "172.18.128.182": "soa_bench_032.yaml"
+  "172.18.128.166": "soa_bench_034.yaml"
+  "172.18.41.142": "soa_bench_035.yaml"
+  "172.18.128.234": "SOA_QA_Bench_A16.yaml"
+  "172.23.21.11":   "SOA_QA_Bench_C06.yaml"
+  "172.18.128.230": "SOA_QA_Bench_A17.yaml"
+  "172.18.128.227": "SOA_QA_Bench_A18.yaml"
+  "172.18.128.229": "SOA_QA_Bench_A19.yaml"
+  "172.18.128.228": "SOA_QA_Bench_A20.yaml"
+  "172.23.20.15"  : "SOA_QA_Bench_A21.yaml"
+  "172.18.128.231": "SOA_QA_Bench_A22.yaml"
+  "172.18.128.80" : "SOA_QA_Bench_A24.yaml" 
+  "172.18.128.78" : "SOA_QA_Bench_A23.yaml"
+  "172.18.128.233": "SOA_QA_Bench_A25.yaml"
+  "172.18.128.221": "SOA_QA_Bench_B07.yaml"
+  "172.18.128.150": "Jazz-monkey-172.18.128.150.yaml"
+  "172.18.128.148": "Jazz-monkey-172.18.128.148.yaml"
+  "172.18.129.137": "DP2_SOA_QA_Bench_A01.yaml"
+  "172.18.41.24": "soa_bench_036.yaml"
+
+
+
+
+
+
+
+
+
+
+
+
+
+

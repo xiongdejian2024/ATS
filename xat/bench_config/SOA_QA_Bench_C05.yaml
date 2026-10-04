@@ -1,0 +1,35 @@
+# 武汉单域台架
+bus:
+  eth_obd: "enx000ec658349a"
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+  connectivitycanfd: can0
+
+eth_vlan: "enp89s0"
+eth_obd: "172.16.9.222"
+wifi_localhost: "172.23.20.14"
+
+# 当前连接的域控，例如BGM、TCAM、CDC、ACU
+domain:
+  - TCAM
+
+usbrelay:
+  TCAM_P: /dev/hidraw0_2
+  TCAM_KL15: /dev/hidraw0_5
+  
+adbdevice:
+  tcam: "a3e41149"
+
+vid: "07e9abba830cbb07191d96b87df21602"
+vin: "JDS0ATESTBENCH097"
+tel: "15926230758"
+
+sec_con:
+  TCAM: [0xFFFFFFFFFF, 0x19B834DCA2, 0xF56B94CD8A, "9c121c16bca957c759701493b409853c", 0xFFFFFFFFFF]
+  BGM: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2, "9c121c16bca957c759701493b409853c", 0xFFFFFFFFFF]
+  CDC: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2, "9c121c16bca957c759701493b409853c", 0xFFFFFFFFFF]
+  ACU: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2, "9c121c16bca957c759701493b409853c", 0xFFFFFFFFFF]
+
+
+
+

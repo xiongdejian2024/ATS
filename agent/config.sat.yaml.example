@@ -3,10 +3,8 @@ server:
 task:
   timeout: 3600
 integrations:
-  sat:
-    # Use existing repositories; no copies, git reset or automatic installation.
-    root: /Users/xiongdejian/project/python_project/sat
-    ecu_root: /Users/xiongdejian/project/python_project/ecu-simulator
-    # 解释器需安装 XAT 集成依赖；台架模式还需要 SAT 的完整依赖。
+  xat:
+    # XAT 自有框架、库、用例和资源；不读取旧工程。
+    root: /Users/xiongdejian/project/python_project/ATS/xat
     python: /Users/xiongdejian/project/python_project/ATS/.venv-integration/bin/python
     allow_hardware: false

@@ -1,0 +1,20 @@
+# 实车配置
+domain:
+  - BGM
+  - TCAM
+
+serial: ["USB_DO", "USB_DI", "USB_PWM", "USB_BGM", "USB_TCAM"]
+
+eth_vlan: "enxf8e43b0167ed"
+eth_obd: "169.254.1.200"
+wifi_localhost: "172.18.128.138"
+
+
+BNCM_KEY: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+tel: "18616973692"
+vid: "22a9256590f0a7f016cbb5d7a4d24819"
+vin: "L6T79T2E9PP002461"
+
+
+
+

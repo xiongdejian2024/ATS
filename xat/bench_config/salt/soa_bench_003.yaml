@@ -1,0 +1,7 @@
+
+{
+    "aes_key" : "${XAT_CREDENTIAL_SCAN_29A881D27E624CBB3639}",
+    "aes_iv"  : "3ef03efaf2d89a567e32690976226b7e",
+    "cmac_key": "${XAT_CREDENTIAL_SCAN_0B564B12F99831C1B73D}"
+}
+

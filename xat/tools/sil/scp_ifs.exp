@@ -1,0 +1,11 @@
+#!/usr/bin/expect -f
+
+set timeout 600
+
+spawn scp -r /root/vjet/ifs root@172.20.5.11:/mnt/
+expect {
+    "password:" {send "root\r"; exp_continue}
+    "yes/no" {send "yes\r"; exp_continue}
+    eof {send_user "eof"}
+    }
+

@@ -1,0 +1,12 @@
+[
+    {
+    "S2SConfigVersion": ["v3.0.0", "All"],
+    "CurFileConfigVersion": 1.0,
+    "S2SConfigData": {
+        "RoadInclnRoadInclnTriger" : 0.05,
+        "RoadInclnRoadInclnCancel" : 0.039,
+        "AccrPedlRatAccrPedlRatTriger" : 90,
+        "AccrPedlRatAccrPedlRatCancel" : 95
+                    }
+    }
+]

@@ -1,0 +1,75 @@
+{
+    "app_name": "S2S",
+    "log_tag": "s2sF",
+    "module": [
+        {
+            "module_name": "fw_error",
+            "log": [
+                {
+                    "logname": "heartBeatConter",
+                    "logcomment": "心跳超时1s以上"
+                },
+                {
+                    "logname": "parseResData headIdLast",
+                    "logcomment": "tcp私有协议 头部错误"
+                },
+                {
+                    "logname": "not pair busNumber:",
+                    "logcomment": "upd 私有协议头部错误"
+                },
+                {
+                    "logname": "receiveUDP,cnt:",
+                    "logcomment": "upd 发生组包 会导致解析错误"
+                },
+                {
+                    "logname": "UDP push error",
+                    "logcomment": "信号解析线程出现阻塞"
+                },
+                {
+                    "logname": "(parseCAN|parseFlxRay|parseLIN) error position",
+                    "logcomment": "upd 长度出现异常过短问题"
+                },
+                {
+                    "logname": "usagemode Not Find",
+                    "logcomment": "usagemode绑定需要每次SDB匹配时 进行check"
+                },
+                {
+                    "logname": "sendToMcu not",
+                    "logcomment": "TCP下发 参数错误"
+                },
+                {
+                    "logname": "HeartBeatPDU push error",
+                    "logcomment": "心跳无法发出"
+                },
+                {
+                    "logname": "ENV_CONFIG_PATH is null",
+                    "logcomment": "找不到 配置文件位置"
+                },
+                {
+                    "logname": "is not exist",
+                    "logcomment": "找不到 s2s.json配置文件"
+                },
+                {
+                    "logname": "ReqCon connect fail",
+                    "logcomment": "TCP下发 socket建立失败"
+                },
+                {
+                    "logname": "udp signal up connect fail",
+                    "logcomment": "udp socket 建立失败"
+                },
+                {
+                    "logname": "tcp signal up connect fail",
+                    "logcomment": "tcp socket 建立失败"
+                },
+                {
+                    "logname": "isExist s2sTimer|start s2sTimer|stop s2sTimer",
+                    "logcomment": "TimerID 不存在"
+                },
+                {
+                    "logname": "Timer TimeOut 500ms timerName timer",
+                    "logcomment": "处理callback超过500ms"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,1001 @@
+10&11: "---------------------------------------------------------------\r\n--可替换部分\r\
+  \n-------------------------------------------------------\r\nFLOWS={\r\n    -- ecu\
+  \ addr, diag cmd\r\n    {0x1001,{0x10,0x02}},\r\n    {0x1001,{0x10,0x03}},\r\n \
+  \   {0x1001,{0x11,0x01}},\r\n    {0x1002,{0x10,0x02}},\r\n    {0x1002,{0x10,0x03}},\r\
+  \n    {0x1002,{0x11,0x01}}\r\n}\r\nUDS_CMD_INTERVEL=1.0\r\n--------------------------------------------------------------\r\
+  \n\r\n-----------------------------------------------------------------------------------\r\
+  \n-- 固定部分\r\n-----------------------------------------------------------\r\nfunction\
+  \ sleep(n)\r\n    if (n > 0) then\r\n        os.execute(\"sleep \" .. tonumber(n))\r\
+  \n    end\r\nend\r\n\r\nfunction get_timestamp()\r\n    if (UDS_CMD_INTERVEL<0.1)\
+  \ then\r\n        return math.floor(os.time() * 1000 + (os.clock() % 1) * 1000)\r\
+  \n    else\r\n        local hd = io.popen(\"echo $(date +%s%N)\")\r\n        local\
+  \ result = hd:read(\"*a\")\r\n        hd:close()\r\n        return math.floor(result/1000000)\r\
+  \n    end\r\nend\r\n\r\nfunction uds_raw(ecu_addr, data, wait_time, retry, wait_resp)\r\
+  \n    local wait_time= wait_time or 5000\r\n    local retry= retry or 0\r\n    local\
+  \ wait_resp= wait_resp or true\r\n    local addr, rsp_data, err_code\r\n    while\
+  \ (true) do\r\n        addr, rsp_data, err_code = cpp_diag_cmd(ecu_addr, data, wait_time,\
+  \ wait_resp)\r\n        if (err_code ~= 0 and err_code ~= 9 and retry > 0) then\r\
+  \n            retry = retry - 1\r\n        else\r\n            break\r\n       \
+  \ end\r\n    end\r\n    return rsp_data, err_code\r\nend\r\n\r\nfunction check_and_req_arb()\r\
+  \n    local is_arbd = cpp_get_signal(5) --5 IsArbitrated\r\n    if (is_arbd) then\r\
+  \n        return true\r\n    else\r\n        return cpp_request_arb(1) -- option:\
+  \ 1 requst, 2 release\r\n    end\r\nend\r\n\r\nfunction main_entry()\r\n    local\
+  \ TASK_ID= T2V_taskId or \"1234\"\r\n    cpp_print_log(\"task id:\"..T2V_taskId)\r\
+  \n    local final_code=0 --0成功、1失败、2、会话关闭、3执行超时, 4 arb\r\n    local para_str=\"\
+  {\"\r\n    if check_and_req_arb() then\r\n        local data_str=\"[\"\r\n     \
+  \   -- start run the cmds\r\n        for key, val in pairs(FLOWS) do\r\n       \
+  \     local ecu = val[1]\r\n            local cmd_idx=2\r\n            while (cmd_idx\
+  \ <= #val) do\r\n                local cmd = val[cmd_idx]\r\n                cmd_idx\
+  \ = cmd_idx + 1\r\n                local request_tm  = get_timestamp()\r\n     \
+  \           local rsp_data, err_code\r\n                -- 执行单条指令：超时时间5s, 若有失败retry\
+  \ 1次\r\n                rsp_data, err_code = uds_raw(ecu, cmd, 5000, 1, true)\r\n\
+  \                if (err_code~=0) then\r\n                    final_code = 1\r\n\
+  \                    if (err_code < -1) then -- TODO v1.4\r\n                  \
+  \      err_code = -2\r\n                    end\r\n                    -- no break\
+  \ -- 出错也继续执行后续命令\r\n                end\r\n                local response_tm  =\
+  \ get_timestamp()\r\n                local cmd_res_str=\"{\"\r\n               \
+  \ cmd_res_str=cmd_res_str..\"\\\"addr\\\":\".. ecu ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd\\\":[\".. table.concat(cmd, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd_time\\\":\".. request_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp\\\":[\".. table.concat(rsp_data, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp_time\\\":\".. response_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"code\\\":\".. err_code\r\n                cmd_res_str=cmd_res_str..\"}\"\r\n\
+  \                data_str=data_str.. cmd_res_str ..\",\"\r\n                -- 检测会话是否还开着\r\
+  \n                if not cpp_get_signal(1) then\r\n                    final_code\
+  \ = 2\r\n                    break\r\n                end\r\n            end\r\n\
+  \            if not cpp_get_signal(1) then\r\n                final_code = 2\r\n\
+  \                break\r\n            end\r\n            -- 间隔\r\n            sleep(UDS_CMD_INTERVEL)\r\
+  \n        end\r\n        data_str=string.sub(data_str, 1, #data_str - 1)\r\n   \
+  \     data_str=data_str..\"]\"\r\n        para_str=para_str..\"\\\"data\\\":\"..data_str..\"\
+  ,\"\r\n    else\r\n        final_code = 4\r\n    end\r\n    para_str=para_str..\"\
+  \\\"code\\\":\"..final_code\r\n    para_str=para_str..\"}\"\r\n    -- upload reuslts\r\
+  \n    local CMD_CODE= T2V_cmd or 3\r\n    cpp_upload_results(TASK_ID, para_str,\
+  \ CMD_CODE, 1)\r\nend\r\n-----------------------------------------------------------------------------"
+'14': "---------------------------------------------------------------\r\n--可替换部分\r\
+  \n-------------------------------------------------------\r\nFLOWS={\r\n    -- ecu\
+  \ addr, diag cmd\r\n    {0x1001,{0x14,0xFF,0xFF,0xFF}},\r\n    {0x1002,{0x14,0xFF,0xFF,0xFF}}\r\
+  \n}\r\nUDS_CMD_INTERVEL=1.0\r\n--------------------------------------------------------------\r\
+  \n\r\n-----------------------------------------------------------------------------------\r\
+  \n-- 固定部分\r\n-----------------------------------------------------------\r\nfunction\
+  \ sleep(n)\r\n    if (n > 0) then\r\n        os.execute(\"sleep \" .. tonumber(n))\r\
+  \n    end\r\nend\r\n\r\nfunction get_timestamp()\r\n    if (UDS_CMD_INTERVEL<0.1)\
+  \ then\r\n        return math.floor(os.time() * 1000 + (os.clock() % 1) * 1000)\r\
+  \n    else\r\n        local hd = io.popen(\"echo $(date +%s%N)\")\r\n        local\
+  \ result = hd:read(\"*a\")\r\n        hd:close()\r\n        return math.floor(result/1000000)\r\
+  \n    end\r\nend\r\n\r\nfunction uds_raw(ecu_addr, data, wait_time, retry, wait_resp)\r\
+  \n    local wait_time= wait_time or 5000\r\n    local retry= retry or 0\r\n    local\
+  \ wait_resp= wait_resp or true\r\n    local addr, rsp_data, err_code\r\n    while\
+  \ (true) do\r\n        addr, rsp_data, err_code = cpp_diag_cmd(ecu_addr, data, wait_time,\
+  \ wait_resp)\r\n        if (err_code ~= 0 and err_code ~= 9 and retry > 0) then\r\
+  \n            retry = retry - 1\r\n        else\r\n            break\r\n       \
+  \ end\r\n    end\r\n    return rsp_data, err_code\r\nend\r\n\r\nfunction check_and_req_arb()\r\
+  \n    local is_arbd = cpp_get_signal(5) --5 IsArbitrated\r\n    if (is_arbd) then\r\
+  \n        return true\r\n    else\r\n        return cpp_request_arb(1) -- option:\
+  \ 1 requst, 2 release\r\n    end\r\nend\r\n\r\nfunction main_entry()\r\n    local\
+  \ TASK_ID= T2V_taskId or \"1234\"\r\n    cpp_print_log(\"task id:\"..T2V_taskId)\r\
+  \n    local final_code=0 --0成功、1失败、2、会话关闭、3执行超时, 4 arb\r\n    local para_str=\"\
+  {\"\r\n    if check_and_req_arb() then\r\n        local data_str=\"[\"\r\n     \
+  \   -- start run the cmds\r\n        for key, val in pairs(FLOWS) do\r\n       \
+  \     local ecu = val[1]\r\n            local cmd_idx=2\r\n            while (cmd_idx\
+  \ <= #val) do\r\n                local cmd = val[cmd_idx]\r\n                cmd_idx\
+  \ = cmd_idx + 1\r\n                local request_tm  = get_timestamp()\r\n     \
+  \           local rsp_data, err_code\r\n                -- 执行单条指令：超时时间5s, 若有失败retry\
+  \ 1次\r\n                rsp_data, err_code = uds_raw(ecu, cmd, 5000, 1, true)\r\n\
+  \                if (err_code~=0) then\r\n                    final_code = 1\r\n\
+  \                    if (err_code < -1) then -- TODO v1.4\r\n                  \
+  \      err_code = -2\r\n                    end\r\n                    -- no break\
+  \ -- 出错也继续执行后续命令\r\n                end\r\n                local response_tm  =\
+  \ get_timestamp()\r\n                local cmd_res_str=\"{\"\r\n               \
+  \ cmd_res_str=cmd_res_str..\"\\\"addr\\\":\".. ecu ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd\\\":[\".. table.concat(cmd, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd_time\\\":\".. request_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp\\\":[\".. table.concat(rsp_data, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp_time\\\":\".. response_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"code\\\":\".. err_code\r\n                cmd_res_str=cmd_res_str..\"}\"\r\n\
+  \                data_str=data_str.. cmd_res_str ..\",\"\r\n                -- 检测会话是否还开着\r\
+  \n                if not cpp_get_signal(1) then\r\n                    final_code\
+  \ = 2\r\n                    break\r\n                end\r\n            end\r\n\
+  \            if not cpp_get_signal(1) then\r\n                final_code = 2\r\n\
+  \                break\r\n            end\r\n            -- 间隔\r\n            sleep(UDS_CMD_INTERVEL)\r\
+  \n        end\r\n        data_str=string.sub(data_str, 1, #data_str - 1)\r\n   \
+  \     data_str=data_str..\"]\"\r\n        para_str=para_str..\"\\\"data\\\":\"..data_str..\"\
+  ,\"\r\n    else\r\n        final_code = 4\r\n    end\r\n    para_str=para_str..\"\
+  \\\"code\\\":\"..final_code\r\n    para_str=para_str..\"}\"\r\n    -- upload reuslts\r\
+  \n    local CMD_CODE= T2V_cmd or 3\r\n    cpp_upload_results(TASK_ID, para_str,\
+  \ CMD_CODE, 1)\r\nend\r\n-----------------------------------------------------------------------------"
+'19': "---------------------------------------------------------------\r\n--可替换部分\r\
+  \n-------------------------------------------------------\r\nFLOWS={\r\n    -- ecu\
+  \ addr, diag cmd\r\n    {0x1001,{0x19,0x02,0x09}},\r\n    {0x1001,{0x19,0x02,0x08}},\r\
+  \n    {0x1001,{0x19,0x0A}},\r\n    {0x1001,{0x19,0x04,0xA0,0x02,0x02,0x20}},\r\n\
+  \    {0x1001,{0x19,0x04,0xA0,0x07,0x12,0x20}},\r\n    {0x1001,{0x19,0x04,0xA0,0x07,0x13,0x20}},\r\
+  \n    {0x1001,{0x19,0x04,0xA0,0x08,0x12,0x20}},\r\n    {0x1001,{0x19,0x04,0xA0,0x08,0x13,0x20}},\r\
+  \n    {0x1001,{0x19,0x04,0xA0,0x0F,0x01,0x20}},\r\n    {0x1001,{0x19,0x04,0xEE,0x03,0x68,0x20}},\r\
+  \n    {0x1001,{0x19,0x04,0xF1,0x00,0x00,0x20}},\r\n    {0x1001,{0x19,0x04,0xF1,0x01,0x00,0x20}},\r\
+  \n    {0x1001,{0x19,0x04,0xF1,0x02,0x00,0x20}},\r\n    {0x1001,{0x19,0x04,0xE3,0x00,0x56,0x20}},\r\
+  \n    {0x1001,{0x19,0x04,0xE3,0x00,0x55,0x20}},\r\n    {0x1001,{0x19,0x04,0xD3,0x30,0x9A,0x20}},\r\
+  \n    {0x1001,{0x19,0x04,0xD3,0x31,0x9A,0x20}},\r\n    {0x1001,{0x19,0x04,0xD3,0x32,0x9A,0x20}},\r\
+  \n\t{0x1002,{0x19,0x02,0x09}},\r\n    {0x1002,{0x19,0x02,0x08}},\r\n    {0x1002,{0x19,0x0A}},\r\
+  \n    {0x1002,{0x19,0x04,0xA0,0x02,0x02,0x20}},\r\n    {0x1002,{0x19,0x04,0xA0,0x07,0x12,0x20}},\r\
+  \n    {0x1002,{0x19,0x04,0xA0,0x07,0x13,0x20}},\r\n    {0x1002,{0x19,0x04,0xA0,0x08,0x12,0x20}},\r\
+  \n    {0x1002,{0x19,0x04,0xA0,0x08,0x13,0x20}},\r\n    {0x1002,{0x19,0x04,0xA0,0x0F,0x01,0x20}},\r\
+  \n    {0x1002,{0x19,0x04,0xEE,0x03,0x68,0x20}},\r\n    {0x1002,{0x19,0x04,0xF1,0x00,0x00,0x20}},\r\
+  \n    {0x1002,{0x19,0x04,0xF1,0x01,0x00,0x20}},\r\n    {0x1002,{0x19,0x04,0xF1,0x02,0x00,0x20}},\r\
+  \n    {0x1002,{0x19,0x04,0xE3,0x00,0x56,0x20}},\r\n    {0x1002,{0x19,0x04,0xE3,0x00,0x55,0x20}},\r\
+  \n    {0x1002,{0x19,0x04,0xD3,0x30,0x9A,0x20}},\r\n    {0x1002,{0x19,0x04,0xD3,0x31,0x9A,0x20}},\r\
+  \n    {0x1002,{0x19,0x04,0xD3,0x32,0x9A,0x20}}\r\n}\r\nUDS_CMD_INTERVEL=1.0\r\n\
+  --------------------------------------------------------------\r\n\r\n-----------------------------------------------------------------------------------\r\
+  \n-- 固定部分\r\n-----------------------------------------------------------\r\nfunction\
+  \ sleep(n)\r\n    if (n > 0) then\r\n        os.execute(\"sleep \" .. tonumber(n))\r\
+  \n    end\r\nend\r\n\r\nfunction get_timestamp()\r\n    if (UDS_CMD_INTERVEL<0.1)\
+  \ then\r\n        return math.floor(os.time() * 1000 + (os.clock() % 1) * 1000)\r\
+  \n    else\r\n        local hd = io.popen(\"echo $(date +%s%N)\")\r\n        local\
+  \ result = hd:read(\"*a\")\r\n        hd:close()\r\n        return math.floor(result/1000000)\r\
+  \n    end\r\nend\r\n\r\nfunction uds_raw(ecu_addr, data, wait_time, retry, wait_resp)\r\
+  \n    local wait_time= wait_time or 5000\r\n    local retry= retry or 0\r\n    local\
+  \ wait_resp= wait_resp or true\r\n    local addr, rsp_data, err_code\r\n    while\
+  \ (true) do\r\n        addr, rsp_data, err_code = cpp_diag_cmd(ecu_addr, data, wait_time,\
+  \ wait_resp)\r\n        if (err_code ~= 0 and err_code ~= 9 and retry > 0) then\r\
+  \n            retry = retry - 1\r\n        else\r\n            break\r\n       \
+  \ end\r\n    end\r\n    return rsp_data, err_code\r\nend\r\n\r\nfunction check_and_req_arb()\r\
+  \n    local is_arbd = cpp_get_signal(5) --5 IsArbitrated\r\n    if (is_arbd) then\r\
+  \n        return true\r\n    else\r\n        return cpp_request_arb(1) -- option:\
+  \ 1 requst, 2 release\r\n    end\r\nend\r\n\r\nfunction main_entry()\r\n    local\
+  \ TASK_ID= T2V_taskId or \"1234\"\r\n    cpp_print_log(\"task id:\"..T2V_taskId)\r\
+  \n    local final_code=0 --0成功、1失败、2、会话关闭、3执行超时, 4 arb\r\n    local para_str=\"\
+  {\"\r\n    if check_and_req_arb() then\r\n        local data_str=\"[\"\r\n     \
+  \   -- start run the cmds\r\n        for key, val in pairs(FLOWS) do\r\n       \
+  \     local ecu = val[1]\r\n            local cmd_idx=2\r\n            while (cmd_idx\
+  \ <= #val) do\r\n                local cmd = val[cmd_idx]\r\n                cmd_idx\
+  \ = cmd_idx + 1\r\n                local request_tm  = get_timestamp()\r\n     \
+  \           local rsp_data, err_code\r\n                -- 执行单条指令：超时时间5s, 若有失败retry\
+  \ 1次\r\n                rsp_data, err_code = uds_raw(ecu, cmd, 5000, 1, true)\r\n\
+  \                if (err_code~=0) then\r\n                    final_code = 1\r\n\
+  \                    if (err_code < -1) then -- TODO v1.4\r\n                  \
+  \      err_code = -2\r\n                    end\r\n                    -- no break\
+  \ -- 出错也继续执行后续命令\r\n                end\r\n                local response_tm  =\
+  \ get_timestamp()\r\n                local cmd_res_str=\"{\"\r\n               \
+  \ cmd_res_str=cmd_res_str..\"\\\"addr\\\":\".. ecu ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd\\\":[\".. table.concat(cmd, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd_time\\\":\".. request_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp\\\":[\".. table.concat(rsp_data, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp_time\\\":\".. response_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"code\\\":\".. err_code\r\n                cmd_res_str=cmd_res_str..\"}\"\r\n\
+  \                data_str=data_str.. cmd_res_str ..\",\"\r\n                -- 检测会话是否还开着\r\
+  \n                if not cpp_get_signal(1) then\r\n                    final_code\
+  \ = 2\r\n                    break\r\n                end\r\n            end\r\n\
+  \            if not cpp_get_signal(1) then\r\n                final_code = 2\r\n\
+  \                break\r\n            end\r\n            -- 间隔\r\n            sleep(UDS_CMD_INTERVEL)\r\
+  \n        end\r\n        data_str=string.sub(data_str, 1, #data_str - 1)\r\n   \
+  \     data_str=data_str..\"]\"\r\n        para_str=para_str..\"\\\"data\\\":\"..data_str..\"\
+  ,\"\r\n    else\r\n        final_code = 4\r\n    end\r\n    para_str=para_str..\"\
+  \\\"code\\\":\"..final_code\r\n    para_str=para_str..\"}\"\r\n    -- upload reuslts\r\
+  \n    local CMD_CODE= T2V_cmd or 3\r\n    cpp_upload_results(TASK_ID, para_str,\
+  \ CMD_CODE, 1)\r\nend\r\n-----------------------------------------------------------------------------"
+22_P0_DID: "---------------------------------------------------------------\r\n--可替换部分\r\
+  \n-------------------------------------------------------\r\nFLOWS={\r\n    -- ecu\
+  \ addr, diag cmd\r\n    {0x1001,{0x22,0xF1,0xAA}},\r\n    {0x1001,{0x22,0xF1,0xAB}},\r\
+  \n    {0x1001,{0x22,0xF1,0x8C}},\r\n    {0x1001,{0x22,0x41,0xDE}},\r\n    {0x1001,{0x22,0x41,0xDF}},\r\
+  \n    {0x1001,{0x22,0x41,0xE0}},\r\n    {0x1001,{0x22,0x41,0xE1}},\r\n    {0x1001,{0x22,0xF1,0x90}},\r\
+  \n    {0x1001,{0x22,0xF1,0x06}},\r\n    {0x1001,{0x22,0xD1,0x34}},\r\n    {0x1001,{0x22,0xF1,0xAE}},\r\
+  \n    {0x1001,{0x22,0x40,0xEE}},\r\n    {0x1001,{0x22,0xD0,0x1C}},\r\n    {0x1001,{0x22,0x40,0x8F}},\r\
+  \n    {0x1001,{0x22,0x40,0xDE}},\r\n    {0x1001,{0x22,0x40,0xDF}},\r\n    {0x1001,{0x22,0x40,0xE0}},\r\
+  \n    {0x1001,{0x22,0xD1,0x2F}},\r\n    {0x1001,{0x22,0xF1,0x02}},\r\n    {0x1001,{0x22,0xD9,0x06}},\r\
+  \n    {0x1001,{0x22,0xD9,0x04}},\r\n    {0x1001,{0x22,0xDD,0x0A}},\r\n\t{0x1002,{0x22,0xF1,0xAA}},\r\
+  \n    {0x1002,{0x22,0xF1,0xAB}},\r\n    {0x1002,{0x22,0xF1,0x8C}},\r\n    {0x1002,{0x22,0x41,0xDE}},\r\
+  \n    {0x1002,{0x22,0x41,0xDF}},\r\n    {0x1002,{0x22,0x41,0xE0}},\r\n    {0x1002,{0x22,0x41,0xE1}},\r\
+  \n    {0x1002,{0x22,0xF1,0x90}},\r\n    {0x1002,{0x22,0xF1,0x06}},\r\n    {0x1002,{0x22,0xD1,0x34}},\r\
+  \n    {0x1002,{0x22,0xF1,0xAE}},\r\n    {0x1002,{0x22,0x40,0xEE}},\r\n    {0x1002,{0x22,0xD0,0x1C}},\r\
+  \n    {0x1002,{0x22,0x40,0x8F}},\r\n    {0x1002,{0x22,0x40,0xDE}},\r\n    {0x1002,{0x22,0x40,0xDF}},\r\
+  \n    {0x1002,{0x22,0x40,0xE0}},\r\n    {0x1002,{0x22,0xD1,0x2F}},\r\n    {0x1002,{0x22,0xF1,0x02}},\r\
+  \n    {0x1002,{0x22,0xD9,0x06}},\r\n    {0x1002,{0x22,0xD9,0x04}},\r\n    {0x1002,{0x22,0xDD,0x0A}}\r\
+  \n}\r\nUDS_CMD_INTERVEL=1.0\r\n--------------------------------------------------------------\r\
+  \n\r\n-----------------------------------------------------------------------------------\r\
+  \n-- 固定部分\r\n-----------------------------------------------------------\r\nfunction\
+  \ sleep(n)\r\n    if (n > 0) then\r\n        os.execute(\"sleep \" .. tonumber(n))\r\
+  \n    end\r\nend\r\n\r\nfunction get_timestamp()\r\n    if (UDS_CMD_INTERVEL<0.1)\
+  \ then\r\n        return math.floor(os.time() * 1000 + (os.clock() % 1) * 1000)\r\
+  \n    else\r\n        local hd = io.popen(\"echo $(date +%s%N)\")\r\n        local\
+  \ result = hd:read(\"*a\")\r\n        hd:close()\r\n        return math.floor(result/1000000)\r\
+  \n    end\r\nend\r\n\r\nfunction uds_raw(ecu_addr, data, wait_time, retry, wait_resp)\r\
+  \n    local wait_time= wait_time or 5000\r\n    local retry= retry or 0\r\n    local\
+  \ wait_resp= wait_resp or true\r\n    local addr, rsp_data, err_code\r\n    while\
+  \ (true) do\r\n        addr, rsp_data, err_code = cpp_diag_cmd(ecu_addr, data, wait_time,\
+  \ wait_resp)\r\n        if (err_code ~= 0 and err_code ~= 9 and retry > 0) then\r\
+  \n            retry = retry - 1\r\n        else\r\n            break\r\n       \
+  \ end\r\n    end\r\n    return rsp_data, err_code\r\nend\r\n\r\nfunction check_and_req_arb()\r\
+  \n    local is_arbd = cpp_get_signal(5) --5 IsArbitrated\r\n    if (is_arbd) then\r\
+  \n        return true\r\n    else\r\n        return cpp_request_arb(1) -- option:\
+  \ 1 requst, 2 release\r\n    end\r\nend\r\n\r\nfunction main_entry()\r\n    local\
+  \ TASK_ID= T2V_taskId or \"1234\"\r\n    cpp_print_log(\"task id:\"..T2V_taskId)\r\
+  \n    local final_code=0 --0成功、1失败、2、会话关闭、3执行超时, 4 arb\r\n    local para_str=\"\
+  {\"\r\n    if check_and_req_arb() then\r\n        local data_str=\"[\"\r\n     \
+  \   -- start run the cmds\r\n        for key, val in pairs(FLOWS) do\r\n       \
+  \     local ecu = val[1]\r\n            local cmd_idx=2\r\n            while (cmd_idx\
+  \ <= #val) do\r\n                local cmd = val[cmd_idx]\r\n                cmd_idx\
+  \ = cmd_idx + 1\r\n                local request_tm  = get_timestamp()\r\n     \
+  \           local rsp_data, err_code\r\n                -- 执行单条指令：超时时间5s, 若有失败retry\
+  \ 1次\r\n                rsp_data, err_code = uds_raw(ecu, cmd, 5000, 1, true)\r\n\
+  \                if (err_code~=0) then\r\n                    final_code = 1\r\n\
+  \                    if (err_code < -1) then -- TODO v1.4\r\n                  \
+  \      err_code = -2\r\n                    end\r\n                    -- no break\
+  \ -- 出错也继续执行后续命令\r\n                end\r\n                local response_tm  =\
+  \ get_timestamp()\r\n                local cmd_res_str=\"{\"\r\n               \
+  \ cmd_res_str=cmd_res_str..\"\\\"addr\\\":\".. ecu ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd\\\":[\".. table.concat(cmd, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd_time\\\":\".. request_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp\\\":[\".. table.concat(rsp_data, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp_time\\\":\".. response_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"code\\\":\".. err_code\r\n                cmd_res_str=cmd_res_str..\"}\"\r\n\
+  \                data_str=data_str.. cmd_res_str ..\",\"\r\n                -- 检测会话是否还开着\r\
+  \n                if not cpp_get_signal(1) then\r\n                    final_code\
+  \ = 2\r\n                    break\r\n                end\r\n            end\r\n\
+  \            if not cpp_get_signal(1) then\r\n                final_code = 2\r\n\
+  \                break\r\n            end\r\n            -- 间隔\r\n            sleep(UDS_CMD_INTERVEL)\r\
+  \n        end\r\n        data_str=string.sub(data_str, 1, #data_str - 1)\r\n   \
+  \     data_str=data_str..\"]\"\r\n        para_str=para_str..\"\\\"data\\\":\"..data_str..\"\
+  ,\"\r\n    else\r\n        final_code = 4\r\n    end\r\n    para_str=para_str..\"\
+  \\\"code\\\":\"..final_code\r\n    para_str=para_str..\"}\"\r\n    -- upload reuslts\r\
+  \n    local CMD_CODE= T2V_cmd or 3\r\n    cpp_upload_results(TASK_ID, para_str,\
+  \ CMD_CODE, 1)\r\nend\r\n-----------------------------------------------------------------------------"
+22_P1_DID: "---------------------------------------------------------------\r\n--可替换部分\r\
+  \n-------------------------------------------------------\r\nFLOWS={\r\n    -- ecu\
+  \ addr, diag cmd\r\n    {0x1001,{0x22,0xF1,0x86}},\r\n    {0x1001,{0x22,0xED,0x20}},\r\
+  \n    {0x1001,{0x22,0xC0,0x08}},\r\n    {0x1001,{0x22,0xD2,0x50}},\r\n    {0x1001,{0x22,0xF1,0x54}},\r\
+  \n    {0x1001,{0x22,0xF1,0x53}},\r\n    {0x1001,{0x22,0xDD,0x0B}},\r\n    {0x1001,{0x22,0xD2,0x60}},\r\
+  \n    {0x1001,{0x22,0x28,0x1F}},\r\n    {0x1001,{0x22,0xB1,0x63}},\r\n\t{0x1002,{0x22,0xF1,0x86}},\r\
+  \n    {0x1002,{0x22,0xED,0x20}},\r\n    {0x1002,{0x22,0xC0,0x08}},\r\n    {0x1002,{0x22,0xD2,0x50}},\r\
+  \n    {0x1002,{0x22,0xF1,0x54}},\r\n    {0x1002,{0x22,0xF1,0x53}},\r\n    {0x1002,{0x22,0xDD,0x0B}},\r\
+  \n    {0x1002,{0x22,0xD2,0x60}},\r\n    {0x1002,{0x22,0x28,0x1F}},\r\n    {0x1002,{0x22,0xB1,0x63}}\r\
+  \n}\r\nUDS_CMD_INTERVEL=1.0\r\n--------------------------------------------------------------\r\
+  \n\r\n-----------------------------------------------------------------------------------\r\
+  \n-- 固定部分\r\n-----------------------------------------------------------\r\nfunction\
+  \ sleep(n)\r\n    if (n > 0) then\r\n        os.execute(\"sleep \" .. tonumber(n))\r\
+  \n    end\r\nend\r\n\r\nfunction get_timestamp()\r\n    if (UDS_CMD_INTERVEL<0.1)\
+  \ then\r\n        return math.floor(os.time() * 1000 + (os.clock() % 1) * 1000)\r\
+  \n    else\r\n        local hd = io.popen(\"echo $(date +%s%N)\")\r\n        local\
+  \ result = hd:read(\"*a\")\r\n        hd:close()\r\n        return math.floor(result/1000000)\r\
+  \n    end\r\nend\r\n\r\nfunction uds_raw(ecu_addr, data, wait_time, retry, wait_resp)\r\
+  \n    local wait_time= wait_time or 5000\r\n    local retry= retry or 0\r\n    local\
+  \ wait_resp= wait_resp or true\r\n    local addr, rsp_data, err_code\r\n    while\
+  \ (true) do\r\n        addr, rsp_data, err_code = cpp_diag_cmd(ecu_addr, data, wait_time,\
+  \ wait_resp)\r\n        if (err_code ~= 0 and err_code ~= 9 and retry > 0) then\r\
+  \n            retry = retry - 1\r\n        else\r\n            break\r\n       \
+  \ end\r\n    end\r\n    return rsp_data, err_code\r\nend\r\n\r\nfunction check_and_req_arb()\r\
+  \n    local is_arbd = cpp_get_signal(5) --5 IsArbitrated\r\n    if (is_arbd) then\r\
+  \n        return true\r\n    else\r\n        return cpp_request_arb(1) -- option:\
+  \ 1 requst, 2 release\r\n    end\r\nend\r\n\r\nfunction main_entry()\r\n    local\
+  \ TASK_ID= T2V_taskId or \"1234\"\r\n    cpp_print_log(\"task id:\"..T2V_taskId)\r\
+  \n    local final_code=0 --0成功、1失败、2、会话关闭、3执行超时, 4 arb\r\n    local para_str=\"\
+  {\"\r\n    if check_and_req_arb() then\r\n        local data_str=\"[\"\r\n     \
+  \   -- start run the cmds\r\n        for key, val in pairs(FLOWS) do\r\n       \
+  \     local ecu = val[1]\r\n            local cmd_idx=2\r\n            while (cmd_idx\
+  \ <= #val) do\r\n                local cmd = val[cmd_idx]\r\n                cmd_idx\
+  \ = cmd_idx + 1\r\n                local request_tm  = get_timestamp()\r\n     \
+  \           local rsp_data, err_code\r\n                -- 执行单条指令：超时时间5s, 若有失败retry\
+  \ 1次\r\n                rsp_data, err_code = uds_raw(ecu, cmd, 5000, 1, true)\r\n\
+  \                if (err_code~=0) then\r\n                    final_code = 1\r\n\
+  \                    if (err_code < -1) then -- TODO v1.4\r\n                  \
+  \      err_code = -2\r\n                    end\r\n                    -- no break\
+  \ -- 出错也继续执行后续命令\r\n                end\r\n                local response_tm  =\
+  \ get_timestamp()\r\n                local cmd_res_str=\"{\"\r\n               \
+  \ cmd_res_str=cmd_res_str..\"\\\"addr\\\":\".. ecu ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd\\\":[\".. table.concat(cmd, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd_time\\\":\".. request_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp\\\":[\".. table.concat(rsp_data, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp_time\\\":\".. response_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"code\\\":\".. err_code\r\n                cmd_res_str=cmd_res_str..\"}\"\r\n\
+  \                data_str=data_str.. cmd_res_str ..\",\"\r\n                -- 检测会话是否还开着\r\
+  \n                if not cpp_get_signal(1) then\r\n                    final_code\
+  \ = 2\r\n                    break\r\n                end\r\n            end\r\n\
+  \            if not cpp_get_signal(1) then\r\n                final_code = 2\r\n\
+  \                break\r\n            end\r\n            -- 间隔\r\n            sleep(UDS_CMD_INTERVEL)\r\
+  \n        end\r\n        data_str=string.sub(data_str, 1, #data_str - 1)\r\n   \
+  \     data_str=data_str..\"]\"\r\n        para_str=para_str..\"\\\"data\\\":\"..data_str..\"\
+  ,\"\r\n    else\r\n        final_code = 4\r\n    end\r\n    para_str=para_str..\"\
+  \\\"code\\\":\"..final_code\r\n    para_str=para_str..\"}\"\r\n    -- upload reuslts\r\
+  \n    local CMD_CODE= T2V_cmd or 3\r\n    cpp_upload_results(TASK_ID, para_str,\
+  \ CMD_CODE, 1)\r\nend\r\n-----------------------------------------------------------------------------"
+22_P2_DID: "---------------------------------------------------------------\r\n--可替换部分\r\
+  \n-------------------------------------------------------\r\nFLOWS={\r\n    -- ecu\
+  \ addr, diag cmd\r\n    {0x1001,{0x22,0xF1,0xA0}},\r\n    {0x1001,{0x22,0x42,0x19}},\r\
+  \n    {0x1001,{0x22,0x42,0x1D}},\r\n    {0x1001,{0x22,0x42,0x1E}},\r\n    {0x1001,{0x22,0x42,0x0A}},\r\
+  \n    {0x1001,{0x22,0x42,0x1A}},\r\n    {0x1001,{0x22,0x46,0x00}},\r\n    {0x1001,{0x22,0x42,0xF2}},\r\
+  \n    {0x1001,{0x22,0x42,0xE5}},\r\n    {0x1001,{0x22,0x41,0x6B}},\r\n    {0x1001,{0x22,0x70,0x24}},\r\
+  \n    {0x1001,{0x22,0x70,0x25}},\r\n    {0x1001,{0x22,0x40,0xE2}},\r\n    {0x1001,{0x22,0xDA,0x00}},\r\
+  \n    {0x1001,{0x22,0xD9,0x34}},\r\n    {0x1001,{0x22,0x42,0xCD}},\r\n    {0x1001,{0x22,0x42,0xE4}},\r\
+  \n    {0x1001,{0x22,0x40,0xB0}},\r\n    {0x1001,{0x22,0x42,0xCF}},\r\n    {0x1001,{0x22,0x40,0x90}},\r\
+  \n    {0x1001,{0x22,0xD9,0x35}},\r\n    {0x1001,{0x22,0x42,0xD1}},\r\n    {0x1001,{0x22,0x42,0xD3}},\r\
+  \n    {0x1001,{0x22,0x42,0xD2}},\r\n    {0x1001,{0x22,0x41,0xE9}},\r\n    {0x1001,{0x22,0x40,0xD7}},\r\
+  \n    {0x1001,{0x22,0x42,0xE3}},\r\n    {0x1001,{0x22,0x40,0x25}},\r\n    {0x1001,{0x22,0x40,0xCB}},\r\
+  \n    {0x1001,{0x22,0x40,0x94}},\r\n    {0x1001,{0x22,0x44,0x44}},\r\n    {0x1001,{0x22,0xF0,0x11}},\r\
+  \n    {0x1001,{0x22,0xF0,0x10}},\r\n    {0x1001,{0x22,0xE1,0x03}},\r\n    {0x1001,{0x22,0x43,0xC4}},\r\
+  \n    {0x1001,{0x22,0x42,0xE9}},\r\n    {0x1001,{0x22,0x40,0xA2}},\r\n    {0x1001,{0x22,0x40,0xD1}},\r\
+  \n    {0x1001,{0x22,0x43,0x2E}},\r\n    {0x1001,{0x22,0x41,0x0B}},\r\n    {0x1001,{0x22,0x42,0x32}},\r\
+  \n    {0x1001,{0x22,0xF1,0x08}},\r\n    {0x1001,{0x22,0xFD,0x07}},\r\n    {0x1001,{0x22,0x40,0xE3}},\r\
+  \n    {0x1001,{0x22,0x43,0xD6}},\r\n    {0x1001,{0x22,0x40,0xE8}},\r\n    {0x1001,{0x22,0x43,0x13}},\r\
+  \n    {0x1001,{0x22,0xDD,0x0C}},\r\n    {0x1001,{0x22,0x42,0x9D}},\r\n    {0x1001,{0x22,0xB3,0x00}},\r\
+  \n    {0x1001,{0x22,0xD1,0x35}},\r\n    {0x1001,{0x22,0x70,0x00}},\r\n    {0x1001,{0x22,0x70,0x22}},\r\
+  \n    {0x1001,{0x22,0xB2,0x00}},\r\n    {0x1001,{0x22,0x43,0x10}},\r\n    {0x1001,{0x22,0xDD,0x00}},\r\
+  \n    {0x1001,{0x22,0x43,0x00}},\r\n    {0x1001,{0x22,0x43,0x05}},\r\n    {0x1001,{0x22,0x45,0xA1}},\r\
+  \n    {0x1001,{0x22,0x41,0x6D}},\r\n    {0x1001,{0x22,0x41,0x6F}},\r\n    {0x1001,{0x22,0x43,0x2D}},\r\
+  \n    {0x1001,{0x22,0x41,0x6E}},\r\n    {0x1001,{0x22,0x41,0x70}},\r\n    {0x1001,{0x22,0x41,0xE5}},\r\
+  \n    {0x1001,{0x22,0x42,0xFB}},\r\n    {0x1001,{0x22,0x40,0xEF}},\r\n    {0x1001,{0x22,0x45,0x16}},\r\
+  \n    {0x1001,{0x22,0x43,0x3E}},\r\n    {0x1001,{0x22,0x40,0xCA}},\r\n    {0x1001,{0x22,0xEE,0x94}},\r\
+  \n    {0x1001,{0x22,0x41,0x87}},\r\n    {0x1001,{0x22,0xB3,0x02}},\r\n    {0x1001,{0x22,0xF1,0xF0}},\r\
+  \n    {0x1001,{0x22,0x42,0x97}},\r\n    {0x1001,{0x22,0x42,0x26}},\r\n    {0x1001,{0x22,0xB1,0x65}},\r\
+  \n    {0x1001,{0x22,0x42,0x30}},\r\n    {0x1001,{0x22,0x42,0x2F}},\r\n    {0x1001,{0x22,0x40,0xF2}},\r\
+  \n    {0x1001,{0x22,0x42,0x9E}},\r\n    {0x1001,{0x22,0xF0,0xF5}},\r\n    {0x1001,{0x22,0x41,0x10}},\r\
+  \n    {0x1001,{0x22,0x40,0xE4}},\r\n    {0x1001,{0x22,0x45,0x33}},\r\n    {0x1001,{0x22,0x45,0x35}},\r\
+  \n    {0x1001,{0x22,0xF1,0xA5}},\r\n    {0x1001,{0x22,0xF1,0xBB}},\r\n    {0x1001,{0x22,0x42,0xF4}},\r\
+  \n    {0x1001,{0x22,0xBB,0x00}},\r\n    {0x1001,{0x22,0xBB,0x01}},\r\n    {0x1001,{0x22,0xBB,0x02}},\r\
+  \n    {0x1001,{0x22,0xBB,0x03}},\r\n    {0x1001,{0x22,0xBB,0x04}},\r\n    {0x1001,{0x22,0xBB,0x05}},\r\
+  \n    {0x1001,{0x22,0xBB,0x06}},\r\n    {0x1001,{0x22,0xBB,0x07}},\r\n    {0x1001,{0x22,0xBB,0x08}},\r\
+  \n    {0x1001,{0x22,0xBB,0x09}},\r\n    {0x1001,{0x22,0x42,0x82}},\r\n    {0x1001,{0x22,0x42,0x83}},\r\
+  \n    {0x1001,{0x22,0x43,0xB8}},\r\n    {0x1001,{0x22,0x45,0xA4}},\r\n    {0x1001,{0x22,0xEF,0x99}},\r\
+  \n    {0x1001,{0x22,0x41,0x1D}},\r\n    {0x1001,{0x22,0xD1,0x36}},\r\n    {0x1001,{0x22,0xF1,0x24}},\r\
+  \n    {0x1001,{0x22,0x40,0xAF}},\r\n    {0x1001,{0x22,0x45,0x03}},\r\n    {0x1001,{0x22,0x43,0x28}},\r\
+  \n    {0x1001,{0x22,0xEA,0x41}},\r\n    {0x1001,{0x22,0xEE,0x99}},\r\n    {0x1001,{0x22,0x70,0x23}},\r\
+  \n    {0x1001,{0x22,0x41,0x09}},\r\n    {0x1001,{0x22,0xD0,0x3A}},\r\n    {0x1001,{0x22,0xFD,0x50}},\r\
+  \n    {0x1001,{0x22,0xA0,0x0A}},\r\n    {0x1001,{0x22,0x42,0x00}},\r\n    {0x1001,{0x22,0x42,0x31}},\r\
+  \n    {0x1001,{0x22,0x41,0xF8}},\r\n    {0x1001,{0x22,0x45,0x32}},\r\n    {0x1001,{0x22,0xDD,0x01}},\r\
+  \n    {0x1001,{0x22,0xF1,0x3F}},\r\n    {0x1001,{0x22,0x45,0x04}},\r\n    {0x1001,{0x22,0x41,0xCE}},\r\
+  \n    {0x1001,{0x22,0x40,0xF0}},\r\n    {0x1001,{0x22,0x43,0x0E}},\r\n    {0x1001,{0x22,0x43,0x0F}},\r\
+  \n    {0x1001,{0x22,0xF1,0x50}},\r\n    {0x1001,{0x22,0x40,0x27}},\r\n    {0x1001,{0x22,0x40,0x28}},\r\
+  \n    {0x1001,{0x22,0x40,0x29}},\r\n    {0x1001,{0x22,0x40,0x2A}},\r\n    {0x1001,{0x22,0xDD,0x02}},\r\
+  \n    {0x1001,{0x22,0xEA,0x40}},\r\n    {0x1001,{0x22,0xF1,0x51}},\r\n    {0x1001,{0x22,0xE5,0x03}},\r\
+  \n    {0x1001,{0x22,0x45,0x34}},\r\n    {0x1001,{0x22,0x45,0x30}},\r\n    {0x1001,{0x22,0x45,0x31}},\r\
+  \n    {0x1001,{0x22,0xB3,0x01}},\r\n    {0x1001,{0x22,0x45,0xBF}},\r\n    {0x1001,{0x22,0x43,0x0B}},\r\
+  \n    {0x1001,{0x22,0x43,0x0C}},\r\n    {0x1001,{0x22,0x41,0x8F}},\r\n    {0x1001,{0x22,0x42,0x18}},\r\
+  \n    {0x1001,{0x22,0xB2,0x50}},\r\n    {0x1002,{0x22,0xF1,0xA0}},\r\n    {0x1002,{0x22,0x42,0x19}},\r\
+  \n    {0x1002,{0x22,0x42,0x1D}},\r\n    {0x1002,{0x22,0x42,0x1E}},\r\n    {0x1002,{0x22,0x42,0x0A}},\r\
+  \n    {0x1002,{0x22,0x42,0x1A}},\r\n    {0x1002,{0x22,0x46,0x00}},\r\n    {0x1002,{0x22,0x42,0xF2}},\r\
+  \n    {0x1002,{0x22,0x42,0xE5}},\r\n    {0x1002,{0x22,0x41,0x6B}},\r\n    {0x1002,{0x22,0x70,0x24}},\r\
+  \n    {0x1002,{0x22,0x70,0x25}},\r\n    {0x1002,{0x22,0x40,0xE2}},\r\n    {0x1002,{0x22,0xDA,0x00}},\r\
+  \n    {0x1002,{0x22,0xD9,0x34}},\r\n    {0x1002,{0x22,0x42,0xCD}},\r\n    {0x1002,{0x22,0x42,0xE4}},\r\
+  \n    {0x1002,{0x22,0x40,0xB0}},\r\n    {0x1002,{0x22,0x42,0xCF}},\r\n    {0x1002,{0x22,0x40,0x90}},\r\
+  \n    {0x1002,{0x22,0xD9,0x35}},\r\n    {0x1002,{0x22,0x42,0xD1}},\r\n    {0x1002,{0x22,0x42,0xD3}},\r\
+  \n    {0x1002,{0x22,0x42,0xD2}},\r\n    {0x1002,{0x22,0x41,0xE9}},\r\n    {0x1002,{0x22,0x40,0xD7}},\r\
+  \n    {0x1002,{0x22,0x42,0xE3}},\r\n    {0x1002,{0x22,0x40,0x25}},\r\n    {0x1002,{0x22,0x40,0xCB}},\r\
+  \n    {0x1002,{0x22,0x40,0x94}},\r\n    {0x1002,{0x22,0x44,0x44}},\r\n    {0x1002,{0x22,0xF0,0x11}},\r\
+  \n    {0x1002,{0x22,0xF0,0x10}},\r\n    {0x1002,{0x22,0xE1,0x03}},\r\n    {0x1002,{0x22,0x43,0xC4}},\r\
+  \n    {0x1002,{0x22,0x42,0xE9}},\r\n    {0x1002,{0x22,0x40,0xA2}},\r\n    {0x1002,{0x22,0x40,0xD1}},\r\
+  \n    {0x1002,{0x22,0x43,0x2E}},\r\n    {0x1002,{0x22,0x41,0x0B}},\r\n    {0x1002,{0x22,0x42,0x32}},\r\
+  \n    {0x1002,{0x22,0xF1,0x08}},\r\n    {0x1002,{0x22,0xFD,0x07}},\r\n    {0x1002,{0x22,0x40,0xE3}},\r\
+  \n    {0x1002,{0x22,0x43,0xD6}},\r\n    {0x1002,{0x22,0x40,0xE8}},\r\n    {0x1002,{0x22,0x43,0x13}},\r\
+  \n    {0x1002,{0x22,0xDD,0x0C}},\r\n    {0x1002,{0x22,0x42,0x9D}},\r\n    {0x1002,{0x22,0xB3,0x00}},\r\
+  \n    {0x1002,{0x22,0xD1,0x35}},\r\n    {0x1002,{0x22,0x70,0x00}},\r\n    {0x1002,{0x22,0x70,0x22}},\r\
+  \n    {0x1002,{0x22,0xB2,0x00}},\r\n    {0x1002,{0x22,0x43,0x10}},\r\n    {0x1002,{0x22,0xDD,0x00}},\r\
+  \n    {0x1002,{0x22,0x43,0x00}},\r\n    {0x1002,{0x22,0x43,0x05}},\r\n    {0x1002,{0x22,0x45,0xA1}},\r\
+  \n    {0x1002,{0x22,0x41,0x6D}},\r\n    {0x1002,{0x22,0x41,0x6F}},\r\n    {0x1002,{0x22,0x43,0x2D}},\r\
+  \n    {0x1002,{0x22,0x41,0x6E}},\r\n    {0x1002,{0x22,0x41,0x70}},\r\n    {0x1002,{0x22,0x41,0xE5}},\r\
+  \n    {0x1002,{0x22,0x42,0xFB}},\r\n    {0x1002,{0x22,0x40,0xEF}},\r\n    {0x1002,{0x22,0x45,0x16}},\r\
+  \n    {0x1002,{0x22,0x43,0x3E}},\r\n    {0x1002,{0x22,0x40,0xCA}},\r\n    {0x1002,{0x22,0xEE,0x94}},\r\
+  \n    {0x1002,{0x22,0x41,0x87}},\r\n    {0x1002,{0x22,0xB3,0x02}},\r\n    {0x1002,{0x22,0xF1,0xF0}},\r\
+  \n    {0x1002,{0x22,0x42,0x97}},\r\n    {0x1002,{0x22,0x42,0x26}},\r\n    {0x1002,{0x22,0xB1,0x65}},\r\
+  \n    {0x1002,{0x22,0x42,0x30}},\r\n    {0x1002,{0x22,0x42,0x2F}},\r\n    {0x1002,{0x22,0x40,0xF2}},\r\
+  \n    {0x1002,{0x22,0x42,0x9E}},\r\n    {0x1002,{0x22,0xF0,0xF5}},\r\n    {0x1002,{0x22,0x41,0x10}},\r\
+  \n    {0x1002,{0x22,0x40,0xE4}},\r\n    {0x1002,{0x22,0x45,0x33}},\r\n    {0x1002,{0x22,0x45,0x35}},\r\
+  \n    {0x1002,{0x22,0xF1,0xA5}},\r\n    {0x1002,{0x22,0xF1,0xBB}},\r\n    {0x1002,{0x22,0x42,0xF4}},\r\
+  \n    {0x1002,{0x22,0xBB,0x00}},\r\n    {0x1002,{0x22,0xBB,0x01}},\r\n    {0x1002,{0x22,0xBB,0x02}},\r\
+  \n    {0x1002,{0x22,0xBB,0x03}},\r\n    {0x1002,{0x22,0xBB,0x04}},\r\n    {0x1002,{0x22,0xBB,0x05}},\r\
+  \n    {0x1002,{0x22,0xBB,0x06}},\r\n    {0x1002,{0x22,0xBB,0x07}},\r\n    {0x1002,{0x22,0xBB,0x08}},\r\
+  \n    {0x1002,{0x22,0xBB,0x09}},\r\n    {0x1002,{0x22,0x42,0x82}},\r\n    {0x1002,{0x22,0x42,0x83}},\r\
+  \n    {0x1002,{0x22,0x43,0xB8}},\r\n    {0x1002,{0x22,0x45,0xA4}},\r\n    {0x1002,{0x22,0xEF,0x99}},\r\
+  \n    {0x1002,{0x22,0x41,0x1D}},\r\n    {0x1002,{0x22,0xD1,0x36}},\r\n    {0x1002,{0x22,0xF1,0x24}},\r\
+  \n    {0x1002,{0x22,0x40,0xAF}},\r\n    {0x1002,{0x22,0x45,0x03}},\r\n    {0x1002,{0x22,0x43,0x28}},\r\
+  \n    {0x1002,{0x22,0xEA,0x41}},\r\n    {0x1002,{0x22,0xEE,0x99}},\r\n    {0x1002,{0x22,0x70,0x23}},\r\
+  \n    {0x1002,{0x22,0x41,0x09}},\r\n    {0x1002,{0x22,0xD0,0x3A}},\r\n    {0x1002,{0x22,0xFD,0x50}},\r\
+  \n    {0x1002,{0x22,0xA0,0x0A}},\r\n    {0x1002,{0x22,0x42,0x00}},\r\n    {0x1002,{0x22,0x42,0x31}},\r\
+  \n    {0x1002,{0x22,0x41,0xF8}},\r\n    {0x1002,{0x22,0x45,0x32}},\r\n    {0x1002,{0x22,0xDD,0x01}},\r\
+  \n    {0x1002,{0x22,0xF1,0x3F}},\r\n    {0x1002,{0x22,0x45,0x04}},\r\n    {0x1002,{0x22,0x41,0xCE}},\r\
+  \n    {0x1002,{0x22,0x40,0xF0}},\r\n    {0x1002,{0x22,0x43,0x0E}},\r\n    {0x1002,{0x22,0x43,0x0F}},\r\
+  \n    {0x1002,{0x22,0xF1,0x50}},\r\n    {0x1002,{0x22,0x40,0x27}},\r\n    {0x1002,{0x22,0x40,0x28}},\r\
+  \n    {0x1002,{0x22,0x40,0x29}},\r\n    {0x1002,{0x22,0x40,0x2A}},\r\n    {0x1002,{0x22,0xDD,0x02}},\r\
+  \n    {0x1002,{0x22,0xEA,0x40}},\r\n    {0x1002,{0x22,0xF1,0x51}},\r\n    {0x1002,{0x22,0xE5,0x03}},\r\
+  \n    {0x1002,{0x22,0x45,0x34}},\r\n    {0x1002,{0x22,0x45,0x30}},\r\n    {0x1002,{0x22,0x45,0x31}},\r\
+  \n    {0x1002,{0x22,0xB3,0x01}},\r\n    {0x1002,{0x22,0x45,0xBF}},\r\n    {0x1002,{0x22,0x43,0x0B}},\r\
+  \n    {0x1002,{0x22,0x43,0x0C}},\r\n    {0x1002,{0x22,0x41,0x8F}},\r\n    {0x1002,{0x22,0x42,0x18}},\r\
+  \n    {0x1002,{0x22,0xB2,0x50}}\r\n}\r\nUDS_CMD_INTERVEL=1.0\r\n--------------------------------------------------------------\r\
+  \n\r\n-----------------------------------------------------------------------------------\r\
+  \n-- 固定部分\r\n-----------------------------------------------------------\r\nfunction\
+  \ sleep(n)\r\n    if (n > 0) then\r\n        os.execute(\"sleep \" .. tonumber(n))\r\
+  \n    end\r\nend\r\n\r\nfunction get_timestamp()\r\n    if (UDS_CMD_INTERVEL<0.1)\
+  \ then\r\n        return math.floor(os.time() * 1000 + (os.clock() % 1) * 1000)\r\
+  \n    else\r\n        local hd = io.popen(\"echo $(date +%s%N)\")\r\n        local\
+  \ result = hd:read(\"*a\")\r\n        hd:close()\r\n        return math.floor(result/1000000)\r\
+  \n    end\r\nend\r\n\r\nfunction uds_raw(ecu_addr, data, wait_time, retry, wait_resp)\r\
+  \n    local wait_time= wait_time or 5000\r\n    local retry= retry or 0\r\n    local\
+  \ wait_resp= wait_resp or true\r\n    local addr, rsp_data, err_code\r\n    while\
+  \ (true) do\r\n        addr, rsp_data, err_code = cpp_diag_cmd(ecu_addr, data, wait_time,\
+  \ wait_resp)\r\n        if (err_code ~= 0 and err_code ~= 9 and retry > 0) then\r\
+  \n            retry = retry - 1\r\n        else\r\n            break\r\n       \
+  \ end\r\n    end\r\n    return rsp_data, err_code\r\nend\r\n\r\nfunction check_and_req_arb()\r\
+  \n    local is_arbd = cpp_get_signal(5) --5 IsArbitrated\r\n    if (is_arbd) then\r\
+  \n        return true\r\n    else\r\n        return cpp_request_arb(1) -- option:\
+  \ 1 requst, 2 release\r\n    end\r\nend\r\n\r\nfunction main_entry()\r\n    local\
+  \ TASK_ID= T2V_taskId or \"1234\"\r\n    cpp_print_log(\"task id:\"..T2V_taskId)\r\
+  \n    local final_code=0 --0成功、1失败、2、会话关闭、3执行超时, 4 arb\r\n    local para_str=\"\
+  {\"\r\n    if check_and_req_arb() then\r\n        local data_str=\"[\"\r\n     \
+  \   -- start run the cmds\r\n        for key, val in pairs(FLOWS) do\r\n       \
+  \     local ecu = val[1]\r\n            local cmd_idx=2\r\n            while (cmd_idx\
+  \ <= #val) do\r\n                local cmd = val[cmd_idx]\r\n                cmd_idx\
+  \ = cmd_idx + 1\r\n                local request_tm  = get_timestamp()\r\n     \
+  \           local rsp_data, err_code\r\n                -- 执行单条指令：超时时间5s, 若有失败retry\
+  \ 1次\r\n                rsp_data, err_code = uds_raw(ecu, cmd, 5000, 1, true)\r\n\
+  \                if (err_code~=0) then\r\n                    final_code = 1\r\n\
+  \                    if (err_code < -1) then -- TODO v1.4\r\n                  \
+  \      err_code = -2\r\n                    end\r\n                    -- no break\
+  \ -- 出错也继续执行后续命令\r\n                end\r\n                local response_tm  =\
+  \ get_timestamp()\r\n                local cmd_res_str=\"{\"\r\n               \
+  \ cmd_res_str=cmd_res_str..\"\\\"addr\\\":\".. ecu ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd\\\":[\".. table.concat(cmd, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd_time\\\":\".. request_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp\\\":[\".. table.concat(rsp_data, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp_time\\\":\".. response_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"code\\\":\".. err_code\r\n                cmd_res_str=cmd_res_str..\"}\"\r\n\
+  \                data_str=data_str.. cmd_res_str ..\",\"\r\n                -- 检测会话是否还开着\r\
+  \n                if not cpp_get_signal(1) then\r\n                    final_code\
+  \ = 2\r\n                    break\r\n                end\r\n            end\r\n\
+  \            if not cpp_get_signal(1) then\r\n                final_code = 2\r\n\
+  \                break\r\n            end\r\n            -- 间隔\r\n            sleep(UDS_CMD_INTERVEL)\r\
+  \n        end\r\n        data_str=string.sub(data_str, 1, #data_str - 1)\r\n   \
+  \     data_str=data_str..\"]\"\r\n        para_str=para_str..\"\\\"data\\\":\"..data_str..\"\
+  ,\"\r\n    else\r\n        final_code = 4\r\n    end\r\n    para_str=para_str..\"\
+  \\\"code\\\":\"..final_code\r\n    para_str=para_str..\"}\"\r\n    -- upload reuslts\r\
+  \n    local CMD_CODE= T2V_cmd or 3\r\n    cpp_upload_results(TASK_ID, para_str,\
+  \ CMD_CODE, 1)\r\nend\r\n-----------------------------------------------------------------------------"
+3E: "---------------------------------------------------------------\r\n--可替换部分\r\n\
+  -------------------------------------------------------\r\nFLOWS={\r\n    -- ecu\
+  \ addr, diag cmd\r\n    {0x1001,{0x3E,0x00}},\r\n    {0x1002,{0x3E,0x00}},\r\n \
+  \   {0x1001,{0x3E,0x80}},\r\n    {0x1002,{0x3E,0x80}}\r\n}\r\nUDS_CMD_INTERVEL=1.0\r\
+  \n--------------------------------------------------------------\r\n\r\n-----------------------------------------------------------------------------------\r\
+  \n-- 固定部分\r\n-----------------------------------------------------------\r\nfunction\
+  \ sleep(n)\r\n    if (n > 0) then\r\n        os.execute(\"sleep \" .. tonumber(n))\r\
+  \n    end\r\nend\r\n\r\nfunction get_timestamp()\r\n    if (UDS_CMD_INTERVEL<0.1)\
+  \ then\r\n        return math.floor(os.time() * 1000 + (os.clock() % 1) * 1000)\r\
+  \n    else\r\n        local hd = io.popen(\"echo $(date +%s%N)\")\r\n        local\
+  \ result = hd:read(\"*a\")\r\n        hd:close()\r\n        return math.floor(result/1000000)\r\
+  \n    end\r\nend\r\n\r\nfunction uds_raw(ecu_addr, data, wait_time, retry, wait_resp)\r\
+  \n    local wait_time= wait_time or 5000\r\n    local retry= retry or 0\r\n    local\
+  \ wait_resp= wait_resp or true\r\n    local addr, rsp_data, err_code\r\n    while\
+  \ (true) do\r\n        addr, rsp_data, err_code = cpp_diag_cmd(ecu_addr, data, wait_time,\
+  \ wait_resp)\r\n        if (err_code ~= 0 and err_code ~= 9 and retry > 0) then\r\
+  \n            retry = retry - 1\r\n        else\r\n            break\r\n       \
+  \ end\r\n    end\r\n    return rsp_data, err_code\r\nend\r\n\r\nfunction check_and_req_arb()\r\
+  \n    local is_arbd = cpp_get_signal(5) --5 IsArbitrated\r\n    if (is_arbd) then\r\
+  \n        return true\r\n    else\r\n        return cpp_request_arb(1) -- option:\
+  \ 1 requst, 2 release\r\n    end\r\nend\r\n\r\nfunction main_entry()\r\n    local\
+  \ TASK_ID= T2V_taskId or \"1234\"\r\n    cpp_print_log(\"task id:\"..T2V_taskId)\r\
+  \n    local final_code=0 --0成功、1失败、2、会话关闭、3执行超时, 4 arb\r\n    local para_str=\"\
+  {\"\r\n    if check_and_req_arb() then\r\n        local data_str=\"[\"\r\n     \
+  \   -- start run the cmds\r\n        for key, val in pairs(FLOWS) do\r\n       \
+  \     local ecu = val[1]\r\n            local cmd_idx=2\r\n            while (cmd_idx\
+  \ <= #val) do\r\n                local cmd = val[cmd_idx]\r\n                cmd_idx\
+  \ = cmd_idx + 1\r\n                local request_tm  = get_timestamp()\r\n     \
+  \           local rsp_data, err_code\r\n                -- 执行单条指令：超时时间5s, 若有失败retry\
+  \ 1次\r\n                rsp_data, err_code = uds_raw(ecu, cmd, 5000, 1, true)\r\n\
+  \                if (err_code~=0) then\r\n                    final_code = 1\r\n\
+  \                    if (err_code < -1) then -- TODO v1.4\r\n                  \
+  \      err_code = -2\r\n                    end\r\n                    -- no break\
+  \ -- 出错也继续执行后续命令\r\n                end\r\n                local response_tm  =\
+  \ get_timestamp()\r\n                local cmd_res_str=\"{\"\r\n               \
+  \ cmd_res_str=cmd_res_str..\"\\\"addr\\\":\".. ecu ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd\\\":[\".. table.concat(cmd, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"cmd_time\\\":\".. request_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp\\\":[\".. table.concat(rsp_data, \",\") ..\"],\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"rsp_time\\\":\".. response_tm ..\",\"\r\n                cmd_res_str=cmd_res_str..\"\
+  \\\"code\\\":\".. err_code\r\n                cmd_res_str=cmd_res_str..\"}\"\r\n\
+  \                data_str=data_str.. cmd_res_str ..\",\"\r\n                -- 检测会话是否还开着\r\
+  \n                if not cpp_get_signal(1) then\r\n                    final_code\
+  \ = 2\r\n                    break\r\n                end\r\n            end\r\n\
+  \            if not cpp_get_signal(1) then\r\n                final_code = 2\r\n\
+  \                break\r\n            end\r\n            -- 间隔\r\n            sleep(UDS_CMD_INTERVEL)\r\
+  \n        end\r\n        data_str=string.sub(data_str, 1, #data_str - 1)\r\n   \
+  \     data_str=data_str..\"]\"\r\n        para_str=para_str..\"\\\"data\\\":\"..data_str..\"\
+  ,\"\r\n    else\r\n        final_code = 4\r\n    end\r\n    para_str=para_str..\"\
+  \\\"code\\\":\"..final_code\r\n    para_str=para_str..\"}\"\r\n    -- upload reuslts\r\
+  \n    local CMD_CODE= T2V_cmd or 3\r\n    cpp_upload_results(TASK_ID, para_str,\
+  \ CMD_CODE, 1)\r\nend\r\n-----------------------------------------------------------------------------"
+CheckRemoteDiagRes_10&11:
+  '1001':
+  - '1002'
+  - '1003'
+  - '1101'
+  '1002':
+  - '1002'
+  - '1003'
+  - '1101'
+CheckRemoteDiagRes_14:
+  '1001':
+  - 14FFFFFF
+  '1002':
+  - 14FFFFFF
+CheckRemoteDiagRes_19:
+  '1001':
+  - '190209'
+  - '190208'
+  - 190A
+  - 1904A0020220
+  - 1904A0071220
+  - 1904A0071320
+  - 1904A0081220
+  - 1904A0081320
+  - 1904A00F0120
+  - 1904EE036820
+  - 1904F1000020
+  - 1904F1010020
+  - 1904F1020020
+  - 1904E3005620
+  - 1904E3005520
+  - 1904D3309A20
+  - 1904D3319A20
+  - 1904D3329A20
+  '1002':
+  - '190209'
+  - '190208'
+  - 190A
+  - 1904A0020220
+  - 1904A0071220
+  - 1904A0071320
+  - 1904A0081220
+  - 1904A0081320
+  - 1904A00F0120
+  - 1904EE036820
+  - 1904F1000020
+  - 1904F1010020
+  - 1904F1020020
+  - 1904E3005620
+  - 1904E3005520
+  - 1904D3309A20
+  - 1904D3319A20
+  - 1904D3329A20
+CheckRemoteDiagRes_22_P0_DID:
+  '1001':
+  - 22F1AA
+  - 22F1AB
+  - 22F18C
+  - 2241DE
+  - 2241DF
+  - 2241E0
+  - 2241E1
+  - 22F190
+  - 22F106
+  - 22D134
+  - 22F1AE
+  - 2240EE
+  - 22D01C
+  - 22408F
+  - 2240DE
+  - 2240DF
+  - 2240E0
+  - 22D12F
+  - 22F102
+  - 22D906
+  - 22D904
+  - 22DD0A
+  '1002':
+  - 22F1AA
+  - 22F1AB
+  - 22F18C
+  - 2241DE
+  - 2241DF
+  - 2241E0
+  - 2241E1
+  - 22F190
+  - 22F106
+  - 22D134
+  - 22F1AE
+  - 2240EE
+  - 22D01C
+  - 22408F
+  - 2240DE
+  - 2240DF
+  - 2240E0
+  - 22D12F
+  - 22F102
+  - 22D906
+  - 22D904
+  - 22DD0A
+CheckRemoteDiagRes_22_P1_DID:
+  '1001':
+  - 22F186
+  - 22ED20
+  - 22C008
+  - 22D250
+  - 22F154
+  - 22F153
+  - 22DD0B
+  - 22D260
+  - 22281F
+  - 22B163
+  '1002':
+  - 22F186
+  - 22ED20
+  - 22C008
+  - 22D250
+  - 22F154
+  - 22F153
+  - 22DD0B
+  - 22D260
+  - 22281F
+  - 22B163
+CheckRemoteDiagRes_22_P2_DID:
+  '1001':
+  - 22F1A0
+  - '224219'
+  - 22421D
+  - 22421E
+  - 22420A
+  - 22421A
+  - '224600'
+  - 2242F2
+  - 2242E5
+  - 22416B
+  - '227024'
+  - '227025'
+  - 2240E2
+  - 22DA00
+  - 22D934
+  - 2242CD
+  - 2242E4
+  - 2240B0
+  - 2242CF
+  - '224090'
+  - 22D935
+  - 2242D1
+  - 2242D3
+  - 2242D2
+  - 2241E9
+  - 2240D7
+  - 2242E3
+  - '224025'
+  - 2240CB
+  - '224094'
+  - '224444'
+  - 22F011
+  - 22F010
+  - 22E103
+  - 2243C4
+  - 2242E9
+  - 2240A2
+  - 2240D1
+  - 22432E
+  - 22410B
+  - '224232'
+  - 22F108
+  - 22FD07
+  - 2240E3
+  - 2243D6
+  - 2240E8
+  - '224313'
+  - 22DD0C
+  - 22429D
+  - 22B300
+  - 22D135
+  - '227000'
+  - '227022'
+  - 22B200
+  - '224310'
+  - 22DD00
+  - '224300'
+  - '224305'
+  - 2245A1
+  - 22416D
+  - 22416F
+  - 22432D
+  - 22416E
+  - '224170'
+  - 2241E5
+  - 2242FB
+  - 2240EF
+  - '224516'
+  - 22433E
+  - 2240CA
+  - 22EE94
+  - '224187'
+  - 22B302
+  - 22F1F0
+  - '224297'
+  - '224226'
+  - 22B165
+  - '224230'
+  - 22422F
+  - 2240F2
+  - 22429E
+  - 22F0F5
+  - '224110'
+  - 2240E4
+  - '224533'
+  - '224535'
+  - 22F1A5
+  - 22F1BB
+  - 2242F4
+  - 22BB00
+  - 22BB01
+  - 22BB02
+  - 22BB03
+  - 22BB04
+  - 22BB05
+  - 22BB06
+  - 22BB07
+  - 22BB08
+  - 22BB09
+  - '224282'
+  - '224283'
+  - 2243B8
+  - 2245A4
+  - 22EF99
+  - 22411D
+  - 22D136
+  - 22F124
+  - 2240AF
+  - '224503'
+  - '224328'
+  - 22EA41
+  - 22EE99
+  - '227023'
+  - '224109'
+  - 22D03A
+  - 22FD50
+  - 22A00A
+  - '224200'
+  - '224231'
+  - 2241F8
+  - '224532'
+  - 22DD01
+  - 22F13F
+  - '224504'
+  - 2241CE
+  - 2240F0
+  - 22430E
+  - 22430F
+  - 22F150
+  - '224027'
+  - '224028'
+  - '224029'
+  - 22402A
+  - 22DD02
+  - 22EA40
+  - 22F151
+  - 22E503
+  - '224534'
+  - '224530'
+  - '224531'
+  - 22B301
+  - 2245BF
+  - 22430B
+  - 22430C
+  - 22418F
+  - '224218'
+  - 22B250
+  '1002':
+  - 22F1A0
+  - '224219'
+  - 22421D
+  - 22421E
+  - 22420A
+  - 22421A
+  - '224600'
+  - 2242F2
+  - 2242E5
+  - 22416B
+  - '227024'
+  - '227025'
+  - 2240E2
+  - 22DA00
+  - 22D934
+  - 2242CD
+  - 2242E4
+  - 2240B0
+  - 2242CF
+  - '224090'
+  - 22D935
+  - 2242D1
+  - 2242D3
+  - 2242D2
+  - 2241E9
+  - 2240D7
+  - 2242E3
+  - '224025'
+  - 2240CB
+  - '224094'
+  - '224444'
+  - 22F011
+  - 22F010
+  - 22E103
+  - 2243C4
+  - 2242E9
+  - 2240A2
+  - 2240D1
+  - 22432E
+  - 22410B
+  - '224232'
+  - 22F108
+  - 22FD07
+  - 2240E3
+  - 2243D6
+  - 2240E8
+  - '224313'
+  - 22DD0C
+  - 22429D
+  - 22B300
+  - 22D135
+  - '227000'
+  - '227022'
+  - 22B200
+  - '224310'
+  - 22DD00
+  - '224300'
+  - '224305'
+  - 2245A1
+  - 22416D
+  - 22416F
+  - 22432D
+  - 22416E
+  - '224170'
+  - 2241E5
+  - 2242FB
+  - 2240EF
+  - '224516'
+  - 22433E
+  - 2240CA
+  - 22EE94
+  - '224187'
+  - 22B302
+  - 22F1F0
+  - '224297'
+  - '224226'
+  - 22B165
+  - '224230'
+  - 22422F
+  - 2240F2
+  - 22429E
+  - 22F0F5
+  - '224110'
+  - 2240E4
+  - '224533'
+  - '224535'
+  - 22F1A5
+  - 22F1BB
+  - 2242F4
+  - 22BB00
+  - 22BB01
+  - 22BB02
+  - 22BB03
+  - 22BB04
+  - 22BB05
+  - 22BB06
+  - 22BB07
+  - 22BB08
+  - 22BB09
+  - '224282'
+  - '224283'
+  - 2243B8
+  - 2245A4
+  - 22EF99
+  - 22411D
+  - 22D136
+  - 22F124
+  - 2240AF
+  - '224503'
+  - '224328'
+  - 22EA41
+  - 22EE99
+  - '227023'
+  - '224109'
+  - 22D03A
+  - 22FD50
+  - 22A00A
+  - '224200'
+  - '224231'
+  - 2241F8
+  - '224532'
+  - 22DD01
+  - 22F13F
+  - '224504'
+  - 2241CE
+  - 2240F0
+  - 22430E
+  - 22430F
+  - 22F150
+  - '224027'
+  - '224028'
+  - '224029'
+  - 22402A
+  - 22DD02
+  - 22EA40
+  - 22F151
+  - 22E503
+  - '224534'
+  - '224530'
+  - '224531'
+  - 22B301
+  - 2245BF
+  - 22430B
+  - 22430C
+  - 22418F
+  - '224218'
+  - 22B250
+CheckRemoteDiagRes_3E:
+  '1001':
+  - 3E00
+  - 3E80
+  '1002':
+  - 3E00
+  - 3E80
+cali: "------可动态更改部分-----------------------------------------------------------------------------------\r\
+  \n-- app id, 默认0 充电口盖标定\r\nCALI_APP_ID=0\r\n-- 是否允许跳过用户授权，默认false\r\nCALI_ALLOW_SKIP_AUTH=false\r\
+  \n\r\n\r\n-------固定部分-----------------------------------------------------------------------------\r\
+  \nfunction sleep(n)\r\n    if (n > 0) then\r\n        os.execute(\"sleep \" .. tonumber(n))\r\
+  \n    end\r\nend\r\n\r\n\r\nfunction main_entry()\r\n    -- luaL_checktype(l, 1,\
+  \ LUA_TNUMBER); // opt: 1.trigger, 2 auth, 3 retry\r\n    -- luaL_checktype(l, 2,\
+  \ LUA_TNUMBER); // app_id\r\n    -- luaL_checktype(l, 3, LUA_TNUMBER); // req: 1.on,\
+  \ 2.off\r\n    -- luaL_checktype(l, 4, LUA_TBOOLEAN);  // allow_skip\r\n    cpp_call_cali(1,CALI_APP_ID,1,\
+  \ CALI_ALLOW_SKIP_AUTH) -- 触发\r\n    sleep(3)\r\n    -----------------------------------------------------------------------\r\
+  \n    -- 模拟屏幕操作：for test only\r\n    -- remote 方式，默认无诊断仲裁\r\n    -- cpp_call_cali(2,0,1)\
+  \ -- auth\r\n    -- sleep(3)\r\n    -- cpp_call_cali(3,0,1) -- retry\r\n    -----------------------------------------------------------------------\r\
+  \n\r\n    -- 等待最终结果 for \r\n    local res, log = cpp_query_remote_cali_log()\r\n\
+  \    local para_str = log\r\n    local count = 1\r\n    while res ~= 0 do\r\n  \
+  \      sleep(1)\r\n        cpp_print_log(\"waiting for cali result\")\r\n      \
+  \  count = count + 1\r\n        res, log = cpp_query_remote_cali_log()\r\n     \
+  \   if res == 0 then -- ok\r\n            cpp_print_log(\"cali_done \"..log)\r\n\
+  \            para_str = log\r\n           break \r\n        else -- continue\r\n\
+  \        end\r\n        -- check if session open\r\n        local is_open = cpp_get_signal(1)\r\
+  \n        if not is_open then -- abort\r\n            cpp_call_cali(1,CALI_APP_ID,2,\
+  \ CALI_ALLOW_SKIP_AUTH) -- 打断\r\n            para_str =\"{\\\"data\\\":[],\\\"checkData\\\
+  \":[{\\\"content\\\":\\\"高优先级任务打断，请稍后再试\\\",\\\"time\\\":0,\\\"code\\\":1}],\\\"\
+  code\\\":1}\"\r\n            break\r\n        end\r\n        if count > 1*60*5 then\
+  \ -- timeout TODO 5min\r\n            cpp_print_log(\"cali_timeout\")\r\n      \
+  \      para_str =\"{\\\"data\\\":[],\\\"checkData\\\":[{\\\"content\\\":\\\"标定执行超时\\\
+  \",\\\"time\\\":0,\\\"code\\\":1}],\\\"code\\\":1}\"\r\n            break\r\n  \
+  \      end\r\n    end\r\n\r\n    local TASK_ID= T2V_taskId or \"1234\"\r\n    local\
+  \ CMD_CODE= T2V_cmd or 3\r\n    cpp_upload_results(TASK_ID, para_str, CMD_CODE,\
+  \ 1)\r\n    cpp_print_log(\"exit lua\")\r\n\r\nend\r\n"
+remote_diag_headers:
+  Authorization: ${XAT_CREDENTIAL____BGM_CONFIG_REMOTE_DIAG_LUA_YAML__REMOTE_DIAG_HEADERS_AUTHORIZATION}
+  Content-Type: application/json
+  Cookie: jidu_device_id=925c097e-b404-4070-82b5-604642a2fb73
+  source-code: upm-common-code
+send_diag_cmd:
+  cmd: 3
+  para: ''
+  vid: 3565f4e05d321dd1b0e8c56df952b5c2
+session_close:
+  cmd: 2
+  modelId: '61'
+  para: ''
+  vid: 3565f4e05d321dd1b0e8c56df952b5c2
+session_open:
+  cmd: 1
+  para: "------------------------------------\r\n--可替换部分:\r\n--SESSION_TIME_OUT 会话超时时间，单位：秒\r\
+    \n--CHECK_INTERVEL 条件检查周期，单位：秒\r\n--------------------------------\r\nSESSION_TIME_OUT=300\r\
+    \nCHECK_INTERVEL=5\r\n-------------------------------------\r\n\r\n---------------------------------------------------------------\r\
+    \n-- 固定部分\r\n-----------------------------------------------------------\r\nSESSION_ERROR_MSG=\"\
+    \\\"Speed Check NG\\\"\" -- default reason in lua\r\nfunction check_condition()\r\
+    \n    local speed, valid = cpp_get_signal(2) --sig 2 vehicle speed\r\n    if (speed<0.83)\
+    \ then\r\n        return true\r\n    else\r\n        return false\r\n    end\r\
+    \nend\r\n\r\nfunction sleep(n)\r\n    os.execute(\"sleep \" .. tonumber(n))\r\n\
+    end\r\n\r\nfunction check_condition_loop()\r\n    while cpp_get_signal(1) do\r\
+    \n        sleep(CHECK_INTERVEL)\r\n        -- check if session open\r\n      \
+    \  local is_open = cpp_get_signal(1)\r\n        if is_open then\r\n          \
+    \  if check_condition() then\r\n                -- ok, do nothing\r\n        \
+    \    else\r\n                -- close the session\r\n                local final_code=1\r\
+    \n                local para_str=\"{\"\r\n                para_str=para_str..\"\
+    \\\"code\\\":\"..final_code..\",\"\r\n                para_str=para_str..\"\\\"\
+    msg\\\":\"..SESSION_ERROR_MSG\r\n                para_str=para_str..\"}\"\r\n\
+    \                local TASK_ID= T2V_taskId or \"1234\"\r\n                cpp_remote_session(TASK_ID,\
+    \ 2, para_str)\r\n                return false\r\n            end\r\n        else\r\
+    \n            --session already closed, break\r\n            break\r\n       \
+    \ end\r\n    end\r\n    return true\r\nend\r\n\r\nfunction main_entry()\r\n  \
+    \  local TASK_ID= T2V_taskId or \"1234\"\r\n    cpp_print_log(\"task id:\"..T2V_taskId)\r\
+    \n    local final_code=0\r\n    need_send_result=true\r\n    if check_condition()\
+    \ then\r\n        local CMD_CODE= T2V_cmd or 1\r\n        cpp_remote_session(TASK_ID,\
+    \ CMD_CODE, SESSION_TIME_OUT)\r\n        need_send_result=false\r\n        final_code=0\r\
+    \n    else\r\n        final_code=1\r\n    end\r\n\r\n    -- upload reuslts\r\n\
+    \    if need_send_result then\r\n        local para_str=\"{\"\r\n        para_str=para_str..\"\
+    \\\"code\\\":\"..final_code..\",\"\r\n        para_str=para_str..\"\\\"msg\\\"\
+    :\"..SESSION_ERROR_MSG\r\n        para_str=para_str..\"}\"\r\n        local CMD_CODE=\
+    \ T2V_cmd or 1\r\n        cpp_upload_results(TASK_ID, para_str, CMD_CODE, 0) \
+    \ -- route:0 mqtt, 1 http\r\n    end\r\n    -- 周期性检测\r\n    check_condition_loop()\r\
+    \nend\r\n---------------------------------------------------------------------"
+  vid: 3565f4e05d321dd1b0e8c56df952b5c2

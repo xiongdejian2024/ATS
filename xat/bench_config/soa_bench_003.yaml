@@ -1,0 +1,59 @@
+# 杨柳 四域台架
+bus:
+  eth_obd: "enp89s0"
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+  bodycan: 'can0'
+  propulsioncan: 'can1'
+  chassiscan1: 'can2'
+  chassiscan2: 'can3'
+  passivesafetycan: 'can4'
+  diagnosticcan: 'can5'
+  infocanfd: 'can6'
+  bodyexposedcanfd: 'can7'
+  adcanfd: 'can8'
+  connectivitycanfd: 'can9'
+  bodyalmcanfd1: 'can10'
+  bodyalmcanfd2: 'can11'
+
+serial: ["USB_DO", "USB_DI", "USB_PWM", "USB_BGM", "USB_TCAM"]
+
+eth_vlan: ""
+wifi_localhost: "172.18.128.73"
+# 当前连接的域控，例如BGM、TCAM、CDC、ACU
+domain:
+  - BGM
+  - TCAM
+  - CDC
+  - ACU
+# 继电器接线 说明
+# ur1 -- BGM               默认接通
+# ur2 -- TCAM              默认接通
+# ur3 -- BGM 诊断激活线     默认断开
+# ur4 -- PCAN              默认接通
+# ur5 -- CDC               默认接通
+# ur6 -- ACU               默认接通
+# ur7 -- Toomoss           默认接通
+# ur8 -- TCAM KL15         默认断开
+usbrelay:
+  BGM_P: 1
+  TCAM_P: 2
+  BGM_D: 3
+  PCAN_P: 4
+  CDC_P: 5
+  ACU_P: 6
+  Toomoss_P: 7
+  TCAM_KL15: 8
+
+
+adbdevice:
+  tcam: "8e27818c"
+  cdc: "1234567"
+
+vid: ""
+vin: "LSTEST6R9F2086656"
+
+
+
+
+

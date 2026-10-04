@@ -5,6 +5,9 @@ import sys
 from pathlib import Path
 from typing import Optional, Dict, Any
 import yaml
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Config:
@@ -21,9 +24,9 @@ class Config:
         self.keep_tasks: int = 10
         self.keep_days: int = 7
         self.log_max_size: int = 10 * 1024 * 1024  # 10MB
-        base = Path(__file__).resolve().parents[2]
-        self.sat_root = str(base / "sat")
-        self.ecu_root = str(base / "ecu-simulator")
+        base = Path(__file__).resolve().parents[1] / "xat"
+        self.sat_root = str(base)
+        self.ecu_root = str(base / "packages/ecu")
         self.sat_python = sys.executable
         self.sat_allow_hardware = False
         self.log_backup_count: int = 5
@@ -79,9 +82,11 @@ class Config:
             if not data:
                 return
             
-            sat = data.get("integrations", {}).get("sat", {})
-            self.sat_root = sat.get("root", self.sat_root)
-            self.ecu_root = sat.get("ecu_root", self.ecu_root)
+            integrations = data.get("integrations", {})
+            sat = integrations.get("xat", integrations.get("sat", {}))
+            # 旧 sat 配置仅兼容解释器与开关；源码和资源改用 XAT。
+            if "xat" in integrations:
+                self.sat_root = sat.get("root", self.sat_root)
             self.sat_python = sat.get("python", self.sat_python)
             self.sat_allow_hardware = sat.get("allow_hardware", False) is True
 
@@ -93,13 +98,13 @@ class Config:
             
             # 日志配置
             if "logging" in data:
-                logging = data["logging"]
-                if "level" in logging:
-                    self.log_level = logging["level"]
-                if "max_size" in logging:
-                    self.log_max_size = logging["max_size"]
-                if "backup_count" in logging:
-                    self.log_backup_count = logging["backup_count"]
+                log_config = data["logging"]
+                if "level" in log_config:
+                    self.log_level = log_config["level"]
+                if "max_size" in log_config:
+                    self.log_max_size = log_config["max_size"]
+                if "backup_count" in log_config:
+                    self.log_backup_count = log_config["backup_count"]
             
             # 任务配置
             if "task" in data:
@@ -122,7 +127,8 @@ class Config:
                     self.monitor_interval = monitor["interval"]
         
         except Exception as e:
-            raise ValueError(f"加载配置文件失败: {e}")
+            logger.exception("加载 Agent 配置失败：%s", config_file)
+            raise ValueError(f"加载配置文件失败: {e}") from e
     
     def get_work_dir(self) -> Path:
         """
@@ -217,4 +223,3 @@ def parse_args() -> argparse.Namespace:
     )
     
     return parser.parse_args()
-

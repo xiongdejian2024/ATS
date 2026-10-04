@@ -1,0 +1,20 @@
+#128.8 刷写压测TCAM台架
+bus:
+  eth_obd: "enx207bd52c167f"
+  # eth_obd: "enx00e04c680409"
+  eth_vlan5: "eth0.5"
+
+serial: ["USB_DO", "USB_DI", "USB_PWM", "USB_BGM", "USB_TCAM"]
+
+#eth_vlan: "enp0s31f6"
+eth_obd: "169.254.1.200"
+
+wifi_localhost: "172.18.128.8"
+
+sec_con:
+  TCAM: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2,"b90013812978819d8a003f9f9deb86f3", "f9b08e6fee3f0136585e6eacbe6a5c36",0xFFFFFFFFFF,0xFFFFFFFFFF,0xFFFFFFFFFF]
+  BGM: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2, "b90013812978819d8a003f9f9deb86f3", "f9b08e6fee3f0136585e6eacbe6a5c36",0xFFFFFFFFFF,0xFFFFFFFFFF,0xFFFFFFFFFF]
+ 
+domain:
+  - BGM
+  - TCAM

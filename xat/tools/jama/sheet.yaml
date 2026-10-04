@@ -1,0 +1,54 @@
+project: 46
+item_type_id: 26
+child_item_type_id: 26
+TCAM:
+  蜂窝网络: 1188885
+  DoIP: 1197296
+  EM: 1193654
+  SoftwareUpdate: 1197299
+  以太网通信: 1193831
+  GNSS: 1193832
+  数字安全: 1188873
+  新能源车监控RTM: 1193602
+  网络管理: 1197298
+  HAVP: 1188881
+  FOTA: 1188876
+  Ecall: 1193599
+BGM:
+  BGM网络通道定义: 1193435
+  数字安全: 1188842
+  EM: 1193655
+  以太网通信: 1193699
+  DM Verity: 1193710
+  HAVP: 1188860
+  时间管理: 1193567
+  DoIP: 1193569
+  诊断DID: 1284059
+  诊断IOControl: 1300268
+  诊断路由: 1193571
+  诊断仲裁: 1193572
+  SoftwareUpdate: 1193574
+  部分网络管理_网关: 1193577
+  雷达标定: 1193579
+  HV: 1197531
+  CarMode: 1193583
+  ExteriorLight: 1191670
+  CarCfg: 1193588
+  E-PowertrainImmo: 1193593
+  基础数据上报: 1193596
+  新能源监控: 1193597
+  FOTA: 1188843
+  BonnetService: 1243702
+  VehicleModeService: 1191718
+  CTDService: 1191716
+  CarConfigService: 1191714
+  LowVoltageService: 1191707
+  WTIService: 1191703
+  HighVoltageService: 1191700
+  ChassisService: 1191699
+  SoC产线检测: 1244368
+  Usagemode: 1202993
+jama:
+  username: public_soa_bgm_tcam
+  password: ${XAT_CREDENTIAL____JAMA_SHEET_YAML__JAMA_PASSWORD}
+  url: https://jama.jiduauto.com

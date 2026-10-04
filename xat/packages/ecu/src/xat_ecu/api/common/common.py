@@ -25,7 +25,8 @@ from xat_ecu.legacy.common.data_type_handing import logger
 from xat_ecu.legacy.common.file_handle import *
 from xat_ecu.legacy.common import exception_error
 # 项目固定在sat 下
-sat_abspath = os.path.dirname(os.path.realpath(__file__)).split("sat")[0] + "sat"
+from xat_ecu.resources import LEGACY_ROOT
+sat_abspath = os.environ.get('XAT_PROJECT_ROOT', str(LEGACY_ROOT))
 # work dir 固定是在 sat/xat_cases/legacy/xxx 下
 workdir_abspath = os.getcwd()
 

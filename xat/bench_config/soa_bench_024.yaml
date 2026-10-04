@@ -1,0 +1,48 @@
+# TCAM单域台架 172.18.128.167
+bus:
+  eth_obd: ""
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+  # bodycan: [1392511911, 0]
+  # propulsioncan: [1392511911, 1]
+  # cem_lin6: [1392511911, 0]
+
+serial: ["USB_DO", "USB_DI", "USB_PWM", "USB_BGM", "USB_TCAM"]
+
+eth_vlan: "enxf8e43b81f4e1"
+
+eth_obd: "169.254.1.200"
+wifi_localhost: "172.18.128.167"
+domain:
+  - TCAM
+# 继电器接线 说明
+# ur1 -- BGM               默认接通
+# ur2 -- TCAM              默认接通
+# ur3 -- BGM 诊断激活线     默认断开
+# ur4 -- PCAN              默认接通
+# ur5 -- CDC               默认接通
+# ur6 -- ACU               默认接通
+# ur7 -- Toomoss           默认接通
+# ur8 -- TCAM KL15         默认断开
+# usbrelay:
+
+#   BGM_P: 1
+#   TCAM_P: 2
+#   BGM_D: 3
+#   PCAN_P: 4
+#   CDC_P: 5
+#   ACU_P: 6
+#   Toomoss_P: 7
+#   TCAM_KL15: 8
+
+
+adbdevice:
+  tcam: "97d0998"
+  # cdc: "1234567"
+
+#573
+vid: "6a677400230e77947e5b867334042241"
+vin: "LSTEST6R9F2086667"
+tel:  "13866890609"
+
+

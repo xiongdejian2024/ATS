@@ -1,0 +1,137 @@
+L6T79P2N2PP002437:
+  #528
+  veh_type: 'mars1'
+  tel: '18221073295'
+  faulty_ecu: ['VDDM', 'SRS', 'IPM', 'BBM', 'FLR', 'RCMM', 'RCMR', 'RCML']
+  vid: '83c3d1e750f7f3a1675d64e05a2431a2'
+
+L6T79T4E4PD000308:
+  #328
+  veh_type: 'venus'
+  tel: '18221073295'
+  faulty_ecu: ['VDDM', 'SRS', 'BBM', 'SWTL', 'SWTR', 'DRM_FL', 'DRM_FR', 'DRM_RR', 'DRM_RL']
+  vid: 'a0e24dbdc3fd9a66a25f25aca1d23ea1'
+
+L6T79FRE8RD000079:
+  #310
+  veh_type: 'venus'
+  tel: '15214727812'
+  faulty_ecu: ['DRM_FL', 'DRM_FR', 'DRM_RR', 'DRM_RL']
+  vid: '632feecb86e98b7d09415fe9ae031da9'
+
+L6T79T2E3PP002455:
+  #573
+  veh_type: 'mars1'
+  tel: '18221073295'
+  faulty_ecu: ['RCMM', 'RML', 'RCMR', 'RCML', 'HCML', 'HCMR', 'SWTL', 'SWTR', 'SRS']
+  vid: '30b4f1583353e3d1efa045c167a5de75'
+
+L6T79P2N1PP002591:
+  #813
+  veh_type: 'mars1'
+  tel: '15214727812'
+  faulty_ecu: ['DRM_FL']
+  vid: '236427a27bfac547bf3028e457fd7375'
+
+L6T79T4E5PD000303:
+  #321 
+  veh_type: 'venus'
+  tel: '15632232655'
+  faulty_ecu: ['SRS']
+  vid: '9f5529f7381ea41eb65c87b989af42c5'
+
+L6T79T2E0PP002445:
+  #550
+  veh_type: 'mars1'
+  tel: '13122912699'
+  faulty_ecu: ['SUM1', 'RCMR', 'RCML']
+  vid: 'cef6d6c8e4587d508a834596f7c9c870'
+
+L6T79T2E9PP002461:
+  #512
+  veh_type: 'mars1'
+  tel: '15000460518'
+  faulty_ecu: ['FLR', 'RCMM']
+  vid: '22a9256590f0a7f016cbb5d7a4d24819'
+
+L6T79T2E3PP002603:
+  #987
+  veh_type: 'mars1'
+  tel: '18595429486'
+  faulty_ecu: ['DPOD']
+  vid: '2ba55415e4679ca9bcb295fd53e95134'
+
+L6T79P2N0PP002436:
+  #529
+  veh_type: 'mars1'
+  tel: '19534250686'
+  faulty_ecu: ['SODL','RCMM','RCMR', 'RCML']
+  vid: '04fadd90bed5bf219f00c18296152cb5'
+
+L6T79T4E7RD055466:
+  #531
+  veh_type: 'venus'
+  tel: '15214727812'
+  faulty_ecu: ['SRS']
+  vid: '13fc7725e7c76b9cf6a65ee56a2083f6'
+
+L6T79P4N7PD000259:
+  #369
+  veh_type: 'venus'
+  tel: '15821139490'
+  faulty_ecu: ['SRS']
+  vid: '53c08378f00c41bd589d8460240caa50'
+
+L6T79P2N2PP002602:
+  #993
+  veh_type: 'mars1'
+  tel: '15870661637'
+  faulty_ecu: []
+  vid: '788ad17327243e78f65b562ec3681045'
+
+JDS0ATESTBENCH074:
+  #170
+  veh_type: 'mars1'
+  tel: '18221073295'
+  faulty_ecu: ['ACU','CDC','BNCM','WPC','NKR','WPC3','FLR','FSRL','FSRR','SODL','SODR','AUD','CD',
+               'SWTL','SWTR','VDDM','BBM','SRS','EGSM','BECM1','MGM','IEM','HVCM','ECM3','PSCM_1',
+               'PSCM_2','SAS','SUM1','RML','DDM','RLDM','RRDM','DPOD','PPOD','LPOD','RPOD','CCM','POT',
+               'SMD','SMP','HCML','HCMR','RCML','RCMR','RCMM','DRM_FL','DRM_FR','DRM_RL','DRM_RR','IPM','SMB']
+  vid: 'f3b258e2e847e71e20fd01fe33b7900b'
+
+JDS0ATESTBENCH107:
+  #227
+  veh_type: 'mars1'
+  tel: '19117205185'
+  faulty_ecu: ['ACU','CDC','BNCM','WPC','NKR','WPC3','FLR','FSRL','FSRR','SODL','SODR','AUD','CD',
+               'SWTL','SWTR','VDDM','BBM','SRS','EGSM','BECM1','MGM','IEM','HVCM','ECM3','PSCM_1','PDM',
+               'PSCM_2','SAS','SUM1','RML','DDM','RLDM','RRDM','DPOD','PPOD','LPOD','RPOD','CCM','POT',
+               'SMD','SMP','HCML','HCMR','RCML','RCMR','RCMM','DRM_FL','DRM_FR','DRM_RL','DRM_RR','IPM','SMB']
+  vid: '5ed1fe021e2b402cd9a6e7d69be05555'
+
+JDS0ATESTBENCH117:
+  #233
+  veh_type: 'mars1'
+  tel: '19117205185'
+  faulty_ecu: ['ACU','CDC','BNCM','WPC','NKR','WPC3','FLR','FSRL','FSRR','SODL','SODR','AUD','CD',
+               'SWTL','SWTR','VDDM','BBM','SRS','EGSM','BECM1','MGM','IEM','HVCM','ECM3','PSCM_1','PDM',
+               'PSCM_2','SAS','SUM1','RML','DDM','RLDM','RRDM','DPOD','PPOD','LPOD','RPOD','CCM','POT',
+               'SMD','SMP','HCML','HCMR','RCML','RCMR','RCMM','DRM_FL','DRM_FR','DRM_RL','DRM_RR','IPM','SMB']
+  vid: 'ebbfee18b1d04508333f6cb3a2439584'
+
+JDS0ATESTBENCH050:
+  #169
+  veh_type: 'mars1'
+  tel: '19117205185'
+  faulty_ecu: ['ACU','CDC','BNCM','WPC','NKR','WPC3','FLR','FSRL','FSRR','SODL','SODR','AUD','CD',
+               'SWTL','SWTR','VDDM','BBM','SRS','EGSM','BECM1','MGM','IEM','HVCM','ECM3','PSCM_1','PDM',
+               'PSCM_2','SAS','SUM1','RML','DDM','RLDM','RRDM','DPOD','PPOD','LPOD','RPOD','CCM','POT',
+               'SMD','SMP','HCML','HCMR','RCML','RCMR','RCMM','DRM_FL','DRM_FR','DRM_RL','DRM_RR','IPM','SMB']
+  vid: '49a9352e144b843e177912e042d09e3f'
+
+LSTEST6R9F2086656:
+  #656
+  veh_type: 'mars1'
+  tel: '19117205185'
+  faulty_ecu: []
+  vid: 'c7dcd61eec1a3fc8f89163be08bde0e6'

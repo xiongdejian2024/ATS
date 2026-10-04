@@ -15,7 +15,7 @@ logger = logging.getLogger("xat.integrations")
 
 def pytest_addoption(parser):
     group = parser.getgroup("xat-integration", "XAT 的 SAT / ECU 集成")
-    group.addoption("--xat-mode", choices=["none", "offline", "sat"], default="none")
+    group.addoption("--xat-mode", choices=["none", "offline", "sat", "hardware"], default="none")
     group.addoption("--sat-root")
     group.addoption("--ecu-root")
     group.addoption("--allow-hardware", action="store_true", default=None)
@@ -133,7 +133,7 @@ def ecu_simulator(pytestconfig, ecu_profile):
     if pytestconfig._xat_integration.mode == "none":
         raise ValueError("ECU fixture 需要 --xat-mode offline 或 sat")
     try:
-        from automotive_sdk.services.simulator import SimulatorService
+        from xat_ecu.services.simulator import SimulatorService
 
         simulator = SimulatorService(ecu_profile)
         logger.info("创建 ECU 模拟服务")
@@ -160,10 +160,10 @@ def ecu_sdk_options():
 @pytest.fixture
 def ecu_sdk(pytestconfig, ecu_sdk_options):
     settings = pytestconfig._xat_integration
-    if settings.mode != "sat" or not settings.allow_hardware:
+    if settings.mode not in {"sat", "hardware"} or not settings.allow_hardware:
         raise ValueError("完整 ECU SDK fixture 需要显式允许的台架模式")
     try:
-        from automotive_sdk import VehicleSDK
+        from xat_ecu import VehicleSDK
 
         with VehicleSDK(**ecu_sdk_options) as sdk:
             logger.info("创建 ECU SDK：%s", sdk)

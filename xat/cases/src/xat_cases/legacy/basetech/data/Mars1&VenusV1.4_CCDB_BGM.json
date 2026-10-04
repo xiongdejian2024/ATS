@@ -1,0 +1,1850 @@
+[
+    {
+        "ccp_family":"VEHICLE TYPE",
+        "ccp_id":1,
+        "ccp_variant":"01=L541 S90L\n02=V542 V90\n03=V543 V90CC\n04=V526 XC90\n05=V426 XC60\n06=V541 S90\n07=V316 XC40\n08=V320\n09=V323\n0A=V431 S60\n0B=V432 V60\n0C=L431\n0D=V433 V60 CC\n0E=P514\n0F=V331\n80=CX11 01\n81=CS1103\n82=CH11\n83=CC11 02\n84=CS12\n85=DCY11\nA1=EX11\nA2=KX11\nA3=DC1E\nA4=KW11\nE0=HRE1\nE1=LCV1\nA5=ES11\nA6=BC1E\nA7=EF1E\nA8=DX1E\n10=V317\n86=DX11\n87=FX11\n8B=HX11\n8C=HC11\n8A=LAMBDA\nA9=CF1E\nAA=CM1E\nAB=DX11 CMA1.5\n8D=HB11\n8E=ALPHA\nAC=FE21\nAD=V216\nAE=BX1E\nAF=FS11\nB0=FX12\nB1=CX21",
+        "default_value":"A3",
+        "ecu_name":"BGM",
+        "userful_value":"A3"
+    },
+    {
+        "ccp_family":"NUMBER OF DOORS",
+        "ccp_id":2,
+        "ccp_variant":"01=5 door\n02=4 door\n03=2 door\n04=3 door",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"TRANSMISSION DRIVELINE",
+        "ccp_id":3,
+        "ccp_variant":"01=2 wheel drive\n02=AWD All wheel drive\n80=E-4WD,Electronic four wheel drive\n81=RWD,Rear wheel drive",
+        "default_value":"81",
+        "ecu_name":"BGM",
+        "userful_value":"81/80"
+    },
+    {
+        "ccp_family":"FUEL",
+        "ccp_id":6,
+        "ccp_variant":"01=Petrol\n02=Diesel\n03=No Fuel",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"STEERING WHEEL POSITION",
+        "ccp_id":8,
+        "ccp_variant":"01=Left Hand Drive\n02=Right Hand Drive",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"GEARBOX",
+        "ccp_id":9,
+        "ccp_variant":"01=AWF22FWD,Automatic 8-speed FWD\n02=M66FWD,Manual 6-speed FWD\n03=C6FWD,Manual 6-speed FWD\n04=AWF22AWD,Automatic 8-speed AWD\n05=M66AWD,Manual 6-speed AWD\n06=AWF21FWD,Automatic 6-speed FWD\n07=7DCTFWD,Dual Clutch 7-speed FWD\n08=M76FWD,Manual 6-speed FWD\n09=7DCTAWD,Dual Clutch 7-speed AWD\n0A=AW8GFWD,Automatic 8-speed FWD\n0B=AW8GAWD,Automatic 8-speed AWD\n7F=No Gearbox\n80=MX65FWD,Manual 6-Speed FWD\n0C=1EDT,Electric Drive Train,1 speed\nA1=Reducer FWD\nA2=Reducer RWD\nA3=Reducer AWD\n81=8ATEAWD\n82=7DCTFWD,Dual Clutch 7-speed FWD,Gen 2\n83=Reducer FWDb-11.8\n84=Reducer RWDb-11.8\n85=Reducer AWDb-11.8\n86=6Speed Manual RWD\n87=6Speed Auto RWD\n88=7DCTRWD,Dual Clutch 7 Speed RWD\n89=6 Manual with RWD LSD\n8A=7 DCT with RWD LSD\n8B=3DHT\n0D=E FWD,Electric Drive Train,1 speed",
+        "default_value":"A2",
+        "ecu_name":"BGM",
+        "userful_value":"A2/A3"
+    },
+    {
+        "ccp_family":"GEARBOX TYPE",
+        "ccp_id":10,
+        "ccp_variant":"01=Manual gearbox\n02=Automatic gearbox",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"PROPULSION TYPE",
+        "ccp_id":13,
+        "ccp_variant":"01=Combustion engine only\n02=Hybrid vehicle\n03=Plugin hybrid vehicle\n04=Battery electric vehicle\n80=MHEV for GEEA2.0",
+        "default_value":"04",
+        "ecu_name":"BGM",
+        "userful_value":"04"
+    },
+    {
+        "ccp_family":"TYRE PRESSURE MONITORING SYSTEM",
+        "ccp_id":19,
+        "ccp_variant":"01=Without Monitoring system TPMS\n02=TPMS WBA US algorithm\n03=TPMS WBL US algorithm\n04=TPMS WBA EU algorithm\n05=TPMS WBL EU algorithm\n06=TPMS China algoritm",
+        "default_value":"06",
+        "ecu_name":"BGM",
+        "userful_value":"06"
+    },
+    {
+        "ccp_family":"START DEVICE",
+        "ccp_id":22,
+        "ccp_variant":"01=Start knob two rotation directions\n02=Start knob one rotation direction\n03=Start button\n04=No Physical device",
+        "default_value":"04",
+        "ecu_name":"BGM",
+        "userful_value":"04"
+    },
+    {
+        "ccp_family":"SEATS",
+        "ccp_id":24,
+        "ccp_variant":"01=Not applicable variant, no parts allowed\n02=5seat\n03=7seat\n04=4seat\n05=3seat\n06=4seat 2(519G)\n07=1seat\n08=2seat\n09=6seat",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BATTERY",
+        "ccp_id":30,
+        "ccp_variant":"01=H5 AGM 60Ah 680 CCA\n02=H6 AGM 70Ah 760 CCA\n03=H7 AGM 80Ah 800 CCA\n04=H8 AGM 95Ah 850 CCA\n05=H7 AGM Camel 80Ah 800 CCA\n06=H7 AGM EP 80Ah 795CCA\n07=H6 EFB Exide 70Ah 720CCA\n08=H7 Li1 Li-lon XXXX 80Ah\n09=H6 EFB Leoch 70Ah 680CCA\n0A=BATTERY H6 AGM Leoch 70Ah 760CCA K\n0B=H7 AGM Leoch 80Ah 800 CCA\n0C=H7 AGM Exide 80Ah 800CCA\n0D=H6 EFB FIAMM 70Ah 720CCA\n0E=H8 AGM Exide 95Ah 850CCA\n0F=H6 AGM Exide 70Ah 760 CCA\n80=BATTERY H5 580CCA K\n81=BATTERY H6 650CCAK\n82=BATTERY H7 680CCAK\n83=BATTERY H4 45Ah 300CCA\n84=BATTERY H4 45Ah 430CCA\n85=BATTERY H6 EFB 70Ah 700CCA\n86=LI-ION BATTERY1 45Ah\n87=Li-ion Battery2 30Ah\n88=H6 AGM Camel 70Ah 760 CCA\n89=BATTERY H4 Camel 45Ah 430CCA\n8A=BATTERY H6 EFB Camel 70Ah 700CCA\n8B=Li-ion Battery2 30Ah CAN\n8C=H4 AGM\n8D=12V LFP BAT 20Ah\n8E=53Ah AGM\n8F=H4 AGM CLARIOS 50Ah 520CCA",
+        "default_value":"8F",
+        "ecu_name":"BGM",
+        "userful_value":"8F"
+    },
+    {
+        "ccp_family":"LOW VOLTAGE ELECTRICAL CONFIGURATION",
+        "ccp_id":32,
+        "ccp_variant":"01=Conventional Vehicle Without Start Stop,One Battery\n02=Start Stop In SPA(BCSM)\n03=Start Stop In CMA (Relay)\n04=Enhanced Regen SPA\n05=48V\n06=48V SPA\n07=48V CMA\n08=48V GAD\n09=PHEV SPA\n0A=PHEV CMA HEP7\n0B=PHEV SPA 7DCT\n0C=BEV\n0D=PHEV SPA PS14\n0E=PHEV DRIVE ME 2.0",
+        "default_value":"0C",
+        "ecu_name":"BGM",
+        "userful_value":"0C"
+    },
+    {
+        "ccp_family":"SHIFT BY WIRE",
+        "ccp_id":39,
+        "ccp_variant":"01=Without Shift By Wire\n02=With Shift By Wire\n03=SHIFT BY WIRE (pattern type 2)\n04=Shift by wire (pattern type 3)\n80=Shift by wire (pattern type 4)\n81=Shift by wire (column mount shifter)\n82=Screen and Touchpad shifting",
+        "default_value":"82",
+        "ecu_name":"BGM",
+        "userful_value":"82"
+    },
+    {
+        "ccp_family":"STOP IN SPEED VELOCITY",
+        "ccp_id":44,
+        "ccp_variant":"01=Without StoplnSpeed\n02=StoplnSpeed 0 km/h\n06=StoplnSpeed 4km/h\n09=StoplnSpeed 7km/h\n11=StopinSpeed 15km/h\n20=StopinSpeed 30 km/h\n7A=StoplnSpeed 120 km/h\n84=StoplnSpeed 130 km/h\n0C=StoplnSpeed 10km/h\n80=StoplnSpeed 1km/h\n81=StoplnSpeed 22km/h",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"REMOTE ENGINE START PRECOND",
+        "ccp_id":45,
+        "ccp_variant":"01=Without Remote Engine Start Precond from smartphone app\n02=Remote Engine Start Precond from smartphone app\n03=ERS by app,Running light\n04=ERS by key\n05=ERS by key,Running light\n06=ERS by app and ERS by key\n07=ERS by app and ERS by key, Running light",
+        "default_value":"07",
+        "ecu_name":"BGM",
+        "userful_value":"07"
+    },
+    {
+        "ccp_family":"ALARM",
+        "ccp_id":64,
+        "ccp_variant":"01=Without Alarm\n02=Alarm\n03=With Alarm Using Vehicle Horn\n04=With Alarm for the Netherlands",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"INTERIOR MOTION SENSOR",
+        "ccp_id":65,
+        "ccp_variant":"01=Without interior Motion Sensor\n02=Interior Motion Sensor\n03=Interior Motion Sensor 2",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"INCLINATION SENSOR",
+        "ccp_id":66,
+        "ccp_variant":"01=Without inclination sensor\n02=With inclination sensor",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"STEERING COLUMN LOCK",
+        "ccp_id":67,
+        "ccp_variant":"01=Without Steering Column Lock\n02=With Steering Column Lock variant 1\n03=With Steering Column Lock variant 2",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"RETRIGG ENABLING,IF ALARM",
+        "ccp_id":69,
+        "ccp_variant":"01=Retrigg 1 cycle\n02=Retrig 3 cycles\n03=Retrigg 10 cycles\n80=Retrig 6 cycles",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"PASSIVE ARMING",
+        "ccp_id":70,
+        "ccp_variant":"01=Without passive arming\n02=With passive arming",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"IMMOBILISER VARIANT",
+        "ccp_id":72,
+        "ccp_variant":"01=Immobiliser for 1 Target\n03=Immobiliser for 3 Targets\n02=Immobiliser for 2 Targets",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"KEY WARNING",
+        "ccp_id":73,
+        "ccp_variant":"01=Without Key Warning\n02=With Key Warning",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"ATTENUATION UPHOLSTERY",
+        "ccp_id":74,
+        "ccp_variant":"01=High attenuation upholstery\n02=Middle attenuation upholstery\n03=Low attenuation upholstery",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"THEFT NOTIFICATION",
+        "ccp_id":75,
+        "ccp_variant":"01=Without Theft Notification\n02=With Theft Notification",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"DOOR HANDLE TYPE",
+        "ccp_id":81,
+        "ccp_variant":"01=Standard door handle, not electrical\n02=Capacitive door handle\n03=Electrically deployable door handle",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"CHARGE LID LOCK",
+        "ccp_id":82,
+        "ccp_variant":"01=Without electric charge lid\n80=With electric charge lid Geely\n81=Mechanical charge lid\n82=Semi-Electrical charge lid\n83=Complete-Electrical charge lid",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"CENTRAL LOCK TYPE",
+        "ccp_id":85,
+        "ccp_variant":"01=Without blocked lock mode\n02=Blocked lock mode(BLL)",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"CENTRAL LOCK SWITCHES",
+        "ccp_id":86,
+        "ccp_variant":"01=Central lock switch in driverdoor\n02=Central lock switches in both front doors\n03=Central lock switches in both front doors and local locking switches in both\n80=Central lock switches in both front doors and in both rear doors",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"PRIVATE LOCKING,LUGGAGE COMP.",
+        "ccp_id":88,
+        "ccp_variant":"01=Private locking disabled\n02=Private locking enabled",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SLAM LOCKING",
+        "ccp_id":89,
+        "ccp_variant":"01=SlamLock Disabled\n02=SlamLock Enabled",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"AUTOMATIC LOCKING BY SPEED",
+        "ccp_id":90,
+        "ccp_variant":"01=Automatic Locking by speed always ON, disabled in menu\n02=Automatic Locking by speed enabled,default OFF\n03=Automatic Locking by speed enabled, default ON",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"TWO STEP UNLOCKING",
+        "ccp_id":91,
+        "ccp_variant":"01=Two step unlocking default OFF\n02=Two step unlocking default ON",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"KEYLESS ENTRY",
+        "ccp_id":94,
+        "ccp_variant":"01=Without Keyless entry\n02=Passive entry,Personal Car Communicator,incl.remote tag\n80=Passive entry by key distance,Personal Car Communicator,incl.remote tag",
+        "default_value":"80",
+        "ecu_name":"BGM",
+        "userful_value":"80"
+    },
+    {
+        "ccp_family":"AUDIBLE LOCKING FEEDBACK",
+        "ccp_id":96,
+        "ccp_variant":"01=Audible locking feedback disabled\n02=Audible locking feedback enabled, default OFF\n03=Audible locking feedback enabled, default ON",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"TRUNK RELEASE,POP-UP",
+        "ccp_id":97,
+        "ccp_variant":"01=Without Trunk Release\n02=Remote&interior trunk release,POP UP",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SELF OPENING BOOTLID/TAILGATE",
+        "ccp_id":98,
+        "ccp_variant":"01=Without poweroperated tailgate or bootlid\n02=With poweroperated tailgate or bootlid\n03=With softclose on tailgate\n04=With poweroperated tailgate or bootlid,AM-markets\n80=With poweroperated tailgate by single motor and single pole",
+        "default_value":"80",
+        "ecu_name":"BGM",
+        "userful_value":"80"
+    },
+    {
+        "ccp_family":"HANDSFREE OPENER,BOOTLID/TAILGATE",
+        "ccp_id":99,
+        "ccp_variant":"01=Without foot movement detection module\n02=Foot movement detection module\n03=Foot movement detection module (accessory)\n04=Foot movement detection module Gen3\n05=Foot movement detection module Gen3(accessory)",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"AUTONOMOUS DRIVE",
+        "ccp_id":100,
+        "ccp_variant":"01=No Autonomous Vehicle\n02=Autonomous Vehicle Volvo\n03=Autonomous Vehicle Preparation\n80=Autonomous Vehicle Geely",
+        "default_value":"80",
+        "ecu_name":"BGM",
+        "userful_value":"80"
+    },
+    {
+        "ccp_family":"TURN SIGNAL TYPE",
+        "ccp_id":104,
+        "ccp_variant":"01=Standard turn signal\n02=Sequential turn signal\n80=with Sequential Turn Indicators Front Standard Rear\n81=with Sequential Turn Indicators Rear Standard Front\n82=with Sequential Turn Indicators Front and Rear",
+        "default_value":"81",
+        "ecu_name":"BGM",
+        "userful_value":"81"
+    },
+    {
+        "ccp_family":"WELCOME&GOODBYE LIGHTS TYPE",
+        "ccp_id":105,
+        "ccp_variant":"01=Without Welcome and Goodbye Lights\n02=Welcome and Goodbye Lights Pattern 1\n03=Welcome and Goodbye Lights Pattern 2\n04=Welcome and Goodbye Lights Pattern 3\n05=Welcome and Goodbye Lights Pattern 4\n06=Welcome and Goodbye Lights Pattern 5\n07=Welcome and Goodbye Lights Pattern 6\n80=Welcome and Goodbye Lights Pattern A\n81=Welcome and Goodbye Lights Pattern B\n82=With Welcome and GoodBye Lights\n83=With Configurable Welcome and GoodBye Lights\n08=Welcome and Goodbye Lights Pattern 7\n84=Welcome and Goodbye lights pattern C",
+        "default_value":"80",
+        "ecu_name":"BGM",
+        "userful_value":"80"
+    },
+    {
+        "ccp_family":"HEADLIGHTS TYPE",
+        "ccp_id":106,
+        "ccp_variant":"01=Halogen lights without adjuster\n02=Halogen lights with adjuster\n03=Xenon Automatic Bending Light,type A\n04=Xenon Automatic Bending Light,type B\n05=LED With Bending Light,type A,Top Range\n06=LED With Bending Light,type B,Top Range\n07=LED,Without Bending Light,type A,Mid Range\n08=LED,Without Bending Light,type B,Mid Range\n09=LED,type A,with HCM US/CND Mid Range\n0A=LED,type B,with HCM ROW Mid Range\n0B=LED,type A,with HCM US/CND High Range\n0C=LED,type B,with HCM ROW High Range\n0D=HALO B Halogen lights with adjuster&LED Supplement Lamp for DRL/Pos/T \n0E=LED,Type B,with HCM & LED Supplement Lamp for DRL/Pos/TI\n0F=LED,type A,Base Headlamp with HCM\n10=LED,type B,Base Headlamp with HCM\n11=LED,type A,Pixel Headlamp with HCM\n12=LED,type B,Pixel Headlamp with HCM\n13=LED Pixel,Without Bending Light,Type A,with HCM US/CDN MID Range\n80=LED with manual leveling and without bending\n81=LED,Base Headlamp with HCM,Withot Bend Light,SAE\n82=LED,Base Headlamp with HCM,Withot Bend Light,ECE",
+        "default_value":"11",
+        "ecu_name":"BGM",
+        "userful_value":"11"
+    },
+    {
+        "ccp_family":"EXTERIOR LIGHT LOGIC",
+        "ccp_id":107,
+        "ccp_variant":"01=DDRL not together with position light\n02=Without DDRL\n03=DDRL in pos O, user configurable\n04=DDRL in pos Auto,user configurable\n05=DDRL in all positions\n06=Without DDRL,with position light, after market\n80=DRL with no rear position light\n81=DRL with SML no rear position light",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"DRL TYPE",
+        "ccp_id":108,
+        "ccp_variant":"01=No DRL\n02=DRL On During DI\n03=DRL Dimmed and Pos On During DI\n04=DRL and Pos Off During DI\n05=DRL Off and Pos On During DI",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"ACTIVE HIGH BEAM",
+        "ccp_id":109,
+        "ccp_variant":"01=Without AHB\n02=With AHB1 (On/Off),Low Beam in Village (ROW)\n03=With AHB1(On/Off),US/CND(Sensitivity settings)\n04=With AHB2 (Adaptive),ROW (Sensitivity settings)\n05=With AHB2 (Adaptive),US/CND(Sensitivity settings)\n06=With AHB3 (Pixel),ROW (Sensitivity settings)\n07=With AHB3 (Pixel),US/CND (Sensitivity settings)",
+        "default_value":"04",
+        "ecu_name":"BGM",
+        "userful_value":"04"
+    },
+    {
+        "ccp_family":"REAR FOGLIGHT TOWFUNCTION",
+        "ccp_id":110,
+        "ccp_variant":"01=Foglights running even when trailer is connected\n02=Foglights shut off when trailer is connected, only trailers foglights are run",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"TOURIST LIGHT",
+        "ccp_id":111,
+        "ccp_variant":"01=Without configurable Tourist Light\n02=Left asymmetry with configurable Tourist Light\n03=Right asymmetry with configurable Tourist Light",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"CORNERING LIGHT",
+        "ccp_id":112,
+        "ccp_variant":"01=Without cornering light\n02=With cornering light",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"FOGLIGHT/FUNCTION IN SPOILER",
+        "ccp_id":113,
+        "ccp_variant":"01=Without Front Foglight Restrictions\n02=Front Foglight not together with High Beam\n03=Front Foglight restricted with Low Beam",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"EMERGENCY BRAKE LIGHT",
+        "ccp_id":114,
+        "ccp_variant":"01=Without EBL\n02=EBL,Flashing Brake Light and Hazard Warning\n03=EBL,Extended Light Area\n04=EBL,Extended Light Area,direction indicator",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"FRONT FOGLIGHT",
+        "ccp_id":115,
+        "ccp_variant":"01=Without foglight\n02=Foglight,LED\n03=Foglight,bulb",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"DRL TECHNOLOGY",
+        "ccp_id":116,
+        "ccp_variant":"01=No DRL\n02=DRL Bulb\n03=DRL LED combined with Pos",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"DOOR HANDLE LIGHT",
+        "ccp_id":117,
+        "ccp_variant":"01=Without door handle light\n02=With door handle light on all door handles, including puddle lights",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"WINDSCREEN WIPERS",
+        "ccp_id":120,
+        "ccp_variant":"01=Conventional washing\n02=Wet arms,not heated\n03=Wet arms,heated\n04=Conventional washing,heated nozzles\n05=Aquablades,not heated\n06=Aquablades,heated",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"HEADLIGHT CLEANING OPTION",
+        "ccp_id":121,
+        "ccp_variant":"01=Without headlight cleaning\n02=With headlight cleaning\n03=Without headlight cleaning, large reservoire Variant shall be cancelled!/Sus",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"HEATED WINDSCREEN",
+        "ccp_id":122,
+        "ccp_variant":"01=No Heated Frontscreen\n02=Heated Frontscreen",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"IR REFLECTIVE GLASS WINDSCREEN",
+        "ccp_id":123,
+        "ccp_variant":"01=Standard Windscreen Glass\n02=IR protected Windscreen Glass",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"REAR WINDOW WIPER",
+        "ccp_id":124,
+        "ccp_variant":"01=No rear window wiper\n02=Rear Window wiper with washer",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"BUMPER TYPES",
+        "ccp_id":139,
+        "ccp_variant":"01=Standard front bumper\n02=R-design front bumper\n03=Kinetic front bumper\n04=Inscription front bumper\n80=Low front bumper",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"PARKING ASSISTANCE",
+        "ccp_id":142,
+        "ccp_variant":"01=Without parking assistance\n02=Parking assistance,rear\n03=Parking assistance,front and rear\n04=Parking assistance,Semi-Automatic Parking\n05=Parking assistance,Full-Automatic Parking\n06=Parking Assistance,SAP+\n07=Parking assistance Gen3, front, rear & side\n08=Parking assistance Gen3,rear\n09=Parking assistance Gen3,front and rear\n0A=Parking assistance, Remote Full-Automatic Parking (RFAP)\n80=With APA (FUSION)\n81=With APA(FUSION)and RPA(REMOTE PARKING ASSIST)\n82=With APA(FUSION) and RPA(REMOTE PARKING ASSIST) and RPP(REMOTE PAR\n83=With APA and RPA and RPP(REMOTE PARKING PILOT) and HPP(HOMEZONE P.\n84=With APA(FUSION)and RPA(REMOTE PARKING ASSIST) and RPP(REMOTE PAR\n85=With Parking Pilot Lidar project: Parking Pilot, support learning Parking and",
+        "default_value":"83",
+        "ecu_name":"BGM",
+        "userful_value":"83"
+    },
+    {
+        "ccp_family":"HEAD UP DISPLAY",
+        "ccp_id":158,
+        "ccp_variant":"01=With Head Up Display,FCW\n02=With Head Up Display,graphic\n03=Without Head Up Display\n04=With Head Up Display,graphic 2\n05=With Head Up Display,graphic 3\n06=Combined Head Up Display,graphic",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"CLEAN COMPARTMENT",
+        "ccp_id":169,
+        "ccp_variant":"01=Without Clean compartment\n02=With Clean compartment",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"AC COMPRESSORS",
+        "ccp_id":173,
+        "ccp_variant":"01=Mechanical A(140cc)\n02=Mechanical B(160cc)\n03=Electric AC\n04=IVDC compressor NOT for Volvo\n05=Electrical AC,Chiller with TXV\n06=Mechanical A2 DPS2(140cc)\n07=Mechanical B2 DPS2(160cc)\n08=Mechanical C(140cc)\n09=Mechanical D(170cc)",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"HVAC VARIANTS",
+        "ccp_id":175,
+        "ccp_variant":"01=Electronic Climate Control,2 zone\n02=Electronic Climate Control,4 zone\n03=HVAC Small,1 zone\n04=HVAC Small,2 zone\n05=HVAC Small,3 zone\n06=Manual AC\n80=Manual AC partial recirculation\n81=HVAC Small,4 zone\n82=Electronic Climate Control,1 zone\n83=ADU1Z-1 Zone Air Distribution Unit\n84=ADU2Z-2 Zone Air Distribution Unit\n85=ADU3Z-3 Zone Air Distribution Unit\n86=ADU4Z-4 Zone Air Distribution Unit\n87=HVAC 4 zones Full control Fan Flow/Air Distribution/Temperature unit",
+        "default_value":"05",
+        "ecu_name":"BGM",
+        "userful_value":"05"
+    },
+    {
+        "ccp_family":"REAR VIEW MIRROR TYPE",
+        "ccp_id":176,
+        "ccp_variant":"01=Manual dimming\n02=Automatic dimming inner\n03=Automatic dimming inner and outer\n80=Automatic dimming inner and driver side only",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ROOF HATCH",
+        "ccp_id":177,
+        "ccp_variant":"01=No roof hatch/panorama roof\n02=Openable panorama roof\n03=Hatch\n04=Electrochromic Panorama Roof\n05=Panorama roof,fixed\n80=Double sun curtains\n06=Panorama roof,Polestar star light,fixed.\n81=Sunroof Glass Color Adjustment",
+        "default_value":"05",
+        "ecu_name":"BGM",
+        "userful_value":"05/81"
+    },
+    {
+        "ccp_family":"PINCH PROTECTION LEVEL",
+        "ccp_id":178,
+        "ccp_variant":"01=Standard pinch protection\n02=Enhanced pinch protection",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"HEATED REAR SEAT",
+        "ccp_id":181,
+        "ccp_variant":"01=Without heated rear seat\n02=Heated rear seat",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"PARKING CLIMATE LEVEL",
+        "ccp_id":182,
+        "ccp_variant":"01=No parking climate\n02=Afterrun parking climate\n03=Heating parking climate\n04=Full parking climate\n80=Combined Scheduled & Direct Start Parking Climate",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"INTERIOR ILLUMINATION",
+        "ccp_id":183,
+        "ccp_variant":"01=Interior lighting base version\n02=Interior lighting high version\n03=Interior lighting mid version\n11=Interior lighting base version, not for Volvo\n12=Interior lighting mid version, not for Volvo\n13=Interior lighting high version,not for Volvo\n80=RGB ambient light base version\n81=RGB ambient light high version\n82=Interior Lightning Top version, not for Volvo\n83=Interior Lightning low version, not for Volvo\n84=RGB ambient light Mid version\n85=Interior Light RGB Base version\n86=Interior Light RGB Mid version\n87=Interior Light RGB High version\n88=Interior lighting base version2\n89=Interior lighting mid version2\n8A=Interior lighting high version2\n8B=RGB ambient light high version2",
+        "default_value":"80",
+        "ecu_name":"BGM",
+        "userful_value":"80/84"
+    },
+    {
+        "ccp_family":"POWER SEATS",
+        "ccp_id":184,
+        "ccp_variant":"01=No Memory Seats\n02=Driver Memory seat and Mechanical passenger seat\n03=Driver Memory seat and Passenger seat without memory\n04=Driver and Passenger Memory Seats\n80=Driver Power Seat without Memory and Passenger Mechanical Seat\n81=Driver Power Seat without Memory and Passenger Power Seat without Memi",
+        "default_value":"04",
+        "ecu_name":"BGM",
+        "userful_value":"04"
+    },
+    {
+        "ccp_family":"HEATED STEERING WHEEL",
+        "ccp_id":186,
+        "ccp_variant":"01=Without heated steering wheel\n02=Heated steering wheel",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"TINTED TAILGATE WINDOW",
+        "ccp_id":188,
+        "ccp_variant":"01=Not Tinted Tailgate Window\n02=Tinted Tailgate Window",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"REAR SEAT VENTILATION",
+        "ccp_id":189,
+        "ccp_variant":"01=Without rear seat ventilation\n02=With rear seat ventilation",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"TRAILER MODULE,AFTERMARKET",
+        "ccp_id":211,
+        "ccp_variant":"01=Without TRailer Module\n02=TRailer Module 13-pos socket,Fixed towbar\n03=TRailer Module 4/7-pos socket,Fixed towbar\n04=TRailer Module 13-pos socket, Semi-el retractable towbar\n05=TRailer Module 4/7-pos socket, Semi-el retractable towbar\n06=TRailer Module Preparation\n80=TRailer Module 13-pos socket, Full-el retractable towbar\n81=TRailer Module 4/7-pos socket, Full-el retractable towbar",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"ALCOLOCK",
+        "ccp_id":212,
+        "ccp_variant":"01=Without Alcolock\n02=Alcolock with bypass\n03=Alcolock without bypass",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"LANGUAGE REGION",
+        "ccp_id":220,
+        "ccp_variant":"01=Language Region for World\n02=Language Region for Europe\n03=Language Region for North America\n04=Language Region for South America\n05=Language Region for Middle East/Africa\n06=Language Region for South East Asia\n07=Language Region for Pacific\n08=Language Region for Russia\n09=Language Region for Korea\n0A=Language Region for China\n0B=Language Region for Taiwan\n0C=Language Region for Japan\n0D=Language Region for India\n0E=Language Region for lsrael\n0F=Language Region for Turkey\n80=Language Region for NORDIC",
+        "default_value":"0A",
+        "ecu_name":"BGM",
+        "userful_value":"0A"
+    },
+    {
+        "ccp_family":"TYRE PRESSURE LLF",
+        "ccp_id":225,
+        "ccp_variant":"01=0->160 km/h,light load,front,200 kPa\n02=0->160 km/h,light load,front,210 kPa\n03=0->160 km/h,light load,front,220 kPa\n04=0->160 km/h,light load,front,230 kPa\n05=0->160 km/h,light load,front,240 kPa\n06=0->160 km/h,light load,front,250 kPa\n07=0->160 km/h,light load,front,260 kPa\n08=0->160 km/h,light load,front,270 kPa\n09=0->160 km/h,light load,front,280 kPa\n0A=0 -> 160 km/h, light load, front, 290 kPa\n0B=0->160 km/h,light load,front,300 kPa\n0C=0->160 km/h,light load,front,310 kPa\n0D=0->160 km/h,light load,front,320 kPa\n0E=0->160 km/h, light load,front,330 kPa\n0F=0->160km/h, light load,front,340 kPa\n10=0-> 160 km/h,light load,front,350 kPa\n11=0-> 160 km/h,light load,front,360 kPa",
+        "default_value":"07",
+        "ecu_name":"BGM",
+        "userful_value":"07"
+    },
+    {
+        "ccp_family":"TYRE PRESSURE LLR",
+        "ccp_id":226,
+        "ccp_variant":"01=0->160 km/h,light load,rear,200 kPa\n02=0->160 km/h,light load,rear,210 kPa\n03=0->160 km/h,light load,rear,220 kPa\n04=0->160 km/h,light load,rear,230 kPa\n05=0->160 km/h,light load,rear,240 kPa\n06=0 -> 160 km/h, light load, rear, 250 kPa\n07=0->160km/h,light load,rear,260 kPa\n08=0->160 km/h,light load,rear,270 kPa\n09=0->160km/h,light load,rear,280 kPa\n0A=0->160 km/h,light load,rear,290 kPa\n0B=0->160km/h,light load,rear,300 kPa\n0C=0->160 km/h,light load,rear,310 kPa\n0D=0->160 km/h,light load,rear,320 kPa\n0E=0->160 km/h,light load,rear,330 kPa\n0F=0->160 km/h,light load,rear,340 kPa\n10=0->160km/h,light load,rear,350 kPa\n11=0->160 km/h,light load,rear,360 kPa",
+        "default_value":"07",
+        "ecu_name":"BGM",
+        "userful_value":"07"
+    },
+    {
+        "ccp_family":"TYRE PRESSURE LHF",
+        "ccp_id":227,
+        "ccp_variant":"01=0->160km/h,heavy load,front,200 kPa\n02=0->160 km/h,heavy load,front,210 kPa\n03=0 -> 160 km/h, heavy load, front, 220 kPa\n04=0->160km/h,heavy load,front,230 kPa\n05=0->160 km/h,heavy load,front,240 kPa\n06=0->160 km/h,heavy load,front,250 kPa\n07=0 -> 160 km/h, heavy load, front, 260 kPa\n08=0->160 km/h,heavy load,front,270 kPa\n09=0->160 km/h,heavy load,front,280 kPa\n0A=0->160km/h,heavy load,front,290 kPa\n0B=0->160km/h,heavy load,front,300 kPa\n0C=0->160 km/h,heavy load,front,310 kPa\n0D=0->160 km/h,heavy load,front,320 kPa\n0E=0->160 km/h,heavy load,front,330 kPa\n0F=0->160 km/h,heavy load,front,340 kPa\n10=0->160 km/h,heavy load,front,350 kPa\n11=0->160 km/h,heavy load,front,360 kPa",
+        "default_value":"0A",
+        "ecu_name":"BGM",
+        "userful_value":"0A"
+    },
+    {
+        "ccp_family":"TYRE PRESSURE LHR",
+        "ccp_id":228,
+        "ccp_variant":"01=0->160 km/h,heavy load,rear,200 kPa\n02=0->160 km/h,heavy load,rear,210 kPa\n03=0->160 km/h,heavy load,rear,220 kPa\n04=0->160 km/h,heavy load,rear,230 kPa\n05=0->160 km/h,heavy load,rear,240 kPa\n06=0->160 km/h,heavy load,rear,250 kPa\n07=0->160 km/h,heavy load,rear,260 kPa\n08=0->160 km/h,heavy load,rear,270 kPa\n09=0->160 km/h,heavy load,rear,280 kPa\n0A=0->160km/h,heavy load,rear,290 kPa\n0B=0->160 km/h,heavy load,rear,300 kPa\n0C=0->160 km/h,heavy load,rear,310 kPa\n0D=0->160 km/h,heavy load,rear,320 kPa\n0E=0->160km/h,heavy load,rear,330 kPa\n0F=0->160 km/h,heavy load,rear,340 kPa\n10=0->160 km/h,heavy load,rear,350 kPa\n11=0 -> 160 km/h, heavy load, rear, 360 kPa",
+        "default_value":"0A",
+        "ecu_name":"BGM",
+        "userful_value":"0A"
+    },
+    {
+        "ccp_family":"TYRE PRESSURE HLF",
+        "ccp_id":229,
+        "ccp_variant":"01=160 km/h->,light load,front,200 kPa\n02=160km/h->,light load,front,210 kPa\n03=160 km/h->,light load,front,220 kPa\n04=160 km/h->,light load,front,230 kPa\n05=160km/h->, light load,front,240 kPa\n06=160 km/h->,light load,front,250 kPa\n07=160 km/h->, light load, front,260 kPa\n08=160 km/h->,light load,front,270 kPa\n09=160km/h->,light load,front,280 kPa\n0A=160 km/h->,light load,front,290 kPa\n0B=160 km/h->,light load,front,300 kPa\n0C=160 km/h-> , light load, front, 310 kPa\n0D=160 km/h->,light load,front,320 kPa\n0E=160 km/h->, light load,front,330 kPa\n0F=160km/h->,light load,front,340 kPa\n10=160 km/h->,light load,front,350 kPa\n11=160km/h->,light load,front,360 kPa",
+        "default_value":"07",
+        "ecu_name":"BGM",
+        "userful_value":"07"
+    },
+    {
+        "ccp_family":"TYRE PRESSURE HLR",
+        "ccp_id":230,
+        "ccp_variant":"01=160 km/h->,light load,rear,200 kPa\n02=160 km/h->,light load,rear,210 kPa\n03=160 km/h->,light load,rear,220 kPa\n04=160km/h->,light load,rear,230 kPa\n05=160 km/h->,light load,rear,240 kPa\n06=160 km/h->,light load,rear,250 kPa\n07=160 km/h->,light load,rear,260 kPa\n08=160km/h->,light load,rear,270 kPa\n09=160km/h->,light load,rear,280 kPa\n0A=160 km/h->,light load,rear,290 kPa\n0B=160 km/h->,light load,rear,300 kPa\n0C=160 km/h->,light load,rear,310 kPa\n0D=160km/h->,light load,rear,320 kPa\n0E=160 km/h->,light load,rear,330 kPa\n0F=160 km/h->,light load,rear,340 kPa\n10=160km/h->,light load,rear,350 kPa\n11=160km/h->,light load,rear,360 kPa",
+        "default_value":"07",
+        "ecu_name":"BGM",
+        "userful_value":"07"
+    },
+    {
+        "ccp_family":"TYRE PRESSURE HHF",
+        "ccp_id":231,
+        "ccp_variant":"01=160 km/h->,heavy load,front,200 kPa\n02=160 km/h->,heavy load,front,210 kPa\n03=160 km/h->,heavy load,front,220 kPa\n04=160km/h->,heavy load,front,230 kPa\n05=160 km/h->,heavy load,front,240 kPa\n06=160 km/h - >, heavy load, front,250 kPa\n07=160 km/h->,heavy load,front,260 kPa\n08=160 km/h->,heavy load,front,270 kPa\n09=160 km/h->,heavy load,front,280 kPa\n0A=160 km/h->,heavy load,front,290 kPa\n0B=160km/h->,heavy load,front,300 kPa\n0C=160 km/h->,heavy load,front,310 kPa\n0D=160km/h- >,heavy load, front,320 kPa\n0E=160 km/h->,heavy load,front,330 kPa\n0F=160 km/h->,heavy load,front,340 kPa\n10=160 km/h- >, heavy load, front,350 kPa\n11=160km/h->,heavy load,front,360 kPa",
+        "default_value":"0A",
+        "ecu_name":"BGM",
+        "userful_value":"0A"
+    },
+    {
+        "ccp_family":"TYRE PRESSURE HHR",
+        "ccp_id":232,
+        "ccp_variant":"01=160 km/h->,heavy load,rear,200 kPa\n02=160km/h->,heavy load,rear,210 kPa\n03=160 km/h->,heavy load,rear,220 kPa\n04=160 km/h->,heavy load,rear,230 kPa\n05=160 km/h->,heavy load,rear,240 kPa\n06=160 km/h->,heavy load,rear,250 kPa\n07=160km/h->,heavy load,rear,260 kPa\n08=160km/h->,heavy load,rear,270 kPa\n09=160 km/h - >, heavy load, rear, 280 kPa\n0A=160km/h->,heavy load,rear,290 kPa\n0B=160 km/h->,heavy load,rear,300 kPa\n0C=160 km/h->,heavy load, rear,310 kPa\n0D=160 km/h->,heavy load,rear,320 kPa\n0E=160 km/h->,heavy load,rear,330 kPa\n0F=160 km/h->,heavy load,rear,340 kPa\n10=160 km/h - >, heavy load, rear, 350 kPa\n11=160 km/h->,heavy load, rear,360 kPa",
+        "default_value":"0A",
+        "ecu_name":"BGM",
+        "userful_value":"0A"
+    },
+    {
+        "ccp_family":"FRONT DIRECTION INDICATOR LAMP TYPE ",
+        "ccp_id":253,
+        "ccp_variant":"01=Bulb\n02=LED\n03=LED with diagnostic mode Bulb\n80=LED High inrush",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"REAR DIRECTION INDICATOR LAMP TYPE",
+        "ccp_id":254,
+        "ccp_variant":"01=Bulb\n02=LED\n03=With LIN\n80=LED higher open load limit\n81=LED higher inrush limits\n82=LED open load and inrush limits A\n83=LED with sequential",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"REAR FOGLIGHT LAMP TYPE",
+        "ccp_id":255,
+        "ccp_variant":"01=Bulb\n02=LED\n03=Single-sided Bulb\n04=Single-sided LED\n05=Without rear foglight\n06=With LIN",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BENDING LIGHT",
+        "ccp_id":256,
+        "ccp_variant":"01=Without Bending Light\n02=With Bending Light only in Low Beam\n03=With Bending Light in High and Low Beam\n04=With Bending Light only in High Beam",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"REAR POSITION LAMP TYPE",
+        "ccp_id":257,
+        "ccp_variant":"01=Bulb\n02=LED\n03=With LIN\n80=LED without dynamic light",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"REAR STOP LEFT/RIGHT LAMP TYPE",
+        "ccp_id":258,
+        "ccp_variant":"01=Bulb\n02=LED\n03=With LIN",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"REVERSING LAMP TYPE",
+        "ccp_id":259,
+        "ccp_variant":"01=Bulb Double sided\n02=LED Double sided\n03=Bulb Single Sided\n04=LED Single sided\n05=With LIN",
+        "default_value":"04",
+        "ecu_name":"BGM",
+        "userful_value":"04"
+    },
+    {
+        "ccp_family":"INDIRECT TPMS SYSTEM",
+        "ccp_id":267,
+        "ccp_variant":"01=Without Indirect Tyre Pressure Monitoring System\n02=Indirect TPMS,Basic Algorithm\n03=Indirect TPMS,US Algorithm\n04=Indirect TPMS,EU Algorithm\n05=Indirect TPMS,China Algorithm",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"HEADLAMP PROJECT,FOR HCM",
+        "ccp_id":274,
+        "ccp_variant":"01=Without HCM\n02=426 with HCM\n03=43x with HCM\n80=HCM LED\n81=HCM MATRIX",
+        "default_value":"81",
+        "ecu_name":"BGM",
+        "userful_value":"81"
+    },
+    {
+        "ccp_family":"REAR SEAT REMOTE FUNCTIONALITY",
+        "ccp_id":275,
+        "ccp_variant":"01=Without Rear Seat Remote Functionality\n02=Rear Seat Remote Excellence",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"SUN SENSOR",
+        "ccp_id":352,
+        "ccp_variant":"01=Without Sun Sensor\n02=With Sun Sensor,LIN(3D)\n03=With Sun Sensor,Hardwired (2D)\n80=With Sun Sensor,LIN(2D)",
+        "default_value":"80",
+        "ecu_name":"BGM",
+        "userful_value":"80"
+    },
+    {
+        "ccp_family":"HUMIDITY SENSOR",
+        "ccp_id":353,
+        "ccp_variant":"01=Without Humidity Sensor\n02=With Humidity Sensor",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"RAIN SENSOR FUNCTION",
+        "ccp_id":401,
+        "ccp_variant":"01=No Rain Sensor Function\n02=Rain Sensor Function Activated By Button\n03=Rain Sensor Function Activated By Interval Position",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"OCCUPANT DETECTION SENSOR DRIVER S ",
+        "ccp_id":415,
+        "ccp_variant":"01=Without occupant detection sensor\n02=With occupant detection sensor\n80=With occupant detection sensors at passenger seat (2 seats at the 1st row)\n81=With occupant detection sensor at driver and passenger seats (2 seats at the \n82=With occupant detection sensor at middle and outer passenger seats(3 seat:\n83=With occupant detection sensor at driver, middle and outer passenger seats \n84=With occupant detection sensor at driver and outer passenger seats(3 seats",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"AUDIO SPEAKERS",
+        "ccp_id":460,
+        "ccp_variant":"01=4 Speakers\n02=6 Speakers\n03=8 Speakers\n04=9 Speakers\n05=11 Speakers\n06=12 Speakers\n07=14 Speakers\n08=5 Speakers\n09=13 Speaker\n80=10 Speakers\n81=15 Speakers\n82=16 Speakers\n83=23 Speakers\n84=27 Speakers\n85=7 Speakers",
+        "default_value":"85",
+        "ecu_name":"BGM",
+        "userful_value":"82/85"
+    },
+    {
+        "ccp_family":"MEMORY IN REAR VIEW MIRRORS",
+        "ccp_id":463,
+        "ccp_variant":"01=Mirrors without memory\n02=Mirrors with memory",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"DOOR OPENING WARNING",
+        "ccp_id":478,
+        "ccp_variant":"01=Without Door Opening Warning\n02=With Door Opening Warning",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"POWER DOOR TYPE",
+        "ccp_id":481,
+        "ccp_variant":"01=No power side/sliding door\n02=Driver power side door\n03=Front left and right power side doors\n04=Power side doors (all side doors)\n05=Left rear power sliding door, right rear manual sliding door\n06=Left rear manual sliding door, right rear power sliding door\n07=Power sliding doors on both rear sides\n08=Front left and right power side door, left rear power sliding door, right rear \n09=Front left and right power side door, left rear manual sliding door, right rea \n0A=Front left and right power side door, power sliding doors on both rear side \n80=Power swiping doors (all side doors)\n81=Left swiping doors,right manual door\n82=Right swiping doors,left manual door\n83=Front butterfly power doors(2 doors),Rear power side doors(2 doors)",
+        "default_value":"04",
+        "ecu_name":"BGM",
+        "userful_value":"04"
+    },
+    {
+        "ccp_family":"WASHER FLUID LEVEL INDICATION FUNCTI",
+        "ccp_id":501,
+        "ccp_variant":"01=Without washer fluid level indication function\n02=With washer fluid level indication function",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"WIPER MOTOR MODULE",
+        "ccp_id":503,
+        "ccp_variant":"01=Without WMM\n02=With WMM",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"HOOD TYPE",
+        "ccp_id":507,
+        "ccp_variant":"01=Mechanical opening\n02=Electrical pop-up/release and opening\n03=Electrical pop-up/release and mechanical opening",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"REAR LAMP CONTROL MODULE",
+        "ccp_id":508,
+        "ccp_variant":"01=Without RCM\n02=With RCML and RCMR\n03=With RCML,RCMR and RCMM",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"HOME SAFE LIGHT",
+        "ccp_id":509,
+        "ccp_variant":"01=Without HomeSafe Light\n02=With HomeSafe Light",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"EXTERIOR LIGHT SHOW",
+        "ccp_id":510,
+        "ccp_variant":"01=Without Exterior Light Show\n02=With Exterior Light Show(free)\n03=With Multi Exterior Light Show(paid in low end)\n04=With Editable Light Show\n05=With Advanced Editable Light Show",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ADAPTIVE FRONT LIGHT SYSTEM",
+        "ccp_id":511,
+        "ccp_variant":"01=Witout AFS\n02=With AFS",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"TRANSMISSION LOCKING",
+        "ccp_id":524,
+        "ccp_variant":"01=Without Transmission locking\n02=With Transmission locking",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"AMBIENCE LIGHT MULTICOLOR CARD",
+        "ccp_id":525,
+        "ccp_variant":"01=Ambience light multicolor card 1/2/3\n02=Ambience light multicolor card 1/2/3/4\n03=To be defined",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"READING LIGHT",
+        "ccp_id":526,
+        "ccp_variant":"01=Without reading light\n02=1 reading light\n03=2 reading lights\n04=3 reading lights\n05=4 reading lights\n06=5 reading lights\n07=6 reading lights",
+        "default_value":"05",
+        "ecu_name":"BGM",
+        "userful_value":"05"
+    },
+    {
+        "ccp_family":"POW STEERING WHEEL POSITION ADJUSTI",
+        "ccp_id":541,
+        "ccp_variant":"01=Without POW Steering Wheel Position Adjustment\n02=With POW Steering Wheel Position Adjustment",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BATTERY BACKED-UP SOUNDER TYPE",
+        "ccp_id":543,
+        "ccp_variant":"01=Without Battery Backed-Up Sounder\n02=BBS with rechargeable battery no inclination sensor\n03=BBS with non-rechargeable battery no inclination sensor\n04=BBS with rechargeable battery and inclination sensor\n05=BBS with non-rechargeable battery and inclination sensor",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"BRAKE PEDAL SENSOR/SWITCH",
+        "ccp_id":545,
+        "ccp_variant":"01=With BLS Brake Light Switch\n02=With BPPS Brake Pedal Position Sensor\n03=With BPSS Brake Pedal position Sensor and Switch\n04=Brake light switch with 4 pin",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"ILLUMINATION SWITCH TYPE",
+        "ccp_id":546,
+        "ccp_variant":"01=With Hard Switch\n02=With Soft Switch,without display light sensor\n03=With Soft Switch,with display light sensor",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SECOND ROW MEMORY SEAT",
+        "ccp_id":551,
+        "ccp_variant":"01=Without Second Row Memory Seat\n02=Second Row Memory Seat",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"DOOR WINDOWS TYPE",
+        "ccp_id":561,
+        "ccp_variant":"01=Standard framed windows\n02=Frameless windows\n03=Fixed Framed windows",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ACTIVE REAR SPOILER",
+        "ccp_id":564,
+        "ccp_variant":"01=Without Active Rear Spoiler\n02=Active Rear Spoiler-General/Body Material\n03=Active Rear Spoiler-Carbon Fibre",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"HIGH VOLTAGE BATTERY TYPE",
+        "ccp_id":566,
+        "ccp_variant":"01=Without High Voltage Battery\n02=162Ah/61.5Kwh\n03=242Ah/94Kwh\n04=156Ah/61.5kWh\n05=114.5Ah/40kWh\n06=150Ah/92.5kWh\n07=150Ah/105.7kWh\n08=176Ah/70.3kwh\n09=242Ah/85.2kWh\n10=246Ah/100.8kWh\n11=242Ah/99.47kWh\n12=140Ah/98kWh\n13=122Ah/45.57kWh\n14=173Ah/72.27 kwh\n17=196Ah/75kwh",
+        "default_value":"10",
+        "ecu_name":"BGM",
+        "userful_value":"10/17"
+    },
+    {
+        "ccp_family":"ELECTRIC VEHICLE INLET TYPE",
+        "ccp_id":567,
+        "ccp_variant":"01=Without Electrical Vehicle Inlet\n02=Combo AC/DC port (type 1)\n03=Separate AC/DC ports (type 1)",
+        "default_value":"03",
+        "ecu_name":"BGM",
+        "userful_value":"03"
+    },
+    {
+        "ccp_family":"DC CHARGE LID LOCK",
+        "ccp_id":578,
+        "ccp_variant":"01=Without charge lid\n02=Mechanical charge lid\n03=Semi-Electrical charge lid\n04=Complete-Electrical charge lid",
+        "default_value":"04",
+        "ecu_name":"BGM",
+        "userful_value":"04"
+    },
+    {
+        "ccp_family":"ECO+mode",
+        "ccp_id":615,
+        "ccp_variant":"01=N ECO+mode\n02=ECO+mode",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"Customization mode",
+        "ccp_id":626,
+        "ccp_variant":"01=Without Customization mode\n02=Customization mode",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"EXTERIOR Light Switch Type",
+        "ccp_id":629,
+        "ccp_variant":"01=Normal type, HB stalk only for HB\n02=Position light auto return and AHBC follow HB stalk\n03=Normal type and AHBC follow HB stalk\n04=With swing, light press available\n05=With swing, light and deep press available\n06=Without swing",
+        "default_value":"06",
+        "ecu_name":"BGM",
+        "userful_value":"06"
+    },
+    {
+        "ccp_family":"HEADREST AUDIO",
+        "ccp_id":636,
+        "ccp_variant":"01=Without headrest audio\n02=With headrest audio",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"Jidu Vehicle Type",
+        "ccp_id":950,
+        "ccp_variant":"01=MarsOne\n02=Venus",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"Door Interior Trim Light",
+        "ccp_id":958,
+        "ccp_variant":"00=Default(等同于01)\n01=WIthout Door Interior Trim Light\n02=With Door Interior Trim Light",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"00/01/02"
+    },
+    {
+        "ccp_family":"Steering wheel type",
+        "ccp_id":959,
+        "ccp_variant":"00=Default(等同于U-shaped steering wheel)\n01=U-shaped steering wheel\n02=O-shaped steering wheel",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"00/01/02"
+    },
+    {
+        "ccp_family":"Adas Light",
+        "ccp_id":960,
+        "ccp_variant":"00=Default(等同于01)\n01=Without Adas Light\n02=With Adas Light",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"00/01/02"
+    },
+    {
+        "ccp_family":"BMS Type",
+        "ccp_id":961,
+        "ccp_variant":"00=Default(等同于01)\n01=Without active wake-up capability\n02=With active wake-up capability",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"00/01/02"
+    },
+    {
+        "ccp_family":"HVCM",
+        "ccp_id":1301,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"AGM",
+        "ccp_id":1302,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ACU",
+        "ccp_id":1303,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"PRLD",
+        "ccp_id":1304,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ASWM",
+        "ccp_id":1305,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"TLCM",
+        "ccp_id":1306,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"BECM",
+        "ccp_id":1307,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BMS",
+        "ccp_id":1308,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"Lidar_L",
+        "ccp_id":1309,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"Lidar_R",
+        "ccp_id":1310,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"CCM",
+        "ccp_id":1311,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"MGM",
+        "ccp_id":1312,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"NKR",
+        "ccp_id":1313,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"DRM_FL",
+        "ccp_id":1314,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"DRM_FR",
+        "ccp_id":1315,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"DRM_RL",
+        "ccp_id":1316,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"DRM_RR",
+        "ccp_id":1317,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"DDM",
+        "ccp_id":1318,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ETCM",
+        "ccp_id":1319,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"DDS",
+        "ccp_id":1320,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ECM",
+        "ccp_id":1321,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SIG",
+        "ccp_id":1322,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"PMSI",
+        "ccp_id":1323,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"AFU",
+        "ccp_id":1324,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"VGA",
+        "ccp_id":1325,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"PLRD",
+        "ccp_id":1326,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"AIIL_L",
+        "ccp_id":1327,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"AIIR_R",
+        "ccp_id":1328,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"PSGM",
+        "ccp_id":1329,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"EGSM",
+        "ccp_id":1330,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"MMD",
+        "ccp_id":1331,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"MMP",
+        "ccp_id":1332,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"IPM",
+        "ccp_id":1333,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"IEM",
+        "ccp_id":1336,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"HCML",
+        "ccp_id":1339,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"HCMR",
+        "ccp_id":1340,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"OHC",
+        "ccp_id":1343,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"PDM",
+        "ccp_id":1345,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SRS",
+        "ccp_id":1346,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"POT",
+        "ccp_id":1348,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"PSCM",
+        "ccp_id":1353,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"RLSM",
+        "ccp_id":1358,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"RML",
+        "ccp_id":1364,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SODL",
+        "ccp_id":1374,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SODR",
+        "ccp_id":1375,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SAS",
+        "ccp_id":1376,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SUM",
+        "ccp_id":1381,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"VDDM ",
+        "ccp_id":1388,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"CEM",
+        "ccp_id":1389,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"WMM",
+        "ccp_id":1391,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ACCM",
+        "ccp_id":1392,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"AUD",
+        "ccp_id":1395,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"HVCH",
+        "ccp_id":1407,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"IRMM",
+        "ccp_id":1413,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BBM",
+        "ccp_id":1435,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"NRCM",
+        "ccp_id":1436,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"WPC",
+        "ccp_id":1437,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"PAC",
+        "ccp_id":1438,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"CD",
+        "ccp_id":1443,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"IMU",
+        "ccp_id":1444,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"AWM",
+        "ccp_id":1455,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01"
+    },
+    {
+        "ccp_family":"FSRL",
+        "ccp_id":1465,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"FSRR",
+        "ccp_id":1466,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SMB",
+        "ccp_id":1473,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"SMD",
+        "ccp_id":1474,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SMP",
+        "ccp_id":1475,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ALM",
+        "ccp_id":1476,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"RCMM",
+        "ccp_id":1517,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"RCML",
+        "ccp_id":1518,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"RCMR",
+        "ccp_id":1519,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BNCM",
+        "ccp_id":1520,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"CDC",
+        "ccp_id":1521,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"ECRV",
+        "ccp_id":1522,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BCTV",
+        "ccp_id":1524,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BCFV",
+        "ccp_id":1525,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"EEXV",
+        "ccp_id":1526,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BEXV",
+        "ccp_id":1528,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"CEXV",
+        "ccp_id":1529,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"FCSI",
+        "ccp_id":1530,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"PSGL",
+        "ccp_id":1531,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"DSGL",
+        "ccp_id":1532,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"ALM_7",
+        "ccp_id":1533,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"ALM_8",
+        "ccp_id":1534,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"ALM_9",
+        "ccp_id":1535,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"ALM_10",
+        "ccp_id":1536,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"01",
+        "ecu_name":"BGM",
+        "userful_value":"01/02"
+    },
+    {
+        "ccp_family":"RPOD",
+        "ccp_id":1537,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"LPOD",
+        "ccp_id":1538,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"PPOD",
+        "ccp_id":1539,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"DPOD",
+        "ccp_id":1540,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SWTR",
+        "ccp_id":1544,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"SWTL",
+        "ccp_id":1545,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"DSRC",
+        "ccp_id":1546,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"BGM",
+        "ccp_id":1547,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"TCAM",
+        "ccp_id":1548,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"HOD",
+        "ccp_id":1550,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"RRDM",
+        "ccp_id":1551,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"RLDM",
+        "ccp_id":1552,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    },
+    {
+        "ccp_family":"FLR",
+        "ccp_id":1554,
+        "ccp_variant":"01=Not Mounted\n02=Mounted",
+        "default_value":"02",
+        "ecu_name":"BGM",
+        "userful_value":"02"
+    }
+]

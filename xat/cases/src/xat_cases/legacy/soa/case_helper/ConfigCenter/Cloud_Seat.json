@@ -1,0 +1,7 @@
+[{
+  "S2SConfigVersion": ["v3.0.0", "All"],
+  "CurFileConfigVersion": 1.0,
+  "S2SConfigData": {
+      "UserInVehicleDebTimeSecs": 3
+            }
+  }]

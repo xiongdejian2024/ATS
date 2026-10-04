@@ -1,0 +1,25 @@
+bl_ver: v_1_4_0
+bus:
+  bodycan: can0
+  eth_obd: enx000ec64a8e4c
+  eth_vlan5: eth0.5
+  eth_vlan9: eth0.9
+com_mock_ecu: []
+dut_ecu:
+- BGM
+ecu_mock_cfg:
+  diag_mode: ALL
+  ecu_name: ALL
+  nrc_code: 34
+  p_n_res: true
+  server_doip_id: 5121
+  server_ip: 172.16.9.21
+gateway_ip: 169.254.1.1
+sd_tester_cfg:
+  diag_mode: doip
+  dig_bus: diagnosticcan
+  ecu_name: BNCM
+  is_via_gateway: true
+  server_ip: 169.254.1.1
+veh_gen: ''
+veh_type: mars1

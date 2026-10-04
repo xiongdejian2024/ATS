@@ -1,0 +1,21 @@
+{
+    "name": "BGM_NetWork_Management_0001",
+    "description": "BGM_wake_sleep_by_hardline",
+    "preconditions$26": "1. BGM已启动\n2. BGM已休眠",
+    "test_platform$26": 760,
+    "homologation$26": 498,
+    "tcPriority$26": 853,
+    "test_case_maturity_level$26": 1011,
+    "testCaseSteps": [
+        {
+            "action": "1. BGM接通诊断唤醒线",
+            "expectedResult": "1. BGM可以被唤醒",
+            "notes": ""
+        },
+        {
+            "action": "2. BGM移除诊断唤醒线",
+            "expectedResult": "2.BGM进入休眠状态",
+            "notes": ""
+        }
+    ]
+}

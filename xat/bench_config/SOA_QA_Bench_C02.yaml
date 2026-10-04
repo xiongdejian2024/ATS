@@ -1,0 +1,36 @@
+bus:
+  eth_obd: "enxf8e43bd2d7c4"
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+  connectivitycanfd: "can0"
+
+serial: ["USB_DO", "USB_DI", "USB_PWM", "USB_BGM", "USB_TCAM"]
+
+eth_vlan: "enp89s0"
+eth_obd: "172.16.9.222"
+wifi_localhost: "172.18.128.71"
+
+# 当前连接的域控，例如BGM、TCAM、CDC、ACU
+domain:
+  - TCAM
+
+# 老继电器接线 说明  usbrelay
+# ur2 -- TCAM              默认接通 0
+# ur8 -- TCAM KL15         默认断开 1
+
+usbrelay:
+  TCAM_P: 2
+  TCAM_KL15: 8
+
+adbdevice:
+  tcam: "3830e086"
+
+vid: "b3325faac33fcf469f68ba1e20e0fc8e"
+vin: "JDS0ATESTBENCH048"
+iccid: "89860808092390016254"
+tel: "15941653461"
+
+sec_con:
+  TCAM: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2,"8a46c5b548c0a3318bacc17bc3a8edea", 0xFFFFFFFFFF, 0xFFFFFFFFFF, 0xFFFFFFFFFF, 0xFFFFFFFFFF]
+
+

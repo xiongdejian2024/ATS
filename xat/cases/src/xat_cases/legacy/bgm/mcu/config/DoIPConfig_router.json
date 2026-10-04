@@ -1,0 +1,17 @@
+{
+  "ecu_ip": "169.254.1.1",
+  "ecu_logical_address": "1023",
+  "tester_ip": "169.254.1.200",
+  "tester_logical_address": "0E80",
+  "logical_functional_address": "0E00",
+  "doip_tcp_port": "",
+  "Routing_activation_type": "",
+  "Wait_before_reconnect_attempt": "",
+  "Interval_between_attempts": "",
+  "Maximum_number_of_attempts": "",
+  "Timing_P6_client": "",
+  "Timing_P6_client_extended": "",
+  "Timing_P2_server": "",
+  "Timing_P2_server_extended": "",
+  "suppress_positive_response": 0
+}

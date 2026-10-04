@@ -1,0 +1,162 @@
+bus:
+  eth_obd: enx00e04c3647ff
+  eth_vlan5: eth0.5
+  propulsioncan: can3
+  chassiscan2: can0
+  chassiscan1: can2
+  connectivitycanfd: can1
+  bodycan: can4
+  infocanfd: can5
+  backbonefr:
+  - C7C4383B26486941
+  - 0
+  cem_lin1:
+  - 1392511939
+  - 0
+  cem_lin2:
+  - 1392511939
+  - 1
+  passivesafetycan:
+  - 1392511939
+  - 0
+  cem_lin4:
+  - 1392511922
+  - 0
+  cem_lin6:
+  - 1392511922
+  - 1
+serial:
+- USB_DO
+- USB_DI
+- USB_PWM
+- USB_BGM
+- USB_TCAM
+sec_con:
+  TCAM:
+  - 1099511627775
+  - 110464654498
+  - 110464654498
+  - 8a46c5b548c0a3318bacc17bc3a8edea
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+  BGM:
+  - 1099511627775
+  - 110464654498
+  - 110464654498
+  - 8a46c5b548c0a3318bacc17bc3a8edea
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+  CDC:
+  - 1099511627775
+  - 110464654498
+  - 110464654498
+  - 8a46c5b548c0a3318bacc17bc3a8edea
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+  ACU:
+  - 1099511627775
+  - 110464654498
+  - 110464654498
+  - 8a46c5b548c0a3318bacc17bc3a8edea
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+  BNCM:
+  - 1099511627775
+  - 562709902893
+  - 562709902893
+  - 8a46c5b548c0a3318bacc17bc3a8edea
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+  - 1099511627775
+BNCM_KEY: FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+eth_vlan: enx00e04c3647ff
+wifi_localhost: 172.18.128.7
+domain:
+- BGM
+- TCAM
+dev:
+  ip_addr: usbrelay
+signal:
+  driver_door_ajar:
+    desc: J3-21        左前门状态开关
+    enable: true
+    type: DO
+    channel: /dev/hidraw0_2
+  passenger_door_ajar:
+    desc: J3-08        右前门状态开关
+    enable: true
+    type: DO
+    channel: /dev/hidraw0_4
+  left_rear_door_ajar:
+    desc: J3-12        左后门状态开关
+    enable: true
+    type: DO
+    channel: /dev/hidraw0_5
+  right_rear_door_ajar:
+    enable: true
+    desc: J3-09        右后门状态开关
+    type: DO
+    channel: /dev/hidraw0_6
+  driver_occupy_sensor:
+    enable: true
+    desc: J3-35        驾驶员占位
+    type: DO
+    channel: /dev/hidraw0_3
+  trunk_ajar:
+    enable: true
+    desc: J3-34        行李箱状态开关
+    type: DO
+    channel: /dev/hidraw0_7
+  brake_pedal_switch:
+    enable: true
+    desc: J2-32        刹车踏板开关
+    type: DO
+    channel: /dev/hidraw0_8
+  trunk_unlock_ext_button:
+    enable: true
+    desc: J3-31        外部尾门解锁开关
+    type: DO
+    channel: /dev/hidraw1_5
+  driver_door_handle:
+    enable: true
+    desc: J3-41        左前门把手开关
+    type: DO
+    channel: /dev/hidraw1_1
+  passenger_door_handle:
+    enable: true
+    desc: J3-40        右前门把手开关
+    type: DO
+    channel: /dev/hidraw1_2
+  left_rear_door_handle:
+    enable: true
+    desc: J3-39        左后门把手开关
+    type: DO
+    channel: /dev/hidraw1_3
+  right_rear_door_handle:
+    enable: true
+    desc: J3-38        右后门把手开关
+    type: DO
+    channel: /dev/hidraw1_4
+usbrelay:
+  BGM_P: /dev/hidraw0_1
+  DrvrDoorOpenSts: /dev/hidraw0_2
+  PassDoorOpenSts: ${XAT_CREDENTIAL______SOA_BENCH_002_YAML__USBRELAY_PASSDOOROPENSTS}
+  LeReDoorOpenSts: /dev/hidraw0_5
+  RiReDoorOpenSts: /dev/hidraw0_6
+  TrunkDoorOpenSts: /dev/hidraw0_7
+  DrvrSeatPresent: /dev/hidraw0_3
+  Brake: /dev/hidraw0_8
+  RiReDoorOutSwitch: /dev/hidraw1_4
+  LeReDoorOutSwitch: /dev/hidraw1_3
+  PassDoorOutSwitch: ${XAT_CREDENTIAL______SOA_BENCH_002_YAML__USBRELAY_PASSDOOROUTSWITCH}
+  DrvrDoorOutSwitch: /dev/hidraw1_1
+  TrunkDoorOutSwtich: /dev/hidraw1_5

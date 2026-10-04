@@ -1,0 +1,22 @@
+name: XAT 独立 pytest 框架检查
+on:
+  push:
+    branches: [main, 'codex/**']
+    paths: ['xat/framework/**', 'xat/pyproject.toml', 'tests/test_automotive_lifecycle.py', '.github/workflows/xat-framework.yml']
+  pull_request:
+    paths: ['xat/framework/**', 'xat/pyproject.toml', 'tests/test_automotive_lifecycle.py', '.github/workflows/xat-framework.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  framework:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 仅安装 pytest 框架
+        run: python -m pip install -e ./xat
+      - name: 验证原 pytest 选项与生命周期，不安装 ECU 库及 ATS 后端
+        run: python -m pytest tests/test_automotive_lifecycle.py --noconftest -q -o addopts=''

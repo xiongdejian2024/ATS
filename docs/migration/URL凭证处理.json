@@ -1,0 +1,20 @@
+[
+  {
+    "路径": "xat/framework/automotive/utils/bench_helper.py",
+    "行": 37,
+    "环境变量": "XAT_CREDENTIAL_URL_1",
+    "状态": "移除旧仓库克隆常量；部署改为 XAT_GIT_URL 与 Git 凭证管理"
+  },
+  {
+    "路径": "xat/cases/src/xat_cases/legacy/tcam/basetech/stress_testing/network_testing.py",
+    "行": 212,
+    "环境变量": "XAT_CREDENTIAL_URL_2",
+    "状态": "完整URL由环境变量注入；不存储原用户名密码"
+  },
+  {
+    "路径": "xat/tools/feishu/feishu_task.py",
+    "行": 326,
+    "环境变量": "XAT_CREDENTIAL_URL_3",
+    "状态": "完整URL由环境变量注入；不存储原用户名密码"
+  }
+]

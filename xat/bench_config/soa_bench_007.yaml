@@ -1,0 +1,72 @@
+bus:
+  eth_obd: "enp89s0"
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+  
+  # bodycan: 'can0'
+  # connectivitycanfd: 'can1'
+  # bodyexposedcanfd: 'can2'
+  # passivesafetycan: 'can3'
+  # adcanfd: 'can4'
+  # chassiscan2: 'can5'
+  
+  bodycan: [1392511958, 0]
+  connectivitycanfd: [1392511958, 1]
+  infocanfd: [1392511974, 0]
+  passivesafetycan: [1392511974, 1]
+  bodyexposedcanfd: [1392511975, 0]
+  adcanfd: [1392511975, 1]
+  chassiscan1: [1392511947, 0]
+  propulsioncan: [1392511947, 1]
+  chassiscan2: [1392511940, 0]
+  diagnosticcan: [1392511940, 1]
+
+  cem_lin1: [1392511958, 0]
+  cem_lin2: [1392511958, 1]
+  cem_lin3: [1392511974, 0]
+  cem_lin4: [1392511974, 1]
+  cem_lin5: [1392511975, 0]
+  cem_lin6: [1392511975, 1]
+  backbonefr: ["E7CB383B263B8955", 0]
+
+eth_vlan: "enp89s0"
+eth_obd: "169.254.1.200"
+wifi_localhost: "172.18.128.77"
+domain:
+  - BGM
+  - TCAM
+# 继电器接线 说明
+# ur1 -- BGM               默认接通
+# ur2 -- TCAM              默认接通
+# ur3 -- BGM 诊断激活线     默认断开
+# ur4 -- PCAN              默认接通
+# ur5 -- CDC               默认接通
+# ur6 -- ACU               默认接通
+# ur7 -- Toomoss           默认接通
+# ur8 -- TCAM KL15         默认断开
+
+usbrelay:
+  BGM_P: HW554_1  # 控制BGM上下电：0 - 接通，1 - 断开
+  TCAM_P: HW554_2  # 控制TCAM上下电：0 - 接通，1 - 断开
+  BGM_D: HW554_3  # 控制诊断激活线使能：0 - 接通， 1 - 断开
+  PCAN_P: HW554_4 # 控制PCAN电源
+  # CDC_P: 5
+  # ACU_P: 6
+  # Toomoss_P: 7
+  TCAM_KL15: HW554_8
+
+
+
+adbdevice:
+  tcam: "8e27818c"
+  cdc: "1234567"
+
+vid: "43c8e583435233651e0ca3d6b7346f34"
+vin: "LSTEST6R9F2086645"
+
+sec_con:
+  TCAM: [0xFFFFFFFFFF, 0x19B834DCA2, 0xF56B94CD8A, "d8332fcd22d27580e59a325ce404a7d8", "0xFFFFFFFFFF"]
+  BGM:  [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2, "e9f1f0d09a71cdf0fbbfb2a909ca7f1e", "0xFFFFFFFFFF"]
+
+  
+

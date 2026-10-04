@@ -1,0 +1,102 @@
+[
+    {
+        "proname": "tcam.rvc.CockpitCtrlParaConfig",
+        "value": [
+            {
+                "key": "uClimateTempMaintainActvSOC",
+                "value": 20,
+                "comment": "0 ~ 100%"
+            },
+            {
+                "key": "uClimateTempMaintainExitSOC",
+                "value": 15,
+                "comment": "0 ~ 100%"
+            },
+            {
+                "key": "uClimaTempMaintainRunTime",
+                "value": 30,
+                "comment": "0 ~ 59 min"
+            },
+            {
+                "key": "uRvcTspRspnTimeout",
+                "value": 10,
+                "comment": "0 ~ 60 second"
+            },
+            {
+                "key": "uRemClimaHvTimeout",
+                "value": 15,
+                "comment": "0 ~ 127 second"
+            },
+            {
+                "key": "uRemClimaCtrlTimeout",
+                "value": 15,
+                "comment": "0 ~ 127 second"
+            },
+            {
+                "key": "uRemClimaRunTime",
+                "value": 15,
+                "comment": "0 ~ 59 min"
+            },
+            {
+                "key": "uRemSeatHeatTimeout",
+                "value": 15,
+                "comment": "0 ~ 127 second"
+            },
+            {
+                "key": "uRemSeatHeatRunTime",
+                "value": 15,
+                "comment": "0 ~ 59 min"
+            },
+            {
+                "key": "uRemSteerWhlHeatTimeout",
+                "value": 15,
+                "comment": "0 ~ 127 second"
+            },
+            {
+                "key": "uRemSteerWhlHeatRunTime",
+                "value": 15,
+                "comment": "0 ~ 59 min"
+            }
+        ]
+    },
+    {
+        "proname": "tcam.rvc.CockpitBookParaConfig",
+        "value": [
+            {
+                "key": "uRemHvBattPreHeatRunTime",
+                "value": 60,
+                "comment": "0 ~ 120 min"
+            },
+            {
+                "key": "uRemCockpitReserveRunTime",
+                "value": 15,
+                "comment": "0 ~ 60 min"
+            },
+            {
+                "key": "uRvcSubscribeCmdExecTimeOut",
+                "value": 30,
+                "comment": "0 ~ 60 second"
+            },
+            {
+                "key": "uRvcRenewalCmdReqTime",
+                "value": 825,
+                "comment": "0 ~ 900 second"
+            },
+            {
+                "key": "uRemClimaHvDelayTimeout",
+                "value": 15,
+                "comment": "0 ~ 60 second"
+            },
+            {
+                "key": "uRvcRenewalCmdRspnTimeOut",
+                "value": 30,
+                "comment": "0 ~ 60 second"
+            },
+            {
+                "key": "uRvcWaitTimeSyncFlag",
+                "value": 15,
+                "comment": "0 ~ 60 second"
+            }
+        ]
+    }
+]

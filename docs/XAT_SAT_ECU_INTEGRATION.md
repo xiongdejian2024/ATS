@@ -1,89 +1,68 @@
-# XAT 的 SAT / ECU Simulator 集成
+# XAT 框架、库、用例与 ATS 调用
 
-目标目录是当前 ATS 仓库内的 `xat/`。同级独立 `python_project/xat` 不属于本次修改范围。
+集成落点是本 ATS 仓库内的 `xat`。原 SAT 与 ECU Simulator 的源码能力已经迁入，各自拥有独立职责和开发目录。原仓库保留用于来源核对，不参与运行或安装。
 
-## 架构与使用
+## 调用关系
 
-XAT 管理 pytest Hook、fixture、用例选择和结果；SAT 提供原框架的数据类型、配置和台架用例；ECU 项目的 `automotive_sdk` 提供模拟与 SDK 服务。现有源码通过路径配置加载，不复制到 ATS，也不自动执行设备初始化。
+```mermaid
+flowchart LR
+    UI[ATS 前端选择用例] --> API[ATS 后端创建执行任务]
+    API --> Agent[Agent 接收任务]
+    Agent --> XAT[XAT pytest 框架]
+    XAT --> Cases[XAT 独立用例包]
+    Cases --> Library[xat_ecu 公共接口与车型库]
+    XAT --> Result[各阶段结果与报告]
+    Result --> Agent
+    Agent --> API
+    API --> UI
+```
 
-ATS 前端 → 后端队列 → Agent → XAT → SAT / ECU 模块 → XAT 结果 → Agent ACK 补传 → ATS 入库、统计和报告。
+框架负责 pytest 收集、选择、fixture 生命周期、结果与报告。库负责协议、传输、设备与业务能力，不导入框架或用例。用例通过 `xat_ecu.api`、`VehicleSDK` 等公开接口访问库；框架可为设备 fixture 延迟加载库，并通过可注入 reporter 把库步骤接入 Allure。库可在没有 pytest、ATS 后端或用例包的环境中单独安装。
 
-前端“测试任务”编辑器选择“使用 XAT 软件验收”，命令为 `xat --mode offline`。Agent 从自身配置读取源码与 Python 路径，启动 `python -m framework`；进程超时、取消、并发隔离和磁盘补传由 Agent 管理。旧 `ats-sat` 命令兼容，但同样通过 XAT 执行。单用例执行、取消、重连结果恢复均支持两种命令。
+## 安装与软件验证
 
-在 ATS 根目录运行：
+在 ATS 根目录执行：
 
 ```bash
-PYTHONPATH=xat .venv-integration/bin/python -m framework \
-  --mode offline \
-  --sat-root ../sat --ecu-root ../ecu-simulator \
-  --output-dir /tmp/xat-software-check
+python -m venv .venv-integration
+.venv-integration/bin/python -m pip install -r requirements-integration.txt
+.venv-integration/bin/python -m pip install -e './xat/packages/ecu[test,protocols]'
+.venv-integration/bin/python -m framework --mode offline --output-dir /tmp/xat-results
 ```
 
-也可以安装 XAT 后使用入口：
+按能力单独安装库的 `[can]`、`[ssh]`、`[serial]`、`[security]`、`[network]`、`[protocols]`。台架业务仍需原厂驱动、对应系统 ABI、私有平台包及用户配置；这些不在软件验收中连接或运行。
+
+库测试可独立运行：
 
 ```bash
-uv pip install --python .venv-integration/bin/python -e ./xat --no-deps
-.venv-integration/bin/xat --mode offline \
-  --sat-root ../sat --ecu-root ../ecu-simulator \
-  --output-dir /tmp/xat-software-check
+python -m pytest xat/packages/ecu/tests --noconftest -q
 ```
 
-`--no-deps` 仅适用于已经按 `requirements-integration.txt` 安装依赖的环境。全新环境应安装 XAT 声明的依赖。日志、JSON 结果和 JUnit XML 在输出目录中。
-
-## XAT 用例中的 fixture
-
-```python
-def test_caseid_response(ecu_simulator, sat_types):
-    ecu_simulator.start_simulation(ecus=["ECU"])
-    ecu_simulator.set_mock_response("ECU", 0x22, b"OK")
-    assert ecu_simulator.get_response_for("ECU", 0x22) == b"\x62OK"
-    assert sat_types.ReportInfo(total=1, passed=1).passed == 1
-```
-
-- `sat_types`：原 SAT 的 `utils.data_type` 模块。
-- `sat_runtime`：原 SAT 数据类型、台架 YAML 和用例 YAML；在台架模式中可按需导入其他 SAT 模块。
-- `ecu_simulator`：原 ECU SDK 的 `SimulatorService`，每个测试独立创建，结束后自动停止和清空。
-- `ecu_profile`：默认 `None`，用例可覆盖为 SDK 的车型配置。
-- `ecu_sdk`：原 `VehicleSDK` 的诊断、总线、信号、刷写与模拟服务入口；需要台架模式、硬件许可，并覆盖 `ecu_sdk_options` 提供车型与版本等参数。通过上下文管理器清理资源。
-
-自定义软件用例使用 `--tests /path/to/test_software.py`。离线模式显式加载 XAT Hook 和集成插件，关闭 SAT conftest 及插件自动加载，不初始化台架设备。
-
-## 用例选择与准确结果
-
-`--selection /path/to/selection.json` 接受编号到 ATS ID 的映射：
-
-```json
-{"ecu_positive": "case-uuid-1", "ecu_negative": "case-uuid-2"}
-```
-
-同时兼容原 `test_cases.json` 的 `case_codes` / `case_ids` 数组；编号和 ID 必须一一对应，拒绝空选择和重复编号。未传选择文件时运行全部收集到的用例。
-
-支持完整 pytest node ID、`ats_case` 标记、参数化 ID、SAT 的 `_caseid_` 单编号和多数字编号。结果在 setup/call/teardown 全部结束后写入；setup 或 teardown 失败记为 error。所选用例未完成会产生 error，进程不能返回成功。
-
-XAT 原来的故意失败示例保持不变。直接运行该文件仍是 2 通过、1 失败，自动验收验证这一真实行为。
-
-## 台架入口与边界
-
-默认禁止台架模式。显式允许后，原 SAT conftest 加载原 Hook 和 `ecu` fixture，保留既有 SAT 用例运行流程，同时使用 XAT 选择和结果适配：
+框架独立安装和生命周期验证不要求 ECU 库：
 
 ```bash
-PYTHONPATH=xat .venv-integration/bin/python -m framework \
-  --mode sat --allow-hardware \
-  --sat-root /path/to/sat --ecu-root /path/to/ecu-simulator \
-  --tests test_case/your_domain/test_your_feature.py \
-  --bench-config bench_config/your_bench.yaml \
-  --case-config test_case/your_domain/config/latest_config.yaml \
-  --output-dir /path/to/run-output
+python -m pip install -e ./xat
+PYTHONPATH=xat python -m pytest tests/test_automotive_lifecycle.py --noconftest -q -o addopts=''
 ```
 
-上面的命令是台架使用说明，本次未执行。真实 SAT 依赖、原 ECU 硬件与网络初始化需要台架环境；软件验收只证明 XAT 的接入、fixture 生命周期和结果行为，以及实际 SAT 数据类型 / ECU 内存模拟功能。
+原车辆用例仅进行静态编译检查，不能使用全量 pytest 命令执行。`scripts/check_software.sh` 只运行已列明的软件检查。`scripts/audit_xat_sources.py` 检查源码可编译、库反向依赖和缺失本地导入，发现问题会返回失败。
 
-也可直接使用 pytest：先设置 `PYTHONPATH=xat`，加载 `-p framework.hooks -p framework.integrations.plugin`，传入 `--xat-mode offline`、`--sat-root`、`--ecu-root`、`--xat-results`。XAT 目录内的 `conftest.py` 已注册两个插件。
+## Agent 与前端
 
-## 验收与远程同步
+Agent 配置采用 `integrations.xat`，示例见 `agent/config.sat.yaml.example`。`root` 是 XAT 用例和配置的资源根目录，`python` 指向已安装框架及库的解释器，`allow_hardware` 默认 false。旧 `integrations.sat` 只保留解释器和开关兼容，不加载旧仓库。
 
-运行 `./scripts/check_software.sh` 验证完整软件链路和前端。2026-10-04 最终版本的 27 项软件回归、前端类型检查、2 项单测和构建通过；XAT wheel 包实际运行的 4 项模块检查通过。通过 ego-browser 验证了前端保存 XAT 模板、整套运行产生4条通过记录，以及单用例运行只新增1条通过记录。
+前端模板使用 `xat --mode offline`；兼容旧的 `ats-sat` 命令。框架接受 `--selection` 用例选择文件、`--bench-config` 与 `--case-config` 配置文件，Agent 为每次 execution_id 创建独立目录。结果在 setup/call/teardown 完成后写入，清理失败或选中的用例缺失不会返回成功。Agent 继续负责超时、进程组取消、重连补传和处理后 ACK 去重。
 
-GitHub CI 运行 XAT / Agent 的无外部源码检查和前端检查。带 `xat_external` 标记的检查使用本机真实 SAT/ECU 源码，只在配置了源码的环境运行。测试不连接台架，也不把外部源码、数据库、日志或运行产物上传。
+分布式部署的仓库地址由 `XAT_GIT_URL` 提供，使用 Git 凭证管理或 SSH，不在地址中内嵌密码。部署安装 XAT 自有框架、库和用例，不再拉取旧 SAT 仓库。监控与设备锁脚本来自框架包内资源；这些设备命令仅做软件生成检查，未实际执行。
 
-每阶段提交并推送到 `xiongdejian2024/ATS` 的 `codex/sat-ecu-integration` 分支。原 `wh-xdj/ATS` 没有写权限，未合并到其主分支。具体提交、验收与 CI 记录见 [开发验收日志](开发验收日志.md)。
+真实台架入口是 `xat --mode hardware`，需要额外显式允许。本次不启用，不执行台架用例、真实刷写或设备操作。
+
+## 维护边界与迁移限制
+
+- 框架修改提交在 `xat/framework`，库修改提交在 `xat/packages/ecu`，用例和输入数据提交在 `xat/cases`；各自有独立 GitHub 检查。
+- 原代码的凭证改为环境变量注入。清单列出所需 `XAT_CREDENTIAL_*` 名称，未提供时明确报错；不在源码中恢复原凭证。
+- 旧 CGW/Force 等工具的源项目缺少依赖，按用户选择保留在 `xat/tools/archive/ecu`，归档及缺失引用见 `docs/migration/历史工具归档.json`。
+- 现代 `VehicleSDK.flash` 原本是假成功占位，已改为明确拒绝。原实际刷写实现已保留在 `xat_ecu.legacy.ecu_sim.sd_tester`，未执行刷写验收。
+- 软件测试验证已覆盖的协议、配置、模拟、生命周期和任务回填；不证明全部车型或原生驱动在真实硬件上可用。
+
+来源、当前阶段和验收记录见 [XAT 功能迁移](XAT功能迁移.md) 与 [开发验收日志](开发验收日志.md)。

@@ -1,0 +1,53 @@
+# 杨柳 两域台架
+bus:
+  eth_obd: "enx000ec629d667"
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+  bodycan: [1392511959, 0]
+  bodyexposedcanfd: [1392511959, 1]
+  passivesafetycan: [1392511938, 0]
+  chassiscan2: [1392511938, 1]
+  adcanfd: [1392511938, 0]
+  infocanfd: [1392511938, 1]
+  connectivitycanfd: [1392511940, 0]
+  bodyalmcanfd2: [1392511940, 1]
+  propulsioncan: [1392511967, 0]
+  bodyalmcanfd1: [1392511967, 1]
+  chassiscan1: [1392511986, 0]
+  diagnosticcan: [1392511986, 1]
+
+serial: ["USB_DO", "USB_DI", "USB_PWM", "USB_BGM", "USB_TCAM"]
+
+eth_vlan: "enxf8e43bd2c08f"
+eth_obd: "169.254.1.200"
+wifi_localhost: "172.18.128.70"
+domain:
+  - BGM
+  - TCAM
+# 继电器接线 说明
+# ur1 -- BGM               默认接通
+# ur2 -- TCAM              默认接通
+# ur3 -- BGM 诊断激活线     默认断开
+# ur4 -- PCAN              默认接通
+# ur5 -- CDC               默认接通
+# ur6 -- ACU               默认接通
+# ur7 -- Toomoss           默认接通
+# ur8 -- TCAM KL15         默认断开
+usbrelay:
+
+  BGM_P: 1
+  TCAM_P: 2
+  BGM_D: 3
+  PCAN_P: 4
+  CDC_P: 5
+  ACU_P: 6
+  Toomoss_P: 7
+  TCAM_KL15: 8
+
+
+adbdevice:
+  tcam: "d2942811"
+  # cdc: "1234567"
+
+vid: "3ce9736bfe5f79ebbc2ab1634a3fa389"
+vin: "JDS0ATESTBENCH003"

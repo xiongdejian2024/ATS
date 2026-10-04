@@ -1,0 +1,161 @@
+syntax = "proto3";
+package jet.configmaster;
+//车端目标服务：v.configmaster
+//云端目标服务：tsp.b-plat-cloud-config
+// 配置下发(云端下行，APIName:TspAppConfigSet)
+message ConfSyncData {
+  string                  PbVer             = 1; //pb协议的版本，比如V1、V2、V3等
+  int64                   Timestamp         = 2; //下发时间戳（单位：毫秒）
+  string                  ModelName         = 3; //车型，如：MarsOne，Venus
+  string                  ModelYear         = 4; //款型，如：2023
+  repeated   Conf         Confs             = 5; //支持多个配置数据
+}
+message Conf {
+  string        Domain          = 1; //域控，如：tcam，bgm，cdc，acu
+  string        AppName         = 2; //应用名称
+  string        ConfName        = 3; //配置的名字
+  int64         PublishID       = 4; //本次发布唯一标识
+  ConfigAction  Action          = 5; //配置动作
+  ConfType      ConfType        = 6; //配置的类型
+  PushType      PushType        = 7; //配置推送方式
+  bytes         Value           = 8; //配置，可以是json数据，也可以是url
+  SyncStrategy  SyncStrategy    = 9; //同步策略
+  bool          Wakeup          = 10; //是否唤醒应用所在的域控
+  string        DomainVer       = 11; //域控软件版本 
+  string        Md5             = 12; //MD5校验码
+}
+enum ConfigAction {
+  CA_DEFAULT = 0; //默认update
+  CA_UPDATE  = 1; //update
+  CA_DELETE  = 2; //删除
+}
+enum ConfType {
+  CT_JSON = 0; //json类型
+  CT_FILE = 1; //file类型
+}
+enum PushType {
+  PT_UNKNOWN  = 0;
+  PT_CONTENT  = 1; //推送内容
+  PT_URL      = 2; //推送链接地址
+}
+enum SyncStrategy {
+  SS_UNKNOWN          = 0;
+  SS_SLEEP_ONE_ROUND  = 1; //一轮休眠后同步
+  SS_PARKING          = 2; //P挡同步
+  SS_REAL_TIME        = 3; //实时同步
+} 
+//响应response
+message ConfSyncDataResp {
+    repeated  ConfSyncDataRespDetail  Details = 1; // 车端的响应
+}
+message ConfSyncDataRespDetail {
+    int64        PublishID       = 1; //发布的唯一标识
+    RespStatus   Status          = 2; //状态码
+    string       StatusMessage   = 3; //描述
+}
+enum RespStatus {
+    RS_UNKNOWN    = 0;
+    RS_SUCCESS    = 1; //成功
+    RS_FAIL       = 2; //失败
+}
+// 结果上报(车端上行，APIName: configStatusReport)
+message ConfigStatusReport
+{
+   string      PbVer                      = 1; //pb协议的版本，比如V1、V2、V3等
+   int64       Timestamp                  = 2; //上传时间戳（单位：毫秒）
+   repeated    ConfReportData Data        = 3; //返回多个配置的状态，可以属于不同的域控、不同的应用、不同的配置
+}
+// 单个配置文件的状态
+message ConfReportData {
+  int64       PublishID               = 1; //发布id
+  string      Domain                  = 2; //域控，如：tcam，bgm，cdc，acu
+  string      AppName                 = 3; //应用名称
+  string      ConfName                = 4; //配置名称
+  repeated    ConfigStatusData StatusData   = 5; //返回同一配置文件的多个使用状态，典型使用场景是主从板
+}
+message ConfigStatusData {
+  StageType   StageType       = 1; //上报的阶段类型
+  StatusType  StatusType     = 2; //状态，成功还是失败
+  string      StatusMessage  = 3; //状态message
+  int32       AppIndex       = 4; //一个App使用的配置文件默认为0
+  int64       Timestamp      = 5; //使用配置的应用生效时间
+}
+enum StageType {
+    RT_UNKNOWN                  = 0;
+    RT_MASTER_RECEIVED          = 1; // 配置master收到了
+    RT_CONFIG_SERVER_RECEIVED   = 2; // 配置中心收到了
+    RT_APP_CHECK                = 3; // APP Check成功
+    RT_APPLY                    = 4; // 在应用中生效了
+}
+enum StatusType {
+    ST_UNKNOWN                           = 0;
+    ST_SUCCESS                           = 1; //成功
+    ST_MASTER_RECEIVED                   = 257;//配置master收到了成功（Master） 0x0101
+    ST_PB_VER_ERROR                      = 385;//老版本车收到新版本需要会不支持（Master）0x0181
+    ST_MODEL_NAME_ERROR                  = 386;//车端校验，MarsOne,Venus(可以动态获取)（Master）0x0182
+    ST_MODEL_YEAR_ERROR                  = 387;//车端没有，先不校验，预留（Master）0x0183
+    ST_DOMAIN_ERROR                      = 388;//车端支持的domain（Master）0x0184
+    ST_SERVER_RECEIVED                   = 513;//配置Server持久化存储失败(Server) 0x0201
+    ST_SERVER_DOWNLOAD_SUCCESS           = 514;//配置Server下载成功 (Server) 0x0202
+    ST_SERVER_NOTIFY_APP                 = 515;//满足同步条件后，广播配置更新给APP（Server）0x0203
+    ST_SERVER_DELETE_SUCCESS             = 516;//配置中心Server端删除配置文件成功(Server) 0x0204
+    ST_SERVER_DOWNLOAD_FAILED            = 641;//配置Server下载失败(Server) 0x0281
+    ST_SERVER_SAVE_FILE_FAILED           = 642;//配置Server持久化存储失败(Server) 0x0282
+    ST_SERVER_DELETE_FAILED              = 643;//配置Server端删除配置文件失败(Server) 0x0283
+    ST_SERVER_SPACE_FULL                 = 644;//配置Server端空间已满(Server) 0x0284
+    ST_APP_CHECKED                       = 769;//配置master收到了成功（Master） 0x0301
+    ST_TYPE_ERROR                        = 897;//数据类型错误 0x0381
+    ST_JSON_ERROR                        = 898;//格式错误 0x0382
+    ST_APP_PARSED_ERROR                  = 899;//App解析失败(App) 0x0383
+    ST_APP_NAME_ERROR                    = 900;//应用名称错误 0x384
+    ST_APP_DAMAGE_ERROR                  = 901;//配置文件损坏 0x385
+    ST_APP_APPLY                         = 1025;//配置master收到了成功（Master） 0x0401
+    ST_APP_APPLY_FAIL                    = 1153;//App应用配置成功(App) 0x0481
+    ST_TERMINATED_BY_NEW_PUBLISH_ERROR   = 2177; //被新发布终止 (TSP) 0x0881
+}
+//响应response
+message ConfigStatusReportResp {
+    repeated  ConfigStatusReportRespDetail  Details = 1; // 云端的响应
+}
+message ConfigStatusReportRespDetail {
+  int64        PublishID       = 1; //发布的唯一标识
+  int32        AppIndex        = 2; //一个App使用的配置文件默认为0
+  RespStatus   Status          = 3; //状态码
+  string       StatusMessage   = 4; //
+}
+//车端重启后向云端通知，云端根据维护的历史数据，主动下发确实或滞后的配置（车端上行，APIName:checkConfigVersion）
+message NotifyData {
+    bool               IsEmpty   = 1; //标识数组是否为空，方便车端处理
+    int64              Timestamp = 2; //时间戳
+    repeated AppDetail Detail    = 3; //应用的详情
+}
+//配置状态单元
+message AppDetail {
+  string                  PbVer             = 1; //pb协议的版本，比如V1、V2、V3等
+  int64                   PublishID         = 2; //发布唯一标识
+  string                  Domain            = 3; //域控名
+  string                  AppName           = 4; //应用名称
+  string                  ConfName          = 5; //配置文件名称
+  repeated ConfigStatusData  StatusData   = 6; //配置文件配置状态
+}
+//车端支持云端查询车端配置文件版本号（云端下行，APIName: ReqcheckConfigVersion）
+message ReqCheckConfigData {
+    int64         Timestamp = 1; //时间戳
+}
+//数据服务在线实时检测
+message ServiceEventReq {
+    repeated SoaServiceEvent events = 1;    // 设备模块上、下线时间
+    uint64 timestamp                = 2;    // 数据上报时间
+}
+
+message SoaServiceEvent {
+    EventType eventType = 1;    // 事件类型
+    string serviceName  = 2;    // 事件触发的服务列表
+    uint64 timestamp    = 3;    // 触发事件事件戳
+}
+
+enum EventType {
+    DEFAULT = 0;    // 预留无效位
+    ONLINE = 1;     // 上线事件
+    OFFLINE = 2;    // 下线事件
+}

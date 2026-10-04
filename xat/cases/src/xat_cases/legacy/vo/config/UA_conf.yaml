@@ -1,0 +1,26 @@
+TCAM_Download_Req:
+  downloadReq:
+    fileInformations:
+    - encKey: ${XAT_CREDENTIAL_SCAN_07BE275376D647B1D7BB}
+      fileName: 6110110200AY.bin
+      keyId: 8e454805ac454742a70dfd36ca3fc504
+      pn: 8895036217  B
+      signature: MEQCIFZt86H76LMA76XfmSUIspuY6LfX0eJZ68H+eAyStR5+AiANTwbydngpznkaX2oA/qbvu66KLVJNd4CVa6VFyStEIw==
+      size: 199531648
+      url: https://t-ivs-fota.cdn.bcebos.com/ofm/4e259c23d8096e1a71a73c5168d5e61176175927/9bc54e5e-61a1-4c1b-45eb-1563f85f16de/6110110200AY.bin?responseContentType=application%2Foctet-stream&authorization=bce-auth-v1%2F289a3f3e82b34da4973652d035b59cc3%2F2024-06-04T06%3A35%3A53Z%2F-1%2F%2Fc3a9e989424e2481013feea788cfd9d2bf6ed8e4fa1b50f58f63ecd2ffe31634
+      version: 6110110200 AY
+    fileNumber: 1
+    keyInformation:
+      encKey: ${XAT_CREDENTIAL_SCAN_07BE275376D647B1D7BB}
+      keyId: 8e454805ac454742a70dfd36ca3fc504
+    mode: 0
+Version_Debug_TCAM:
+  data:
+    baseLineVer: 6100000055 BL
+    ecu:
+    - HWPN: ''
+      SWPN: 6110110065 NA
+      ecuId: '1011'
+      name: TCAM
+    taskId: 0
+  type: 40

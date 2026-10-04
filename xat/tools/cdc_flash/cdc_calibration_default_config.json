@@ -1,0 +1,196 @@
+{"Common": [
+    {
+        "id": "Vid",
+        "value": "vid"
+    },
+    {
+        "tag": "cdc_dataengine",
+        "data": [
+            {
+                "name": "cdc_dataengine",
+                "value": [
+                    {
+                        "name": "PersistencyDataUploadLimit",
+                        "value": 16
+                    },
+                    {
+                        "name": "PersistencyDataMaxFileLimit",
+                        "value": 32
+                    },
+                    {
+                        "name": "FileDumpTimeout",
+                        "value": 60000
+                    },
+                    {
+                        "name": "UploadTimeout",
+                        "value": 60000
+                    },
+                    {
+                        "name": "ConfVersion",
+                        "value": "0000"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "tag": "bootesdataconnect",
+        "data": [
+            {
+                "name": "soa.config",
+                "value": [
+                    {
+                        "proname": "soa.config",
+                        "value": [
+                            {
+                                "version": "000022",
+                                "globalConfig": {
+                                    "enable": "1",
+                                    "uploadCycle": 5000
+                                },
+                                "dataConfig": [
+                                    {
+                                        "service": "BootesSampleService",
+                                        "api": "ControlBootesSampleByPercentage",
+                                        "dealayTime": 0
+                                    },
+                                    {
+                                        "service": "BootesSampleService",
+                                        "api": "ControlBootesSampleByOneClick",
+                                        "dealayTime": 0
+                                    },
+                                    {
+                                        "service": "BootesSampleService",
+                                        "api": "ControlBootesSampleByStep",
+                                        "dealayTime": 0
+                                    },
+                                    {
+                                        "service": "BootesSampleService",
+                                        "api": "BootesSampleState",
+                                        "dealayTime": 0
+                                    },
+                                    {
+                                        "service": "BootesSampleService",
+                                        "api": "BootesSampleTransparency",
+                                        "dealayTime": 0
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "tag": "cdc_powerservice",
+        "data": [
+            {
+                "name": "cdc_powerservice",
+                "value": [
+                    {
+                        "name": "HMIOff2STRTimeout",
+                        "value": 10
+                    },
+                    {
+                        "name": "STR2SleepTimeout",
+                        "value": 120
+                    },
+                    {
+                        "name": "Remote2STRTimeout",
+                        "value": 10
+                    },
+                    {
+                        "name": "NoSTR2STRRebootTimeout",
+                        "value": 480
+                    },
+                    {
+                        "name": "NoSleep2STRRebootTimeout",
+                        "value": 10
+                    },
+                    {
+                        "name": "OutsideLockedTimeout",
+                        "value": 600000
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "tag": "cdc_calibrationservice",
+        "data": [
+            {
+                "name": "Staging",
+                "value": "jiduapp.cn"
+            },
+            {
+                "name": "Prod",
+                "value": "jiducar.com"
+            }
+        ]
+    },
+    {
+        "tag": "cdc_fault_upload_server",
+        "data": [
+            {
+                "name": "cdc_fault_upload_server",
+                "value": [
+                    {
+                        "name": "UploadBlackScreenLog",
+                        "value": 1
+                    },
+                    {
+                        "name": "KillNoRespondService",
+                        "value": 1
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "tag": "cdc_android_net_config",
+        "data": [
+            {
+                "name": "log_manager_sndbuf",
+                "value": 8192
+            },
+            {
+                "name": "data_engine_sndbuf",
+                "value": 4096
+            }
+        ]
+    }
+],
+"1": [
+    {
+        "tag": "cdc_settings_config",
+        "data": [
+            {
+                "name": "s_copilot_seat_default",
+                "value": {
+                    "Backrest": "52",
+                    "FrontBack": "20",
+                    "Height": "44",
+                    "LegrestHeight": "48"
+                }
+            }
+        ]
+    }
+],
+"2": [
+    {
+        "tag": "cdc_settings_config",
+        "data": [
+            {
+                "name": "s_copilot_seat_default",
+                "value": {
+                    "Backrest":"20",
+                    "FrontBack":"20",
+                    "Height":"30",
+                    "LegrestHeight":"0"
+                }
+            }
+        ]
+    }
+]
+}

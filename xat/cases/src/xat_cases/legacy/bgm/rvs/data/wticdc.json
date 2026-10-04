@@ -1,0 +1,110 @@
+{"WTI":{        
+    "WarningMsgNode":{
+        "CDCWTIMsgAvasFunctionOn":{
+            "CDCWTIMsgAvasFunctionOn":{
+                "info":{
+                    "AvasOn": "1"
+                }
+            }
+        },
+        "CDCWTIMsgAvasFunctionFault":{
+            "CDCWTIMsgAvasFunctionFault":{
+                "info":{
+                    "AvasFault": "1"
+                }
+            }
+        },
+        "CDCWTIMsgDmsDeviceFault":{
+            "CDCWTIMsgDmsDeviceFault":{
+                "info":{
+                    "DmsDeviceFault": "1"
+                }
+            }
+        },
+        "CDCWTIMsgOmsDeviceFault":{
+            "CDCWTIMsgOmsDeviceFault":{
+                "info":{
+                    "OmsDeviceFault": "1"
+                }
+            }
+        },
+        "CDCWTIMsgInSideMicFault":{
+            "CDCWTIMsgInSideMicFault":{
+                "info":{
+                    "InSideMicFault": "1"
+                }
+            }
+        },
+        "CDCWTIMsgOutSideMicFault":{
+            "CDCWTIMsgOutSideMicFault":{
+                "info":{
+                    "OutSideMicFault": "1"
+                }
+            }
+        },
+        "CDCWTIMsgInSideSpeakerFault":{
+            "CDCWTIMsgInSideSpeakerFault":{
+                "info":{
+                    "InSideSpeakerFault": "1"
+                }
+            }
+        },
+        "CDCWTIMsgOutSideSpeakerFault":{
+            "CDCWTIMsgOutSideSpeakerFault":{
+                "info":{
+                    "OutSideSpeakerFault": "1"
+                }
+            }
+        },
+        "CDCWTIMsgTweeterBlocked":{
+            "CDCWTIMsgTweeterBlocked":{
+                "info":{
+                    "TweeterBlocked": "1"
+                }
+            }
+        },
+        "CDCWTIMsgPumpFault":{
+            "CDCWTIMsgPumpFault":{
+                "info":{
+                    "PumpFault": "1"
+                }
+            }
+        },
+        "CDCWTIMsgPrimaryBrightnessLimited":{
+            "CDCWTIMsgPrimaryBrightnessLimited":{
+                "info":{
+                    "PrimaryBrightnessLimited": "1"
+                }
+            }
+        },
+        "CDCWTIMsgRearBrightnessLimited":{
+            "CDCWTIMsgRearBrightnessLimited":{
+                "info":{
+                    "RearBrightnessLimited": "1"
+                }
+            }
+        },
+        "CDCWTIMsgPerceptionWarning":{
+            "CDCWTIMsgPerceptionWarning":{
+                "info":{
+                    "DMSOMSSystemInvalid": "1",
+                    "DMSCameraMasked": "2",
+                    "OMSCameraMasked": "3",
+                    "PostureNoFace": "4",
+                    "PostureAbnormal": "5",
+                    "DMSCameraNotCalibrated": "6",
+                    "OMSCameraNotCalibrated": "7",
+                    "NoEyeWarning": "8",
+                    "EyeMaskedWarning": "9",
+                    "EyeDistractionSevere": "10",
+                    "FatigueSevere": "11",
+                    "EyeDistractionMild": "12",
+                    "PhoneDistraction": "13",
+                    "FatigueMildContinue": "14",
+                    "FatigueMild": "15"
+                }
+            }
+        }
+    }
+}
+}

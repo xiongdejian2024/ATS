@@ -1,0 +1,22 @@
+{
+    "arry": [
+        [
+            {
+                "BLUE": -1,
+                "BRIGHTNESS": 0,
+                "GREEN": -1,
+                "RED": -1,
+                "id": 1
+            }
+        ],
+        [
+            {
+                "BLUE": -1,
+                "BRIGHTNESS": -1,
+                "GREEN": -1,
+                "RED": -1,
+                "id": -1
+            }
+        ]
+    ]
+}

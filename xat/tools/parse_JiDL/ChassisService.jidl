@@ -1,0 +1,1856 @@
+/*****************************************************************************
+ * (c) Copyright, JIDU Co,Ltd, Copyright 2021
+ *
+ * All rights reserved.
+ *
+ ****************************************************************************/
+
+/**
+  * @file         ChassisService.jidl
+  * @author       wanbang.zhao
+  * @email       wanbang.zhao@jiduauto.com
+  * @version    01.6
+  * @date       20240221
+  * @brief       描述底盘系统相关的服务接口
+*/
+
+/**
+ * @brief 服务定义: ChassisService
+ */
+service ChassisService {
+
+/**
+ * @brief 类型定义: BrkSysWarnIndicateReqSts
+ * BrkSysWarnIndicateReqSts
+ */
+enum BrkSysWarnIndicateReqSts{
+    /** Off */
+    @value(0) Off,
+
+    /** YELLOW */
+    @value(1) YELLOW,
+
+    /** RED */
+    @value(2) RED,
+
+    /** Yellow and Record DTC */
+    @value(3) RESERVED_STS
+};
+
+/**
+ * @brief 类型定义: BrkSysWarnMsgDisplayReqSts
+ * 制动系统报警信息显示请求状态
+ */
+enum BrkSysWarnMsgDisplayReqSts{
+    /** NoReq */
+    @value(0) NO_REQ,
+
+    /** YELLOW */
+    @value(1) BRAKE_FAILURE,
+
+    /** RED */
+    @value(2) ABS_REQ,
+
+    /** ABS_TEMP_OFF */
+    @value(3) ABS_TEMP_OFF,
+
+    /** ESC_REQ */
+    @value(4) ESC_REQ,
+
+    /** ESC_TEMP_OFF */
+    @value(5) ESC_TEMP_OFF,
+
+    /** TRACTION_CONTROL_TEMP_OFF */
+    @value(6) TRACTION_CONTROL_TEMP_OFF,
+
+    /** BRK_RESERVED */
+    @value(7) BRK_RESERVED
+};
+
+/**
+ * @brief 类型定义: SensorQualityFactor
+ * SensorQualityFactor
+ */
+enum SensorQualityFactor{
+    /** UNDEFIND_DATA_ACCUR */
+    @value(0) UNDEFIND_DATA_ACCUR,
+
+    /** TEMP_UNDEFINED_DATA */
+    @value(1) TEMP_UNDEFINED_DATA,
+
+    /** DATA_ACCUR_NOT_WITHIN_SPCN */
+    @value(2) DATA_ACCUR_NOT_WITHIN_SPCN,
+
+    /** ACCUR_DATA */
+    @value(3) ACCUR_DATA
+};
+
+/**
+ * @brief 类型定义: ABSActInfo
+ * ABS激活状态
+ */
+struct ABSActInfo {
+    /** 左前车轮的ABS激活状态 true : 激活 false : 未激活 */
+    bool flActSts;
+
+    /** 右前车轮的ABS激活状态 true : 激活 false : 未激活 */
+    bool frActSts;
+
+    /** 左后车轮的ABS激活状态 true : 激活 false : 未激活 */
+    bool rlActSts;
+
+    /** 右后车轮的ABS激活状态 true : 激活 false : 未激活 */
+    bool rrActSts;
+};
+
+/**
+     * @brief 车速单位
+     *
+     */
+enum SpeedUnit
+{
+    //Kmh
+    @value(0) KMPH,
+    //mileh  英里每小时
+    @value(1) MPH,
+    //未知单位
+    @value(2) UNKNOW
+};
+
+/**
+ * @brief 类型定义: DisplayVehicleSpeed
+ * 显示车速
+ */
+struct DisplayVehicleSpeed {
+    /** speed 0-512 */
+    uint16 speed;
+
+    /** SpeedUnit  */
+    SpeedUnit unit;
+
+    /** SensorQualityFactor */
+    SensorQualityFactor qf;
+};
+
+/**
+ * @brief 类型定义: ABSWarnIndicateReqSts
+ * ABSWarnIndicateReqSts
+ */
+enum ABSWarnIndicateReqSts{
+    /** OFF */
+    @value(0) OFF,
+
+    /** ON */
+    @value(1) ON,
+
+    /** FLASH */
+    @value(2) FLASH,
+
+    /** RESERVED */
+    @value(3) RESERVED
+};
+
+/**
+ * @brief 类型定义: EPBIndicatorLightReqSts
+ * EPBIndicatorLightReqSts
+ */
+enum EPBIndicatorLightReqSts{
+
+    /** OFF */
+    @value(0) LIGHT_OFF,
+
+    /** ON */
+    @value(1) LIGHT_ON,
+
+    /** FLASH */
+    @value(2) LIGHT_FLASH,
+
+    /** RESERVED */
+    @value(3) LIGHT_RESERVED
+};
+
+/**
+ * @brief 类型定义: EPBMsg
+ * EPBMsg
+ */
+enum EPBMsg{
+    /** NOT_ACTIVE */
+    @value(0) NOT_ACTIVE,
+
+    /** APPLY */
+    @value(1) APPLY,
+
+    /** RELEASE */
+    @value(2) RELEASE
+};
+
+/**
+ * @brief EPBSwitchInfo:
+ * EPB开关
+ */
+struct EPBSwitchInfo {
+    /** 左卡钳开关状态 */
+    EPBMsg epbL;
+
+    /** 右卡钳开关状态 */
+    EPBMsg epbR;
+};
+
+/**
+ * @brief 类型定义: EPBWorkSts
+ * EPBWorkSts
+ */
+enum EPBWorkSts{
+    /** RESD0 */
+    @value(0) RESD0,
+
+    /** RESD1 */
+    @value(1) RESD1,
+
+    /** RESD2 */
+    @value(2) RESD2,
+
+    /** ALL_APPID */
+    @value(3) ALL_APPID,
+
+    /** RESD4 */
+    @value(4) RESD4,
+
+    /** ALL_IN_TRAN */
+    @value(5) EPB_IN_TRAN,
+
+    /** BRKG_DYN_BY_ACTR */
+    @value(6) BRKG_DYN_BY_ACTR,
+
+    /** RESD7 */
+    @value(7) RESD7,
+
+    /** RESD8 */
+    @value(8) RESD8,
+
+    /** EPB_ACT_RELEASED */
+    @value(9) EPB_ACT_RELEASED,
+
+    /** ACTR_DYN_DEGRADED */
+    @value(10) ACTR_DYN_DEGRADED,
+
+    /** RESD11 */
+    @value(11) RESD11,
+
+    /** BRKG_DYN */
+    @value(12) BRKG_DYN,
+
+    /** RESD13 */
+    @value(13) RESD13,
+
+    /** RESD14 */
+    @value(14) RESD14,
+
+    /** ERR */
+    @value(15) ERR_STS
+};
+
+/**
+ * @brief 类型定义: EPBDispSts
+ * EPBDispSts
+ */
+enum EPBDispSts{
+
+    /** NO_REQUEST */
+    @value(0) NO_REQUEST,
+
+    /** PARKING_BRAKE_NOT_FULLY */
+    @value(1) PARKING_BRAKE_NOT_FULLY,
+
+    /** PARKING_BRAKE_NOT_RELEASE */
+    @value(2) PARKING_BRAKE_NOT_RELEASE,
+
+    /** PARKING_BRAKE_NOT_APPLIED */
+    @value(3) PARKING_BRAKE_NOT_APPLIED,
+
+    /** HOT_PARK_BRAKE_SYSTEM */
+    @value(4) HOT_PARK_BRAKE_SYSTEM,
+
+    /** PARKING_BRAKE_SERVICE_REQUIRED */
+    @value(5) PARKING_BRAKE_SERVICE_REQUIRED,
+
+    /** USE_PARKING_BRAKE_TO_RELEASE */
+    @value(6) USE_PARKING_BRAKE_TO_RELEASE,
+
+    /** RELEASE_PARK_BRAKE */
+    @value(7) RELEASE_PARK_BRAKE,
+
+    /** TMP_INTERRUPT_PARK_BRAKE_SYSTEM */
+    @value(8) TMP_INTERRUPT_PARK_BRAKE_SYSTEM,
+
+    /** PARK_BRAKE_NOT_HOLD_VEHICLE */
+    @value(9) PARK_BRAKE_NOT_HOLD_VEHICLE,
+
+    /** PARK_BRAKE_BENCH_MODE */
+    @value(10) PARK_BRAKE_BENCH_MODE,
+
+    /** PRESS_BRAKE_PEDAL_TO_PARKING_MODE */
+    @value(11) PRESS_BRAKE_PEDAL_TO_PARKING_MODE,
+
+    /** PARKING_BRAKE_AUTOMATIC */
+    @value(12) PARKING_BRAKE_AUTOMATIC,
+
+    /** DYNAMIC_BRAKE_IS_ACTIVE */
+    @value(13) DYNAMIC_BRAKE_IS_ACTIVE
+};
+
+/**
+ * @brief 类型定义: EPBDisplayReqSts
+ * EPBDisplayReqSts
+ */
+struct EPBDisplayReqSts {
+    /** 高优先级 */
+    EPBDispSts highPriSts;
+    /** 低优先级 */
+    EPBDispSts lowPriSts;
+};
+
+/**
+ * @brief 类型定义: VehicleSpeed
+ * VehicleSpeed
+ */
+struct VehicleSpeed{
+    /** 车速 */
+    float speed;
+    /** 车速是否有效 */
+    bool isVaild;
+};
+
+/**
+ * @brief 类型定义: HDCWorkSts
+ * HDCWorkSts
+ */
+enum HDCWorkSts{
+    /** NOT_REQUEST */
+    @value(0) NOT_REQUEST,
+
+    /** ON_REQUESTED */
+    @value(1) ON_REQUESTED,
+
+    /** REQUEST_FOR_BRAKING */
+    @value(2) REQUEST_FOR_BRAKING,
+
+    /** TMP_OFF_REQUEST */
+    @value(3) TMP_OFF_REQUEST,
+
+    /** HDC_RESERVED */
+    @value(4) HDC_RESERVED
+};
+
+/**
+ * @brief 类型定义: EnergeRecoveryLevel
+ * EnergeRecoveryLevel
+ */
+enum EnergeRecoveryLevel{
+    /** LEVEL1 */
+    @value(0) LEVEL1,
+
+    /** LEVEL2 */
+    @value(1) LEVEL2,
+
+    /** LEVEL3 */
+    @value(2) LEVEL3,
+
+    /** LEVEL4 */
+    @value(3) LEVEL4
+};
+
+/**
+ * @brief 类型定义: ESCWorkSts
+ * ESCWorkSts ESC运行状态
+ */
+enum ESCWorkSts{
+    /** ESC_STS_LNIN */
+    @value(0) ESC_STS_LNIN,
+
+    /** ESC_STS_OK */
+    @value(1) ESC_STS_OK,
+
+    /** ESC_STS_TEMP_ERR */
+    @value(2) ESC_STS_TEMP_ERR,
+
+    /** ESC_STS_PRMNT_ERR */
+    @value(3) ESC_STS_PRMNT_ERR,
+
+    /** ESC_STS_USR_OFF */
+    @value(4) ESC_STS_USR_OFF
+};
+
+/**
+ * @brief 类型定义: EPBWarnChimeReqSts
+ * EPBWarnChimeReqSts 警示音请求状态
+ */
+enum EPBWarnChimeReqSts{
+    /** WARN_CHIME_STOP */
+    @value(0) WARN_CHIME_STOP,
+
+    /** WARN_CHIME_ONE */
+    @value(1) WARN_CHIME_ONE,
+
+    /** WARN_CHIME_TWO */
+    @value(2) WARN_CHIME_TWO
+};
+
+/**
+ * @brief 类型定义: AVHDisplayReqSts
+ * AVHDisplayReqSts AVH显示请求状态
+ */
+enum AVHDisplayReqSts{
+    /** NO_MESSAGE */
+    @value(0) NO_MESSAGE,
+
+    /** MSG1 */
+    @value(1) MSG1,
+
+    /** MSG2 */
+    @value(2) MSG2,
+
+    /** MSG3 */
+    @value(3) MSG3,
+
+    /** MSG4 */
+    @value(4) MSG4,
+
+    /** ERR */
+    @value(5) ERR
+};
+
+/**
+ * @brief 类型定义: ESCWarnIndicateReqSts
+ * ESCWarnIndicateReqSts ESC报警指示请求状态
+ */
+enum ESCWarnIndicateReqSts{
+    /** ON_REQUEST */
+    @value(0) ON_REQUEST,
+
+    /** FLASH_REQUEST */
+    @value(1) FLASH_REQUEST,
+
+    /** ESC_RESERVED */
+    @value(2) ESC_RESERVED,
+
+    /** OFF_REQUEST */
+    @value(3) OFF_REQUEST
+};
+
+/**
+ * @brief 类型定义: SteerErrReqSts
+ * SteerErrReqSts
+ */
+enum SteerErrReqSts{
+    /** NOREQ */
+    @value(0) NOREQ,
+
+    /** STEER_ASSI_SRV_RQRD */
+    @value(1) STEER_ASSI_SRV_RQRD,
+
+    /** STEER_ERR_STOP_SFTY */
+    @value(2) STEER_ERR_STOP_SFTY,
+
+    /** STEER_ASSI_URGENT_SRV_RQRD */
+    @value(3) STEER_ASSI_URGENT_SRV_RQRD,
+
+    /** STEER_ASSI_TEMP_REDN */
+    @value(4) STEER_ASSI_TEMP_REDN,
+
+    /** SPARE1 */
+    @value(5) SPARE1,
+
+    /** SPARE2 */
+    @value(6) SPARE2,
+
+    /** SPARE3 */
+    @value(7) SPARE3
+};
+
+/**
+ * @brief 类型定义: WheelPosition
+ *  轮胎位置
+ */
+enum WheelPosition{
+    @value(0) FRONT_LEFT,
+    @value(1) FRONT_RIGHT,
+    @value(2) REAR_LEFT,
+    @value(3) REAR_RIGHT
+};
+
+/**
+ * @brief 类型定义: TirePressureWarn
+ *  胎压报警类型
+ */
+enum TirePressureWarn{
+    @value(0) NORMAL,
+    @value(1) LOW_PRESSURE,
+    @value(2) HIGH_PRESSURE,
+    @value(3) RESERVE
+};
+
+/**
+ * @brief 类型定义: TirePressureWarn
+ *
+ */
+enum EPBApplyReq{
+    @value(0) EPB_NO_REQUEST,
+    @value(1) EPB_APPLY_REQUEST,
+    @value(2) EPB_RELEASE_REQUEST,
+    @value(3) EPB_FORBIDDEN,
+    @value(4) EPB_UNKNOWN
+};
+
+/**
+ * @brief 类型定义: ESCIdPen
+ *  ESC个性化ID
+ */
+enum ESCIdPen{
+    @value(0) ESC_ID_UNKNOWN,
+    @value(1) ESC_ID_PROFILE1,
+    @value(2) ESC_ID_PROFILE2,
+    @value(3) ESC_ID_PROFILE3,
+    @value(4) ESC_ID_PROFILE4,
+    @value(5) ESC_ID_PROFILE5,
+    @value(6) ESC_ID_PROFILE6,
+    @value(7) ESC_ID_PROFILE7,
+    @value(8) ESC_ID_PROFILE8,
+    @value(9) ESC_ID_PROFILE9,
+    @value(10) ESC_ID_PROFILE10,
+    @value(11) ESC_ID_PROFILE11,
+    @value(12) ESC_ID_PROFILE12,
+    @value(13) ESC_ID_PROFILE13,
+    @value(14) ESC_ID_PROFILE_RESERVED,
+    @value(15) ESC_ID_PROFILE_ALL
+};
+
+/**
+ * @brief 类型定义: BrkFldLvlWarnMsg
+ *  制动液位报警提示信息
+ */
+enum BrkFldLvlWarnMsg{
+    @value(0) NO_TEST,
+    @value(1) MESSAGE1
+};
+
+
+/**
+ * @brief 类型定义: VehicleMotionSts
+ *  车辆运动状态，包括：静止、前进及后退
+ */
+enum VehicleMotionSts{
+    @value(0) MOTION_STS_UNKNOWN,
+    @value(1) MOTION_STS_STAND_STILL,
+    @value(2) MOTION_STS_FORWARD,
+    @value(3) MOTION_STS_BACKWARD
+};
+
+/**
+ * @brief 类型定义: SteerAsscLevel
+ *  转向强度等级
+ */
+enum SteerAsscLevel{
+    @value(0) ASSC_LEVEL_UNKNOWN,
+    @value(1) ASSC_LEVEL1,
+    @value(2) ASSC_LEVEL2,
+    @value(3) ASSC_LEVEL3,
+    @value(4) ASSC_LEVEL4,
+    @value(5) ASSC_LEVEL5,
+    @value(6) ASSC_LEVEL6,
+    @value(7) ASSC_LEVEL7
+};
+
+/**
+ * @brief 类型定义: GearLvlFaultStatus
+ *  换挡故障状态
+ */
+enum GearLvlFaultStatus{
+    @value(0) NO_FAULT,
+    @value(1) SCREEN_SHIFT_FAULT,
+    @value(2) SCREEN_SHIFT_FAULT_AND_LIMIT_POWER,
+    @value(3) TOUCHPAD_SHIFT_FAULT,
+    @value(4) TOUCHPAD_SHIFT_FAULT_AND_LIMIT_POWER,
+    @value(5) SCREEN_AND_TOUCHPAD_SHIFT_FAULT
+};
+
+/**
+ * @brief 类型定义: TqModStatus
+ *  扭矩模式状态
+ */
+enum TqModStatus{
+    @value(0) NO_FAULT,
+    @value(1) ECO,
+    @value(2) COMFORT_NORMAL,
+    @value(3) DYNAMIC_SPORT,
+    @value(4) RESERVED1,
+    @value(5) OFFROAD_CROSSTERRAIN,
+    @value(6) ADAPTIVE,
+    @value(7) RACE,
+    @value(8) RESERVED2,
+    @value(9) ECO_PLUS,
+    @value(10) POWER,
+    @value(11) SNOW,
+    @value(12) SAND,
+    @value(13) MUD,
+    @value(14) ROCK,
+    @value(15) ERR
+};
+
+/**
+ * @brief 类型定义: SuspDamperLevel
+ *  悬架减震阻尼等级
+ */
+enum SuspDamperLevel{
+    @value(0) SUSP_LEVEL1,
+    @value(1) SUSP_LEVEL2,
+    @value(2) SUSP_LEVEL3,
+    @value(3) SUSP_LEVEL4,
+    @value(4) SUSP_RESERVED1,
+    @value(5) SUSP_RESERVED2,
+    @value(6) SUSP_RESERVED3,
+    @value(7) SUSP_RESERVED4
+};
+
+/**
+ * @brief 类型定义: SportModeAvlStatus
+ *  运动模式激活状态
+ */
+enum SportModeAvlStatus{
+    @value(0) TYP0,
+    @value(1) TYP1,
+    @value(2) TYP2,
+    @value(3) TYP3,
+    @value(4) TYP4,
+    @value(5) TYP5,
+    @value(6) TYP6,
+    @value(7) TYP7
+};
+
+/**
+ * @brief 类型定义: SteerWhlSensorInfo
+ * 方向盘转角信息
+ */
+struct SteerWhlSensorInfo {
+
+    /** 方向盘转向角度 */
+    float angle;
+
+    /** 方向盘转向角速度 */
+    float angVelocity;
+
+    /** 方向盘传感器状态质量因子 */
+    SensorQualityFactor factor;
+};
+
+/**
+ * @brief 类型定义: EscSportMode
+ * ESC运动模式
+ */
+struct EscSportMode {
+
+    /**个性化ID */
+    ESCIdPen id;
+
+    /** ESC运动模式开关设置	 */
+    bool isOpen;
+};
+
+/**
+ * @brief 类型定义: VehicleMotionState
+ * 车辆运动状态
+ */
+struct VehicleMotionState {
+
+    /**VehicleMotionSts */
+    VehicleMotionSts sts;
+
+    /** 车辆运动状态是否有效*/
+    bool isVaild;
+};
+
+/**
+ * @brief 类型定义: PedalPosRate
+ * 踏板位置状态
+ */
+struct PedalPosRate {
+
+    /**踏板位置状态，百分比表示 */
+    float rate;
+
+    /** 加速踏板位置状态是否有效*/
+    bool isVaild;
+};
+
+/**
+ * @brief 类型定义: BrakePedlPsdStatus
+ * 制动踏板踩下状态
+ */
+struct BrakePedlPsdStatus {
+
+    /** 制动踏板是否踩下状态 */
+    bool isPressed;
+
+    /** 质量因子 */
+    SensorQualityFactor factor;
+};
+
+/**
+ * @brief 类型定义: TirePressureMsg
+ * 胎压
+ */
+struct TirePressureMsg {
+
+    /** 轮胎位置 */
+    WheelPosition	wheelPos;
+
+    /** 传感器电池电量低 */
+    bool isBatteryLow;
+
+    /** 是否快速泄露*/
+    bool isFastLost;
+
+    /** 是否报文过期 */
+    bool isMessageOld;
+
+    /** 胎压值  Kpa, Range：0~350.115*/
+    float pressureData;
+
+    /** 胎压报警状态 */
+    TirePressureWarn warningSts;
+
+    /** 系统故障报警*/
+    bool isSysFailed;
+
+    /** 温度 */
+    int16 temperatureData;
+
+    /** 温度异常报警 */
+    bool isTemperatureFailed;
+
+    /** 预留，暂不使用 */
+    bool isTireFill;
+};
+
+/**
+ * @brief 类型定义: TirePressureInfo
+ * 胎压信息
+ */
+struct TirePressureInfo {
+
+    /** 驾驶位 */
+    TirePressureMsg driver;
+
+    /** 副驾 */
+    TirePressureMsg passenger;
+
+    /** 后左 */
+    TirePressureMsg rearLeft;
+
+    /** 后右 */
+    TirePressureMsg rearRight;
+};
+
+/**
+ * @brief 车轮ID
+ *
+ */
+enum WheelId
+{
+    //左前轮
+    @value(1) WheelIdFL,
+    //右前轮
+    @value(2) WheelIdFR,
+    //左后轮
+    @value(3) WheelIdRL,
+    //Convenience
+    @value(4) WheelIdRR
+};
+
+/**
+ * @brief 车轮转速
+ *
+ */
+struct WheelSpeed
+{
+    //车轮Id
+    WheelId wheelId;
+    //车轮速度
+    float speed;
+    //有效性
+    bool isvalid;
+};
+
+/**
+ * @brief 车轮旋转计数
+ *
+ */
+struct WheelImpluseCounter
+{
+    //车轮Id
+    WheelId wheelId;
+    //车轮旋转计数
+    int16 wheelImpluseCounter;
+    //有效性
+    bool isvalid;
+};
+
+/**
+ * @brief 类型定义: GearShiftDirection
+ * 换挡方向控制
+ */
+struct GearShiftDirection {
+
+    /** Gear shifter move up in screen */
+    bool upTipAut;
+
+    /** Gear shifter move down in screen */
+    bool dwnTipAut;
+
+    /** Gear shifter in Screen origin position*/
+    bool posnAut;
+
+    /** Gear shifter move down to R gear in Screen */
+    bool dwnRTipAut;
+
+    /** Gear shifter move up to D gear in Screen*/
+    bool upDTipAut;
+};
+
+/**
+ * @brief 类型定义: GearShiftPark
+ * 驻车档位控制
+ */
+struct GearShiftPark {
+
+    /** P挡请求控制 */
+    bool parkReq;
+
+    /** P挡请求控制是否有效 */
+    bool validSts;
+};
+
+/**
+ * @brief 类型定义: SuspFailrStatus
+ * 悬架故障状态
+ */
+struct SuspFailrStatus {
+
+    /** 故障状态 */
+    bool failSts;
+
+    /** 质量因子 */
+    SensorQualityFactor factor;
+};
+
+/******************************************** v0.5.5 start ****************************/
+/**
+     * @brief SOA_API Chassis模块接口故障
+     */
+    enum ChassisFault
+    {
+        //模块所有ChassisFault全部清除，无故障/故障消除
+        @value(0) OkChassis,
+        //车速无效
+        @value(1) SpeedInvalid,
+        //仪表盘车速无效
+        @value(2) DisplaySpeedInvalid,
+        //左前轮轮速失效
+        @value(3) WheelSpeedInvalid_WheelIdFL,
+        //右前轮轮速失效
+        @value(4) WheelSpeedInvalid_WheelIdFR,
+        //左后轮轮速失效
+        @value(5) WheelSpeedInvalid_WheelIdRL,
+        //右后轮轮速失效
+        @value(6) WheelSpeedInvalid_WheelIdRR,
+        //左前轮轮速失效
+        @value(7) WheelImpluseCounterInvalid_WheelIdFL,
+        //右前轮旋转脉冲计数失效
+        @value(8) WheelImpluseCounterInvalid_WheelIdFR,
+        //左后轮旋转脉冲计数失效
+        @value(9) WheelImpluseCounterInvalid_WheelIdRL,
+        //右后轮旋转脉冲计数失效
+        @value(10) WheelImpluseCounterInvalid_WheelIdRR,
+        //扭矩模式返回值失效
+        @value(11) TorqueModeInvalid,
+        //EPS转向错误响应状态返回值失效
+        @value(12) SteerErrorReqStatusInvalid,
+        //ESC工作状态返回值失效
+        @value(13) ESCWorkStatusInvalid,
+        //挡位返回值失效
+        @value(14) GearInvalid,
+        //车辆运动状态返回值失效
+        @value(15) MotionStateInvalid
+    };
+
+    /**
+     * @brief 扭矩模式
+     *
+     */
+    enum TorqueMode
+    {
+        //Undefined(Default)
+        @value(0) TorqueModeUndefined,
+        //ECO
+        @value(1) TorqueModeEco,
+        //Comfort(Normal)
+        @value(2) TorqueModeComfort,
+        //DynamicSport
+        @value(3) TorqueModeDynamicSport,
+        //ReservedFirst
+        @value(4) TorqueModeReservedFirst,
+        //OffroadCrossTerrain
+        @value(5) TorqueModeOffroadCrossTerrain,
+        //Adaptive
+        @value(6) TorqueModeAdaptive,
+        //Race
+        @value(7) TorqueModeRace,
+        //ReservedSecond
+        @value(8) TorqueModeReservedSecond,
+        //EcoPlus
+        @value(9) TorqueModeEcoPlus,
+        //Power
+        @value(10) TorqueModePower,
+        //Snow
+        @value(11) TorqueModeSnow,
+        //Sand
+        @value(12) TorqueModeSand,
+        //Mud
+        @value(13) TorqueModeMud,
+        //Rock
+        @value(14) TorqueModeRock,
+        //Error
+        @value(15) TorqueModeError
+    };
+
+    /**
+     * @brief 拖曳模式判断条件
+     *
+     */
+    enum TowModePolicy
+    {
+        //驻车制动松开
+        @value(0) TowModePolicyEPBRelease,
+        //车辆使用模式满足
+        @value(1) TowModePolicyUsageMode,
+        //充电桩未连接
+        @value(2) TowModePolicyChargingDisconnect,
+        //制动踏板踩下
+        @value(3) TowModePolicyBrakePedleOn
+    };
+
+    /**
+     * @brief [Support] EPB动作类型
+     *
+     */
+    enum EPBOperationType
+    {
+        // 夹紧EPB驻车器
+        @value(0) kApply,
+
+        // 释放EPB驻车器
+        @value(1)kRelease,
+
+        // 禁止EPB驻车器
+        @value(2)kForbidden
+    };
+
+    /**
+     * @brief 挡位
+     *
+     */
+    enum Gear
+    {
+        //P挡
+        @value(0) GearP,
+        //R挡
+        @value(1) GearR,
+        //N挡
+        @value(2) GearN,
+        //D挡
+        @value(3) GearD,
+        //M挡
+        @value(4) GearM,
+        //挡位未知
+        @value(5) GearNA
+    };
+
+    /**
+     * @brief 车辆运动状态类型
+     *
+     */
+    enum MotionStateType
+    {
+        //未知无效值
+        @value(0) MotionStateUnknown,
+        //静止
+        @value(1) MotionStateStandStill,
+        //前进
+        @value(2) MotionStateForward,
+        //后退
+        @value(3) MotionStateBackward
+    };
+
+    /**
+     * @brief 车辆运动状态
+     *
+     */
+    struct MotionState
+    {
+        //车辆运动状态
+        MotionStateType motionState;
+        //有效性
+        bool isvalid;
+    };
+    /**
+     * @brief EPS转向错误响应状态
+     *
+     */
+    enum SteerErrorReqStatus
+    {
+        //无响应
+        @value(0) SteerErrorReqStatusNoReq,
+        //AssiSrvRqrd
+        @value(1) SteerErrorReqStatusAssiSrvRqrd,
+        //StopSfty
+        @value(2) SteerErrorReqStatusStopSfty,
+        //AssiUrgentSrvRqrd
+        @value(3) SteerErrorReqStatusAssiUrgentSrvRqrd,
+        //AssiTmpRedn
+        @value(4) SteerErrorReqStatusAssiTmpRedn,
+        //预留项1
+        @value(5) SteerErrorReqStatusReserved1,
+        //预留项2
+        @value(6) SteerErrorReqStatusReserved2,
+        //预留项3
+        @value(7) SteerErrorReqStatusReserved3
+    };
+
+    /**
+     * @brief ESC工作状态
+     *
+     */
+    enum ESCWorkStatus
+    {
+        //Init
+        @value(0) ESCWorkStatusInit,
+        //Ok
+        @value(1) ESCWorkStatusOk,
+        //临时故障
+        @value(2) ESCWorkStatusTempError,
+        //永久故障
+        @value(3) ESCWorkStatusPermanentError,
+        //用户关闭
+        @value(4) ESCWorkStatusUserOff
+    };
+
+    /**
+     * @brief 方向盘转角信息
+     *
+     */
+    struct SteerWheelInfo
+    {
+        //方向盘转角 rad
+        float angle;
+        //方向盘转速 rad/s
+        float angleSpeed;
+    };
+
+    /**
+     * @brief 含单位的车速
+     *
+     */
+    struct SpeedWithUnit
+    {
+        //车速
+        uint16 speed;
+        //车速单位
+        SpeedUnit speedUnit;
+        //有效性
+        bool isvalid;
+    };
+
+    /**
+     * @brief 不含单位的底层车速（单位m/s）
+     *
+     */
+    struct SpeedFloat
+    {
+        //车速
+        float speed;
+        //有效性
+        bool isvalid;
+    };
+/******************************************** v0.5.5 end ******************************/
+
+/**
+ * @brief 接口定义: 包含服务所有的接口定义
+ */
+interface IF_ChassisService {
+
+    /**
+     * @fn GetSuspFailrStatus
+     * @brief 获取悬架故障状态
+     * @return  SuspFailrStatus
+     */
+    @method
+    SuspFailrStatus GetSuspFailrStatus(); //保留
+
+     /**
+     * @fn GetBrkFldLvlWarnMsgStatus
+     * @brief 获取制动液位报警提示信息状态
+     * @return  BrkFldLvlWarnMsg
+     */
+    @method
+    BrkFldLvlWarnMsg GetBrkFldLvlWarnMsgStatus(); //保留
+    /**
+     * @fn getBrkSysWarnIndicateReqSts
+     * @brief 获取制动系统报警指示请求状态
+     * @return  BrkSysWarnIndicateReqSts
+     */
+    @method
+    BrkSysWarnIndicateReqSts getBrkSysWarnIndicateReqSts(); //保留
+    /**
+     * @fn BrkSysWarnMsgDisplayReqSts
+     * @brief 获取制动系统报警信息显示请求状态
+     * @return  BrkSysWarnMsgDisplayReqSts
+     */
+    @method
+    BrkSysWarnMsgDisplayReqSts getBrkSysWarnMsgDisReqSts();//保留
+    /**
+     * @fn getABSActInfo
+     * @brief 获取ABS激活状态
+     * @return  ABSActInfo
+     */
+    @method
+    ABSActInfo getABSActInfo();//保留
+    /**
+     * @fn getABSFailSts
+     * @brief 获取ABS失效状态
+     * @return  true : 失效 false : 未失效
+     */
+    @method
+    bool getABSFailSts();     //保留
+    /**
+     * @fn getABSWarnIndicateReqSts
+     * @brief 获取ABS报警指示请求状态
+     * @return ABSWarnIndicateReqSts
+     */
+    @method
+    ABSWarnIndicateReqSts getABSWarnIndicateReqSts(); //保留
+
+    /**
+     * @fn getDisplayReqSts
+     * @brief 获取EPB显示请求状态
+     * @return  EPBDisplayReqSts
+     */
+    @method
+    EPBDisplayReqSts getDisplayReqSts(); //保留 API NO NEED
+    /**
+     * @fn getIndicatorLightReqSts
+     * @brief 获取EPB指示灯请求状态
+     * @return  EPBIndicatorLightReqSts
+     */
+    @method
+    EPBIndicatorLightReqSts getIndicatorLightReqSts(); //保留 API NO NEED
+    /**
+     * @fn getWarnChimeReqSts
+     * @brief 获取EPB警示音请求状态
+     * @return  EPBWarnChimeReqSts
+     */
+    @method
+    EPBWarnChimeReqSts getWarnChimeReqSts(); //保留, API NO NEED
+    /**
+     * @fn getBrkRelsWarnReqSts
+     * @brief 获取释放刹车踏板警示音请求状态
+     * @return  true : ON false : OFF
+     */
+    @method
+    bool getBrkRelsWarnReqSts(); //保留 API NO NEED
+
+    /**
+     * @fn getHdcWorkSts
+     * @brief HDC功能运行状态
+     * @return  HDCWorkSts
+     */
+    @method
+    HDCWorkSts getHdcWorkSts(); //保留 API NO NEED
+
+    /**
+     * @fn GetAutoHoldFunctionAvailable
+     * @brief 底层控制器反馈，AVH功能可用
+     * @return  bool  true ：AVH功能可用 false : AVH 功能不可用
+     */
+    @method
+    bool GetAutoHoldFunctionAvailable();
+
+    /**
+     * @fn SetEscSportMode
+     * @brief ESC运动模式设置
+     * @param[in] mode : EscSportMode
+     * @return  void
+     */
+    @method
+    void SetEscSportMode(EscSportMode mode); //保留 API NO NEED
+
+    /**
+     * @fn getAvhDisplayReqSts
+     * @brief 获取AVH功能显示请求状态
+     * @return  AVHDisplayReqSts
+     */
+    @method
+    AVHDisplayReqSts getAvhDisplayReqSts(); //保留 API NO NEED
+
+     /**
+     * @fn GetEscSportModeStatus
+     * @brief 获取ESC运动模式状态
+     * @return true : ON false : off
+     */
+    @method
+    bool GetEscSportModeStatus(); //保留 API NO NEED
+    /**
+     * @fn getESCWarnIndicateReqSts
+     * @brief 获取ESC报警指示请求状态
+     * @return  ESCWarnIndicateReqSts
+     */
+    @method
+    ESCWarnIndicateReqSts getESCWarnIndicateReqSts(); //保留 API NO NEED
+    /**
+     * @fn getESCOffIndicateLightSts
+     * @brief 获取ESC Off指示状态
+     * @return  true : ESC Off指示 false : 非ESC Off指示状态
+     */
+    @method
+    bool getESCOffIndicateLightSts(); //保留 API NO NEED
+
+    /**
+     * @fn getVehReadySts
+     * @brief 获取车辆Ready指示状态
+     * @param[out]   车辆ready状态 true : ready false : not ready
+     */
+    @method
+    bool getVehReadySts(); //保留 API NO NEED
+
+     /**
+     * @fn GetAccrPedalPosRate
+     * @brief 获取加速踏板位置状态
+     * @param[out]  PedalPosRate
+     */
+    @method
+    PedalPosRate GetAccrPedalPosRate();
+
+     /**
+     * @fn GetBrakePedlPsdStatus
+     * @brief 获取制动踏板踩下状态
+     * @param[out] BrakePedlPsdStatus
+     */
+    @method
+    BrakePedlPsdStatus GetBrakePedlPsdStatus();
+    /**
+     * @fn brkSysWarnIndicateReqSts
+     * @brief Event brkSysWarnIndcnReqStatus
+     * @param[out]  brkSysWarnIndcnReqSts 制动系统报警指示请求状态
+     */
+    @event
+    brkSysWarnIndicateReqSts(BrkSysWarnIndicateReqSts sts); //保留 API NO NEED
+
+    /**
+     * @fn brkSysWarnMsgDisplayReqSts
+     * @brief Event BrkSysWarnMsgDisplayReqSts
+     * @param[out]  BrkSysWarnMsgDisplayReqSts 制动系统报警信息显示请求状态
+     */
+    @event
+    brkSysWarnMsgDisplayReqSts(BrkSysWarnMsgDisplayReqSts sts); //保留 API NO NEED
+
+    /**
+     * @fn absActSts
+     * @brief Event ABSActInfo
+     * @param[out]  ABSActInfo ABS激活状态
+     */
+    @event
+    absActSts(ABSActInfo info); //保留 API NO NEED
+
+    /**
+     * @fn absFailSts
+     * @brief Event absFailSts
+     * @param[out]  ture ： ABS失效 false ：ABS功能正常
+     */
+    @event
+    absFailSts(bool sts); //保留 API NO NEED
+
+    /**
+     * @fn absWarnIndicateReqSts
+     * @brief Event absWarnIndicateReqSts
+     * @param[out]  ABSWarnIndicateReqSts ABS报警指示请求状态
+     */
+    @event
+    absWarnIndicateReqSts(ABSWarnIndicateReqSts sts);//保留 API NO NEED
+
+    /**
+     * @fn epbWorkSts
+     * @brief Event epbWorkSts
+     * @param[out]  sts EPB运行状态
+     */
+    @event
+    epbWorkSts(EPBWorkSts sts);//TODO CarService.jidl EPBWorkStatus
+    /**
+     * @fn epbDisplayReqSts
+     * @brief Event epbDisplayReqSts
+     * @param[out]  EPBDisplayReqSts EPB显示请求状态
+     */
+    @event
+    epbDisplayReqSts(EPBDisplayReqSts sts);//保留 API NO NEED
+
+    /**
+     * @fn epbIndicatorLightReqSts
+     * @brief Event epbIndicatorLightReqSts
+     * @param[out]  sts EPB指示灯请求状态
+     */
+    @event
+    epbIndicatorLightReqSts(EPBIndicatorLightReqSts sts);//保留 API NO NEED
+
+    /**
+     * @fn epbWarnChimeReqSts
+     * @brief Event epbWarnChimeReqSts
+     * @param[out]  EPB警示音请求状态
+     */
+    @event
+    epbWarnChimeReqSts(EPBWarnChimeReqSts sts);//保留 API NO NEED
+
+    /**
+     * @fn brkRelsWarnReqSts
+     * @brief Event brkRelsWarnReqSts
+     * @param[out] true : ON false : OFF
+     */
+    @event
+    brkRelsWarnReqSts(bool sts);//保留 API NO NEED
+
+    /**
+     * @fn hdcWorkSts
+     * @brief Event hdcWorkSts
+     * @param[out]  sts HDC功能运行状态
+     */
+    @event
+    hdcWorkSts(HDCWorkSts sts);//保留 API NO NEED
+
+    /**
+     * @fn AutoHoldFunctionAvailable
+     * @brief Event AVHFunctionAvailable
+     * @param[out]  true ：AVH功能可用 false : AVH 功能不可用
+     */
+    @event
+    AutoHoldFunctionAvailable(bool sts);
+
+    /**
+     * @fn avhDisplayReqSts
+     * @brief Event avhDisplayReqSts
+     * @param[out]  sts ：AVHDisplayReqSts
+     */
+    @event
+    avhDisplayReqSts(AVHDisplayReqSts sts);//保留 API NO NEED
+
+    /**
+     * @fn escWarnIndicateReqSts
+     * @brief Event escWarnIndicateReqSts
+     * @param[out]  sts ESCWarnIndicateReqSts
+     */
+    @event
+    escWarnIndicateReqSts(ESCWarnIndicateReqSts sts);//保留 API NO NEED
+
+    /**
+     * @fn escOffIndicateLightSts
+     * @brief Event escOffIndicateLightSts
+     * @param[out]  true : ESC Off指示 false 非ESC Off指示状态
+     */
+    @event
+    escOffIndicateLightSts(bool sts);//保留 API NO NEED
+
+    /**
+     * @fn vehicleReady
+     * @brief Event vehicleReady
+     * @param[out]  true : ready false : not ready
+     */
+    @event
+    vehicleReady(bool sts); //保留 API NO NEED
+
+    /**
+     * @fn NotifyBrkFldLvlWarnMsgStatus
+     * @brief Event 制动液位报警提示信息状态
+     * @param[out]  BrkFldLvlWarnMsg
+     */
+    @event
+    NotifyBrkFldLvlWarnMsgStatus(BrkFldLvlWarnMsg msg);//保留 API NO NEED
+
+     /**
+     * @fn NotifyCrpModSts
+     * @brief Event 通知蠕行模式状态
+     * @param[out]  蠕行模式状态
+     */
+    @event
+    NotifyCrpModSts(bool sts); //保留 API NO NEED
+
+    /**
+     * @fn NotifySuspFailrStatus
+     * @brief Event 悬架故障状态
+     * @param[out]  SuspFailrStatus
+     */
+    @event
+    NotifySuspFailrStatus(SuspFailrStatus sts); //保留 API NO NEED
+
+     /**
+     * @fn NotifyEscSportModeStatus
+     * @brief Event 通知ESC运动模式状态
+     * @param[out]  esc sport sts
+     */
+    @event
+    NotifyEscSportModeStatus(bool sts); //保留 API NO NEED
+
+    /**************************************** v0.5.5 start **********************/
+    /**
+         * @fn Lock
+         * @brief [Not Support] 整车上锁 对应API: jet::vehicle::Car::Lock
+         * @param[in] NONE
+         * @return NONE
+         */
+        @method
+        void Lock();
+        /**
+         * @fn Unlock
+         * @brief [Not Support] 整车解锁
+         * @param[in] NONE
+         * @return NONE
+         */
+        @method
+        void Unlock();
+
+         /**
+         * @fn GetLockStatus
+         * @brief [Not Support] 查询整车是否已上锁 对应API: jet::vehicle::Car::GetLockStatus
+         * @return bool true - 上锁 false - 未上锁
+         */
+        @method
+        bool GetLockStatus();
+
+        /**
+         * @fn GetDisplaySpeed
+         * @brief [Support] 获取当前仪表盘车速 对应API: jet::vehicle::Car::GetDisplaySpeed
+         * @return SpeedWithUnit  当前仪表盘车速
+         */
+        @method
+        SpeedWithUnit GetDisplaySpeed();
+
+        /**
+         * @fn GetSpeed
+         * @brief [Support] 获取当前车速 对应API: jet::vehicle::Car::GetSpeed
+         * @return SpeedFloat  当前车速
+         */
+        @method
+        SpeedFloat GetSpeed();
+
+        /**
+         * @fn SetTorqueMode
+         * @brief [Support] 设置扭矩模式 对应API: jet::vehicle::Car::SetTorqueMode
+         * @param[in] TorqueMode  扭矩模式
+         * @return NONE
+         */
+        @method
+        void SetTorqueMode(TorqueMode mode);
+
+        /**
+         * @fn GetTorqueMode
+         * @brief [Support] 获取扭矩模式 对应API: jet::vehicle::Car::GetTorqueMode
+         * @return  TorqueMode 扭矩模式
+         */
+        @method
+        TorqueMode GetTorqueMode();
+
+        /**
+         * @fn SetSuspensionLevel
+         * @brief [Support] 设置悬架减震等级 对应API: jet::vehicle::Car::SetSuspensionLevel
+         * @param[in] uint8  悬架减震等级
+         * @return NONE
+         */
+        @method
+        void SetSuspensionLevel(uint8 level);
+
+        /**
+         * @fn GetSuspensionLevel
+         * @brief [Support] 获取悬架减震等级 对应API: jet::vehicle::Car::GetSuspensionLevel
+         * @return  uint8 悬架减震等级
+         */
+        @method
+        uint8 GetSuspensionLevel();
+
+        /**
+         * @fn SetAutoHold
+         * @brief [Support] 设置自动驻车 对应API: jet::vehicle::Car::SetAutoHold
+         * @param[in] bool 功能使能请求 true - 使能， false - 关闭
+         * @return NONE
+         */
+        @method
+        void SetAutoHold(bool on);
+
+        /**
+         * @fn GetAutoHold
+         * @brief [Support] 获取自动驻车功能的使能状态 对应API: jet::vehicle::Car::GetAutoHold
+         * @return  bool 功能使能状态 true - 已使能， false - 未使能
+         */
+        @method
+        bool GetAutoHold();
+
+        /**
+         * @fn GetHDCFunctionAvailable
+         * @brief [Support] 获取陡坡缓降功能可用状态
+         * @return  bool 功能使能状态 true - 可用（HMI可进行使能）， false - 不可用（开关需置灰）
+         */
+        @method
+        bool GetHDCFunctionAvailable();
+
+        /**
+         * @fn SetHDC
+         * @brief [Support] 设置陡坡缓降开关 对应API: jet::vehicle::Car::SetHDC
+         * @param[in] bool 功能使能请求 true - 使能， false - 关闭
+         * @return NONE
+         */
+        @method
+        void SetHDC(bool on);
+
+        /**
+         * @fn GetHDCOn
+         * @brief [Support] 获取陡坡缓降功能使能状态 对应API: jet::vehicle::Car::GetHDCOn
+         * @return  bool 功能使能状态 true - 已使能， false - 未使能
+         */
+        @method
+        bool GetHDCOn();
+
+        /**
+         * @fn SetTowMode
+         * @brief [Not Support] 启动/关闭牵引模式 对应API: jet::vehicle::Car::SetTowMode
+         * @param[in] bool 功能开关请求 true - 开启， false - 关闭
+         * @return NONE
+         */
+        @method
+        void SetTowMode(bool on);
+
+        /**
+         * @fn SetCoastEnergyRegenerateMode
+         * @brief [Support] 启动/关闭滑行能量模式 对应API: jet::vehicle::Car::SetCoastEnergyRegenerateMode
+         * @param[in] bool 功能开关请求 true - 开启， false - 关闭
+         * @return NONE
+         */
+        @method
+        void SetCoastEnergyRegenerateMode(bool on);
+
+        /**
+         * @fn SetCreepMode
+         * @brief [Support] 启动/关闭蠕行模式 对应API: jet::vehicle::Car::SetCreepMode
+         * @param[in] bool 功能开关请求 true - 开启， false - 关闭
+         * @return NONE
+         */
+        @method
+        void SetCreepMode(bool on);
+
+        /**
+         * @fn SetESC
+         * @brief [Not Support] 设置ESC（电子稳定性控制）功能开关 对应API: jet::vehicle::Car::SetESC
+         * @param[in] bool 功能使能请求 true - 使能， false - 关闭
+         * @return NONE
+         */
+        // @method
+        // void SetESC(bool on);
+
+        /**
+         * @fn GetESC
+         * @brief [Support] 获取ESC功能使能状态 对应API: jet::vehicle::Car::GetESC
+         * @return  bool 功能使能状态 true - 已使能， false - 未使能
+         */
+        @method
+        bool GetESC();
+
+        /**
+         * @fn GetEPBOperationStatus
+         * @brief [Support] 获取当前EPB操作状态 对应API: jet::vehicle::Car::GetEPBOperationStatus
+         * @return  uint8 功能使能状态 当前EPB操作状态 0-15 ： type0 - type15
+         */
+        @method
+        uint8 GetEPBOperationStatus();
+
+        /**
+         * @fn EPBOperation
+         * @brief [Support] 直接操作EPB 对应API: jet::vehicle::Car::EPBOperation
+         * @param[in]  operate 请求的EPB动作类型   kApply -夹紧EPB   kRelease 释放EPB
+         * @return NONE
+         */
+        @method
+        void EPBOperation(EPBOperationType operate);
+
+        /**
+         * @fn SetGear
+         * @brief [Support] 设置挡位 对应API: jet::vehicle::Car::SetGear
+         * @param[in] Gear 目标挡位    P R D
+         * @return NONE
+         */
+        @method
+        void SetGear(Gear gear);
+
+        /**
+         * @fn GetGear
+         * @brief [Support] 获取当前挡位 对应API: jet::vehicle::Car::GetGear
+         * @return  Gear 当前挡位    P R N D
+         */
+        @method
+        Gear GetGear();
+
+        /**
+         * @fn GetGearFault
+         * @brief [Support] 获取当前挡位故障
+         * @return  sequence<GearLvlFaultStatus> 当前所有挡位故障
+         */
+        @method
+        sequence<GearLvlFaultStatus> GetGearFault();
+
+        /**
+         * @fn GetWheelSpeed
+         * @brief [Support] 获取轮速 对应API: jet::vehicle::Car::GetWheelSpeed
+         * @param[in] wheels 需要获取的车轮Id数组
+         * @return  WheelSpeed 轮速键值对
+         */
+        @method
+        sequence<WheelSpeed> GetWheelSpeed(sequence<WheelId> wheels);
+
+        /**
+         * @fn GetWheelImpluseCounter
+         * @brief [Support] 获取车轮转动脉冲数 对应API: jet::vehicle::Car::GetWheelImpluseCounter
+         * @param[in] wheels 需要获取的车轮Id数组
+         * @return  WheelImpluseCounter 车轮转动脉冲数键值对
+         */
+        @method
+        sequence<WheelImpluseCounter> GetWheelImpluseCounter(sequence<WheelId> wheels);
+
+        /**
+         * @fn GetVehicleMotionState
+         * @brief [Support] 获取车辆运动状态 对应API: jet::vehicle::Car::GetVehicleMotionState
+         * @return  MotionState 当前的车辆运动状态 0 未知/默认 1 静止 2 前进 3 后退
+         */
+        @method
+        MotionState GetVehicleMotionState();
+
+        /**
+         * @fn GetSteerErrorReqStatus
+         * @brief [Support] 获取EPS转向错误响应状态 对应API: jet::vehicle::Car::GetSteerErrorReqStatus
+         * @return  SteerErrorReqStatus 当前的EPS转向错误响应状态
+         */
+        @method
+        SteerErrorReqStatus GetSteerErrorReqStatus();
+
+        /**
+         * @fn GetESCWorkStatus
+         * @brief [Support] 获取ESC工作状态 对应API: jet::vehicle::Car::GetESCWorkStatus
+         * @return  ESCWorkStatus 当前的ESC工作状态
+         */
+        @method
+        ESCWorkStatus GetESCWorkStatus();
+
+        /**
+         * @fn GetTraveledDistance
+         * @brief 获取行驶里程
+         * @return uint32 当前行驶里程
+         */
+        @method
+        uint32 GetTraveledDistance();
+
+        /**
+         * @fn GetGearShiftParkStatus
+         * @brief 获取驻车档位状态
+         * @return GearShiftPark 当前驻车档位状态
+         */
+        @method
+        GearShiftPark GetGearShiftParkStatus();
+
+        /**
+         * @fn GetSportModeAvailableStatus
+         * @brief 获取运动模式激活状态
+         * @return SportModeAvlStatus 当前运动模式激活状态
+         */
+        @method
+        SportModeAvlStatus GetSportModeAvailableStatus();
+
+        /**
+         * @fn ChassisFault
+         * @brief 通知当前chassis模块故障列表（底层数据无效）
+         * @param[out] faults 当前chassis模块存在的故障列表（底层数据无效）
+         */
+        @event
+        ChassisFault(sequence<ChassisFault> faults);
+
+        /**
+         * @fn DisplaySpeedChanged
+         * @brief 通知仪表盘车速
+         * @param[out] speed, 当前仪表盘车速
+         */
+        @event
+        DisplaySpeedChanged(SpeedWithUnit speed);
+
+        /**
+         * @fn SpeedChanged
+         * @brief 通知车速变化
+         * @param[out] SpeedFloat, 当前车速 //
+         */
+        @event
+        SpeedChanged(SpeedFloat speed);
+
+        /**
+         * @fn TorqueMode
+         * @brief 通知当前扭矩模式
+         * @param[out] mode, 当前扭矩模式
+         */
+        @event
+        TorqueMode(TorqueMode mode);
+
+        /**
+         * @fn Gear
+         * @brief 通知当前挡位
+         * @param[out] gear, 当前挡位
+         */
+        @event
+        Gear(Gear gear);
+
+        /**
+         * @fn GearFault
+         * @brief 通知当前挡位故障
+         * @param[out] fault, 当前挡位故障类型
+         */
+        @event
+        GearFault(sequence<GearLvlFaultStatus> faults);
+
+        /**
+         * @fn WheelSpeed
+         * @brief 通知当前轮速
+         * @param[out] wheelsSpeed, 当前轮速数组
+         */
+        @event
+        WheelSpeed(sequence<WheelSpeed> wheelsSpeed);
+
+        /**
+         * @fn WheelImpluseCounter
+         * @brief 通知当前车轮旋转脉冲数
+         * @param[out] wheelsImpluseCounter, 当前车轮旋转脉冲数 数组
+         */
+        @event
+        WheelImpluseCounter(sequence<WheelImpluseCounter> wheelsImpluseCounter);
+
+        /**
+         * @fn VehicleMotionState
+         * @brief 通知车辆运动状态
+         * @param[out] state, 当前车辆运动状态
+         */
+        @event
+        VehicleMotionState(MotionState  state);
+
+        /**
+         * @fn SteerErrorReqStatus
+         * @brief 通知EPS转向错误响应状态
+         * @param[out] state, 当前EPS转向错误响应状态
+         */
+        @event
+        SteerErrorReqStatus(SteerErrorReqStatus  state);
+
+        /**
+         * @fn ESCWorkStatus
+         * @brief 通知ESC工作状态
+         * @param[out] state, 当前ESC工作状态
+         */
+        @event
+        ESCWorkStatus(ESCWorkStatus  state);
+
+        /**
+         * @fn EPBOperationStatus
+         * @brief 通知EPB操作状态
+         * @param[out] state, 当前EPB操作状态 0-15 ： type0 - type15
+         */
+        @event
+        EPBOperationStatus(uint8  state);
+
+        /**
+         * @fn HDCFunctionAvailableChanged
+         * @brief 通知陡坡缓降功能可用状态变化
+         * @param[out] on 功能可用状态 true - 可用（HMI可进行使能）， false - 不可用（开关需置灰）
+         */
+        @event
+        HDCFunctionAvailableChanged(bool on);
+
+        /**
+         * @fn HDCChanged
+         * @brief 通知陡坡缓降功能使能状态变化
+         * @param[out] on 当前陡坡缓降功能使能状态 true - 已使能， false - 未使能
+         */
+        @event
+        HDCChanged(bool on);
+
+        /**
+         * @fn ESCChanged
+         * @brief 通知ESC功能使能状态状态变化
+         * @param[out] on 当前ESC功能使能状态状态 true - 已使能， false - 未使能
+         */
+        @event
+        ESCChanged(bool on);
+
+        /**
+         * @fn AutoHoldChanged
+         * @brief 通知自动驻车功能使能状态状态变化
+         * @param[out] on 当前自动驻车功能使能状态状态 true - 已使能， false - 未使能
+         */
+        @event
+        AutoHoldChanged(bool on);
+
+        /**
+         * @fn SuspensionLevel
+         * @brief 通知悬架减震等级变化
+         * @param[out] level 当前悬架减震等级
+         */
+        @event
+        SuspensionLevel(uint8 level);
+
+        /**
+         * @fn TraveledDistance
+         * @brief 通知行驶里程
+         * @param[out] value, 当前行驶里程
+         */
+        @event
+        TraveledDistance(uint32 value);
+
+        /**
+         * @fn CoastEnergyRegenerateMode
+         * @brief 通知滑行能量模式状态变化
+         * @param[out] on 功能开关请求 true - 开启， false - 关闭
+         */
+        @event
+        CoastEnergyRegenerateMode(bool on);
+
+        /**
+         * @fn CreepMode
+         * @brief 通知蠕行模式状态变化
+         * @param[out] on 功能开关状态 true - 开启， false - 关闭
+         */
+        @event
+        CreepMode(bool on);
+
+        /**
+         * @fn GearShiftParkStatus
+         * @brief 通知驻车档位状态变化
+         * @param[out] state.parkReq 功能开关状态 true - 开启， false - 关闭
+         * @param[out] state.validSts 状态有效性 true - 有效， false - 无效
+         */
+        @event
+        GearShiftParkStatus(GearShiftPark state);
+
+        /**
+         * @fn SportModeAvailableStatus
+         * @brief 通知运动模式激活状态变化
+         * @param[out] state 运动模式激活状态
+         */
+        @event
+        SportModeAvailableStatus(SportModeAvlStatus state);
+    /**************************************** v0.5.5 end ************************/
+};
+};

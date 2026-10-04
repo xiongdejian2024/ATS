@@ -1,0 +1,183 @@
+syntax = "proto3";
+
+package jet.rvc;
+
+
+/* 实时指令发送 */
+message RealtimeCmdReq{
+  string            execId            = 1; // 执行唯一ID
+  string            vid               = 2; // 车辆vid
+  EnumVehicleModel  vehicleModel      = 3; // 车型
+  EnumCmdCode       cmdCode           = 4; // 指令编码
+  CmdDetail         cmdDetail         = 5; // 指令项
+  int64             timestamp         = 6; // 发送时间戳 加密需要
+}
+
+message RealtimeCmdResp{
+  string              execId          = 1; // 执行唯一ID
+  int32               code            = 2; // 0 执行成功，非0失败
+  string              msg             = 3; // 具体原因
+  map<string, string> data            = 4; // 响应数据(可选),map格式
+  int32               execType        = 5; // 指令开始或者结束，  必传  1：ack，Tcm收到指令； 2：开始，执行前置条件满足且检验通过，执行器触发开始执行； 3：结束，指令执行的实际结果，执行器执行完成，反馈执行结果；
+}
+
+enum EnumCmdCode {
+  un_know                            = 0; // 空档
+  lock_control                       = 1; // 解闭锁
+  window_control                     = 2; // 车窗
+  panic_vehicle                      = 3; // 寻车
+  tailgate_control                   = 4; // 尾门
+  charge_soc_settings                = 5; // 充电SOC设置
+  ac_control                         = 6; // 空调控制
+  seat_heat                          = 7; // 座椅加热
+  steering_wheel_heat                = 8; // 方向盘加热
+  charge_operation                   = 9; // 充电设置
+  door_full_closing_control          =10; // 五门全关控制
+  battery_pack_heat                  =11; //电池包加热
+}
+
+
+/* 指令具体项 */
+message CmdDetail{
+  LockControl               lock_control              = 1; // 当 cmdCode = lock_control               有值
+  WindowControl             window_control            = 2; // 当 cmdCode = window_control             有值
+  PanicVehicle              panic_vehicle             = 3; // 当 cmdCode = panic_vehicle              有值
+  TailGateControl           tailgate_control          = 4; // 当 cmdCode = tailgate_control           有值
+  ChargeSocSettings         charge_soc_settings       = 5; // 当 cmdCode = charge_soc_settings        有值
+  AcControl                 ac_control                = 6; // 当 cmdCode = ac_control                 有值
+  SeatHeat                  seat_heat                 = 7; // 当 cmdCode = seat_heat                  有值
+  SteeringWheelHeat         steering_wheel_heat       = 8; // 当 cmdCode = steering_wheel_heat        有值
+  ChargeOperation           charge_operation          = 9; // 当 cmdCode = charge_operation           有值
+  DoorFullClosingControl    door_full_closing_control =10; // 当 cmdCode = door_full_closing_control  有值
+  BatteryPackHeat           battery_pack_heat         =11; // 当 cmdCode = battery_pack_heat          有值
+}
+
+
+enum EnumVehicleModel{
+  VmUnknown                           = 0; // 空档
+  VmMarsOne                           = 61; // marsOne
+}
+/* 解闭锁 */
+message LockControl{
+  LockControlOp     op                = 1; // 1: 解锁，2：闭锁，3: 关门+闭锁
+  string            keyId             = 2; // 蓝牙钥匙Id,在蓝牙指令中必传
+  string            userId            = 3; // 用户Id,在4G指令中必传
+}
+
+/* 车窗控制 */
+message WindowControl{
+  int32             frontLeft         = 1; // 左前窗    空档为-1 ,开度为0到100
+  int32             frontRight        = 2; // 右前窗    空档为-1 ,开度为0到100
+  int32             secondRowLeft     = 3; // 左二排窗  空档为-1 ,开度为0到100
+  int32             secondRowRight    = 4; // 右二排窗  空档为-1 ,开度为0到100
+}
+
+/* 寻车 */
+message PanicVehicle{
+  PanicVehicleOp    op                = 1; // -1，关闭，1，鸣笛闪灯，2，仅闪灯
+}
+
+/* 尾门控制 */
+message TailGateControl{
+  TailGateOp        op                = 1; // 动作(-1: 关，1:开，2：翘起(废弃)，3：设置开度值)
+  int32 	          position          = 2 ;// 开度(为设置开度值时必传)
+}
+
+/* 充电Sco设置 */
+message ChargeSocSettings {
+  int32             max               = 1; // 千分比(50.0%-100.0%，默认85.0%) 如870为87%
+}
+
+/* 空调控制 */
+message AcControl{
+  AcControlOp       op                = 1; // 动作(1: 开，0：空档(只设置温度)，-1: 关)
+  int32             temp              = 2; // 温度(160~280，即为16度到28度，0.5为单位调节，默认 220)
+}
+
+/* 座椅加热 */
+message SeatHeat{
+  SeatHeatLevel     master            = 1; // 主驾座椅档位
+  SeatHeatLevel     secondary         = 2; // 副驾座椅档位
+}
+
+/* 方向盘加热 */
+message SteeringWheelHeat{
+  SteeringWheelHeatLevel   level      = 1; // 加热档位
+}
+
+/* 充电操作 */
+message ChargeOperation{
+  ChargeOperationOp  op               = 1; //动作(-1: 结束充电)
+}
+
+message DoorFullClosingControl{
+  DoorFullClosingControlOp  op        =1; // 动作(1:全关)
+}
+
+message BatteryPackHeat{
+  BatteryPackHeatOp  op               =1; // 动作(1:打开)
+}
+
+enum  LockControlOp{
+  LcUnknown                           = 0; // 空档
+  LcUnlock                            = 1; // 解锁
+  LcLock                              = 2; // 闭锁
+  LcCloseDoorAndLock                  = 3; // 关门+闭锁
+}
+
+enum PanicVehicleOp{
+  PvUnknown                           = 0; // 空档
+  PvClose                             = -1;// 关闭
+  PvHornLight                         = 1; // 鸣笛闪灯
+  PvOnlyLight                         = 2; // 仅闪灯
+}
+
+enum TailGateOp{
+  TgUnknown                           = 0; // 空档
+  TgClose                             = -1;// 关闭
+  TgOpen                              = 1; // 开启
+  TgCocked                            = 2; //尾门翘起
+}
+
+enum AcControlOp{
+  AcNeutral                           = 0; // 空档(只设置温度)
+  AcClose                             =-1; // 关
+  AcOpen                              = 1; // 开
+}
+
+enum SeatHeatLevel{
+  ShNeutral                           = 0; // 空档
+  ShClose                             =-1; // 关
+  ShLevel1                            = 1; // 1档
+  ShLevel2                            = 2; // 2档
+  ShLevel3                            = 3; // 3档
+}
+
+enum SteeringWheelHeatLevel{
+  SwhNeutral                          = 0; // 空档
+  SwhClose                            =-1; // 关
+  SwhLevel1                           = 1; // 1档
+  SwhLevel2                           = 2; // 2档
+  SwhLevel3                           = 3; // 3档
+}
+
+enum ChargeOperationOp{
+  CoUnknown                           = 0; // 空档
+  CohClose                            =-1; // 关
+}
+
+enum DoorFullClosingControlOp{
+  DfccUnknown                          = 0; // 空档
+  DfccClose                            = 1; // 关
+}
+
+enum BatteryPackHeatOp{
+  BphUnknown                          = 0; // 空档
+  BphOpen                             = 1; // 开
+}
+
+/* 适用于签名加密的方式 */
+message CmdSign{
+  bytes              cmdBody          = 1; // 指令消息
+  string             sign             = 2; // 签名
+}

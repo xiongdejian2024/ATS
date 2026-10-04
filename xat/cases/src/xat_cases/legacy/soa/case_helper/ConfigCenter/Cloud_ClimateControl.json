@@ -1,0 +1,11 @@
+[{
+    "S2SConfigVersion": ["v3.0.0", "All"],
+    "CurFileConfigVersion": 1.0,
+  "S2SConfigData": {
+      "CircTrWorkVal": 85,
+      "CircTrTimerStartVal": 75,
+      "CircTrTimerEndVal": 80,
+      "CircTrDuraSecs": 600,
+      "FragranceDebounceSecs": 7
+  }
+}]

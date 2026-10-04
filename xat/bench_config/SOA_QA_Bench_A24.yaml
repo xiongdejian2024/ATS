@@ -1,0 +1,234 @@
+#两域台架:172.18.128.80
+bus:
+  eth_obd: "enp89s0"
+  eth_vlan5: "eth0.5"
+  eth_vlan9: "eth0.9"
+
+  bodycan: ["E9A0383B263B8B2A", 0]
+  propulsioncan: ["E9A0383B263B8B2A", 1]
+  chassiscan1: ["E9A0383B263B8B2A", 2]
+  chassiscan2: ["E9A0383B263B8B2A", 3]
+  passivesafetycan: ["E9A0383B263B8B2A", 4]
+  diagnosticcan: ["E9A0383B263B8B2A", 5]
+  infocanfd: ["E9A0383B263B8B2A", 6]
+  bodyexposedcanfd: ["E9A0383B263B8B2A", 7]
+  adcanfd: ["E9A0383B263B8B2A", 8]
+  connectivitycanfd: ["E9A0383B263B8B2A", 9]
+  bodyalmcanfd1: ["E9A0383B263B8B2A", 10]
+  bodyalmcanfd2: ["E9A0383B263B8B2A", 11]
+
+  cem_lin1: [1392516605, 0]
+  cem_lin2: [1392516605, 1]
+  cem_lin3: [1392516583, 0]
+  cem_lin4: [1392516583, 1]
+  cem_lin5: [1392516519, 0]
+  cem_lin6: [1392516519, 1]
+
+  backbonefr: ["C7F4383B26486971", 0]
+
+serial: ["USB_DO", "USB_DI", "USB_PWM"]
+
+eth_vlan: "enx68da73ad474e"
+eth_obd: "169.254.1.200"
+wifi_localhost: "172.18.128.80"
+# 当前连接的域控，例如BGM、TCAM、CDC、ACU
+domain:
+  - BGM
+  - TCAM
+# 继电器接线 说明
+# ur1 -- BGM               默认接通
+# ur2 -- TCAM              默认接通
+# ur3 -- BGM 诊断激活线     默认断开
+# ur4 -- PCAN              默认接通
+# ur5 -- CDC               默认接通
+# ur6 -- ACU               默认接通
+# ur7 -- Toomoss           默认接通
+# ur8 -- TCAM KL15         默认断开
+
+power_control_type: jydam0800
+jydam0800:
+  BGM_P: "COM1"
+  TCAM_P: "COM2"
+  BGM_D: "COM3"
+  PCAN_P: "COM4"
+  CDC_P: "COM5"
+  ACU_P: "COM6"
+  Toomoss_P: "COM7"
+  TCAM_KL15: "COM8"
+
+
+adbdevice:
+  tcam: "8e08d8fc"
+
+
+vid: "1dce01bfe30c3035a0ae0f9251919eb6"
+vin: "LSTEST6R9F2086669"
+tel: "15632232655"
+
+sec_con:
+  TCAM: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2,"b90013812978819d8a003f9f9deb86f3", "f9b08e6fee3f0136585e6eacbe6a5c36",0xFFFFFFFFFF,0xFFFFFFFFFF,0xFFFFFFFFFF]
+  BGM: [0xFFFFFFFFFF, 0x19B834DCA2, 0x19B834DCA2, "b90013812978819d8a003f9f9deb86f3", "f9b08e6fee3f0136585e6eacbe6a5c36",0xFFFFFFFFFF,0xFFFFFFFFFF,0xFFFFFFFFFF]
+  
+BNCM_KEY: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+
+
+# NI 板卡 的 IO config 仅限于 台架 71 和72
+dev:
+  ip_addr : "com"
+
+signal:
+  # Indentation (tabs and/or spaces) is allowed but not required
+  diag_active_switch:
+    enable: true
+    type: "DO"
+    channel: "/dev/USB_DO/line1"
+
+  brake_pedal_switch:
+    enable: true
+    desc : "J2-32	刹车踏板开关"
+    type: "DO"
+    channel: "/dev/USB_DO/line2"
+
+  wiper_washing_switch:
+    enable: true
+    desc: "J3-05 雨刮洗涤低液位提醒开关"
+    type: "DO"
+    channel: "/dev/USB_DO/line13"
+
+  ecall_switch:
+    enable: true
+    desc : "TCAM J1-11	SOS_BCALL_BUTTON"
+    type: "DO"
+    channel: "/dev/USB_DO/line16"
+
+  driver_occupy_sensor:
+    enable: true
+    desc : "J3-35	驾驶员占位传感器"
+    type: "DO"
+    channel: "/dev/USB_DO/line17"
+
+  passenger_door_ajar:
+    desc : "J3-08	右前门状态开关"
+    enable: true
+    type: "DO"
+    channel: "/dev/USB_DO/line18"
+
+  driver_door_ajar:
+      desc : "J3-21	左前门状态开关"
+      enable : true
+      type : "DO"
+      channel : "/dev/USB_DO/line19"
+
+  right_rear_door_handle:
+      enable : true
+      desc : "J3-38	右后门把手开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line20"
+
+  left_rear_door_ajar:
+      desc : "J3-12	左后门状态开关"
+      enable : true
+      type : "DO"
+      channel : "/dev/USB_DO/line21"
+
+  trunk_ajar:
+      enable : true
+      desc : "J3-34	行李箱状态开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line22"
+
+  right_rear_door_ajar:
+      enable : true
+      desc : "J3-09	右后门状态开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line23"
+
+  driver_door_handle:
+      enable : true
+      desc : "J3-41	左前门把手开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line24"
+
+  passenger_door_handle:
+      enable : true
+      desc : "J3-40	右前门把手开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line25"
+
+  left_rear_door_handle:
+      enable : true
+      desc : "J3-39	左后门把手开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line26"
+
+  charge_lid_switch:
+      enable : true
+      desc : "J3-26	充电口盖位状态开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line27"
+
+  hood_ajar_1:
+      enable : true
+      desc : "J3-37	引擎盖状态开关1"
+      type : "DO"
+      channel : "/dev/USB_DO/line28"
+
+  hazard_switch:
+      enable : true
+      desc : "J3-07	危险警报灯开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line29"
+
+  trunk_unlock_ext_button:
+      enable : true
+      desc : "J3-31	外部尾门解锁开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line30"
+
+  horn_switch:
+      enable : true
+      desc : "J3-20	喇叭开关"
+      type : "DO"
+      channel : "/dev/USB_DO/line31"
+
+  hood_ajar_2:
+      enable : true
+      desc : "J3-36	引擎盖状态开关2"
+      type : "DO"
+      channel : "/dev/USB_DO/line32"
+
+  #  di
+
+  blower_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line0"
+
+  horn_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line1"
+
+  crash_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line2"
+  hcm_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line3"
+
+  rear_defrost_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line4"
+
+  front_wash_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line5"
+
+  rcm_relay:
+      enable : true
+      type : "DI"
+      channel : "/dev/USB_DI/line6"

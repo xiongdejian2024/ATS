@@ -1,0 +1,20 @@
+name: XAT 独立用例检查
+on:
+  push:
+    branches: [main, 'codex/**']
+    paths: ['xat/cases/**', '.github/workflows/xat-cases.yml']
+  pull_request:
+    paths: ['xat/cases/**', '.github/workflows/xat-cases.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cases:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 校验用例语法，不安装或连接台架驱动
+        run: python -m compileall -q xat/cases/src

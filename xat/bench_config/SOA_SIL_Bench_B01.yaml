@@ -1,0 +1,12 @@
+# 单域SIL配置
+eth_vlan: "veth0"
+wifi_localhost: "127.0.0.1"
+
+# 当前连接的域控，例如BGM、TCAM、CDC、ACU
+domain:
+  - TCAM
+
+
+vid: "07e9abba830cbb07191d96b87df21602"
+vin: "JDS0ATESTBENCH097"
+tel: "15926230758"

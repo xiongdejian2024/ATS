@@ -156,8 +156,8 @@ async def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     base = Path(__file__).resolve().parents[2]
-    parser.add_argument("--sat-root", default=str(base / "sat"))
-    parser.add_argument("--ecu-root", default=str(base / "ecu-simulator"))
+    parser.add_argument("--sat-root", default=str(Path(__file__).resolve().parents[1] / "xat"))
+    parser.add_argument("--ecu-root", default=str(Path(__file__).resolve().parents[1] / "xat/packages/ecu"))
     parser.add_argument("--port", type=int, default=8800)
     parser.add_argument("--frontend-port", type=int, default=3300)
     try:

@@ -1,0 +1,258 @@
+{
+    "ecuName": "CDC",
+    "ecuLogConfig": [
+        {
+            "vlog_type_id": 0,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 1,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 2,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 3,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 4,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 5,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 6,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 7,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 8,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 65535,
+            "expired_time": 0,
+            "enable_trigger_upload": 0
+        },
+        {
+            "vlog_type_id": 9,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 10,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 65535,
+            "expired_time": 0,
+            "enable_trigger_upload": 0
+        },
+        {
+            "vlog_type_id": 11,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 65535,
+            "expired_time": 0,
+            "enable_trigger_upload": 0
+        },
+        {
+            "vlog_type_id": 12,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 300,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 13,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 14,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 65535,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 15,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 300,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 16,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 17,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 18,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 300,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 19,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 300,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 20,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 300,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 21,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 22,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 23,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 24,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 300,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 25,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 65535,
+            "expired_time": 0,
+            "enable_trigger_upload": 0
+        },
+        {
+            "vlog_type_id": 26,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 27,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 28,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 120,
+            "expired_time": 0,
+            "enable_trigger_upload": 1
+        },
+        {
+            "vlog_type_id": 29,
+            "vlog_level": "Info",
+            "vlog_logfile_size": 65535,
+            "vlog_upload_interval": 65535,
+            "expired_time": 0,
+            "enable_trigger_upload": 0
+        }
+    ],
+    "localTriggerUploadConfig": [
+        {
+            "triggerType": 3,
+            "isUploadLog": true,
+            "logTimeScope": 3,
+            "logType": [
+                "logcat",
+                "slog",
+                "qnx_screenshot",
+                "android_screenshot"
+            ]
+        }
+    ]
+}

@@ -20,8 +20,8 @@ def parse_command(command):
             raise ValueError(message)
 
     parser = Parser(prog="xat")
-    parser.add_argument("--mode", choices=["offline", "sat"], default="offline")
-    parser.add_argument("--tests", default="test_case")
+    parser.add_argument("--mode", choices=["offline", "sat", "hardware"], default="offline")
+    parser.add_argument("--tests", default="cases/src/xat_cases/legacy")
     parser.add_argument("--bench-config")
     parser.add_argument("--case-config")
     parser.add_argument("--timeout", type=float)
@@ -49,7 +49,7 @@ def build_invocation(config, options, directory, selection):
         allow_hardware=config.sat_allow_hardware,
     )
     settings.prepare()
-    if options.mode == "sat":
+    if options.mode in {"sat", "hardware"}:
         settings.sat_path(options.tests)
     for value in (options.bench_config, options.case_config):
         if value:
@@ -62,7 +62,8 @@ def build_invocation(config, options, directory, selection):
             "PYTHONDONTWRITEBYTECODE": "1",
             "PYTHONUNBUFFERED": "1",
             "XAT_ALLOW_HARDWARE": "true" if settings.allow_hardware else "false",
-            "PYTHONPATH": os.pathsep.join([str(xat_root), str(ats_root)]),
+            "XAT_PROJECT_ROOT": str(settings.sat_root),
+            "PYTHONPATH": os.pathsep.join([str(xat_root), str(xat_root / "packages/ecu/src"), str(xat_root / "cases/src"), str(ats_root)]),
         }
     )
     # 明确传入本次选择和输出目录，不继承别的任务的选择文件。
@@ -85,7 +86,7 @@ def build_invocation(config, options, directory, selection):
     ]
     if settings.allow_hardware:
         command.append("--allow-hardware")
-    if options.mode == "sat":
+    if options.mode in {"sat", "hardware"}:
         command += ["--tests", options.tests]
     for flag, value in [
         ("--bench-config", options.bench_config),

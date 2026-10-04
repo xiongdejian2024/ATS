@@ -24,4 +24,4 @@ where = ["src"]
 include = ["xat_ecu*"]
 
 [tool.setuptools.package-data]
-xat_ecu = ["**/*.yaml", "**/*.yml", "**/*.json", "**/*.csv", "**/*.dbc", "**/*.arxml", "**/*.ldf", "**/*.dll", "**/*.so", "**/*.h", "**/*.proto", "**/*.xlsx", "**/*.xls", "**/*.sh", "**/*.source"]
+xat_ecu = ["**/*.yaml", "**/*.yml", "**/*.json", "**/*.csv", "**/*.dbc", "**/*.arxml", "**/*.ldf", "**/*.dll", "**/*.so", "**/*.dylib", "**/*.lib", "**/*.h", "**/*.proto", "**/*.xlsx", "**/*.xls", "**/*.sh", "**/*.source", "**/*.txt", "**/*.md", "**/*.xml", "**/*.ini", "**/*.cfg", "**/*.bin", "**/*.tmpl", "**/*.pickle", "**/*.pem", "**/*.vxt", "**/*.bat", "legacy/interface/bgm/adb", "legacy/interface/bgm/tcpdump", "legacy/interface/bgm/soa_api_test", "legacy/interface/tcam/soa_api_test", "legacy/interface/tcam/tcam_seco_api_test", "legacy/interface/bgm/dbg-utils.tar.bz2", "legacy/interface/bgm/bgm_env/config/mcu_update_config/*/ua_server_app", "legacy/interface/bgm/bgm_env/config/mcu_update_config/*/ua_client_app"]
