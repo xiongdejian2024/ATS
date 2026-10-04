@@ -74,8 +74,19 @@ class ReviewCommentCreate(StrictRequest):
     itemId: str | None = None
 
 
-class SavedViewCreate(StrictRequest):
+class SavedViewRename(StrictRequest):
     name: str = Field(min_length=1, max_length=100)
+
+    @field_validator("name")
+    @classmethod
+    def nonblank_name(cls, value):
+        value = value.strip()
+        if not value:
+            raise ValueError("视图名称不能为空")
+        return value
+
+
+class SavedViewCreate(SavedViewRename):
     filters: dict[str, Any]
 
     @field_validator("filters")

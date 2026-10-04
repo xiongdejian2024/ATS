@@ -19,12 +19,14 @@ from schemas.case_governance import (
     ReviewVote,
     ReviewCommentCreate,
     SavedViewCreate,
+    SavedViewRename,
     CaseBatchUpdate,
     CaseBatchCopy,
     ReviewBatchVote,
     ReviewResubmit,
 )
 from schemas.common import APIResponse
+from models import User
 from services import case_governance as service
 from core.logger import logger
 
@@ -458,6 +460,11 @@ def save_view(
     service.project_access(db, user, project_id)
 
     def operation():
+        # 锁定视图所有者，避免并发创建绕过每个项目10个个人视图的上限。
+        db.query(User).filter_by(id=str(user.id)).with_for_update().first()
+        count = db.query(CaseSavedView).filter_by(project_id=project_id, owner_id=str(user.id)).count()
+        if count >= 10:
+            raise HTTPException(409, "每个项目最多创建10个个人视图")
         row = CaseSavedView(
             project_id=project_id,
             owner_id=str(user.id),
@@ -467,6 +474,30 @@ def save_view(
         db.add(row)
         db.flush()
         logger.info("个人筛选视图已保存 project_id={} owner_id={}", project_id, user.id)
+        return view_data(row)
+
+    return result(transact(db, operation))
+
+
+@router.put("/views/{view_id}")
+def rename_view(
+    project_id: str,
+    view_id: str,
+    body: SavedViewRename,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    service.project_access(db, user, project_id)
+    row = db.query(CaseSavedView).filter_by(
+        id=view_id, project_id=project_id, owner_id=str(user.id)
+    ).with_for_update().first()
+    if not row:
+        raise HTTPException(404, "个人视图不存在")
+
+    def operation():
+        row.name = body.name
+        db.flush()
+        logger.info("个人视图已重命名 project_id={} view_id={} owner_id={}", project_id, view_id, user.id)
         return view_data(row)
 
     return result(transact(db, operation))

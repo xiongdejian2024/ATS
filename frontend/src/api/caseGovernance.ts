@@ -124,6 +124,8 @@ export const caseGovernanceApi = {
   views: (p: string) => apiClient.get<CaseSavedView[]>(`${base(p)}/views`),
   saveView: (p: string, name: string, filters: Record<string, any>) =>
     apiClient.post<CaseSavedView>(`${base(p)}/views`, { name, filters }),
+  renameView: (p: string, id: string, name: string) =>
+    apiClient.put<CaseSavedView>(`${base(p)}/views/${id}`, { name }),
   deleteView: (p: string, id: string) =>
     apiClient.delete(`${base(p)}/views/${id}`),
   batch: (p: string, body: Record<string, any>) =>

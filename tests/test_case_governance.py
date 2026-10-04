@@ -484,3 +484,27 @@ def test_project_case_compatibility_routes_persist_and_reject_foreign_access(
     assert client.delete(prefix + f"/{case_id}").status_code == 200
     assert db.get(Case, case_id).deleted_at is not None
     assert TestCaseService.get_test_case(db, case_id) is None
+
+
+def test_private_view_rename_ownership_and_limit(governance):
+    """个人视图重命名保留筛选，隔离所有者，且不能绕过数量上限。"""
+    g = governance
+    c = g["client"]
+    url = g["base"] + "/views"
+    first = c.post(url, json={"name": "旧名称", "filters": {"search": "smoke"}}).json()["data"]
+    renamed = c.put(url + "/" + first["id"], json={"name": " 新名称 "})
+    assert renamed.status_code == 200
+    assert renamed.json()["data"]["name"] == "新名称"
+    assert renamed.json()["data"]["filters"] == {"search": "smoke"}
+    assert c.put(url + "/" + first["id"], json={"name": "   "}).status_code == 422
+    for index in range(9):
+        assert c.post(url, json={"name": f"视图{index}", "filters": {}}).status_code == 200
+    assert c.put(url + "/" + first["id"], json={"name": "视图0"}).status_code == 409
+    assert next(view for view in c.get(url).json()["data"] if view["id"] == first["id"])["name"] == "新名称"
+    assert c.post(url, json={"name": "超过上限", "filters": {}}).status_code == 409
+    g["state"]["user"] = g["users"][1]
+    assert c.put(url + "/" + first["id"], json={"name": "越权修改"}).status_code == 404
+    assert c.post(url, json={"name": "独立所有者", "filters": {}}).status_code == 200
+    g["state"]["user"] = g["users"][0]
+    assert c.delete(url + "/" + first["id"]).status_code == 200
+    assert c.post(url, json={"name": "删除后可新增", "filters": {}}).status_code == 200

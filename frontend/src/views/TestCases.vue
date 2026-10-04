@@ -1,10 +1,5 @@
 <template>
   <div class="test-cases-container" @click="hideModuleContextMenu">
-    <!-- 顶部项目选择器 -->
-    <div class="project-selector-bar">
-      <CaseGovernancePanel v-if="projectId && !recycleVisible" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" @changed="refreshGovernedCases" @apply-view="applySavedView" />
-    </div>
-
     <a-layout class="test-cases-layout">
       <!-- 左侧模块树 -->
       <a-layout-sider v-show="showModules" width="240" class="module-tree-sider">
@@ -89,75 +84,31 @@
 
       <!-- 右侧主内容区 -->
       <a-layout-content class="cases-content">
-        <!-- 固定顶部工具栏 -->
         <div v-if="!recycleVisible" class="fixed-toolbar">
-          <a-space class="toolbar" wrap>
-            <a-button @click="showModules=!showModules">{{showModules?'收起模块':'模块'}}</a-button>
-            <a-button type="primary" @click="handleCreateCase">
-              <template #icon><PlusOutlined /></template>
-              新建
-            </a-button>
-            <a-button @click="handleImport">
-              <template #icon><ImportOutlined /></template>
-              导入
-            </a-button>
-            <a-divider type="vertical" />
-            <a-input-search
-              v-model:value="searchValue"
-              placeholder="通过ID/名称/标签搜索"
-              style="width: 200px"
-              @search="handleSearch"
-              allow-clear
-            />
-            <a-select
-              v-model:value="viewMode"
-              style="width: 100px"
-            >
-              <a-select-option value="all">全部数据</a-select-option>
-              <a-select-option value="my">我创建的</a-select-option>
-              <a-select-option value="followed">我关注的</a-select-option>
-            </a-select>
-            <a-button @click="filterDrawerVisible = true">
-              <template #icon><FilterOutlined /></template>
-              筛选
-            </a-button>
+          <div class="toolbar-create">
+            <a-button v-if="isNarrowScreen" @click="showModules=!showModules">{{showModules?'收起模块':'模块'}}</a-button>
+            <a-button type="primary" @click="handleCreateCase">新建</a-button>
+            <a-button @click="handleImport">导入</a-button>
+          </div>
+          <div class="toolbar-filter">
+            <a-input-search v-model:value="searchValue" placeholder="通过ID/名称/标签搜索" style="width:187px" allow-clear @search="handleSearch" />
+            <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" :system-view="viewMode" @system-view="applySystemView" @changed="refreshGovernedCases" @apply-view="applySavedView" />
+            <a-button :type="advancedFilters.length ? 'primary' : 'default'" @click="filterDrawerVisible=true"><FilterOutlined /> 筛选</a-button>
+            <a-button v-if="advancedFilters.length" type="link" @click="clearAdvancedFilters">清空筛选</a-button>
             <a-button-group>
-              <a-button :type="viewLayout === 'list' ? 'primary' : 'default'" @click="viewLayout = 'list'">
-                <template #icon><UnorderedListOutlined /></template>
-              </a-button>
-              <a-button :type="viewLayout === 'mind' ? 'primary' : 'default'" @click="viewLayout = 'mind'">
-                <template #icon><AppstoreOutlined /></template>脑图
-              </a-button>
+              <a-button :type="viewLayout === 'list' ? 'primary' : 'default'" aria-label="列表视图" title="列表视图" @click="viewLayout='list'"><UnorderedListOutlined /></a-button>
+              <a-button :type="viewLayout === 'mind' ? 'primary' : 'default'" aria-label="脑图视图" title="脑图视图" @click="viewLayout='mind'"><AppstoreOutlined /></a-button>
             </a-button-group>
-            <a-dropdown><a-button>导出</a-button><template #overlay><a-menu @click="handleExport"><a-menu-item key="excel">Excel</a-menu-item><a-menu-item key="xmind">XMind</a-menu-item></a-menu></template></a-dropdown>
-            <a-button @click="templateVisible = true">模板字段</a-button>
-            <a-button @click="loadTestCases">
-              <template #icon><ReloadOutlined /></template>
-            </a-button>
-            <a-popover
-              v-model:visible="columnSettingVisible"
-              trigger="click"
-              placement="bottomRight"
-              title="自定义列显示"
-            >
-              <template #content>
-                <div style="width: 200px;">
-                  <a-checkbox-group
-                    v-model:value="visibleColumnKeys"
-                    :options="columnOptions"
-                    style="display: flex; flex-direction: column; gap: 8px;"
-                  />
-                  <a-divider style="margin: 12px 0;" />
-                  <a-space>
-                    <a-button size="small" @click="resetColumnSettings">重置</a-button>
-                    <a-button size="small" type="primary" @click="saveColumnSettings">保存</a-button>
-                  </a-space>
-                </div>
-              </template>
-              <a-button>
-                <template #icon><SettingOutlined /></template>
-                列设置
-              </a-button>
+            <a-button aria-label="刷新用例" title="刷新" @click="refreshGovernedCases"><ReloadOutlined /></a-button>
+          </div>
+        </div>
+        <div v-if="!recycleVisible" class="table-heading">
+          <span class="module-heading">{{ tableTitle }}</span>
+          <a-space :size="4">
+            <a-dropdown><a-button type="text" aria-label="用例更多操作" title="更多操作"><MoreOutlined /></a-button><template #overlay><a-menu><a-menu-item @click="handleExport({key:'excel'})">导出 Excel</a-menu-item><a-menu-item @click="handleExport({key:'xmind'})">导出 XMind</a-menu-item><a-menu-item @click="templateVisible=true">模板字段</a-menu-item></a-menu></template></a-dropdown>
+            <a-popover v-model:open="columnSettingVisible" trigger="click" placement="bottomRight" title="列设置">
+              <template #content><div style="width:200px"><a-checkbox-group v-model:value="visibleColumnKeys" :options="columnOptions" style="display:flex;flex-direction:column;gap:8px" /><a-divider style="margin:12px 0" /><a-space><a-button size="small" @click="resetColumnSettings">重置</a-button><a-button size="small" type="primary" @click="saveColumnSettings">保存</a-button></a-space></div></template>
+              <a-button type="text" aria-label="用例列设置" title="列设置"><SettingOutlined /></a-button>
             </a-popover>
           </a-space>
         </div>
@@ -178,7 +129,6 @@
               :scroll="{ x: 1500 }"
               @change="handleTableChange"
               size="middle"
-              :title="() => tableTitle"
             >
             <template #bodyCell="{ column, record, index }">
               <template v-if="column.key === 'id'">
@@ -196,12 +146,9 @@
               </template>
 
               <template v-else-if="column.key === 'level'">
-                <a-tag :color="getLevelColor(record.priority)">
-                  <template #icon>
-                    <FlagOutlined />
-                  </template>
-                  {{ record.priority }}
-                </a-tag>
+                <a-select :value="record.priority" :bordered="false" class="inline-case-level" :aria-label="`修改用例 ${record.caseCode} 等级`" @change="(value: string) => saveInline(record,'priority',value)">
+                  <a-select-option v-for="level in ['P0','P1','P2','P3']" :key="level" :value="level"><FlagOutlined :style="{ color: getLevelColor(level) }" /> {{ level }}</a-select-option>
+                </a-select>
               </template>
 
               <template v-else-if="column.key === 'reviewResult'">
@@ -218,9 +165,7 @@
               </template>
 
               <template v-else-if="column.key === 'modulePath'">
-                <span :title="getModuleName(record.moduleId) || '未规划用例'" style="color: #8c8c8c">
-                  <FolderOutlined /> {{ getModuleName(record.moduleId) || '未规划用例' }}
-                </span>
+                <a-tree-select :value="record.moduleId || '__unassigned__'" :tree-data="moduleSelectTree" :field-names="{value:'key',label:'title',children:'children'}" :bordered="false" show-search tree-node-filter-prop="title" class="inline-case-module" :aria-label="`修改用例 ${record.caseCode} 模块`" @change="(value: string) => saveInline(record,'moduleId',value === '__unassigned__' ? null : value)" />
               </template>
 
               <template v-else-if="column.key === 'tags'">
@@ -312,6 +257,8 @@
               <a-button @click="handleBatchEdit">编辑</a-button>
               <a-button @click="handleBatchMove">移动到</a-button>
               <a-button @click="handleBatchCopy">复制到</a-button>
+              <a-button @click="governancePanel?.openIssueLinks()">关联需求 / 缺陷</a-button>
+              <a-button @click="governancePanel?.openCreateReview()">发起评审</a-button>
               <a-dropdown>
                 <a-button>
                   <template #icon><MoreOutlined /></template>
@@ -416,7 +363,7 @@ import { testPlanApi } from '@/api/testPlan'
 import { ref, reactive, computed, onMounted, onUnmounted, watch, createVNode } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { message, Modal, Input } from 'ant-design-vue';
-import { PlusOutlined, ImportOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
 import TestCaseEdit from '@/components/TestCase/TestCaseEdit.vue'
 import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
 import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
@@ -434,6 +381,7 @@ import { useProjectStore } from '@/stores/project';
 import { useUserStore } from '@/stores/user';
 import type { TestCase, Project } from '@/types';
 import dayjs from 'dayjs'
+import { useWindowSize } from '@vueuse/core'
 
 const route = useRoute()
 const router = useRouter()
@@ -451,6 +399,8 @@ const projectId = computed<string>(() => {
 
 // 左侧模块树
 const recycleTotal = ref(0)
+const { width: windowWidth } = useWindowSize()
+const isNarrowScreen = computed(() => windowWidth.value <= 900)
 const showModules=ref(window.innerWidth>900)
 const moduleSearchValue = ref('')
 const moduleTreeData = ref<any[]>([])
@@ -646,6 +596,11 @@ const filters = reactive({
 const governancePanel = ref<InstanceType<typeof CaseGovernancePanel>>()
 const savedViewFilters = computed(() => ({ search: searchValue.value, moduleKeys: selectedModuleKeys.value, filterConditions: advancedFilters.value, filterLogic: filterLogic.value, viewMode:viewMode.value, sortBy:sortBy.value,sortOrder:sortOrder.value, ...filters }))
 const refreshGovernedCases = async () => { await loadTestCases(); await loadModuleTree() }
+const clearAdvancedFilters = async () => { advancedFilters.value=[]; filterLogic.value='and'; pagination.current=1; await loadTestCases() }
+const applySystemView = async (value: string) => {
+  viewMode.value=value; searchValue.value=''; advancedFilters.value=[]; filters.level=undefined; filters.executionResult=undefined; filters.reviewResult=undefined; pagination.current=1
+  await loadTestCases()
+}
 const applySavedView = async (saved: Record<string, any>) => {
   searchValue.value = typeof saved.search === 'string' ? saved.search : ''
   viewMode.value = saved.viewMode || 'all'
@@ -830,7 +785,7 @@ const columnSettingVisible = ref(false)
 // 动态计算显示的列
 const columns = computed(() => {
   const visibleCols = allColumns.filter(col => visibleColumnKeys.value.includes(col.key))
-  return [...visibleCols, actionColumn]
+  return [...visibleCols, { ...actionColumn, fixed: isNarrowScreen.value ? undefined : actionColumn.fixed }]
 })
 
 // 保存列设置
@@ -928,6 +883,8 @@ const loadModuleTree = async () => {
     console.error('加载模块树与回收站计数失败', error)
   }
 }
+
+const moduleSelectTree = computed(() => [{title:'未规划用例',key:'__unassigned__'}, ...buildModuleTree(modules.value,[])])
 
 const buildModuleTree = (modules: any[], allCases: any[]): any[] => {
   const treeMap = new Map()
@@ -1239,7 +1196,6 @@ const renameMindModule = async (id:string,name:string) => {
   if(!name.trim())return message.warning('请输入模块名称')
   try{await projectApi.updateModule(projectId.value,id,{name:name.trim(),sortOrder:modules.value.find(m=>m.id===id)?.sortOrder || 0});await refreshGovernedCases();message.success('模块名称已保存')}catch(error){console.error('保存脑图模块失败',error)}
 }
-watch(viewMode,()=>{pagination.current=1;loadTestCases()})
 
 // 编辑用例
 const handleEditCase = (record: TestCase) => {
@@ -1632,7 +1588,7 @@ const handleAddModule = (node: any) => {
   message.success('模块创建成功')
         await loadModuleTree()
       } catch (error) {
-        console.error('Failed to create module:', error)
+        console.error('创建模块失败', error)
         message.error('模块创建失败')
         return Promise.reject()
       }
@@ -1888,16 +1844,6 @@ const getDisplayName = (userId: string) => {
   return userId.length > 8 ? userId.substring(0, 8) + '...' : userId
 }
 
-// 根据模块ID获取模块名称
-const getModuleName = (moduleId: string | null | undefined): string => {
-  if (!moduleId) return ''
-  const module = findModuleById(moduleId)
-  if (module) {
-    return module.name
-  }
-  return ''
-}
-
 // 生命周期
 watch(
   () => projectId.value,
@@ -2072,40 +2018,18 @@ const paginationTotal = (total: number) => `共 ${total} 条`
   height: 100%;
 }
 
-/* 固定顶部工具栏 */
-.fixed-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
-  padding: 16px;
-  flex-shrink: 0;
-}
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.toolbar .ant-btn {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.toolbar .ant-input-search {
-  flex-shrink: 0;
-}
-
-.toolbar .ant-select {
-  flex-shrink: 0;
-}
-
-.toolbar .ant-popover {
-  flex-shrink: 0;
-}
+/* 对齐MS左侧创建、右侧搜索/视图/筛选的工作区工具栏 */
+.fixed-toolbar { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:16px 16px 0; flex-shrink:0; background:#fff; }
+.toolbar-create,.toolbar-filter { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.toolbar-create { gap:12px; }
+.table-heading { display:flex; align-items:center; justify-content:space-between; padding:12px 16px 4px; flex-shrink:0; }
+.module-heading { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.table-card :deep(.ant-card-body) { padding:0; }
+.table-card { border:0; }
+.inline-case-level { min-width:72px; width:100%; }
+.inline-case-module { width:100%; }
+.inline-case-level :deep(.ant-select-selector),.inline-case-module :deep(.ant-select-selector) { padding:0 4px !important; }
+@media(max-width:900px) { .toolbar-filter { width:100%; } .toolbar-filter .ant-input-search { width:100% !important; } .toolbar-filter .case-view-select { flex:1; min-width:120px; } }
 
 /* 可滚动表格内容区域 */
 .scrollable-table-content {

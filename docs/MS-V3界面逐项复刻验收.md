@@ -16,8 +16,8 @@
 | 全局项目选择 | 顶栏200px项目选择，跨模块与刷新保持，切项目清理旧实体链接 | 已实现；隔离两个项目实际切换与刷新检查 |
 | 模块导航 | 左侧测试用例，顶栏用例/评审；测试计划顶栏计划/报告 | 用例/评审已对齐；计划/报告仍待补齐 |
 | 用例首页 | 左侧模块层级、搜索、全部用例、计数、展开/收起、创建、底部回收站；右侧16px内容区 | 第二部分已对齐全部用例同行展开/创建与底部回收站；根模块创建弹窗与完整排版仍有差异 |
-| 用例工具栏 | 当前模块/数量、视图/高级筛选、左侧新建/导入/AI，右侧列表/脑图 | 存在差异；ATS多行额外治理工具栏待整合 |
-| 用例表格 | 默认列顺序、列设置、等级/模块行内修改、评审/执行状态、文本操作、更多菜单、批量操作 | 业务已有；默认字段/行内操作/按钮位置需逐项匹配 |
+| 用例工具栏 | 当前模块/数量、视图/高级筛选、左侧新建/导入/AI，右侧列表/脑图 | 第三部分已整理为左侧新建/导入与右侧搜索/分组视图/筛选/列表脑图/刷新；批量治理进入勾选后底栏，完整高级筛选与AI入口仍待对照 |
+| 用例表格 | 默认列顺序、列设置、等级/模块行内修改、评审/执行状态、文本操作、更多菜单、批量操作 | 第三部分已补等级、所属模块行内修改并实测刷新保存；窄屏取消固定操作列遮挡名称。默认字段与更多菜单仍需逐项匹配 |
 | 新建/编辑用例 | 完整页布局、默认模板、名称、前置、文本/步骤描述、备注、附件、模块、等级、执行人、标签、创建成功页 | 模板/步骤已有；独立详情页、文本描述/备注/创建成功流程待核对补齐 |
 | 用例详情 | 详情、用例、需求、缺陷、依赖关系、用例评审、测试计划、评论、变更历史各独立页签 | 原功能集中在通用关联/协作页签，仍需按官方页签完整展开 |
 | 复制/分享/关注/删除 | 复制进入编辑页面；详情顶部按钮；分享和关注；删除进入回收站 | 第二部分已改为编辑草稿，取消不写库、确认生成新编号已实测；完整页及其他按钮位置仍待匹配 |
@@ -55,12 +55,22 @@
 - 浏览器隔离SQLite：两份确认副本批量删除→回收站2条→刷新保持→批量恢复→列表3条→再次删除→批量彻底删除→刷新回收站0条。桌面1500px与390px截图保存至本地evidence，正式100条用例未修改。
 - 当前用例工具栏仍多行，独立创建/详情页和完整功能项尚未复刻；本部分验收不表示总目标完成。
 
+## 第三部分变更日志
+
+- 2026-10-05：参考官方 `ms-advance-filter/index.vue`，用例创建/导入置左，187px搜索、145px分组视图选择、筛选、列表/脑图及刷新置右；取消原顶部独立治理工具行。模块名/数量与列设置单独置于表格头，批量编辑/移动/复制/关联/评审在选择后底栏显示。
+- 个人视图增加系统/我的视图分组、新建、重命名、删除确认；后端重命名保留筛选内容，所有者与项目隔离，每个项目最多10个视图，并保留事务冲突日志堆栈。
+- 用例等级、所属模块可直接行内选择，复用既有编辑API和版本记录。窄屏取消固定操作列，避免遮住用例名称，操作仍可通过水平滚动访问。
+- 定向隔离回归13项通过，覆盖原用例版本/评审/视图以及新增重名回滚、空名、越权和视图数量限制。前端类型/构建通过；浏览器实际创建、重命名、刷新、删除个人视图，“我关注的”0条/全部4条切换成功，等级P0与模块修改刷新后保留。
+- 桌面1500px/窄屏390px截图保存至 `evidence/ms-v3-case-toolbar-*.png`。操作均发生在新隔离SQLite；正式库只读仍100用例、7计划、0活动任务。
+- 仍须完成完整高级筛选、创建/详情页、表格默认字段/菜单、计划与报告等剩余对照项；本部分验收不表示100%目标完成。
+
 ## 官方依据
 
 - [公共布局源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/layout/default-layout.vue)
 - [导航尺寸配置](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/config/settings.json)
 - [主题源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/theme/default.less)
 - [用例页面源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/case-management/caseManagementFeature/index.vue)
+- [公共筛选工具栏源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/components/pure/ms-advance-filter/index.vue)
 - [用例表格源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/case-management/caseManagementFeature/components/caseTable.vue)
 - [计划页面源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/test-plan/testPlan/index.vue)
 - [计划详情源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/test-plan/testPlan/detail/index.vue)
