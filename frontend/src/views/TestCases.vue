@@ -1214,6 +1214,9 @@ const handleTableChange = (_pag: any, _filters: any, sorter: any) => {
   filters.level = _filters?.level?.[0]
   filters.reviewResult = _filters?.reviewResult?.[0]
   filters.executionResult = _filters?.executionResult?.[0]
+  const automation=_filters?.isAutomated?.[0]
+  advancedFilters.value=advancedFilters.value.filter(c=>c.field!=='isAutomated')
+  if(automation!==undefined)advancedFilters.value.push({field:'isAutomated',operator:'equals',value:automation})
   loadTestCases()
 }
 
@@ -1378,13 +1381,13 @@ const handleBatchDelete = () => {
     content: `确定要删除选中的 ${selectedRowKeys.value.length} 个用例吗？`,
     onOk: async () => {
       try {
-        await Promise.all(
-          selectedRowKeys.value.map(id =>
-            testCaseApi.deleteTestCase(projectId.value, id)
-          )
-        )
-        message.success('批量删除成功')
-        selectedRowKeys.value = []
+        const ids=[...selectedRowKeys.value]
+        const results=await Promise.allSettled(ids.map(id=>testCaseApi.deleteTestCase(projectId.value,id)))
+        const failed=ids.filter((_,i)=>results[i].status==='rejected')
+        results.forEach((r,i)=>{if(r.status==='rejected')console.error('批量删除用例失败',ids[i],r.reason)})
+        selectedRowKeys.value=failed
+        if(failed.length)message.warning(`已删除 ${ids.length-failed.length} 条，${failed.length} 条失败，已保留勾选`)
+        else message.success('所选用例已移入回收站')
         await loadTestCases()
         await loadModuleTree()
   } catch (error) {

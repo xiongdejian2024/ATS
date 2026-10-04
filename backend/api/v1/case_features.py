@@ -76,6 +76,7 @@ def usage(
     service.find_case(db, user, project_id, case_id)
     from models.test_plan import TestPlan, PlanCaseRelation
     from models.test_suite import TestSuite
+    from models.plan_workspace import PlanNode
     from models.case_governance import CaseReview, CaseReviewItem
 
     plans = {
@@ -85,6 +86,8 @@ def usage(
         .filter(TestPlan.project_id == project_id, PlanCaseRelation.case_id == case_id)
         .all()
     }
+    for plan in db.query(TestPlan).join(PlanNode,PlanNode.plan_id==TestPlan.id).filter(TestPlan.project_id==project_id,PlanNode.case_id==case_id).all():
+        plans[plan.id]=plan
     for suite, plan in (
         db.query(TestSuite, TestPlan)
         .join(TestPlan, TestPlan.id == TestSuite.plan_id)
@@ -243,6 +246,12 @@ def delete_issue(
     row = service.issue_for_project(db, project_id, identifier)
     if db.query(CaseIssueLink).filter_by(issue_id=identifier).first():
         raise HTTPException(409, "需求或缺陷仍有关联用例，不能删除")
+    from models.plan_orchestration import PlanRun
+    from models.test_plan import TestPlan
+    for run in db.query(PlanRun).join(TestPlan,TestPlan.id==PlanRun.plan_id).filter(TestPlan.project_id==project_id).all():
+        for entry in (run.manual_results or {}).values():
+            if any(identifier in step.get("defectIds",[]) for step in entry.get("stepResults",[])):
+                raise HTTPException(409,"缺陷已被执行记录引用，请保留历史证据")
     transact(db, lambda: db.delete(row))
     return result()
 

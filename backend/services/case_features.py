@@ -423,6 +423,10 @@ def restore_case(db, user, project_id, case_id):
 def purge_case(db, user, project_id, case_id):
     case = find_case(db, user, project_id, case_id, "delete", deleted=True, lock=True)
     from models.test_execution import TestExecution
+    from models.plan_workspace import PlanNode
+
+    if db.query(PlanNode).filter_by(case_id=case_id).first():
+        raise HTTPException(409,"用例仍被计划测试点引用，不能彻底删除")
 
     if db.query(TestExecution).filter_by(case_id=case_id).first():
         raise HTTPException(409, "用例存在执行历史，不能彻底删除；可保留在回收站")

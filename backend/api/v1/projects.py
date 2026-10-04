@@ -723,6 +723,27 @@ async def import_test_cases(
             df=pd.DataFrame(read_xmind(content))
         else:
             df = pd.read_csv(tmp_path, dtype={"ID": str}) if suffix == '.csv' else pd.read_excel(tmp_path, dtype={"ID": str})
+        if '操作' in df.columns and '用例名称' in df.columns:
+            # 一步骤一行布局：按编号聚合；无编号时按名称和模块聚合新用例。
+            grouped={}
+            for _,row in df.iterrows():
+                identifier=None if pd.isna(row.get('ID')) else str(row.get('ID'))
+                key=('id',identifier) if identifier else ('name',str(row.get('用例名称')),str(row.get('所属模块','')))
+                if key not in grouped:
+                    grouped[key]=row.to_dict()
+                    grouped[key]['_steps']=[]
+                entry=grouped[key]
+                if str(entry['用例名称'])!=str(row['用例名称']):
+                    raise HTTPException(422,'同一编号的步骤行必须使用相同用例名称')
+                action='' if pd.isna(row.get('操作')) else str(row.get('操作'))
+                expected='' if pd.isna(row.get('预期结果')) else str(row.get('预期结果'))
+                if action or expected:
+                    entry['_steps'].append({'step':len(entry['_steps'])+1,'action':action,'expected':expected})
+            rows=[]
+            for entry in grouped.values():
+                entry['测试步骤']=json.dumps(entry.pop('_steps'),ensure_ascii=False)
+                rows.append(entry)
+            df=pd.DataFrame(rows)
         
         # 验证必需的列
         required_columns = ["用例名称"]  # 至少需要用例名称
@@ -805,6 +826,7 @@ async def import_test_cases(
             steps = []
             lines = str(steps_text).split('\n')
             current_step = None
+            reading_expected=False
             
             for line in lines:
                 line = line.strip()
@@ -823,8 +845,13 @@ async def import_test_cases(
                         'action': action,
                         'expected': ''
                     }
+                    reading_expected=False
                 elif current_step and line.startswith('期望:'):
                     current_step['expected'] = line.replace('期望:', '').strip()
+                    reading_expected=True
+                elif current_step:
+                    key='expected' if reading_expected else 'action'
+                    current_step[key]+='\n'+line
             
             if current_step:
                 steps.append(current_step)

@@ -6,6 +6,7 @@
     <a-button @click="saveVisible = true">保存当前筛选</a-button>
     <a-popconfirm v-if="viewId" title="删除这个个人视图？" @confirm="removeView"><a-button>删除视图</a-button></a-popconfirm>
     <a-button :disabled="!selectedIds.length" @click="batchVisible = true">批量更新属性（{{ selectedIds.length }}）</a-button>
+    <a-button :disabled="!selectedIds.length" @click="openIssueLinks">批量关联需求 / 缺陷</a-button>
     <a-button :disabled="!selectedIds.length" @click="openCreateReview">发起评审</a-button>
     <a-button @click="openReviews">评审中心</a-button>
   </a-space>
@@ -17,10 +18,11 @@
     <a-alert message="未填写的字段保持原值；每个修改后的用例会保留版本。" type="info" show-icon />
     <a-form layout="vertical" style="margin-top: 16px">
       <a-form-item label="优先级"><a-select v-model:value="batchPriority" allow-clear :options="['P0','P1','P2','P3'].map(v=>({label:v,value:v}))" /></a-form-item>
-      <a-form-item label="替换标签（留空不修改）"><a-select v-model:value="batchTags" mode="tags" /></a-form-item>
+      <a-form-item label="替换标签"><a-select v-model:value="batchTags" mode="tags" :disabled="clearTags"/><a-checkbox v-model:checked="clearTags">清空标签</a-checkbox></a-form-item>
       <a-form-item label="是否自动化"><a-select v-model:value="batchAutomated" allow-clear :options="[{label:'是',value:'yes'},{label:'否',value:'no'}]" /></a-form-item>
     </a-form>
   </a-modal>
+  <a-modal v-model:open="issueVisible" title="批量关联需求 / 缺陷" :confirm-loading="busy" @ok="linkIssues"><a-select v-model:value="issueId" show-search option-filter-prop="label" style="width:100%" :options="issues.map(i=>({label:i.title,value:i.id}))" placeholder="选择当前项目需求或缺陷"/><a-alert style="margin-top:16px" message="重复关联会由服务保持幂等。单条失败时会报告成功与失败数量。" type="info"/></a-modal>
   <a-modal v-model:open="organizeVisible" :title="organizeMode === 'move' ? '批量移动到模块' : '批量复制到模块'" :confirm-loading="busy" @ok="organize">
     <a-form layout="vertical"><a-form-item label="目标模块"><a-select v-model:value="targetModule" :options="[{label:'未规划',value:'__unassigned__'}, ...modules.map(m=>({label:m.name,value:m.id}))]" /></a-form-item></a-form>
     <a-alert :message="`操作仅限当前项目，影响所选 ${selectedIds.length} 条用例。`" type="info" show-icon />
@@ -60,11 +62,13 @@ import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { projectApi } from '@/api/project'
+import {caseFeaturesApi,type CaseIssue} from '@/api/caseFeatures'
 import { caseGovernanceApi as api, type CaseVersion, type CaseSavedView } from '@/api/caseGovernance'
 const props = defineProps<{projectId: string; selectedIds: string[]; filters: Record<string, any>}>()
 const emit = defineEmits<{(e:'changed'): void; (e:'apply-view', filters: Record<string, any>): void}>()
 const router = useRouter()
 const busy = ref(false)
+const clearTags=ref(false),issueVisible=ref(false),issueId=ref<string>(),issues=ref<CaseIssue[]>([])
 const views = ref<CaseSavedView[]>([]), viewId = ref<string>(), viewName = ref(''), saveVisible = ref(false)
 const batchVisible = ref(false), batchPriority = ref<string>(), batchTags = ref<string[]>([]), batchAutomated = ref<string>()
 const organizeVisible = ref(false), organizeMode = ref<'move'|'copy'>('move'), targetModule = ref('__unassigned__'), modules = ref<{id:string;name:string}[]>([])
@@ -80,7 +84,9 @@ watch(()=>props.projectId, async p=>{views.value=[];viewId.value=undefined;versi
 function applyView(id?:string) {const view=views.value.find(v=>v.id===id); if(view) emit('apply-view',JSON.parse(JSON.stringify(view.filters)))}
 async function saveView(){if(!viewName.value.trim())return message.warning('请填写视图名称');await run(async()=>{const view=await api.saveView(props.projectId,viewName.value.trim(),props.filters);views.value.unshift(view);viewId.value=view.id;saveVisible.value=false;viewName.value='';message.success('个人筛选视图已保存')})}
 async function removeView(){if(!viewId.value)return;await run(async()=>{await api.deleteView(props.projectId,viewId.value!);views.value=views.value.filter(v=>v.id!==viewId.value);viewId.value=undefined})}
-async function batchUpdate(){const data:Record<string,any>={caseIds:props.selectedIds};if(batchPriority.value)data.priority=batchPriority.value;if(batchTags.value.length)data.tags=batchTags.value;if(batchAutomated.value)data.isAutomated=batchAutomated.value==='yes';if(Object.keys(data).length===1)return message.warning('请选择需要修改的属性');await run(async()=>{const result=await api.batch(props.projectId,data);batchVisible.value=false;emit('changed');message.success(`已更新 ${result.updated} 条用例`)})}
+async function batchUpdate(){const data:Record<string,any>={caseIds:props.selectedIds};if(batchPriority.value)data.priority=batchPriority.value;if(clearTags.value)data.tags=[];else if(batchTags.value.length)data.tags=batchTags.value;if(batchAutomated.value)data.isAutomated=batchAutomated.value==='yes';if(Object.keys(data).length===1)return message.warning('请选择需要修改的属性');await run(async()=>{const result=await api.batch(props.projectId,data);batchVisible.value=false;emit('changed');message.success(`已更新 ${result.updated} 条用例`)})}
+async function openIssueLinks(){await run(async()=>{issues.value=await caseFeaturesApi.issues(props.projectId);issueId.value=undefined;issueVisible.value=true})}
+async function linkIssues(){if(!issueId.value)return message.warning('请选择需求或缺陷');await run(async()=>{const results=await Promise.allSettled(props.selectedIds.map(id=>caseFeaturesApi.linkIssue(props.projectId,id,issueId.value!)));const failed=results.filter(r=>r.status==='rejected');for(const r of failed)if(r.status==='rejected')console.error('批量关联需求缺陷失败',r.reason);if(failed.length)message.warning(`成功 ${results.length-failed.length} 条，失败 ${failed.length} 条`);else{message.success('所选用例已关联');issueVisible.value=false}emit('changed')})}
 async function openOrganize(mode:'move'|'copy'){organizeMode.value=mode;await run(async()=>{const data=await projectApi.getModules(props.projectId);modules.value=data.modules || data;targetModule.value='__unassigned__';organizeVisible.value=true})}
 async function organize(){await run(async()=>{const moduleId=targetModule.value==='__unassigned__'?null:targetModule.value;if(organizeMode.value==='move')await api.batch(props.projectId,{caseIds:props.selectedIds,moduleId});else await api.copy(props.projectId,props.selectedIds,moduleId);organizeVisible.value=false;emit('changed');message.success(organizeMode.value==='move'?'所选用例已移动':'所选用例已复制')})}
 function openCreateReview(){router.push({path:'/case-reviews',query:{projectId:props.projectId,caseIds:props.selectedIds.join(','),create:'1'}})}

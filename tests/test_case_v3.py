@@ -381,3 +381,21 @@ def test_import_keeps_explicit_fields_over_template_defaults(features):
         "/api/v1/test-cases", params={"project_id": g["project"].id, "search": "显式值"}
     ).json()["data"]["items"][0]
     assert row["priority"] == "P0" and row["steps"][0]["action"] == "显式步骤"
+
+
+@pytest.mark.parametrize('layout',['case','step'])
+def test_excel_actual_roundtrip_retains_steps_template_custom_and_requirement(features,layout):
+    g=features;c=g['client'];case=g['cases'][0]
+    template=c.post(g['features']+'/templates',json={'name':'往返模板','fields':[{'key':'platform','name':'平台','type':'text'}]}).json()['data']
+    payload={'precondition':'车辆启动','steps':[{'step':1,'action':'第一行\n第二行','expected':'应答1\n应答2'},{'step':2,'action':'下一步','expected':'完成'}],'requirement_ref':'REQ-中文-001','tags':['冒烟','控制器'],'template_id':template['id'],'custom_fields':{'platform':'车型A'}}
+    assert c.put(f'/api/v1/test-cases/{case.id}',json=payload).status_code==200
+    base=f"/api/v1/projects/{g['project'].id}/cases"
+    exported=c.get(base+'/export',params={'case_ids':case.id,'layout':layout})
+    assert exported.status_code==200
+    c.put(f'/api/v1/test-cases/{case.id}',json={'steps':[],'precondition':'改变','requirement_ref':'改变','custom_fields':{'platform':'B'}})
+    imported=c.post(base+'/import',files={'file':('往返.xlsx',exported.content)})
+    assert imported.json()['status']=='success',imported.text
+    current=c.get(f'/api/v1/test-cases/{case.id}',params={'project_id':g['project'].id}).json()['data']
+    assert current['steps']==payload['steps']
+    assert current['precondition']==payload['precondition'] and current['requirementRef']==payload['requirement_ref']
+    assert current['customFields']==payload['custom_fields'] and current['templateId']==template['id']
