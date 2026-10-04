@@ -8,6 +8,9 @@ import socket
 import sys
 import tempfile
 import uuid
+import json
+import re
+import signal
 from datetime import date
 from pathlib import Path
 
@@ -30,6 +33,27 @@ async def main(args):
     from agent.websocket_client import WebSocketClient
     from agent.sat_runner import terminate_process
 
+    scheduler_task = None
+    if args.management:
+        from fastapi import Request
+        from services.task_scheduler import scheduler_loop
+
+        @app.post("/api/v1/lab-model/chat/completions")
+        async def local_model(request: Request):
+            """仅在隔离验收进程提供协议替身，不接外部供应商。"""
+            data = await request.json()
+            system = data.get("messages", [{}])[0].get("content", "")
+            match = re.search(r"严格生成 (\d+) 条", system)
+            if match:
+                case_type = re.search(r"用例类型 (\w+)", system).group(1)
+                content = json.dumps({"cases": [dict(name=f"软件验收草稿 {i + 1}", type=case_type,
+                    priority="P2", precondition="隔离软件环境", requirement_ref="LAB-ONLY",
+                    steps=[{"action": "输入测试参数", "expected": "返回对应校验提示"}],
+                    tags=["软件验收"]) for i in range(int(match.group(1)))]}, ensure_ascii=False)
+            else:
+                content = "软件验收模型替身连接成功。此回答仅用于验证协议与会话保存。"
+            return {"choices": [{"message": {"role": "assistant", "content": content}}]}
+
     Base.metadata.create_all(engine)
     with SessionLocal() as db:
         db.add(
@@ -42,12 +66,15 @@ async def main(args):
         )
         db.commit()
     sock = socket.socket()
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("127.0.0.1", args.port))
     port = sock.getsockname()[1]
     server = uvicorn.Server(uvicorn.Config(app, log_level="error", lifespan="off"))
     serving = asyncio.create_task(server.serve(sockets=[sock]))
     while not server.started:
         await asyncio.sleep(0.05)
+    if args.management:
+        scheduler_task = asyncio.create_task(scheduler_loop())
     client = httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}/api/v1")
     login = (
         await client.post(
@@ -140,9 +167,16 @@ async def main(args):
         f"LAB http://127.0.0.1:{args.frontend_port} ; local_demo / ats-local-demo ; state {directory}",
         flush=True,
     )
+    stop_event = asyncio.Event()
+    if os.name == "posix":
+        for stop_signal in (signal.SIGINT, signal.SIGTERM):
+            asyncio.get_running_loop().add_signal_handler(stop_signal, stop_event.set)
     try:
-        await asyncio.Event().wait()
+        await stop_event.wait()
     finally:
+        if scheduler_task:
+            scheduler_task.cancel()
+            await asyncio.gather(scheduler_task, return_exceptions=True)
         await agent.stop()
         receiving.cancel()
         monitoring.cancel()
@@ -160,6 +194,7 @@ if __name__ == "__main__":
     parser.add_argument("--ecu-root", default=str(Path(__file__).resolve().parents[1] / "xat/packages/ecu"))
     parser.add_argument("--port", type=int, default=8800)
     parser.add_argument("--frontend-port", type=int, default=3300)
+    parser.add_argument("--management", action="store_true", help="启用隔离任务调度和本地模型协议替身，便于四模块浏览器验收")
     try:
         asyncio.run(main(parser.parse_args()))
     except KeyboardInterrupt:
