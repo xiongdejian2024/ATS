@@ -515,7 +515,7 @@ class Agent:
                 self.logger.error(f"测试套执行请求缺少必要参数: suite_id={suite_id}, execution_command={execution_command}, case_ids={case_ids}")
             return
 
-        if execution_command.strip().startswith("ats-sat"):
+        if execution_command.strip().split(maxsplit=1)[:1] in (["xat"], ["ats-sat"]):
             if not execution_id:
                 return
             self.sat_runner.start(message)

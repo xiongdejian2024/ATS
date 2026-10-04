@@ -11,6 +11,7 @@ from utils.serializer import serialize_model, serialize_list
 from typing import Optional
 from datetime import timedelta
 from core.logger import logger
+from services.suite_dispatch import is_xat_command
 
 router = APIRouter()
 
@@ -386,7 +387,7 @@ async def cancel_test_suite(
                 # 如果任务还在等待中，直接标记为取消，不需要发送消息到Agent
                 pass
             
-            if task.status == "running" and suite.execution_command.strip().startswith("ats-sat"):
+            if task.status == "running" and is_xat_command(suite.execution_command):
                 # The Agent completion ACK releases the slot after the child is stopped.
                 return APIResponse(status=ResponseStatus.SUCCESS, message="取消请求已发送", data={"executionId": execution_id})
             previous_status = task.status
@@ -789,7 +790,7 @@ async def get_suite_suite_executions(
             # 从TestSuiteExecution表获取执行记录（用于判断结果和执行人）
             time_window_start = exec_time - timedelta(minutes=5)
             time_window_end = exec_time + timedelta(minutes=5)
-            if suite.execution_command.strip().startswith("ats-sat"):
+            if is_xat_command(suite.execution_command):
                 from services.suite_results import result_id
                 ids = [result_id(execution_id_val, cid) for cid in suite.case_ids]
                 exec_records = db.query(TestSuiteExecution).filter(TestSuiteExecution.id.in_(ids)).all()
@@ -801,7 +802,7 @@ async def get_suite_suite_executions(
                 ).all()
             
             # 如果没有找到执行记录，尝试查找最近的
-            if not exec_records and not suite.execution_command.strip().startswith("ats-sat"):
+            if not exec_records and not is_xat_command(suite.execution_command):
                 exec_records = db.query(TestSuiteExecution).filter(
                     TestSuiteExecution.suite_id == suite_id
                 ).order_by(TestSuiteExecution.executed_at.desc()).limit(1).all()

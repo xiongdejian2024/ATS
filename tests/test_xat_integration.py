@@ -139,6 +139,35 @@ def test_xat_invalid_selection_rejected(tmp_path):
     assert "编号不可重复" in result.stderr
 
 
+def test_xat_full_run_preserves_repeated_parameter_names(tmp_path):
+    source = tmp_path / "test_parameters.py"
+    source.write_text("""import pytest
+@pytest.mark.parametrize("value", [1, 2], ids=["good", "bad"])
+def test_alpha(value): assert value == 1
+@pytest.mark.parametrize("value", [1, 2], ids=["good", "bad"])
+def test_beta(value): assert value == 1
+""")
+    result, rows = run_xat(
+        tmp_path,
+        "-p",
+        "framework.hooks",
+        "-p",
+        "framework.integrations.plugin",
+        "--noconftest",
+        str(source),
+        native=True,
+    )
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert len(rows) == 4
+    assert len({row["case_code"] for row in rows}) == 4
+    assert sorted(row["status"] for row in rows) == [
+        "failed",
+        "failed",
+        "passed",
+        "passed",
+    ]
+
+
 @pytest.mark.xat_external
 def test_xat_cli_uses_real_sat_ecu_fixtures_and_cleans_each_case(tmp_path, sat_config):
     result, rows = run_xat(

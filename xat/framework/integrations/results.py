@@ -2,6 +2,7 @@
 
 import json
 import os
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,7 @@ class ATSResults:
     @pytest.hookimpl(trylast=True)
     def pytest_collection_modifyitems(self, config, items):
         selected, deselected, assigned = [], [], set()
+        candidates_by_node = {}
         for item in items:
             marker = item.get_closest_marker("ats_case")
             if marker:
@@ -43,6 +45,15 @@ class ATSResults:
                     else suffix.split("_")
                 )
             else:
+                candidates = [item.nodeid]
+            candidates_by_node[item.nodeid] = candidates
+        counts = Counter(
+            code for codes in candidates_by_node.values() for code in codes
+        )
+        for item in items:
+            candidates = candidates_by_node[item.nodeid]
+            # 全量执行时普通参数化 ID 可能重复，用完整 node ID 保存独立结果。
+            if self.selection is None and any(counts[code] > 1 for code in candidates):
                 candidates = [item.nodeid]
             codes = (
                 candidates
@@ -123,7 +134,8 @@ class ATSResults:
         try:
             temporary = self.result_path.with_suffix(".tmp")
             temporary.write_text(
-                json.dumps(list(self.rows.values()), ensure_ascii=False), encoding="utf-8"
+                json.dumps(list(self.rows.values()), ensure_ascii=False),
+                encoding="utf-8",
             )
             os.replace(temporary, self.result_path)
         except Exception:

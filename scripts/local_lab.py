@@ -118,7 +118,7 @@ async def main(args):
             "plan_id": plan["id"],
             "name": "SAT / ECU 离线验收",
             "environment_id": environment["id"],
-            "execution_command": "ats-sat --mode offline",
+            "execution_command": "xat --mode offline",
             "case_ids": ids,
         },
     )

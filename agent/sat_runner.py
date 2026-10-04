@@ -19,84 +19,80 @@ def parse_command(command):
         def error(self, message):
             raise ValueError(message)
 
-    parser = Parser(prog="ats-sat")
+    parser = Parser(prog="xat")
     parser.add_argument("--mode", choices=["offline", "sat"], default="offline")
     parser.add_argument("--tests", default="test_case")
     parser.add_argument("--bench-config")
     parser.add_argument("--case-config")
     parser.add_argument("--timeout", type=float)
     parts = shlex.split(command)
-    if not parts or parts[0] != "ats-sat":
-        raise ValueError("Expected ats-sat command")
+    if not parts or parts[0] not in {"xat", "ats-sat"}:
+        raise ValueError("执行命令需要以 xat 或 ats-sat 开头")
     try:
         return parser.parse_args(parts[1:])
     except (SystemExit, argparse.ArgumentError) as exc:
-        raise ValueError("Invalid ats-sat options") from exc
+        raise ValueError("XAT 执行选项无效") from exc
 
 
 def build_invocation(config, options, directory, selection):
+    """Agent 负责进程控制；SAT/ECU 的配置与执行由 XAT 统一处理。"""
     ats_root = Path(__file__).resolve().parents[1]
-    sat_root = Path(config.sat_root).expanduser().resolve()
-    ecu_root = Path(config.ecu_root).expanduser().resolve()
-    if options.mode == "sat" and not config.sat_allow_hardware:
-        raise ValueError(
-            "SAT bench execution disabled; configure allow_hardware only on an approved bench"
-        )
-    if not (sat_root / "sat_framework").is_dir():
-        raise ValueError("SAT root must contain sat_framework")
-    if not (ecu_root / "ecu_simulator").is_dir():
-        raise ValueError("ECU root must contain legacy ecu_simulator")
+    xat_root = ats_root / "xat"
+    if str(xat_root) not in sys.path:
+        sys.path.insert(0, str(xat_root))
+    from framework.integrations.runtime import IntegrationSettings
+
+    settings = IntegrationSettings(
+        mode=options.mode,
+        sat_root=config.sat_root,
+        ecu_root=config.ecu_root,
+        allow_hardware=config.sat_allow_hardware,
+    )
+    settings.prepare()
+    if options.mode == "sat":
+        settings.sat_path(options.tests)
+    for value in (options.bench_config, options.case_config):
+        if value:
+            settings.sat_path(value)
     selection_path = directory / "selection.json"
     selection_path.write_text(json.dumps(selection), encoding="utf-8")
     env = os.environ.copy()
     env.update(
         {
-            "ATS_CASE_SELECTION": str(selection_path),
-            "ATS_RESULT_FILE": str(directory / "results.json"),
             "PYTHONDONTWRITEBYTECODE": "1",
             "PYTHONUNBUFFERED": "1",
-            "PYTHONPATH": os.pathsep.join(
-                [str(ats_root), str(sat_root), str(ecu_root), str(ecu_root / "src")]
-            ),
+            "XAT_ALLOW_HARDWARE": "true" if settings.allow_hardware else "false",
+            "PYTHONPATH": os.pathsep.join([str(xat_root), str(ats_root)]),
         }
     )
+    # 明确传入本次选择和输出目录，不继承别的任务的选择文件。
+    for key in ("ATS_CASE_SELECTION", "ATS_RESULT_FILE"):
+        env.pop(key, None)
     command = [
         config.sat_python or sys.executable,
         "-m",
-        "pytest",
-        "-p",
-        "integrations.sat_pytest",
-        "-o",
-        "addopts=",
-        "-p",
-        "no:cacheprovider",
-        "--junitxml",
-        str(directory / "junit.xml"),
+        "framework",
+        "--mode",
+        options.mode,
+        "--sat-root",
+        str(settings.sat_root),
+        "--ecu-root",
+        str(settings.ecu_root),
+        "--selection",
+        str(selection_path),
+        "--output-dir",
+        str(directory),
     ]
-    if options.mode == "offline":
-        # Do not load SAT's hooks: they connect to bench/intranet services at startup.
-        env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
-        command += [
-            "--noconftest",
-            "-c",
-            str(ats_root / "integrations" / "pytest.ini"),
-            str(ats_root / "integrations" / "offline_cases.py"),
-        ]
-    else:
-
-        def local_path(value):
-            path = (sat_root / value).resolve()
-            path.relative_to(sat_root)
-            if not path.exists():
-                raise ValueError(f"SAT path does not exist: {value}")
-            return str(path)
-
-        command += ["-c", str(sat_root / "pytest.ini"), local_path(options.tests)]
-        if options.bench_config:
-            command += ["--tbcfg", local_path(options.bench_config)]
-        if options.case_config:
-            command += ["--tccfg", local_path(options.case_config)]
-        command += ["--alluredir", str(directory / "allure-results")]
+    if settings.allow_hardware:
+        command.append("--allow-hardware")
+    if options.mode == "sat":
+        command += ["--tests", options.tests]
+    for flag, value in [
+        ("--bench-config", options.bench_config),
+        ("--case-config", options.case_config),
+    ]:
+        if value:
+            command += [flag, value]
     return command, env
 
 
@@ -230,26 +226,24 @@ class SATRunner:
                 or len(set(codes)) != len(codes)
                 or not all(codes)
             ):
-                raise ValueError(
-                    "SAT requires one unique case code per selected ATS case"
-                )
+                raise ValueError("每个所选 ATS 用例需要唯一的 XAT 用例编号")
             timeout = (
                 options.timeout
                 if options.timeout is not None
                 else self.agent.config.default_timeout
             )
             if timeout <= 0:
-                raise ValueError("SAT timeout must be positive")
+                raise ValueError("XAT 超时时间必须大于零")
             command, env = build_invocation(
                 self.agent.config, options, directory, dict(zip(codes, ids))
             )
             logger.info(
-                "开始 SAT 执行：执行ID={}，模式={}，用例数={}",
+                "开始 XAT/SAT 执行：执行ID={}，模式={}，用例数={}",
                 execution_id,
                 options.mode,
                 len(ids),
             )
-            await self.log(message, "开始 SAT 执行，模式：" + options.mode)
+            await self.log(message, "开始 XAT/SAT 执行，模式：" + options.mode)
             process = await asyncio.create_subprocess_exec(
                 *command,
                 cwd=str(directory),
@@ -283,16 +277,16 @@ class SATRunner:
                 else "failed"
             )
             if exit_code:
-                error = f"pytest exited with code {exit_code}; see output.log"
+                error = f"XAT pytest 退出码为 {exit_code}，详情见 output.log"
         except asyncio.CancelledError:
             status, error = "cancelled", "执行已取消"
-            logger.opt(exception=True).info("SAT 执行已取消：{}", execution_id)
+            logger.opt(exception=True).info("XAT/SAT 执行已取消：{}", execution_id)
         except asyncio.TimeoutError:
-            error = "SAT execution timed out"
-            logger.exception("SAT 执行超时：{}", execution_id)
+            error = "XAT 执行超时"
+            logger.exception("XAT/SAT 执行超时：{}", execution_id)
         except Exception as exc:
             error = str(exc)
-            logger.exception("SAT 执行失败：{}", execution_id)
+            logger.exception("XAT/SAT 执行失败：{}", execution_id)
         finally:
             if process:
                 await terminate_process(process)
@@ -305,7 +299,7 @@ class SATRunner:
                             {
                                 "status": "error",
                                 "duration": 0,
-                                "error": error or "No result emitted",
+                                "error": error or "XAT 未产生对应结果",
                             },
                         )
                         await self.deliver(
@@ -331,11 +325,7 @@ class SATRunner:
                             "outcome": (
                                 "cancelled"
                                 if status == "cancelled"
-                                else (
-                                    "timeout"
-                                    if error == "SAT execution timed out"
-                                    else status
-                                )
+                                else ("timeout" if error == "XAT 执行超时" else status)
                             ),
                         }
                     ),
@@ -349,7 +339,7 @@ class SATRunner:
                         "suite_id": suite_id,
                         "execution_id": execution_id,
                         "status": status,
-                        "message": error or "SAT 执行已结束",
+                        "message": error or "XAT/SAT 执行已结束",
                         "duration": f"{time.monotonic() - started:.3f}s",
                         "total_case_count": len(message["case_ids"]),
                         "reported_case_count": len(rows),
@@ -357,16 +347,12 @@ class SATRunner:
                         "outcome": (
                             "cancelled"
                             if status == "cancelled"
-                            else (
-                                "timeout"
-                                if error == "SAT execution timed out"
-                                else status
-                            )
+                            else ("timeout" if error == "XAT 执行超时" else status)
                         ),
                     }
                 )
                 logger.info(
-                    "SAT 执行结束：执行ID={}，状态={}，结果数={}",
+                    "XAT/SAT 执行结束：执行ID={}，状态={}，结果数={}",
                     execution_id,
                     status,
                     len(rows),

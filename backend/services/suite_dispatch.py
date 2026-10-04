@@ -31,3 +31,8 @@ def build_suite_message(db, suite, execution_id, executor_id):
         "case_codes": [by_id[case_id].case_code for case_id in suite.case_ids],
         "executor_id": executor_id,
     }
+
+
+def is_xat_command(command):
+    """统一识别 XAT 命令和原 ats-sat 兼容入口。"""
+    return command.strip().split(maxsplit=1)[:1] in (["xat"], ["ats-sat"])

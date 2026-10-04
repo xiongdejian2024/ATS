@@ -12,6 +12,7 @@ from models import User
 from services.test_case_service import TestCaseService
 from utils.serializer import serialize_model, serialize_list
 from core.logger import logger
+from services.suite_dispatch import is_xat_command
 
 
 router = APIRouter()
@@ -275,8 +276,8 @@ async def execute_case(case_id: str, body: dict, db: Session=Depends(get_db), cu
     if plan.project_id!=case.project_id or case_id not in template.case_ids:
         raise HTTPException(422,'所选模板必须属于同项目并包含该用例')
     if not case.is_automated: raise HTTPException(422,'仅自动化用例可由Agent执行')
-    if not template.execution_command.strip().startswith('ats-sat'):
-        raise HTTPException(422,'单用例选择目前支持ats-sat模板，其他命令不能保证只运行所选用例')
+    if not is_xat_command(template.execution_command):
+        raise HTTPException(422,'单用例选择支持 xat/ats-sat 模板，其他命令不能保证只运行所选用例')
     environment=EnvironmentService.get_environment(db,template.environment_id)
     if not environment or not environment.get('isOnline'): raise HTTPException(503,'模板执行环境未在线')
     values={field:getattr(template,field) for field in ['git_enabled','git_repo_url','git_branch','git_token','environment_id','execution_command']}

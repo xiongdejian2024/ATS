@@ -394,7 +394,7 @@
     <a-select v-model:value="selectedExecutionTemplate" style="width:100%" placeholder="选择已有执行模板">
       <a-select-option v-for="suite in executionTemplates" :key="suite.id" :value="suite.id">{{ suite.name }}</a-select-option>
     </a-select>
-    <a-empty v-if="!caseExecutionLoading && !executionTemplates.length" description="没有包含该用例的ats-sat任务，请先在测试任务中配置" />
+    <a-empty v-if="!caseExecutionLoading && !executionTemplates.length" description="没有包含该用例的 XAT任务，请先在测试任务中配置" />
   </a-modal>
 </template>
 
@@ -1373,12 +1373,12 @@ const handleExecuteCase = async (record: TestCase) => {
   try {
     const plans = (await testPlanApi.getTestPlans(projectId.value, { size: 1000 })).items
     const groups = await Promise.all(plans.map(plan => testSuiteApi.getTestSuites(plan.id)))
-    executionTemplates.value = groups.flatMap(group => group.items).filter(suite => suite.caseIds.includes(record.id) && suite.executionCommand.trim().startsWith('ats-sat'))
+    executionTemplates.value = groups.flatMap(group => group.items).filter(suite => suite.caseIds.includes(record.id) && /^(xat|ats-sat)(?:\s|$)/.test(suite.executionCommand.trim()))
     selectedExecutionTemplate.value = executionTemplates.value[0]?.id
   } catch { message.error('无法加载执行模板') } finally { caseExecutionLoading.value = false }
 }
 const confirmCaseExecution = async () => {
-  if (!executionCase.value || !selectedExecutionTemplate.value) { message.warning('请选包含该用例的ats-sat模板'); return }
+  if (!executionCase.value || !selectedExecutionTemplate.value) { message.warning('请选包含该用例的 XAT模板'); return }
   caseExecutionLoading.value = true
   try {
     await testCaseApi.executeCase(executionCase.value.id, selectedExecutionTemplate.value)

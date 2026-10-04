@@ -6,6 +6,10 @@
 
 XAT 管理 pytest Hook、fixture、用例选择和结果；SAT 提供原框架的数据类型、配置和台架用例；ECU 项目的 `automotive_sdk` 提供模拟与 SDK 服务。现有源码通过路径配置加载，不复制到 ATS，也不自动执行设备初始化。
 
+ATS 前端 → 后端队列 → Agent → XAT → SAT / ECU 模块 → XAT 结果 → Agent ACK 补传 → ATS 入库、统计和报告。
+
+前端“测试任务”编辑器选择“使用 XAT 软件验收”，命令为 `xat --mode offline`。Agent 从自身配置读取源码与 Python 路径，启动 `python -m framework`；进程超时、取消、并发隔离和磁盘补传由 Agent 管理。旧 `ats-sat` 命令兼容，但同样通过 XAT 执行。单用例执行、取消、重连结果恢复均支持两种命令。
+
 在 ATS 根目录运行：
 
 ```bash

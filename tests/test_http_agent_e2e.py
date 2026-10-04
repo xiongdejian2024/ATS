@@ -118,7 +118,7 @@ async def lab(sat_config):
             "plan_id": plan["id"],
             "name": "SAT offline",
             "environment_id": environment["id"],
-            "execution_command": "ats-sat --mode offline",
+            "execution_command": "xat --mode offline",
             "case_ids": ids,
         },
     )
@@ -194,9 +194,38 @@ async def test_http_queue_actual_sat_ecu_results(lab):
     assert history.status_code == 200, history.text
     assert len(history.json()["data"]["items"]) == 2
     assert all(row["caseCount"] == 4 for row in history.json()["data"]["items"])
+    for execution_id in queue_states(suite_id):
+        directory = (
+            lab["agent"].work_dir / "suites" / suite_id / "executions" / execution_id
+        )
+        assert "XAT测试框架启动" in (directory / "output.log").read_text()
+        assert len(json.loads((directory / "results.json").read_text())) == 4
     print(
         "E2E: two HTTP executions; second queued; actual SAT/ECU produced eight persisted passed rows; all ACKed"
     )
+
+
+@pytest.mark.asyncio
+async def test_legacy_sat_command_runs_through_xat(lab):
+    """已有 ats-sat 模板也实际经过 XAT，不丢失旧任务兼容性。"""
+    client, suite_id = lab["client"], lab["suite"]["id"]
+    path = f"/api/v1/test-plans/suites/{suite_id}"
+    response = await client.put(
+        path, json={"execution_command": "ats-sat --mode offline"}
+    )
+    assert response.status_code == 200, response.text
+    assert (await client.post(path + "/execute")).status_code == 200
+    await until(
+        lambda: bool(queue_states(suite_id))
+        and set(queue_states(suite_id).values()) == {"completed"}
+    )
+    execution_id = next(iter(queue_states(suite_id)))
+    directory = (
+        lab["agent"].work_dir / "suites" / suite_id / "executions" / execution_id
+    )
+    assert "XAT测试框架启动" in (directory / "output.log").read_text()
+    rows = json.loads((directory / "results.json").read_text())
+    assert len(rows) == 4 and all(row["status"] == "passed" for row in rows)
 
 
 @pytest.mark.asyncio

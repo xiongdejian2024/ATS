@@ -1,5 +1,7 @@
 # SAT / ECU Simulator 与 ATS 集成
 
+2026-10-04 后续已按用户确认把执行集成归入 ATS 仓库内的 XAT。当前链路为 ATS → Agent → XAT → SAT / ECU，前端使用 `xat --mode offline`，旧 `ats-sat` 命令仍兼容。XAT fixture、独立执行和台架入口见 [XAT 集成说明](XAT_SAT_ECU_INTEGRATION.md)。
+
 本次集成的是独立 SAT（SOA Automation Test），不是 ATS/xat 或独立 XAT。
 SAT 位于 `/Users/xiongdejian/project/python_project/sat`；ECU 位于同级 `ecu-simulator`。
 源码保留原位。SAT 使用旧 `ecu_simulator` 接口；离线验收使用当前 ECU 项目中的 `src/automotive_sdk` 内存模拟模块。
