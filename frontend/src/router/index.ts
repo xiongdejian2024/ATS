@@ -19,6 +19,7 @@ const routes = [
       requiresAuth: true
     },
     children: [
+      { path: 'ai-assistant', name: 'AIAssistant', component: () => import('@views/AIAssistant.vue'), meta: { title: 'AI 辅助' } },
       {
         path: 'dashboard',
         name: 'Dashboard',

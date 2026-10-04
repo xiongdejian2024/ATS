@@ -48,6 +48,7 @@
         </div>
 
         <div class="header-right">
+          <a-button type="text" @click="router.push('/ai-assistant')">AI 辅助</a-button>
           <!-- 通知 -->
           <a-dropdown>
             <a-badge :count="unreadCount">
@@ -104,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, onMounted, onUnmounted } from 'vue';
+import { ref, computed, h, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { MenuFoldOutlined, MenuUnfoldOutlined, DashboardOutlined, ProjectOutlined, ExperimentOutlined, ScheduleOutlined, AppstoreOutlined, SettingOutlined, BellOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons-vue';
@@ -169,6 +170,7 @@ const menuItems = [
     icon: AppstoreOutlined,
     path: '/test-suites'
   },
+  { key: 'ai-assistant', title: 'AI 辅助', icon: ExperimentOutlined, path: '/ai-assistant' },
   {
     key: 'executions', title: '执行记录', icon: ScheduleOutlined, path: '/executions'
   },
@@ -185,6 +187,10 @@ const menuItems = [
 
 
 const projects = computed(() => projectStore.projects)
+watch(() => route.path, path => {
+  const selected = menuItems.find(item => path === item.path || path.startsWith(item.path + '/'))
+  selectedKeys.value = selected ? [selected.key] : []
+}, { immediate: true })
 
 
 
@@ -240,10 +246,8 @@ onMounted(async () => {
   }
 
   // 设置当前菜单选中状态
-  const currentRouteName = route.name as string
-  if (currentRouteName) {
-    selectedKeys.value = [currentRouteName.toLowerCase()]
-  }
+  const item = menuItems.find(item => route.path === item.path || route.path.startsWith(item.path + '/'))
+  selectedKeys.value = item ? [item.key] : []
 })
 </script>
 

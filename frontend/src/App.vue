@@ -1,5 +1,6 @@
 <template>
   <a-config-provider
+    :locale="zhCN"
     :theme="{
       token: {
         colorPrimary: '#1890ff',
@@ -14,6 +15,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 

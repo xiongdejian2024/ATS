@@ -29,6 +29,7 @@ def setup_logger():
             format=log_format,
             level=settings.LOG_LEVEL,
             colorize=True,
+            diagnose=False,
         )
     else:
         # 生产环境：只输出 INFO 及以上级别到控制台
@@ -37,6 +38,7 @@ def setup_logger():
             format=log_format,
             level="INFO",
             colorize=False,
+            diagnose=False,
         )
     
     # 文件输出 - 所有日志
@@ -48,6 +50,7 @@ def setup_logger():
         retention="7 days",
         compression="zip",
         encoding="utf-8",
+        diagnose=False,
     )
     
     # 文件输出 - 错误日志
@@ -59,6 +62,7 @@ def setup_logger():
         retention="30 days",
         compression="zip",
         encoding="utf-8",
+        diagnose=False,
     )
     
     return logger
@@ -69,4 +73,3 @@ setup_logger()
 
 # 导出 logger 供其他模块使用
 __all__ = ["logger"]
-

@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     
     # JWT配置
     JWT_SECRET_KEY: str = "your-super-secret-jwt-key-change-in-production"
+    # 可独立配置；为空时使用持久 JWT 密钥派生 AI 配置加密密钥。
+    AI_ENCRYPTION_KEY: str = ""
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
@@ -76,4 +78,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-
