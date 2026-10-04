@@ -109,6 +109,15 @@
 - 正式后端/Agent/Celery重启加载新筛选逻辑，健康检查通过；正式只读仍100用例、7计划、0活动任务、1在线节点。
 - 完整计划表格的组展开行/默认列/菜单位置、独立详情六页签以及独立报告列表/详情仍需继续实现，完整目标未完成。
 
+## 第九部分变更日志
+
+- 2026-10-05：参考官方计划报告列表，新增“计划／计划报告”顶栏导航及独立列表、详情路由，侧边栏仍归测试计划。详情切换项目返回报告列表，清除旧批次身份。
+- 报告目录同时包含普通计划报告和计划组集成报告；名称、所属计划、类型、结果、通过率、触发方式、操作人、操作时间与查看入口接真实数据。数据库执行项目范围、分页、排序及组合筛选；触发方式关联任务记录，定时组子计划沿用真实定时来源。活动批次的通过率显示未定，不把中间进度当成最终报告。
+- 独立详情复用既有冻结快照与协作报告；集成报告提供计划结果、用例结果、总结、真实PDF和限时分享，可进入成员计划报告。跨项目实体链接返回404，项目外用户403，请求序号防止旧响应覆盖当前项目。
+- 新增报告目录回归：真实手工计划与组执行完成后校验冻结报告、定时来源、分页排序、字面搜索、时区范围、参数约束和项目隔离；相关后端共6项通过，17项前端测试通过，类型/构建通过。
+- 隔离浏览器实测：顶栏进入3条报告→筛选集成报告剩1条→通过率100筛选剩成功普通报告；组总结保存刷新保持；实际下载PDF以%PDF开头；详情切另一项目返回0条列表且侧栏仍选测试计划。桌面及390px截图已检查，页面与顶栏无横向溢出。验收仅手工软件回填，未创建节点任务或调用台架。
+- 浏览器发现高级筛选表单缺少model导致提交未发请求，已修正并以实际请求及列表结果重新验收。本部分未完成报告行内重命名/删除、全部官方配置卡片和计划详情六页签，完整目标继续进行。
+
 ## 官方依据
 
 - [公共布局源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/layout/default-layout.vue)
@@ -121,6 +130,7 @@
 - [用例表格源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/case-management/caseManagementFeature/components/caseTable.vue)
 - [计划页面源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/test-plan/testPlan/index.vue)
 - [计划详情源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/test-plan/testPlan/detail/index.vue)
+- [计划报告列表源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/test-plan/report/component/reportList.vue)
 - [用例官方手册](https://metersphere.io/docs/v3.x/user_manual/test_case/test_case/)
 - [计划官方手册](https://metersphere.io/docs/v3.x/user_manual/test_plan/test_plan/)
 

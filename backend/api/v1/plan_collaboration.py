@@ -1,7 +1,9 @@
 """计划执行协作与真实 PDF/限时分享接口。"""
 import base64
+from datetime import datetime
+from typing import Literal
 from urllib.parse import quote
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from api.deps import get_current_user
@@ -20,6 +22,52 @@ def ok(data=None):
 def access(db, user, run_id, action="read"):
     from api.v1.plan_orchestration import require_run
     return require_run(db, user, run_id, action)
+
+
+@router.get("/projects/{project_id}/reports")
+def report_list(project_id: str, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=100),
+                search: str | None = Query(None, max_length=255), plan_name: str | None = Query(None, max_length=255),
+                kind: Literal["PLAN", "GROUP"] | None = None, result_status: str | None = Query(None, max_length=30),
+                trigger_mode: Literal["manual", "cron"] | None = None, operator: str | None = Query(None, max_length=100),
+                start_time: datetime | None = None, end_time: datetime | None = None,
+                min_rate: float | None = Query(None, ge=0, le=100), max_rate: float | None = Query(None, ge=0, le=100),
+                sort: Literal["created_at", "pass_rate", "result_status", "name"] = "created_at",
+                direction: Literal["asc", "desc"] = "desc", db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from core.project_access import require_project_access
+    from services.plan_report_workspace import list_reports
+    require_project_access(db, user, project_id, "test_plan:read")
+    # 正式数据库连接使用北京时间；先统一时区，避免混合时区比较抛出异常。
+    from utils.datetime_utils import BEIJING_TZ
+    start_time = start_time.astimezone(BEIJING_TZ).replace(tzinfo=None) if start_time and start_time.tzinfo else start_time
+    end_time = end_time.astimezone(BEIJING_TZ).replace(tzinfo=None) if end_time and end_time.tzinfo else end_time
+    if (start_time and end_time and start_time > end_time) or (min_rate is not None and max_rate is not None and min_rate > max_rate):
+        raise HTTPException(422, "筛选范围的起点不能晚于终点")
+    return ok(list_reports(db, project_id, page=page, size=size, search=search, plan_name=plan_name, kind=kind,
+                           result_status=result_status, trigger_mode=trigger_mode, operator=operator,
+                           start_time=start_time, end_time=end_time, min_rate=min_rate, max_rate=max_rate,
+                           sort=sort, direction=direction))
+
+
+@router.get("/projects/{project_id}/reports/{kind}/{run_id}")
+def report_detail(project_id: str, kind: Literal["PLAN", "GROUP"], run_id: str,
+                  db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from core.project_access import require_project_access
+    from models import TestPlan
+    require_project_access(db, user, project_id, "test_plan:read")
+    if kind == "PLAN":
+        run = access(db, user, run_id)
+        if db.get(TestPlan, run.plan_id).project_id != project_id:
+            raise HTTPException(404, "此项目中不存在该报告")
+        payload = enriched_report(db, run)
+        name = run.plan_name
+    else:
+        from api.v1.plan_group_execution import find_run
+        from services.plan_group_execution import run_data
+        run = find_run(db, user, run_id)
+        if run.project_id != project_id:
+            raise HTTPException(404, "此项目中不存在该报告")
+        payload, name = run_data(db, run), run.group_name
+    return ok(dict(kind=kind, name=name + " 报告", payload=payload))
 
 
 @router.get("/runs/{run_id}/cases/{association_id}/collaboration")

@@ -72,8 +72,9 @@
       <div v-if="isMobile && !collapsed" class="mobile-mask" role="button" tabindex="0" aria-label="关闭导航菜单"
         @click="collapsed = true" @keydown.enter="collapsed = true" />
       <a-layout-content class="layout-content">
-        <div class="page-breadcrumb"><span>{{ isCaseWorkspace ? '测试用例' : route.meta?.title || '仪表盘' }}</span>
+        <div class="page-breadcrumb"><span>{{ isCaseWorkspace ? '测试用例' : isPlanWorkspace ? '测试计划' : route.meta?.title || '仪表盘' }}</span>
           <template v-if="isCaseWorkspace"><span class="breadcrumb-separator">/</span><span>{{ route.path === '/case-reviews' ? '评审' : '用例' }}</span></template>
+          <template v-else-if="isPlanWorkspace"><span class="breadcrumb-separator">/</span><span>{{ route.path.startsWith('/test-plan-reports') ? '计划报告' : '计划' }}</span></template>
         </div>
         <div class="page-workspace"><router-view /></div>
       </a-layout-content>
@@ -106,15 +107,16 @@ const selectedKeys = ref<string[]>([])
 const openKeys = ref<string[]>([])
 const currentProjectId = computed(() => projectStore.currentProject?.id)
 const isCaseWorkspace = computed(() => route.path.startsWith('/test-cases') || route.path.startsWith('/case-reviews'))
+const isPlanWorkspace = computed(() => route.path.startsWith('/test-plans') || route.path.startsWith('/test-plan-reports'))
 const projectPageHref = (path: string) => router.resolve({ path, query: currentProjectId.value ? { projectId: currentProjectId.value } : {} }).href
-const navigateProjectPage = async (path: string) => { const failure=await router.push(projectPageHref(path));if(isNavigationFailure(failure)){const selected=menuItems.find(item=>route.path===item.path || route.path.startsWith(item.path+'/'));selectedKeys.value=route.path==='/case-reviews' ? ['test-cases'] : selected ? [selected.key] : []} }
-const contextTabs = computed(() => isCaseWorkspace.value ? [{ path: '/test-cases', title: '用例' }, { path: '/case-reviews', title: '评审' }] : [])
+const navigateProjectPage = async (path: string) => { const failure=await router.push(projectPageHref(path));if(isNavigationFailure(failure))selectedKeys.value=menuSelection(route.path) }
+const contextTabs = computed(() => isCaseWorkspace.value ? [{ path: '/test-cases', title: '用例' }, { path: '/case-reviews', title: '评审' }] : isPlanWorkspace.value ? [{path:'/test-plans',title:'计划'},{path:'/test-plan-reports',title:'计划报告'}] : [])
 async function changeGlobalProject(id: string) {
   const target = projectStore.projects.find(item => item.id === id)
   if (!target) return
   try {
     // 切换项目时移除旧项目实体链接，不能把旧用例/批次带入新项目。
-    const path=['CaseEdit','CaseCreated'].includes(String(route.name)) ? '/test-cases' : route.path
+    const path=['CaseEdit','CaseCreated'].includes(String(route.name)) ? '/test-cases' : route.name==='TestPlanReportDetail' ? '/test-plan-reports' : route.path
     const failure=await router.replace({ path, query: { projectId: id } })
     if(isNavigationFailure(failure)) { console.info('项目切换已取消，保留原项目'); return }
     projectStore.setCurrentProject(target)
@@ -188,10 +190,8 @@ const menuItems = [
 
 
 const projects = computed(() => projectStore.projects)
-watch(() => route.path, path => {
-  const selected = menuItems.find(item => path === item.path || path.startsWith(item.path + '/'))
-  selectedKeys.value = path === '/case-reviews' ? ['test-cases'] : selected ? [selected.key] : []
-}, { immediate: true })
+function menuSelection(path:string){if(path.startsWith('/case-reviews'))return ['test-cases'];if(path.startsWith('/test-plan-reports'))return ['test-plans'];const selected=menuItems.find(item=>path===item.path||path.startsWith(item.path+'/'));return selected?[selected.key]:[]}
+watch(() => route.path, path => { selectedKeys.value=menuSelection(path) }, { immediate: true })
 
 
 
@@ -248,8 +248,7 @@ onMounted(async () => {
   }
 
   // 设置当前菜单选中状态
-  const item = menuItems.find(item => route.path === item.path || route.path.startsWith(item.path + '/'))
-  selectedKeys.value = route.path === '/case-reviews' ? ['test-cases'] : item ? [item.key] : []
+  selectedKeys.value=menuSelection(route.path)
 })
 </script>
 
@@ -282,8 +281,8 @@ onMounted(async () => {
   .platform-brand { width:62px; padding:0 8px; gap:4px; }
   .platform-brand .anticon { display:none; }
   .layout-header { padding-right:8px; }
-  .global-project-select { width:128px; }
-  .context-tabs { gap:12px; padding-left:4px; }
+  .global-project-select { width:104px; }
+  .context-tabs { gap:8px; padding-left:4px; font-size:12px; }
   .header-right { gap:0; }
   .header-right > .ant-btn { display:none; }
   .layout-sider { position:fixed; left:0; top:56px; bottom:0; height:calc(100vh - 56px); z-index:999; transition:transform .2s ease; }
