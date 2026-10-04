@@ -292,18 +292,22 @@
     <a-drawer
       v-model:visible="detailCaseVisible"
       :title="viewingCaseId ? '用例详情' : ''"
-      width="min(1100px, 96vw)"
+      :width="detailFullscreen ? '100vw' : 'min(860px, 96vw)'"
+      :body-style="{padding:'16px'}"
       placement="right"
-      :mask-closable="false"
+      :mask="false"
+      :mask-closable="true"
       :destroy-on-close="true"
       :closable="true"
     >
+      <template #extra><a-space><a-button aria-label="上一条用例" :disabled="!canPreviousCase" @click="navigateDetail(-1)"><LeftOutlined /></a-button><a-button aria-label="下一条用例" :disabled="!canNextCase" @click="navigateDetail(1)"><RightOutlined /></a-button><a-button @click="detailFullscreen=!detailFullscreen">{{detailFullscreen ? '退出全屏':'全屏'}}</a-button></a-space></template>
       <TestCaseDetail
         v-if="viewingCaseId"
         :case-id="viewingCaseId"
         :project-id="projectId"
-        :read-only="true"
         @edit="handleEditFromDetail"
+        @copy="copyFromDetail"
+        @delete="deleteFromDetail"
         @navigate="viewingCaseId=$event"
       />
     </a-drawer>
@@ -363,7 +367,7 @@ import { testPlanApi } from '@/api/testPlan'
 import { ref, reactive, computed, onMounted, onUnmounted, watch, createVNode } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { message, Modal, Input } from 'ant-design-vue';
-import { PlusOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
+import { LeftOutlined, RightOutlined, PlusOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
 import TestCaseEdit from '@/components/TestCase/TestCaseEdit.vue'
 import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
 import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
@@ -1211,6 +1215,21 @@ const handleViewCase = (record: TestCase) => {
 }
 
 // 从详情页面跳转到编辑页面
+const detailFullscreen = ref(false)
+const detailIndex = computed(()=>testCases.value.findIndex(c=>c.id===viewingCaseId.value))
+const canPreviousCase = computed(()=>detailIndex.value>0 || pagination.current>1)
+const canNextCase = computed(()=>detailIndex.value>=0 && (detailIndex.value<testCases.value.length-1 || pagination.current*pagination.pageSize<pagination.total))
+const navigateDetail = async (direction: number) => {
+  const next=detailIndex.value+direction
+  if (next>=0 && next<testCases.value.length) { viewingCaseId.value=testCases.value[next].id; return }
+  if (direction<0 && pagination.current>1 || direction>0 && pagination.current*pagination.pageSize<pagination.total) {
+    pagination.current+=direction;await loadTestCases()
+    const row=direction>0 ? testCases.value[0] : testCases.value.at(-1)
+    if(row)viewingCaseId.value=row.id
+  }
+}
+const copyFromDetail = async () => { try { const row=testCases.value.find(c=>c.id===viewingCaseId.value) || await testCaseApi.getTestCase(projectId.value,viewingCaseId.value);detailCaseVisible.value=false;await handleCopyCase(row) } catch(error) { console.error('复制详情用例失败',error) } }
+const deleteFromDetail = async () => { try { const row=await testCaseApi.getTestCase(projectId.value,viewingCaseId.value); await handleDeleteCase(row) } catch(error) { console.error('加载待删除用例失败',error) } }
 const handleEditFromDetail = () => {
   detailCaseVisible.value = false
   copyingDraft.value = undefined
@@ -1238,6 +1257,7 @@ const handleDeleteCase = async (record: TestCase) => {
       try {
         await testCaseApi.deleteTestCase(projectId.value, record.id)
         message.success('删除成功')
+        if(viewingCaseId.value===record.id)detailCaseVisible.value=false
         await loadTestCases()
         await loadModuleTree()
   } catch (error) {

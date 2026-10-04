@@ -1,16 +1,26 @@
 <template>
   <a-spin :spinning="busy">
-    <a-tabs v-model:active-key="tab">
-      <a-tab-pane key="issues" tab="需求与缺陷">
+    <a-tabs v-model:active-key="tab" :class="{ 'section-only': section }">
+      <a-tab-pane
+        v-if="!section || section === 'requirement' || section === 'defect'"
+        key="issues"
+        tab="需求与缺陷"
+      >
         <a-space wrap
           ><a-select
             v-model:value="issueId"
             show-search
             option-filter-prop="label"
-            placeholder="关联已有需求或缺陷"
+            :placeholder="
+              section === 'defect'
+                ? '关联已有缺陷'
+                : section === 'requirement'
+                  ? '关联已有需求'
+                  : '关联已有需求或缺陷'
+            "
             style="width: 320px; max-width: 100%"
             :options="
-              issues
+              visibleIssues
                 .filter((i) => !linkedIssues.some((l) => l.id === i.id))
                 .map((i) => ({
                   label: `${i.kind === 'defect' ? '缺陷' : '需求'} · ${i.title}`,
@@ -18,9 +28,15 @@
                 }))
             "
           /><a-button :disabled="!issueId" @click="linkIssue">关联</a-button
-          ><a-button @click="openIssue()">新建需求 / 缺陷</a-button></a-space
+          ><a-button @click="openIssue()">{{
+            section === "defect"
+              ? "新建缺陷"
+              : section === "requirement"
+                ? "新建需求"
+                : "新建需求 / 缺陷"
+          }}</a-button></a-space
         >
-        <a-list :data-source="linkedIssues"
+        <a-list :data-source="visibleLinkedIssues"
           ><template #renderItem="{ item }"
             ><a-list-item
               ><a-list-item-meta
@@ -40,7 +56,11 @@
           ></a-list
         >
       </a-tab-pane>
-      <a-tab-pane key="relations" tab="前后置与相关用例">
+      <a-tab-pane
+        v-if="!section || section === 'dependency'"
+        key="relations"
+        tab="前后置与相关用例"
+      >
         <a-alert
           message="这里记录用例之间的关系，不会自动改变执行顺序。执行顺序请在计划或测试任务中配置。"
           type="info"
@@ -50,7 +70,7 @@
         <a-space wrap
           ><a-select
             v-model:value="relationKind"
-            :options="relationKinds"
+            :options="visibleRelationKinds"
             style="width: 140px"
           /><a-select
             v-model:value="targetCaseId"
@@ -68,7 +88,7 @@
             >添加关系</a-button
           ></a-space
         >
-        <a-list :data-source="relations"
+        <a-list :data-source="visibleRelations"
           ><template #renderItem="{ item }"
             ><a-list-item
               ><a-list-item-meta
@@ -92,7 +112,11 @@
           ></a-list
         >
       </a-tab-pane>
-      <a-tab-pane key="automation" tab="自动化关联">
+      <a-tab-pane
+        v-if="!section || section === 'case'"
+        key="automation"
+        tab="自动化关联"
+      >
         <a-alert
           message="可关联已有自动化用例、ATS 执行模板或外部引用。建立关联不会启动执行。"
           type="info"
@@ -163,12 +187,19 @@
     </a-tabs>
     <a-modal
       v-model:open="issueVisible"
-      :title="editingIssueId ? '编辑需求 / 缺陷' : '新建并关联需求 / 缺陷'"
+      :title="
+        (editingIssueId ? '编辑' : '新建并关联') +
+        (section === 'defect'
+          ? '缺陷'
+          : section === 'requirement'
+            ? '需求'
+            : '需求 / 缺陷')
+      "
       :confirm-loading="busy"
       @ok="saveIssue"
     >
       <a-form layout="vertical"
-        ><a-form-item label="类别"
+        ><a-form-item v-if="!section" label="类别"
           ><a-radio-group v-model:value="issueForm.kind"
             ><a-radio value="requirement">需求</a-radio
             ><a-radio value="defect">缺陷</a-radio></a-radio-group
@@ -197,7 +228,7 @@
   </a-spin>
 </template>
 <script setup lang="ts">
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, computed } from "vue";
 import { message } from "ant-design-vue";
 import {
   caseFeaturesApi as api,
@@ -206,10 +237,20 @@ import {
   type CaseAutomation,
 } from "@/api/caseFeatures";
 import { testCaseApi } from "@/api/testCase";
-const props = defineProps<{ projectId: string; caseId: string }>(),
+const props = defineProps<{
+    projectId: string;
+    caseId: string;
+    section?: "requirement" | "defect" | "dependency" | "case";
+  }>(),
   emit = defineEmits<{ navigate: [caseId: string]; changed: [] }>();
 const busy = ref(false),
-  tab = ref("issues"),
+  tab = ref(
+    props.section === "dependency"
+      ? "relations"
+      : props.section === "case"
+        ? "automation"
+        : "issues",
+  ),
   issues = ref<CaseIssue[]>([]),
   linkedIssues = ref<CaseIssue[]>([]),
   issueId = ref<string>(),
@@ -245,6 +286,30 @@ const automationKinds = [
   { label: "UI自动化", value: "ui" },
   { label: "脚本", value: "script" },
 ];
+const visibleIssues = computed(() =>
+  issues.value.filter(
+    (i) =>
+      !["requirement", "defect"].includes(props.section || "") ||
+      i.kind === props.section,
+  ),
+);
+const visibleLinkedIssues = computed(() =>
+  linkedIssues.value.filter(
+    (i) =>
+      !["requirement", "defect"].includes(props.section || "") ||
+      i.kind === props.section,
+  ),
+);
+const visibleRelations = computed(() =>
+  relations.value.filter(
+    (i) => props.section !== "dependency" || i.kind !== "related",
+  ),
+);
+const visibleRelationKinds = computed(() =>
+  relationKinds.filter(
+    (i) => props.section !== "dependency" || i.value !== "related",
+  ),
+);
 const issueForm = reactive({
   kind: "requirement" as "requirement" | "defect",
   title: "",
@@ -310,7 +375,7 @@ function openIssue(item?: CaseIssue) {
           externalRef: item.externalRef || "",
         }
       : {
-          kind: "requirement",
+          kind: props.section === "defect" ? "defect" : "requirement",
           title: "",
           description: "",
           status: "open",
@@ -394,3 +459,9 @@ watch(automationMode, () => {
 });
 watch(() => [props.projectId, props.caseId], load, { immediate: true });
 </script>
+
+<style scoped>
+.section-only :deep(.ant-tabs-nav) {
+  display: none;
+}
+</style>

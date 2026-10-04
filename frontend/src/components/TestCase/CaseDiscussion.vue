@@ -1,6 +1,6 @@
 <template>
   <a-space direction="vertical" style="width: 100%">
-    <a-space
+    <a-space v-if="!hideFollow"
       ><a-button :loading="busy" @click="toggleFollow">{{
         followed ? "取消关注" : "关注用例"
       }}</a-button
@@ -40,7 +40,7 @@
 import { ref, watch } from "vue";
 import { caseFeaturesApi as api, type CaseComment } from "@/api/caseFeatures";
 import { useUserStore } from "@/stores/user";
-const props = defineProps<{ projectId: string; caseId: string }>(),
+const props = defineProps<{ projectId: string; caseId: string; hideFollow?: boolean }>(),
   emit = defineEmits<{ changed: [] }>(),
   user = useUserStore();
 const busy = ref(false),

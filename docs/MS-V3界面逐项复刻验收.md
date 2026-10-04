@@ -19,7 +19,7 @@
 | 用例工具栏 | 当前模块/数量、视图/高级筛选、左侧新建/导入/AI，右侧列表/脑图 | 第三部分已整理为左侧新建/导入与右侧搜索/分组视图/筛选/列表脑图/刷新；批量治理进入勾选后底栏，完整高级筛选与AI入口仍待对照 |
 | 用例表格 | 默认列顺序、列设置、等级/模块行内修改、评审/执行状态、文本操作、更多菜单、批量操作 | 第三部分已补等级、所属模块行内修改并实测刷新保存；窄屏取消固定操作列遮挡名称。默认字段与更多菜单仍需逐项匹配 |
 | 新建/编辑用例 | 完整页布局、默认模板、名称、前置、文本/步骤描述、备注、附件、模块、等级、执行人、标签、创建成功页 | 模板/步骤已有；独立详情页、文本描述/备注/创建成功流程待核对补齐 |
-| 用例详情 | 详情、用例、需求、缺陷、依赖关系、用例评审、测试计划、评论、变更历史各独立页签 | 原功能集中在通用关联/协作页签，仍需按官方页签完整展开 |
+| 用例详情 | 详情、用例、需求、缺陷、依赖关系、用例评审、测试计划、评论、变更历史各独立页签 | 第四部分已展开基本信息、详情、用例、需求、缺陷、依赖关系、用例评审、测试计划、评论、变更历史；显示隐藏/排序、关注/分享/复制/删除及侧栏导航已接入。各页签表格字段、评论富文本与完整详情编辑仍待对照 |
 | 复制/分享/关注/删除 | 复制进入编辑页面；详情顶部按钮；分享和关注；删除进入回收站 | 第二部分已改为编辑草稿，取消不写库、确认生成新编号已实测；完整页及其他按钮位置仍待匹配 |
 | 脑图 | 模块/用例/文本节点，同级/子级新建、进入节点、详情、等级、复制剪切粘贴删除、全部快捷键 | 当前主要编辑步骤与复制用例；模块、文本、剪切、定位与快捷键仍不完整 |
 | 导入 | Excel/XMind独立入口、下载两种模板、校验结果与覆盖选项 | 导入有效；XMind模板与官方分步交互待匹配 |
@@ -64,12 +64,22 @@
 - 桌面1500px/窄屏390px截图保存至 `evidence/ms-v3-case-toolbar-*.png`。操作均发生在新隔离SQLite；正式库只读仍100用例、7计划、0活动任务。
 - 仍须完成完整高级筛选、创建/详情页、表格默认字段/菜单、计划与报告等剩余对照项；本部分验收不表示100%目标完成。
 
+## 第四部分变更日志
+
+- 2026-10-05：读取官方 `caseDetailDrawer.vue`，确认列表详情为860px无遮罩侧栏，默认展示基本信息/详情/用例、需求/缺陷（开启缺陷模块时）、依赖关系/评审/计划/评论/变更历史；新建页面仍是单独页面，尚未完成。
+- 列表详情采用860px无遮罩侧栏，并提供上一条/下一条与全屏。详情页将原混合关联/讨论/计划评审拆为独立页签，复用成熟的已有业务组件与接口，不为页面提供假按钮。
+- 需求/缺陷按实体类别分别筛选并新建关联，依赖关系限定前/后置关系；用例页保留自动化关联。关注/分享/复制/删除移至顶部，附件留在详情内容中，自定义字段置基本信息。
+- 显示设置支持隐藏可选页签与拖动排序，基本信息/详情不可隐藏；按当前用户持久化，刷新恢复。请求序号避免快速切换用例时旧详情覆盖新内容。
+- 隔离浏览器：上一条/下一条正确；新建需求和缺陷后在各自列表显示；评论保存及关注成功；隐藏缺陷、将测试计划拖至第三位，刷新后保留。860px侧栏、全屏1500px及390px窄屏截图已检查。
+- 7项已有用例附件/实体关联/前后置/自动化/关注评论的软件回归通过，前端类型/生产构建通过。完整新建/编辑页、详情内表格/字段和全部功能仍需继续匹配，本部分不表示目标完成。
+
 ## 官方依据
 
 - [公共布局源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/layout/default-layout.vue)
 - [导航尺寸配置](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/config/settings.json)
 - [主题源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/theme/default.less)
 - [用例页面源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/case-management/caseManagementFeature/index.vue)
+- [用例详情侧栏源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/case-management/caseManagementFeature/components/caseDetailDrawer.vue)
 - [公共筛选工具栏源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/components/pure/ms-advance-filter/index.vue)
 - [用例表格源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/case-management/caseManagementFeature/components/caseTable.vue)
 - [计划页面源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/test-plan/testPlan/index.vue)
