@@ -111,7 +111,10 @@ def history(group_id: str, page: int = Query(1, ge=1), size: int = Query(20, ge=
 
 @router.get("/runs/{run_id}")
 def detail(run_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return result(service.run_data(db, find_run(db, user, run_id)))
+    from services.plan_report_workspace import ensure_visible
+    run = find_run(db, user, run_id)
+    ensure_visible(db, "GROUP", run_id)
+    return result(service.run_data(db, run))
 
 
 @router.post("/runs/{run_id}/cancel")
@@ -123,7 +126,9 @@ async def cancel(run_id: str, db: Session = Depends(get_db), user=Depends(get_cu
 
 @router.put("/runs/{run_id}/summary")
 def summary(run_id: str, data: Summary, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_report_workspace import ensure_visible
     run = find_run(db, user, run_id, "update")
+    ensure_visible(db, "GROUP", run_id)
     def operation():
         run.summary = data.model_dump()
     transact(db, operation)
@@ -132,13 +137,18 @@ def summary(run_id: str, data: Summary, db: Session = Depends(get_db), user=Depe
 
 @router.get("/runs/{run_id}/pdf")
 def export_pdf(run_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return Response(render_plan_report(service.run_data(db, find_run(db, user, run_id))), media_type="application/pdf",
+    from services.plan_report_workspace import ensure_visible
+    run = find_run(db, user, run_id)
+    ensure_visible(db, "GROUP", run_id)
+    return Response(render_plan_report(service.run_data(db, run)), media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="ATS-group-{run_id}.pdf"'})
 
 
 @router.post("/runs/{run_id}/share")
 def share(run_id: str, data: ShareInput, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_report_workspace import ensure_visible
     run = find_run(db, user, run_id)
+    ensure_visible(db, "GROUP", run_id)
     token = secrets.token_urlsafe(32)
     row = PlanGroupShare(run_id=run.id, token_hash=sha256(token.encode()).hexdigest(), created_by=str(user.id),
                          expires_at=datetime.now(timezone.utc).replace(tzinfo=None)+timedelta(hours=data.expiresHours))
@@ -164,5 +174,7 @@ def public_pdf(token: str, db: Session = Depends(get_db)):
     if not row or row.expires_at <= datetime.now(timezone.utc).replace(tzinfo=None):
         raise HTTPException(404, "分享不存在、已撤销或已过期")
     run = db.get(PlanGroupRun, row.run_id)
+    from services.plan_report_workspace import ensure_visible
+    ensure_visible(db, "GROUP", row.run_id)
     return Response(render_plan_report(service.run_data(db, run)), media_type="application/pdf",
                     headers={"Cache-Control": "no-store", "Content-Disposition": 'inline; filename="ATS-group-report.pdf"'})

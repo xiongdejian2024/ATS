@@ -77,7 +77,7 @@ def _render(payload: dict) -> bytes:
         return result
 
     report = payload["report"]
-    title = payload.get("groupName") or payload.get("planName") or payload.get("name") or "测试计划"
+    title = payload.get("reportName") or payload.get("groupName") or payload.get("planName") or payload.get("name") or "测试计划"
     status = report.get("outcome") or payload.get("status", "pending")
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=18 * mm, leftMargin=18 * mm,

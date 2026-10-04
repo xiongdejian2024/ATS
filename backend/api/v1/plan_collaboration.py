@@ -5,6 +5,7 @@ from typing import Literal
 from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, Response, Query
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field
 from database import get_db
 from api.deps import get_current_user
 from models.plan_workspace import PlanRunComment, PlanRunAttachment, PlanReportSummary, PlanReportShare
@@ -19,9 +20,26 @@ def ok(data=None):
     return APIResponse(status=ResponseStatus.SUCCESS, message="操作成功", data=data)
 
 
-def access(db, user, run_id, action="read"):
+def access(db, user, run_id, action="read", report_only=False):
     from api.v1.plan_orchestration import require_run
-    return require_run(db, user, run_id, action)
+    run = require_run(db, user, run_id, action)
+    if report_only:
+        from services.plan_report_workspace import ensure_visible
+        ensure_visible(db, "PLAN", run_id)
+    return run
+
+
+class ReportName(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+
+
+class ReportSelection(BaseModel):
+    kind: Literal["PLAN", "GROUP"]
+    id: str = Field(min_length=1, max_length=36)
+
+
+class ReportBatch(BaseModel):
+    reports: list[ReportSelection] = Field(min_length=1, max_length=1000)
 
 
 @router.get("/projects/{project_id}/reports")
@@ -33,41 +51,55 @@ def report_list(project_id: str, page: int = Query(1, ge=1), size: int = Query(2
                 min_rate: float | None = Query(None, ge=0, le=100), max_rate: float | None = Query(None, ge=0, le=100),
                 sort: Literal["created_at", "pass_rate", "result_status", "name"] = "created_at",
                 direction: Literal["asc", "desc"] = "desc", db: Session = Depends(get_db), user=Depends(get_current_user)):
-    from core.project_access import require_project_access
+    from core.project_access import require_project_access, project_allows
     from services.plan_report_workspace import list_reports
-    require_project_access(db, user, project_id, "test_plan:read")
+    project = require_project_access(db, user, project_id, "test_plan:read")
     # 正式数据库连接使用北京时间；先统一时区，避免混合时区比较抛出异常。
     from utils.datetime_utils import BEIJING_TZ
     start_time = start_time.astimezone(BEIJING_TZ).replace(tzinfo=None) if start_time and start_time.tzinfo else start_time
     end_time = end_time.astimezone(BEIJING_TZ).replace(tzinfo=None) if end_time and end_time.tzinfo else end_time
     if (start_time and end_time and start_time > end_time) or (min_rate is not None and max_rate is not None and min_rate > max_rate):
         raise HTTPException(422, "筛选范围的起点不能晚于终点")
-    return ok(list_reports(db, project_id, page=page, size=size, search=search, plan_name=plan_name, kind=kind,
+    payload = list_reports(db, project_id, page=page, size=size, search=search, plan_name=plan_name, kind=kind,
                            result_status=result_status, trigger_mode=trigger_mode, operator=operator,
                            start_time=start_time, end_time=end_time, min_rate=min_rate, max_rate=max_rate,
-                           sort=sort, direction=direction))
+                           sort=sort, direction=direction)
+    payload.update(canRename=project_allows(db, user, project, "test_plan:update"), canDelete=project_allows(db, user, project, "test_plan:delete"))
+    return ok(payload)
+
+
+@router.post("/projects/{project_id}/reports/batch-delete")
+def report_batch_delete(project_id: str, data: ReportBatch, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_report_workspace import delete_reports
+    return ok({"deleted": delete_reports(db, user, project_id, data.reports)})
+
+
+@router.put("/projects/{project_id}/reports/{kind}/{run_id}/name")
+def report_rename(project_id: str, kind: Literal["PLAN", "GROUP"], run_id: str, data: ReportName,
+                  db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_report_workspace import rename_report
+    return ok({"name": rename_report(db, user, project_id, kind, run_id, data.name)})
+
+
+@router.delete("/projects/{project_id}/reports/{kind}/{run_id}")
+def report_delete(project_id: str, kind: Literal["PLAN", "GROUP"], run_id: str,
+                  db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_report_workspace import delete_reports
+    return ok({"deleted": delete_reports(db, user, project_id, [ReportSelection(kind=kind, id=run_id)])})
 
 
 @router.get("/projects/{project_id}/reports/{kind}/{run_id}")
 def report_detail(project_id: str, kind: Literal["PLAN", "GROUP"], run_id: str,
                   db: Session = Depends(get_db), user=Depends(get_current_user)):
-    from core.project_access import require_project_access
-    from models import TestPlan
-    require_project_access(db, user, project_id, "test_plan:read")
+    from services.plan_report_workspace import require_report, report_name
+    run = require_report(db, user, project_id, kind, run_id)
     if kind == "PLAN":
-        run = access(db, user, run_id)
-        if db.get(TestPlan, run.plan_id).project_id != project_id:
-            raise HTTPException(404, "此项目中不存在该报告")
         payload = enriched_report(db, run)
         name = run.plan_name
     else:
-        from api.v1.plan_group_execution import find_run
         from services.plan_group_execution import run_data
-        run = find_run(db, user, run_id)
-        if run.project_id != project_id:
-            raise HTTPException(404, "此项目中不存在该报告")
         payload, name = run_data(db, run), run.group_name
-    return ok(dict(kind=kind, name=name + " 报告", payload=payload))
+    return ok(dict(kind=kind, name=report_name(db, kind, run_id, name), payload=payload))
 
 
 @router.get("/runs/{run_id}/cases/{association_id}/collaboration")
@@ -110,12 +142,12 @@ def download(attachment_id: str, db: Session = Depends(get_db), user=Depends(get
 
 @router.get("/runs/{run_id}/report")
 def report(run_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return ok(enriched_report(db, access(db, user, run_id)))
+    return ok(enriched_report(db, access(db, user, run_id, report_only=True)))
 
 
 @router.put("/runs/{run_id}/summary")
 def save_summary(run_id: str, data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    access(db, user, run_id, "update")
+    access(db, user, run_id, "update", report_only=True)
     if set(data) - {"conclusion", "risk", "notes"} or any(not isinstance(value, str) or len(value) > 20000 for value in data.values()):
         raise HTTPException(422, "总结仅支持结论、风险和备注，每项最多20000字")
     row = db.get(PlanReportSummary, run_id) or PlanReportSummary(run_id=run_id)
@@ -132,12 +164,12 @@ def pdf(db, run):
 
 @router.get("/runs/{run_id}/pdf")
 def export_pdf(run_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return pdf(db, access(db, user, run_id))
+    return pdf(db, access(db, user, run_id, report_only=True))
 
 
 @router.post("/runs/{run_id}/shares")
 def share(run_id: str, data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    row, token = create_share(db, access(db, user, run_id, "update"), user.id, data.get("expiresHours", 24))
+    row, token = create_share(db, access(db, user, run_id, "update", report_only=True), user.id, data.get("expiresHours", 24))
     return ok({"id": row.id, "token": token, "expiresAt": row.expires_at.isoformat() + "Z", "path": f"/api/v1/plan-orchestration/shared/{token}/pdf"})
 
 
@@ -156,7 +188,7 @@ def revoke(share_id: str, db: Session = Depends(get_db), user=Depends(get_curren
 def read_shared(token: str, db: Session = Depends(get_db)):
     # 分享只暴露报告及总结，不包含模型配置、内部快照或凭证。
     payload = enriched_report(db, shared_run(db, token))
-    return ok({key: payload[key] for key in ("id", "planName", "status", "report", "summary")})
+    return ok({key: payload[key] for key in ("id", "planName", "reportName", "status", "report", "summary")})
 
 
 @router.get("/shared/{token}/pdf")
@@ -166,6 +198,6 @@ def shared_pdf(token: str, db: Session = Depends(get_db)):
 
 @router.get("/runs/{run_id}/shares")
 def shares(run_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    access(db, user, run_id, "update")
+    access(db, user, run_id, "update", report_only=True)
     return ok([{"id": row.id, "expiresAt": row.expires_at.isoformat() + "Z", "revoked": row.revoked}
                for row in db.query(PlanReportShare).filter_by(run_id=run_id).order_by(PlanReportShare.created_at.desc())])

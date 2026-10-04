@@ -11,8 +11,11 @@ export interface PlanReportEntry {
 export type ReportDetail = { kind: 'PLAN'; name: string; payload: ReportRun } | { kind: 'GROUP'; name: string; payload: GroupRun }
 const base = (projectId: string) => `/plan-orchestration/projects/${projectId}/reports`
 export const planReportsApi = {
-  list: (projectId: string, params: Record<string, unknown>) => apiClient.get<{items: PlanReportEntry[]; total: number}>(base(projectId), {params}),
+  list: (projectId: string, params: Record<string, unknown>) => apiClient.get<{items: PlanReportEntry[]; total: number;canRename:boolean;canDelete:boolean}>(base(projectId), {params}),
   detail: (projectId: string, kind: ReportKind, id: string) => apiClient.get<ReportDetail>(`${base(projectId)}/${kind}/${id}`),
+  rename: (projectId:string,row:PlanReportEntry,name:string) => apiClient.put<{name:string}>(`${base(projectId)}/${row.kind}/${row.id}/name`,{name}),
+  remove: (projectId:string,row:PlanReportEntry) => apiClient.delete(`${base(projectId)}/${row.kind}/${row.id}`),
+  batchRemove: (projectId:string,reports:{kind:ReportKind;id:string}[]) => apiClient.post(`${base(projectId)}/batch-delete`,{reports}),
 }
 export const reportResultOptions = [
   {value: 'passed', label: '成功'}, {value: 'failed', label: '失败'}, {value: 'cancelled', label: '已取消'},

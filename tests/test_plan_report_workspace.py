@@ -85,3 +85,74 @@ async def test_active_report_and_filter_validation_do_not_dispatch(reports_http)
             assert (await client.get(base, params=params)).status_code == 422
     from models.task_queue import TaskQueue
     assert db.query(TaskQueue).count() == 0
+
+
+@pytest.mark.asyncio
+async def test_rename_delete_revokes_shares_but_retains_frozen_history(reports_http):
+    from copy import deepcopy
+    from api.v1.plan_group_execution import router as groups
+    from models.plan_report_workspace import PlanReportWorkspace, GroupReportWorkspace
+    from models.plan_group_execution import PlanGroupRun
+    db, app, identity = reports_http
+    app.include_router(groups)
+    direct = await start_plan_run(db, 'manual', 'owner')
+    record_manual_result(db, direct.id, 'case-2', ManualResultInput(result='passed'), 'owner')
+    await advance_plan_runs(db)
+    frozen = deepcopy(direct.report)
+    db.add(PlanGroup(id='group', project_id='project', name='报告管理组'))
+    db.flush()
+    db.add(PlanSettings(plan_id='manual', group_id='group'))
+    db.commit()
+    group = await start_group_run(db, 'group', 'owner')
+    await advance_group_runs(db)
+    child_id = db.query(PlanGroupRunChild).filter_by(run_id=group.id).one().plan_run_id
+    record_manual_result(db, child_id, 'case-2', ManualResultInput(result='passed'), 'owner')
+    await advance_plan_runs(db)
+    await advance_group_runs(db)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
+        base = '/orchestration/projects/project/reports'
+        assert (await client.put(base + f'/PLAN/{direct.id}/name', json={'name':'   '})).status_code == 422
+        assert (await client.put(base + f'/PLAN/{direct.id}/name', json={'name':'独立报告改名'})).json()['data']['name'] == '独立报告改名'
+        assert (await client.put(base + f'/GROUP/{group.id}/name', json={'name':'聚合报告改名'})).status_code == 200
+        rows = (await client.get(base, params={'search':'改名'})).json()['data']['items']
+        assert {row['name'] for row in rows} == {'独立报告改名', '聚合报告改名'}
+        assert (await client.get(base + f'/PLAN/{direct.id}')).json()['data']['name'] == '独立报告改名'
+        assert (await client.get(f'/plan-groups/runs/{group.id}')).json()['data']['reportName'] == '聚合报告改名'
+        share = (await client.post(f'/orchestration/runs/{direct.id}/shares', json={'expiresHours':1})).json()['data']['token']
+        group_share = (await client.post(f'/plan-groups/runs/{group.id}/share', json={'expiresHours':1})).json()['data']['path']
+        assert (await client.get(f'/orchestration/shared/{share}')).status_code == 200
+        invalid = [{'kind':'PLAN','id':direct.id}, {'kind':'GROUP','id':'outside'}]
+        assert (await client.post(base + '/batch-delete', json={'reports':invalid})).status_code == 404
+        assert not db.get(PlanReportWorkspace, direct.id).deleted
+        assert (await client.post(base + '/batch-delete', json={'reports':[invalid[0],invalid[0]]})).status_code == 422
+        selected = [{'kind':'PLAN','id':direct.id}, {'kind':'GROUP','id':group.id}]
+        assert (await client.post(base + '/batch-delete', json={'reports':selected})).json()['data']['deleted'] == 2
+        assert (await client.get(base)).json()['data']['total'] == 1  # 子计划报告仍独立保留
+        for path in (base + f'/PLAN/{direct.id}', base + f'/GROUP/{group.id}', f'/orchestration/runs/{direct.id}/report',
+                     f'/orchestration/runs/{direct.id}/pdf', f'/orchestration/shared/{share}', f'/plan-groups/runs/{group.id}/pdf', group_share):
+            assert (await client.get(path)).status_code == 404, path
+        assert (await client.post(f'/orchestration/runs/{direct.id}/shares',json={'expiresHours':1})).status_code == 404
+        assert (await client.post(f'/plan-groups/runs/{group.id}/share',json={'expiresHours':1})).status_code == 404
+        assert (await client.delete(base + f'/PLAN/{direct.id}')).status_code == 200  # 删除可安全重试
+        db.expire_all()
+        assert db.get(PlanRun, direct.id).report == frozen
+        assert db.get(PlanGroupRun, group.id).report['passRate'] == 100
+        assert db.get(GroupReportWorkspace, group.id).deleted
+        assert (await client.get(f'/orchestration/runs/{direct.id}')).status_code == 200  # 执行记录保持可读
+
+
+@pytest.mark.asyncio
+async def test_readonly_member_capabilities_and_active_delete_guard(reports_http):
+    from models import ProjectMember
+    db, app, identity = reports_http
+    db.add(ProjectMember(project_id='project', user_id='stranger', role='member'))
+    db.commit()
+    run = await start_plan_run(db, 'manual', 'owner')
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
+        base = '/orchestration/projects/project/reports'
+        assert (await client.delete(base + f'/PLAN/{run.id}')).status_code == 409
+        identity['id']='stranger'
+        payload=(await client.get(base)).json()['data']
+        assert not payload['canRename'] and not payload['canDelete'] and payload['total']==1
+        assert (await client.put(base + f'/PLAN/{run.id}/name',json={'name':'无权限改名'})).status_code==403
+        assert (await client.delete(base + f'/PLAN/{run.id}')).status_code==403

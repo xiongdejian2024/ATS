@@ -75,7 +75,9 @@ def attach(db, run, association_id, user_id, data):
 
 def enriched_report(db, run):
     from services.plan_orchestration import run_data
+    from services.plan_report_workspace import report_name
     payload = run_data(db, run)
+    payload["reportName"] = report_name(db, "PLAN", run.id, run.plan_name)
     summary = db.get(PlanReportSummary, run.id)
     payload["summary"] = summary.summary if summary else {}
     categories = {}
@@ -109,4 +111,6 @@ def shared_run(db, token):
     run = db.get(PlanRun, row.run_id)
     if not run:
         raise HTTPException(404, "报告不存在")
+    from services.plan_report_workspace import ensure_visible
+    ensure_visible(db, "PLAN", run.id)
     return run

@@ -19,6 +19,7 @@ from .case_features import CaseChange
 from .plan_orchestration import PlanGroup, PlanSettings, PlanRun, PlanRunItem
 from . import plan_workspace
 from . import plan_group_execution
+from . import plan_report_workspace
 from .task_schedule import TaskSchedule, TaskScheduleRun
 from .role import Role, Permission, UserRole, RolePermission, ProjectPermission
 

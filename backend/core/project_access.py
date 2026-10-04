@@ -10,12 +10,19 @@ def require_project_access(db: Session, user: User, project_id: str,
     project = db.get(Project, str(project_id))
     if not project:
         raise HTTPException(404, "项目不存在")
+    if project_allows(db, user, project, permission):
+        return project
+    raise HTTPException(403, "没有此项目的操作权限")
+
+
+def project_allows(db: Session, user: User, project: Project, permission: str) -> bool:
+    """复用同一规则展示可操作按钮，最终写入仍须服务端授权。"""
     resource, action = permission.split(":", 1)
     if (str(user.id) in {project.owner_id, project.created_by}
             or has_global_permission(db, user.id, resource, action)
             or has_project_permission(db, user.id, project.id, resource, action)):
-        return project
+        return True
     member = db.query(ProjectMember).filter_by(project_id=project.id, user_id=user.id).first()
     if member and (action == "read" or member.role in {"admin", "owner", "manager", "maintainer"}):
-        return project
-    raise HTTPException(403, "没有此项目的操作权限")
+        return True
+    return False
