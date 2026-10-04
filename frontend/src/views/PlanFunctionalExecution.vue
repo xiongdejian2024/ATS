@@ -230,7 +230,10 @@
                     @change="loadDetail(false)"
                 /></a-tab-pane>
               </a-tabs>
-              <div v-if="detail.canExecute" class="submit-panel">
+              <div
+                v-if="detail.canExecute && tab === 'details'"
+                class="submit-panel"
+              >
                 <PlanCaseExecuteForm
                   v-model:result="result"
                   v-model:description="description"
