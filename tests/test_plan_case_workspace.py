@@ -112,3 +112,60 @@ async def test_legacy_unlink_prunes_future_suite_scope_but_keeps_templates_and_b
         next_run=await start_plan_run(db,'plan','owner')
         assert {item['id'] for item in next_run.case_snapshot}=={'case-1'}
         assert {item['id'] for item in db.get(PlanRun,run.id).case_snapshot}=={'case-0','case-1'}
+
+
+@pytest.mark.asyncio
+async def test_associate_candidates_pagination_literals_module_counts_and_project_scope(workspace_http):
+    from datetime import datetime
+    db,app,identity=workspace_http
+    db.add(Module(id='parent',project_id='project',name='父模块'));db.flush()
+    db.add(Module(id='child',project_id='project',name='子模块',parent_id='parent'));db.flush()
+    db.get(Case,'case-0').module_id='child'
+    db.get(Case,'case-2').name='百分%_用例'
+    db.add(Case(id='deleted',project_id='project',name='已回收',case_code='DELETED',type='functional',steps=[],created_by='owner',deleted_at=datetime.now()))
+    db.add(Case(id='api',project_id='project',name='API验收',case_code='API',type='api',steps=[],created_by='owner',is_automated=True))
+    db.add(Case(id='bad-api',project_id='project',name='不可执行API',case_code='BAD-API',type='api',steps=[],created_by='owner',is_automated=False))
+    db.add(Project(id='other',name='另项目',owner_id='owner'));db.flush()
+    db.add(Module(id='outside',project_id='other',name='外部目录'))
+    db.add(Case(id='outside-case',project_id='other',name='外部用例',case_code='OUTSIDE',type='functional',steps=[],created_by='owner'))
+    db.commit()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
+        base='/orchestration/plans/plan/case-workspace'
+        data=(await client.get(base+'/candidates',params={'size':1})).json()['data']
+        assert data['total']==3 and len(data['items'])==1 and data['counts']['all']==3
+        assert next(row for row in data['modules'] if row['id']=='parent')['count']==1
+        first=data['items'][0]['id']
+        second=(await client.get(base+'/candidates',params={'size':1,'page':2})).json()['data']['items'][0]['id']
+        assert first!=second
+        assert (await client.get(base+'/candidates',params={'folder':'parent'})).json()['data']['items'][0]['id']=='case-0'
+        literal=(await client.get(base+'/candidates',params={'search':'%_'})).json()['data']
+        assert literal['total']==1 and literal['items'][0]['id']=='case-2' and not literal['items'][0]['alreadyLinked']
+        assert (await client.get(base+'/candidates',params={'folder':'outside'})).status_code==404
+        api=(await client.get(base+'/candidates',params={'category':'api'})).json()['data']
+        assert [row['id'] for row in api['items']]==['api']
+        assert (await client.post(base+'/associate',json={'category':'api','caseIds':['api','case-2']})).status_code==422
+        assert (await client.post(base+'/associate',json={'category':'api','caseIds':['bad-api']})).status_code==422
+        assert db.query(PlanCaseRelation).filter_by(plan_id='plan').count()==2
+        assert (await client.post(base+'/associate',json={'category':'api','caseIds':['api']})).json()['data']['added']==1
+        assert (await client.get(base+'/candidates',params={'category':'api'})).json()['data']['items'][0]['alreadyLinked']
+        identity['id']='stranger'
+        assert (await client.get(base+'/candidates')).status_code==403
+    assert db.query(TaskQueue).count()==0
+
+
+@pytest.mark.asyncio
+async def test_tree_association_validates_full_selection_suite_and_preserves_duplicates(workspace_http):
+    db,app,identity=workspace_http
+    node=save_node(db,db.get(Plan,'plan'),dict(name='原手工范围',nodeType='case',category='functional',caseId='case-2'));db.commit()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
+        base='/orchestration/plans/plan/case-workspace'
+        original=db.query(PlanNode).count()
+        assert (await client.post(base+'/associate',json={'caseIds':['case-0','case-2']})).status_code==422
+        assert (await client.post(base+'/associate',json={'caseIds':['case-0','case-1'],'suiteId':'suite-0'})).status_code==422
+        assert (await client.post(base+'/associate',json={'caseIds':['case-2'],'suiteId':'missing'})).status_code==422
+        assert db.query(PlanNode).count()==original
+        assert (await client.post(base+'/associate',json={'caseIds':['case-0','case-2'],'suiteId':'suite-0'})).json()['data']['added']==2
+        rows=(await client.get(base)).json()['data']['items']
+        assert len(rows)==3 and len({row['associationId'] for row in rows if row['caseId']=='case-2'})==2
+        assert (await client.get(base+'/candidates')).json()['data']['usesTree']
+    assert db.query(TaskQueue).count()==0

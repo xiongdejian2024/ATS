@@ -21,9 +21,18 @@ class Batch(BaseModel):
     assignedTo:str|None=Field(None,max_length=36)
     collectionId:str|None=Field(None,max_length=36)
 class Association(BaseModel):
+    category:Category='functional'
     caseIds:list[str]=Field(min_length=1,max_length=500)
     collectionId:str|None=Field(None,max_length=36)
     suiteId:str|None=Field(None,max_length=36)
+
+@router.get('/plans/{plan_id}/case-workspace/candidates')
+def candidates(plan_id:str,category:Category='functional',search:str=Query('',max_length=255),
+               folder:str='all',priority:str|None=None,page:int=Query(1,ge=1),size:int=Query(20,ge=1,le=100),
+               db:Session=Depends(get_db),user=Depends(get_current_user)):
+    plan=plan_access(db,user,plan_id)
+    require_project_access(db,user,plan.project_id,'test_case:read')
+    return ok(service.candidates(db,plan,category,search,folder,priority,page,size))
 
 @router.get('/plans/{plan_id}/case-workspace')
 def listing(plan_id:str,category:Category='functional',tree_type:Literal['COLLECTION','MODULE']='COLLECTION',folder:str|None=None,

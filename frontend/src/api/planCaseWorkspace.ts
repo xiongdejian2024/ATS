@@ -1,3 +1,4 @@
+import type { TestCase } from "@/types";
 import { apiClient } from "@/utils/api";
 export interface PlanCaseEntry {
   id: string;
@@ -45,6 +46,17 @@ export interface PlanCaseListing {
   counts: { all: number; default: number; unassigned: number };
   usesTree: boolean;
 }
+export interface PlanAssociateListing {
+  items: (TestCase & { moduleName: string; alreadyLinked: boolean })[];
+  total: number;
+  page: number;
+  size: number;
+  modules: CaseFolder[];
+  collections: CaseFolder[];
+  counts: { all: number; unassigned: number };
+  usesTree: boolean;
+  suites: { id: string; name: string; caseIds: string[] }[];
+}
 const base = (id: string) => `/plan-orchestration/plans/${id}/case-workspace`;
 export const planCaseWorkspaceApi = {
   list: (id: string, params: Record<string, unknown>) =>
@@ -59,8 +71,15 @@ export const planCaseWorkspaceApi = {
       collectionId?: string | null;
     },
   ) => apiClient.post(base(id) + "/batch", data),
+  candidates: (id: string, params: Record<string, unknown>) =>
+    apiClient.get<PlanAssociateListing>(base(id) + "/candidates", { params }),
   associate: (
     id: string,
-    data: { caseIds: string[]; collectionId?: string; suiteId?: string },
+    data: {
+      category?: string;
+      caseIds: string[];
+      collectionId?: string | null;
+      suiteId?: string | null;
+    },
   ) => apiClient.post(base(id) + "/associate", data),
 };

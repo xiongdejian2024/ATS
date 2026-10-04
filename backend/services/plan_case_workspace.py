@@ -161,18 +161,59 @@ def associate(db,plan,user,data):
     cases=db.query(TestCase).filter(TestCase.id.in_(data.caseIds),TestCase.project_id==plan.project_id,TestCase.deleted_at.is_(None)).all()
     if len(cases)!=len(data.caseIds): raise HTTPException(404,'用例不存在、已回收或不属于当前项目')
     uses=uses_tree(db,plan.id)
-    if not uses and any(case.type in ('api','scenario') for case in cases): raise HTTPException(422,'请选择功能分类用例')
+    if any((case.type if case.type in ('api','scenario') else 'functional') != data.category for case in cases):
+        raise HTTPException(422,'请选择当前分类的用例')
+    if data.category != 'functional' and any(not case.is_automated for case in cases):
+        raise HTTPException(422,'API/场景分类只能关联可执行的自动化用例')
     suite=db.get(TestSuite,data.suiteId) if data.suiteId else None
+    if data.suiteId and (not suite or suite.plan_id != plan.id):
+        raise HTTPException(422,'测试套必须属于当前计划')
     if uses and any(case.is_automated and (not suite or suite.plan_id!=plan.id or case.id not in suite.case_ids) for case in cases):
         raise HTTPException(422,'自动化用例需要选择包含所有关联用例的当前计划测试套')
     existing={row.case_id for row in db.query(PlanCaseRelation).filter_by(plan_id=plan.id)}
     order=db.query(PlanCaseRelation).filter_by(plan_id=plan.id).count()
     added=0
     for case in cases:
-        if uses: save_node(db,plan,dict(name=case.name,nodeType='case',category='functional',caseId=case.id,parentId=data.collectionId,suiteId=suite.id if case.is_automated and suite else None))
+        if uses: save_node(db,plan,dict(name=case.name,nodeType='case',category=data.category,caseId=case.id,parentId=data.collectionId,suiteId=suite.id if case.is_automated and suite else None))
         elif case.id not in existing:
             db.add(PlanCaseRelation(plan_id=plan.id,case_id=case.id,collection_id=data.collectionId,execution_order=order+added))
         else: continue
         added+=1
-    logger.info('已关联计划功能用例：计划={}，数量={}',plan.id,added)
+    logger.info('已关联计划分类用例：计划={}，分类={}，数量={}',plan.id,data.category,added)
     return dict(added=added)
+
+
+def candidates(db, plan, category, search, folder, priority, page, size):
+    """数据库分页取可关联用例，目录计数不受当前页或目录范围影响。"""
+    from sqlalchemy import func, or_
+    from utils.serializer import serialize_model
+    query = db.query(TestCase).filter(TestCase.project_id == plan.project_id, TestCase.deleted_at.is_(None))
+    query = query.filter(TestCase.type.notin_(['api', 'scenario'])) if category == 'functional' else query.filter(TestCase.type == category)
+    if category != 'functional':
+        query = query.filter(TestCase.is_automated.is_(True))
+    keyword = search.strip().casefold()
+    if keyword:
+        query = query.filter(or_(func.lower(TestCase.name).contains(keyword, autoescape=True),
+                                 func.lower(TestCase.case_code).contains(keyword, autoescape=True)))
+    if priority:
+        query = query.filter(TestCase.priority == priority)
+    modules = db.query(Module).filter_by(project_id=plan.project_id).order_by(Module.sort_order, Module.created_at).all()
+    module_counts = dict(query.with_entities(TestCase.module_id, func.count(TestCase.id)).group_by(TestCase.module_id).all())
+    folders = [dict(id=row.id, name=row.name, parentId=row.parent_id,
+                    count=sum(module_counts.get(key, 0) for key in descendants(modules, row.id))) for row in modules]
+    counts = dict(all=sum(module_counts.values()), unassigned=sum(count for key, count in module_counts.items() if key not in {row.id for row in modules}))
+    if folder == 'unassigned':
+        query = query.filter(or_(TestCase.module_id.is_(None), TestCase.module_id.notin_([row.id for row in modules])))
+    elif folder != 'all':
+        if folder not in {row.id for row in modules}:
+            raise HTTPException(404, '关联选择目录不属于当前项目')
+        query = query.filter(TestCase.module_id.in_(descendants(modules, folder)))
+    total = query.count()
+    records = query.order_by(TestCase.created_at.desc(), TestCase.id).offset((page-1)*size).limit(size).all()
+    associated, points, _, uses = entries(db, plan, category)
+    linked = {item['caseId'] for item in associated}
+    module_names = {row.id: row.name for row in modules}
+    items = [dict(serialize_model(row, camel_case=True), moduleName=module_names.get(row.module_id, '未分配模块'), alreadyLinked=row.id in linked) for row in records]
+    suites = [dict(id=row.id, name=row.name, caseIds=row.case_ids or []) for row in db.query(TestSuite).filter_by(plan_id=plan.id)]
+    return dict(items=items, total=total, page=page, size=size, modules=folders, counts=counts, usesTree=uses,
+                collections=[dict(id=row.id, name=row.name, parentId=row.parent_id, count=0) for row in points], suites=suites)

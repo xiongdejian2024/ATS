@@ -151,6 +151,16 @@
 - 正式MySQL私有备份385923字节，增量增加 `plan_workspaces.uses_tree`、`plan_case_relations.collection_id` 及对应外键/索引，重复检查0项。后端/Agent/Celery重启成功，只读接口200，既有100用例、7计划、0活动任务、1在线节点；读取原计划40条直接关联，未转换旧执行方式，未进行台架执行。
 - 本部分尚未补齐分类行内执行/执行抽屉、批量执行/缺陷关联、关联选择布局、API/场景官方列表、视图和全部脑图编辑，完整目标继续进行。
 
+## 第十三部分变更日志
+
+- 2026-10-05：对照官方 `testPlanMinder/associateDrawer.vue` 与 `ms-associate-case/index.vue`，在测试规划关联入口提供1200px抽屉、模块目录/祖先计数、ID与名称搜索、等级筛选、数据库分页、已关联标记、跨页多选与清空。复用现有Ant Design、SQLAlchemy与目录工具，无新增依赖；原通用选择组件使用全量9999条加载且不满足计划的分类/测试套校验，因此计划采用独立模块。
+- 功能/API/场景候选按真实分类分别查询，回收用例排除、字面 `%_` 搜索正确；目录与测试集均限定当前项目/计划。旧直接关联禁选已添加的用例，树模式允许创建独立重复实例；自动化树关联必须选择包含全部已选自动化用例的当前计划测试套，整批校验失败不写入。
+- 关联旧计划保留原直接范围，不因添加测试集或手工用例强制转树；自动化旧关联仍需已有测试套提供执行命令/节点，界面明确提示。批量关联不派发任何执行任务，正在执行/历史报告继续使用已有冻结快照。
+- 后端完整软件回归158项通过，专项6项通过；前端跨页选择回归新增2项，总23项通过，类型/构建通过。覆盖候选分页与父模块计数、回收排除、分类/项目隔离、完整测试套范围校验、批量回滚和树实例重复关联。
+- 隔离浏览器实测31条候选分页：第一页选择13、第二页选择18→返回首条仍勾选→模块筛选后仍选2条；取消后原计划保持3条，再打开选择清空。重新跨页选择2条、移入测试集甲并关联→刷新5条，数据库核对新增关联及旧3条均保留、树标记仍为false、节点任务0。再次搜索13显示已关联且禁选；切API分类清空原选择。只读成员规划页0关联按钮/0新建测试点按钮。1200px桌面及390px抽屉截图已检查，内部表格可滚动，抽屉宽度390。
+- 正式服务重启后候选与分类接口200、前后端200；既有100用例、7计划、0活动任务、1在线节点，原计划40条关联保持，无数据库结构变更，无正式业务写入或台架执行。
+- 此部分只完成关联抽屉及其基础查询/选择，官方跨项目关联、按模块全选及全部关联列表字段待补齐；测试规划完整脑图、分类执行详情和其他逐项缺口继续进行。
+
 ## 官方依据
 
 - [公共布局源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/layout/default-layout.vue)
@@ -171,3 +181,6 @@
 
 - [计划功能用例表格源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/test-plan/testPlan/detail/featureCase/components/caseTable.vue)
 - [计划功能用例目录源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/views/test-plan/testPlan/detail/featureCase/components/caseTree.vue)
+
+- [计划关联抽屉源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/components/business/ms-minders/testPlanMinder/associateDrawer.vue)
+- [关联用例抽屉公共源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/components/business/ms-associate-case/index.vue)
