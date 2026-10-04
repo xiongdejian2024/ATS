@@ -8,6 +8,7 @@ from sqlalchemy import (
     JSON,
     ForeignKey,
     UniqueConstraint,
+    Date,
 )
 from database import Base
 from models.base import BaseModel
@@ -43,6 +44,11 @@ class CaseReview(Base, BaseModel):
     reviewer_ids = Column(JSON, nullable=False)
     status = Column(String(30), nullable=False, default="pending")
     created_by = Column(String(36), ForeignKey("users.id"), nullable=False)
+    description = Column(Text, nullable=False, default="")
+    mode = Column(String(20), nullable=False, default="multiple")
+    parent_review_id = Column(String(36), nullable=True)
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
 
 
 class CaseReviewItem(Base, BaseModel):
@@ -59,6 +65,7 @@ class CaseReviewItem(Base, BaseModel):
         String(36), ForeignKey("case_versions.id", ondelete="CASCADE"), nullable=False
     )
     status = Column(String(30), nullable=False, default="pending")
+    reviewer_ids = Column(JSON, nullable=True)
 
 
 class CaseReviewDecision(Base, BaseModel):
@@ -108,3 +115,31 @@ class CaseSavedView(Base, BaseModel):
     owner_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String(100), nullable=False)
     filters = Column(JSON, nullable=False)
+
+
+class CaseReviewEvent(Base, BaseModel):
+    __tablename__ = "case_review_events"
+    review_id = Column(
+        String(36),
+        ForeignKey("case_reviews.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    item_id = Column(String(36), nullable=True)
+    actor_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    action = Column(String(40), nullable=False)
+    detail = Column(JSON, nullable=False)
+
+
+class CaseReviewFollow(Base, BaseModel):
+    __tablename__ = "case_review_follows"
+    __table_args__ = (
+        UniqueConstraint("review_id", "user_id", name="uq_review_follow"),
+    )
+    review_id = Column(
+        String(36),
+        ForeignKey("case_reviews.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)

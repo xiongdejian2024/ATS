@@ -37,6 +37,12 @@ async def get_test_cases(
     requirement_ref: Optional[str] = None,  # 需求关联
     precondition: Optional[str] = None,  # 前置条件
     review_status: Optional[str] = None,
+    filters: Optional[str] = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+    mine: bool = False,
+    followed: bool = False,
+    case_ids: Optional[str] = None,
 ):
     """获取测试用例列表（按项目过滤，使用数据库持久化）"""
     try:
@@ -57,6 +63,8 @@ async def get_test_cases(
             requirement_ref=requirement_ref,
             precondition=precondition,
             review_status=review_status,
+            filters=filters, sort_by=sort_by, sort_order=sort_order,
+            mine=mine, followed=followed, user_id=str(current_user.id), case_ids=case_ids,
         )
 
         # 序列化items为camelCase

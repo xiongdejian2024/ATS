@@ -1,4 +1,5 @@
 """测试用例服务层"""
+
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
@@ -17,7 +18,13 @@ class TestCaseService:
     def validate_references(db: Session, project_id: str, data: dict):
         from fastapi import HTTPException
         from models.user import User
-        if data.get("module_id") and not db.query(Module).filter_by(id=str(data["module_id"]), project_id=str(project_id)).first():
+
+        if (
+            data.get("module_id")
+            and not db.query(Module)
+            .filter_by(id=str(data["module_id"]), project_id=str(project_id))
+            .first()
+        ):
             raise HTTPException(422, "用例模块不属于当前项目")
         if data.get("executor_id") and not db.get(User, str(data["executor_id"])):
             raise HTTPException(422, "用例执行人不存在")
@@ -39,106 +46,50 @@ class TestCaseService:
         requirement_ref: Optional[str] = None,  # 需求关联
         precondition: Optional[str] = None,  # 前置条件
         review_status: Optional[str] = None,
+        filters: Optional[str] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        mine: bool = False,
+        followed: bool = False,
+        user_id: Optional[str] = None,
+        case_ids: Optional[str] = None,
     ):
-        """获取测试用例列表"""
-        from sqlalchemy import JSON
-        query = db.query(TestCase).filter(TestCase.project_id == project_id, TestCase.deleted_at.is_(None))
+        """获取测试用例列表；统一高级条件与导出的过滤语义。"""
+        from services.case_query import query_cases
 
-        # 搜索条件
-        if search:
-            query = query.filter(
-                or_(
-                    TestCase.name.contains(search),
-                    TestCase.case_code.contains(search)
-                )
-            )
-
-        # 模块过滤（支持多个模块 ID）
-        if module_ids:
-            # 多个模块 ID（逗号分隔），用于查询模块及其子模块的用例
-            id_list = [mid.strip() for mid in module_ids.split(',') if mid.strip()]
-            if id_list:
-                query = query.filter(TestCase.module_id.in_(id_list))
-        elif module_id:
-            if module_id == 'null':
-                # 未规划用例：module_id 为空
-                query = query.filter(TestCase.module_id.is_(None))
-            else:
-                query = query.filter(TestCase.module_id == module_id)
-
-        # 状态过滤
-        if status:
-            query = query.filter(TestCase.status == status)
-
-        # 优先级过滤
-        if priority:
-            query = query.filter(TestCase.priority == priority)
-
-        # 类型过滤
-        if type:
-            query = query.filter(TestCase.type == type)
-
-        # 标签过滤
-        if tags:
-            tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
-            if tag_list:
-                # tags 是 JSON 字段，需要检查是否包含指定的标签
-                # 使用 JSON_CONTAINS (MySQL) 函数
-                from sqlalchemy import text
-                
-                # 对于每个标签，检查 tags JSON 字段是否包含该标签
-                for tag in tag_list:
-                    # MySQL JSON_CONTAINS 函数: JSON_CONTAINS(tags, '"tag_value"')
-                    tag_json = f'"{tag}"'
-                    query = query.filter(
-                        text("JSON_CONTAINS(tags, :tag_json)")
-                    ).params(tag_json=tag_json)
-
-        # 是否自动化过滤
-        if is_automated is not None:
-            query = query.filter(TestCase.is_automated == is_automated)
-
-        # 需求关联过滤
-        if requirement_ref:
-            query = query.filter(TestCase.requirement_ref.contains(requirement_ref))
-
-        # 前置条件过滤
-        if precondition:
-            query = query.filter(TestCase.precondition.contains(precondition))
-
-        # 评审按当前内容版本匹配，不能把旧版本的通过结论用于新内容。
-        from services.case_governance import current_review_statuses
-        if review_status:
-            review_candidates = query.all()
-            review_statuses = current_review_statuses(db, review_candidates)
-            query = query.filter(TestCase.id.in_([cid for cid, state in review_statuses.items() if state == review_status]))
-
-        # 总数
-        total = query.count()
-
-        # 分页
-        offset = (page - 1) * size
-        items = query.order_by(TestCase.created_at.desc()).offset(offset).limit(size).all()
-        review_statuses = current_review_statuses(db, items)
-
-        # 计算总页数
-        pages = (total + size - 1) // size if total > 0 else 0
-
-        return {
-            "items": items,
-            "total": total,
-            "page": page,
-            "size": size,
-            "pages": pages,
-            "hasNext": page < pages,
-            "hasPrev": page > 1,
-            "reviewStatuses": review_statuses,
-        }
+        return query_cases(
+            db,
+            project_id,
+            page=page,
+            size=size,
+            search=search,
+            module_id=module_id,
+            module_ids=module_ids,
+            status=status,
+            priority=priority,
+            type=type,
+            tags=tags,
+            is_automated=is_automated,
+            requirement_ref=requirement_ref,
+            precondition=precondition,
+            review_status=review_status,
+            filters=filters,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            mine=mine,
+            followed=followed,
+            user_id=user_id,
+            case_ids=case_ids,
+        )
 
     @staticmethod
     def get_test_case(db: Session, case_id: str) -> Optional[TestCase]:
         """获取单个测试用例"""
-        return db.query(TestCase).filter(TestCase.id == case_id, TestCase.deleted_at.is_(None)).first()
+        return (
+            db.query(TestCase)
+            .filter(TestCase.id == case_id, TestCase.deleted_at.is_(None))
+            .first()
+        )
 
     @staticmethod
     def create_test_case(
@@ -149,9 +100,17 @@ class TestCaseService:
         commit: bool = True,
     ) -> TestCase:
         """创建测试用例"""
-        TestCaseService.validate_references(db, str(case_data.project_id), case_data.model_dump())
+        TestCaseService.validate_references(
+            db, str(case_data.project_id), case_data.model_dump()
+        )
         from services.case_features import prepare_case_template
-        data = prepare_case_template(db, str(case_data.project_id), case_data.model_dump(), case_data.model_fields_set)
+
+        data = prepare_case_template(
+            db,
+            str(case_data.project_id),
+            case_data.model_dump(),
+            case_data.model_fields_set,
+        )
         case_data = TestCaseCreate(**data)
         # 生成case_code（如果未提供）- 纯数字格式
         case_code = case_data.case_code
@@ -169,7 +128,11 @@ class TestCaseService:
             id=str(uuid.uuid4()),
             project_id=str(case_data.project_id),
             # TODO: 当模块管理切换为数据库实现后，再恢复对 module_id 的真实写入
-            module_id=str(case_data.module_id) if getattr(case_data, "module_id", None) else None,
+            module_id=(
+                str(case_data.module_id)
+                if getattr(case_data, "module_id", None)
+                else None
+            ),
             case_code=case_code,
             name=case_data.name,
             type=case_data.type,
@@ -184,18 +147,20 @@ class TestCaseService:
             tags=case_data.tags or [],
             status="not_executed",
             created_by=current_user_id,
-            updated_by=current_user_id
+            updated_by=current_user_id,
         )
         test_case.template_id = case_data.template_id
         test_case.custom_fields = case_data.custom_fields or {}
 
         from services.case_governance import snapshot_case
         from core.logger import logger
+
         try:
             db.add(test_case)
             db.flush()
             snapshot_case(db, test_case, current_user_id, "创建用例")
             from services.case_features import change
+
             change(db, test_case, current_user_id, "创建用例")
             if commit:
                 db.commit()
@@ -209,32 +174,51 @@ class TestCaseService:
 
     @staticmethod
     def update_test_case(
-        db: Session,
-        case_id: str,
-        case_data: TestCaseUpdate,
-        current_user_id: str
+        db: Session, case_id: str, case_data: TestCaseUpdate, current_user_id: str
     ) -> Optional[TestCase]:
         """更新测试用例"""
-        test_case = db.query(TestCase).filter(TestCase.id == case_id, TestCase.deleted_at.is_(None)).with_for_update().first()
+        test_case = (
+            db.query(TestCase)
+            .filter(TestCase.id == case_id, TestCase.deleted_at.is_(None))
+            .with_for_update()
+            .first()
+        )
 
         if not test_case:
             return None
 
         from services.case_governance import snapshot_case
         from core.logger import logger
+
         try:
-            TestCaseService.validate_references(db, test_case.project_id, case_data.model_dump(exclude_unset=True))
+            TestCaseService.validate_references(
+                db, test_case.project_id, case_data.model_dump(exclude_unset=True)
+            )
             snapshot_case(db, test_case, current_user_id, "修改前保存版本")
             update_data = case_data.model_dump(exclude_unset=True)
             from services.case_features import prepare_case_template
-            update_data = prepare_case_template(db, test_case.project_id, update_data, case_data.model_fields_set, existing=test_case)
+
+            update_data = prepare_case_template(
+                db,
+                test_case.project_id,
+                update_data,
+                case_data.model_fields_set,
+                existing=test_case,
+            )
             for field, value in update_data.items():
                 setattr(test_case, field, value)
             test_case.updated_by = current_user_id
             test_case.updated_at = beijing_now()
             snapshot_case(db, test_case, current_user_id, "编辑用例")
             from services.case_features import change
-            change(db, test_case, current_user_id, "编辑用例", {"fields": list(update_data)})
+
+            change(
+                db,
+                test_case,
+                current_user_id,
+                "编辑用例",
+                {"fields": list(update_data)},
+            )
             db.commit()
             db.refresh(test_case)
         except Exception:
@@ -245,21 +229,35 @@ class TestCaseService:
         return test_case
 
     @staticmethod
-    def delete_test_case(db: Session, case_id: str, current_user_id: str | None = None) -> bool:
+    def delete_test_case(
+        db: Session, case_id: str, current_user_id: str | None = None
+    ) -> bool:
         """删除测试用例"""
-        test_case = db.query(TestCase).filter(TestCase.id == case_id, TestCase.deleted_at.is_(None)).with_for_update().first()
+        test_case = (
+            db.query(TestCase)
+            .filter(TestCase.id == case_id, TestCase.deleted_at.is_(None))
+            .with_for_update()
+            .first()
+        )
 
         if not test_case:
             return False
 
         from services.case_governance import snapshot_case
         from core.logger import logger
+
         try:
-            snapshot_case(db, test_case, current_user_id or test_case.updated_by or test_case.created_by, "删除前保留用例版本")
+            snapshot_case(
+                db,
+                test_case,
+                current_user_id or test_case.updated_by or test_case.created_by,
+                "删除前保留用例版本",
+            )
             actor = current_user_id or test_case.updated_by or test_case.created_by
             test_case.deleted_at = beijing_now()
             test_case.deleted_by = actor
             from services.case_features import change
+
             change(db, test_case, actor, "移入回收站")
             db.commit()
         except Exception:
@@ -276,7 +274,11 @@ class TestCaseService:
         modules = db.query(Module).filter(Module.project_id == project_id).all()
 
         # 获取所有测试用例
-        cases = db.query(TestCase).filter(TestCase.project_id == project_id, TestCase.deleted_at.is_(None)).all()
+        cases = (
+            db.query(TestCase)
+            .filter(TestCase.project_id == project_id, TestCase.deleted_at.is_(None))
+            .all()
+        )
 
         # 构建树结构
         module_map = {}
@@ -288,8 +290,8 @@ class TestCaseService:
                 "key": module.id,
                 "title": module.name,
                 "type": "module",
-                "level": getattr(module, 'priority', 'P2'),
-                "children": []
+                "level": getattr(module, "priority", "P2"),
+                "children": [],
             }
             module_map[module.id] = module_node
 
@@ -309,7 +311,7 @@ class TestCaseService:
                 "type": "case",
                 "caseCode": case.case_code,
                 "level": case.priority,
-                "tags": case.tags or []
+                "tags": case.tags or [],
             }
 
             if case.module_id and case.module_id in module_map:

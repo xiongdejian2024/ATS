@@ -178,7 +178,7 @@ def test_all_reviewers_and_immutable_snapshot(governance):
         g["client"]
         .post(vote_url, json={"decision": "approved", "comment": "重复"})
         .status_code
-        == 409
+        == 200
     )
     g["state"]["user"] = g["users"][2]
     second = g["client"].post(

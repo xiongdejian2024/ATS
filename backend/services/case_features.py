@@ -427,6 +427,19 @@ def purge_case(db, user, project_id, case_id):
     if db.query(TestExecution).filter_by(case_id=case_id).first():
         raise HTTPException(409, "用例存在执行历史，不能彻底删除；可保留在回收站")
     paths = [attachment_path(row) for row in case.attachments]
+    for model in [CaseIssueLink, CaseAutomationLink, CaseFollow, CaseComment]:
+        db.query(model).filter_by(case_id=case_id).delete(synchronize_session=False)
+    from sqlalchemy import or_
+
+    db.query(CaseRelation).filter(
+        or_(
+            CaseRelation.source_case_id == case_id,
+            CaseRelation.target_case_id == case_id,
+        )
+    ).delete(synchronize_session=False)
+    db.query(CaseAutomationLink).filter_by(target_case_id=case_id).delete(
+        synchronize_session=False
+    )
     change(
         db,
         case,

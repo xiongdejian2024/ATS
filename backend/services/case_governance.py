@@ -12,6 +12,7 @@ from models.case_governance import (
     CaseReviewItem,
     CaseReviewDecision,
     CaseReviewComment,
+    CaseReviewEvent,
 )
 from core.project_access import require_project_access
 from core.logger import logger
@@ -42,7 +43,11 @@ def project_access(db, user, project_id, action="read"):
 
 
 def case_for_project(db, project_id, case_id, lock=False):
-    query = db.query(TestCase).filter_by(project_id=project_id, id=case_id).filter(TestCase.deleted_at.is_(None))
+    query = (
+        db.query(TestCase)
+        .filter_by(project_id=project_id, id=case_id)
+        .filter(TestCase.deleted_at.is_(None))
+    )
     case = (query.with_for_update() if lock else query).first()
     if not case:
         raise HTTPException(404, "项目中不存在该用例")
@@ -74,12 +79,63 @@ def snapshot_case(db, case, actor_id, reason, force=False):
     )
     db.add(version)
     db.flush()
+    from services.case_features import change
+
+    change(
+        db,
+        case,
+        actor_id,
+        "保存版本",
+        {
+            "version": version.version,
+            "reason": reason,
+            "fields": [
+                field
+                for field in SNAPSHOT_FIELDS
+                if not previous or previous.snapshot.get(field) != snapshot.get(field)
+            ],
+        },
+    )
     logger.info(
         "用例版本已保存 case_id={} version={} actor_id={}",
         case.id,
         version.version,
         actor_id,
     )
+    if previous and not db.info.get("auto_resubmitting"):
+        from models.case_features import CaseProjectSettings
+
+        settings = (
+            db.query(CaseProjectSettings)
+            .filter_by(project_id=case.project_id, auto_resubmit=True)
+            .first()
+        )
+        if settings:
+            reviews = (
+                db.query(CaseReview)
+                .join(CaseReviewItem, CaseReviewItem.review_id == CaseReview.id)
+                .filter(
+                    CaseReviewItem.case_id == case.id,
+                    CaseReviewItem.version_id == previous.id,
+                    CaseReview.status.notin_(["cancelled", "superseded"]),
+                )
+                .all()
+            )
+            db.info["auto_resubmitting"] = True
+            try:
+                from schemas.case_governance import ReviewResubmit
+
+                for review in reviews:
+                    clone_review(
+                        db,
+                        db.get(User, str(actor_id)),
+                        case.project_id,
+                        review.id,
+                        ReviewResubmit(),
+                        resubmit=True,
+                    )
+            finally:
+                db.info.pop("auto_resubmitting", None)
     return version
 
 
@@ -119,6 +175,16 @@ def restore_version(db, user, project_id, case_id, version_id, request):
         raise HTTPException(409, "历史版本执行人已不存在")
     for field in SNAPSHOT_FIELDS:
         setattr(case, field, deepcopy(target.snapshot.get(field)))
+    from services.case_features import prepare_case_template
+
+    prepared = prepare_case_template(
+        db,
+        project_id,
+        {"template_id": case.template_id, "custom_fields": case.custom_fields or {}},
+        {"template_id", "custom_fields"},
+        existing=case,
+    )
+    case.custom_fields = prepared["custom_fields"]
     case.updated_by = str(user.id)
     case.updated_at = beijing_now()
     version = snapshot_case(
@@ -142,7 +208,10 @@ def reviewers(db, project_id):
 def create_review(db, user, project_id, request):
     project_access(db, user, project_id, "update")
     eligible = {r["id"] for r in reviewers(db, project_id)}
-    if not set(request.reviewerIds) <= eligible:
+    requested = set(request.reviewerIds) | {
+        v for values in request.itemReviewers.values() for v in values
+    }
+    if not requested <= eligible:
         raise HTTPException(422, "评审人必须为本项目的有效成员或负责人")
     cases = [
         case_for_project(db, project_id, cid, lock=True)
@@ -151,7 +220,19 @@ def create_review(db, user, project_id, request):
     review = CaseReview(
         project_id=project_id,
         name=request.name,
-        policy=request.policy,
+        policy=(
+            "any"
+            if (
+                request.mode == "single"
+                or (not request.mode and request.policy == "any")
+            )
+            else "all"
+        ),
+        mode=request.mode or ("single" if request.policy == "any" else "multiple"),
+        description=request.description,
+        start_date=request.startDate,
+        end_date=request.endDate,
+        created_at=beijing_now(),
         reviewer_ids=request.reviewerIds,
         created_by=str(user.id),
         status="pending",
@@ -166,9 +247,11 @@ def create_review(db, user, project_id, request):
                 case_id=case.id,
                 version_id=version.id,
                 status="pending",
+                reviewer_ids=request.itemReviewers.get(case.id, request.reviewerIds),
             )
         )
     db.flush()
+    review_event(db, review, user.id, "创建评审", {"caseIds": request.caseIds})
     logger.info(
         "用例评审已创建 review_id={} case_count={} policy={}",
         review.id,
@@ -197,9 +280,13 @@ def review_data(db, review):
     ):
         version = db.get(CaseVersion, item.version_id)
         case = db.get(TestCase, item.case_id)
-        outdated = case is None or case.deleted_at is not None or any(
-            getattr(case, field) != version.snapshot.get(field)
-            for field in SNAPSHOT_FIELDS
+        outdated = (
+            case is None
+            or case.deleted_at is not None
+            or any(
+                getattr(case, field) != version.snapshot.get(field)
+                for field in SNAPSHOT_FIELDS
+            )
         )
         decisions = [
             dict(
@@ -215,6 +302,7 @@ def review_data(db, review):
                 id=item.id,
                 caseId=item.case_id,
                 status=item.status,
+                reviewerIds=item.reviewer_ids or review.reviewer_ids,
                 version=version.version,
                 snapshot=version.snapshot,
                 outdated=outdated,
@@ -238,64 +326,201 @@ def review_data(db, review):
         id=review.id,
         name=review.name,
         policy=review.policy,
+        mode=review.mode,
+        description=review.description,
+        parentReviewId=review.parent_review_id,
+        startDate=review.start_date.isoformat() if review.start_date else None,
+        endDate=review.end_date.isoformat() if review.end_date else None,
         reviewerIds=review.reviewer_ids,
         status=review.status,
         createdBy=review.created_by,
         createdAt=review.created_at.isoformat(),
         items=items,
         comments=comments,
+        history=[
+            dict(
+                id=e.id,
+                itemId=e.item_id,
+                actorId=e.actor_id,
+                action=e.action,
+                detail=e.detail,
+                createdAt=e.created_at.isoformat(),
+            )
+            for e in db.query(CaseReviewEvent)
+            .filter_by(review_id=review.id)
+            .order_by(CaseReviewEvent.created_at, CaseReviewEvent.id)
+            .all()
+        ],
+    )
+
+
+def review_event(db, review, actor_id, action, detail, item_id=None):
+    db.add(
+        CaseReviewEvent(
+            review_id=review.id,
+            item_id=item_id,
+            actor_id=str(actor_id),
+            action=action,
+            detail=detail,
+            created_at=beijing_now(),
+        )
     )
 
 
 def vote_review(db, user, project_id, review_id, item_id, request):
     review = get_review(db, user, project_id, review_id, lock=True)
-    if str(user.id) not in review.reviewer_ids:
-        raise HTTPException(403, "只有指定评审人可以提交结论")
-    if review.status != "pending":
-        raise HTTPException(409, "评审已结束，请创建新的评审单")
+    if review.status in {"cancelled", "superseded"}:
+        raise HTTPException(409, "该评审已取消或已重新提审")
     item = db.query(CaseReviewItem).filter_by(review_id=review.id, id=item_id).first()
     if not item:
         raise HTTPException(404, "评审用例不存在")
-    if item.status != "pending":
-        raise HTTPException(409, "该用例已完成评审")
-    if (
-        db.query(CaseReviewDecision)
-        .filter_by(item_id=item.id, reviewer_id=str(user.id))
-        .first()
-    ):
-        raise HTTPException(409, "已经提交过评审结论")
-    db.add(
-        CaseReviewDecision(
-            item_id=item.id,
-            reviewer_id=str(user.id),
-            decision=request.decision,
-            comment=request.comment,
+    assigned = item.reviewer_ids or review.reviewer_ids
+    if str(user.id) not in assigned:
+        raise HTTPException(403, "只有该用例的指定评审人可以提交结论")
+    review_event(db, review, user.id, "评审结论", request.model_dump(), item.id)
+    if request.decision != "suggestion":
+        decision = (
+            db.query(CaseReviewDecision)
+            .filter_by(item_id=item.id, reviewer_id=str(user.id))
+            .first()
         )
-    )
+        if not decision:
+            decision = CaseReviewDecision(item_id=item.id, reviewer_id=str(user.id))
+            db.add(decision)
+        decision.decision, decision.comment, decision.updated_at = (
+            request.decision,
+            request.comment,
+            beijing_now(),
+        )
+        db.flush()
+        decisions = (
+            db.query(CaseReviewDecision)
+            .filter(
+                CaseReviewDecision.item_id == item.id,
+                CaseReviewDecision.reviewer_id.in_(assigned),
+            )
+            .order_by(
+                CaseReviewDecision.updated_at.desc(), CaseReviewDecision.id.desc()
+            )
+            .all()
+        )
+        if review.mode == "single":
+            item.status = decisions[0].decision
+        elif any(d.decision == "rejected" for d in decisions):
+            item.status = "rejected"
+        else:
+            item.status = "approved" if len(decisions) == len(assigned) else "pending"
+        db.flush()
+        states = [
+            i.status
+            for i in db.query(CaseReviewItem).filter_by(review_id=review.id).all()
+        ]
+        review.status = (
+            "rejected"
+            if "rejected" in states
+            else ("approved" if all(s == "approved" for s in states) else "pending")
+        )
+    review.updated_at = beijing_now()
     db.flush()
-    decisions = db.query(CaseReviewDecision).filter_by(item_id=item.id).all()
-    if any(d.decision == "rejected" for d in decisions):
-        item.status = "rejected"
-    elif review.policy == "any" or len(decisions) == len(review.reviewer_ids):
-        item.status = "approved"
-    db.flush()
-    statuses = [
-        i.status for i in db.query(CaseReviewItem).filter_by(review_id=review.id).all()
-    ]
-    review.status = (
-        "rejected"
-        if "rejected" in statuses
-        else ("approved" if all(s == "approved" for s in statuses) else "pending")
-    )
     logger.info(
-        "评审结论已记录 review_id={} item_id={} reviewer_id={} decision={}",
+        "评审结论已记录 review_id={} item_id={} actor_id={} decision={}",
         review.id,
         item.id,
         user.id,
         request.decision,
     )
+    return review
+
+
+def revise_review(db, user, project_id, review_id, request):
+    project_access(db, user, project_id, "update")
+    review = get_review(db, user, project_id, review_id, lock=True)
+    if review.status in {"cancelled", "superseded"}:
+        raise HTTPException(409, "该评审已关闭，请复制或重新提审")
+    item_ids = [
+        i.id for i in db.query(CaseReviewItem).filter_by(review_id=review.id).all()
+    ]
+    if (
+        db.query(CaseReviewDecision)
+        .filter(CaseReviewDecision.item_id.in_(item_ids))
+        .first()
+    ):
+        raise HTTPException(409, "已有有效结论，请重新提审以保留历史")
+    eligible = {r["id"] for r in reviewers(db, project_id)}
+    requested = set(request.reviewerIds) | {
+        v for values in request.itemReviewers.values() for v in values
+    }
+    if not requested <= eligible:
+        raise HTTPException(422, "评审人必须属于当前项目")
+    cases = [
+        case_for_project(db, project_id, cid, lock=True) for cid in request.caseIds
+    ]
+    db.query(CaseReviewComment).filter(CaseReviewComment.item_id.in_(item_ids)).update(
+        {"item_id": None}, synchronize_session=False
+    )
+    db.query(CaseReviewItem).filter_by(review_id=review.id).delete(
+        synchronize_session=False
+    )
+    review.name, review.description, review.reviewer_ids = (
+        request.name,
+        request.description,
+        request.reviewerIds,
+    )
+    review.mode = request.mode or ("single" if request.policy == "any" else "multiple")
+    review.policy = "any" if review.mode == "single" else "all"
+    review.start_date, review.end_date = request.startDate, request.endDate
+    for case in cases:
+        version = snapshot_case(db, case, str(user.id), "编辑评审时保存版本")
+        db.add(
+            CaseReviewItem(
+                review_id=review.id,
+                case_id=case.id,
+                version_id=version.id,
+                status="pending",
+                reviewer_ids=request.itemReviewers.get(case.id, request.reviewerIds),
+            )
+        )
+    review_event(db, review, user.id, "编辑评审", {"caseIds": request.caseIds})
     db.flush()
     return review
+
+
+def clone_review(db, user, project_id, review_id, body, resubmit=False):
+    from schemas.case_governance import ReviewCreate
+
+    source = get_review(db, user, project_id, review_id, lock=True)
+    project_access(db, user, project_id, "update")
+    items = db.query(CaseReviewItem).filter_by(review_id=review_id).all()
+    data = dict(
+        name=source.name[:190] + ("（重新提审）" if resubmit else "（副本）"),
+        caseIds=[i.case_id for i in items],
+        reviewerIds=source.reviewer_ids,
+        mode=source.mode,
+        description=source.description,
+        itemReviewers={i.case_id: i.reviewer_ids or source.reviewer_ids for i in items},
+        startDate=source.start_date,
+        endDate=source.end_date,
+    )
+    data.update(body.model_dump(exclude_unset=True))
+    data["itemReviewers"] = {
+        key: value
+        for key, value in data["itemReviewers"].items()
+        if key in data["caseIds"]
+    }
+    row = create_review(db, user, project_id, ReviewCreate(**data))
+    row.parent_review_id = source.id
+    if resubmit:
+        source.status = "superseded"
+        review_event(db, source, user.id, "重新提审", {"newReviewId": row.id})
+    review_event(
+        db,
+        row,
+        user.id,
+        "复制评审" if not resubmit else "重新提审",
+        {"sourceReviewId": source.id},
+    )
+    db.flush()
+    return row
 
 
 def batch_update(db, user, project_id, request):
@@ -388,7 +613,10 @@ def current_review_statuses(db, cases):
         db.query(CaseReviewItem, CaseVersion, CaseReview)
         .join(CaseVersion, CaseVersion.id == CaseReviewItem.version_id)
         .join(CaseReview, CaseReview.id == CaseReviewItem.review_id)
-        .filter(CaseReviewItem.case_id.in_(mapping), CaseReview.status != "cancelled")
+        .filter(
+            CaseReviewItem.case_id.in_(mapping),
+            CaseReview.status.notin_(["cancelled", "superseded"]),
+        )
         .order_by(CaseReview.created_at.desc(), CaseReview.id.desc())
         .all()
     )

@@ -33,6 +33,84 @@ from sqlalchemy import or_
 router = APIRouter(prefix="/projects/{project_id}/case-features", tags=["用例扩展"])
 
 
+from models.case_features import CaseProjectSettings
+from schemas.case_features import ProjectSettingsWrite
+
+
+@router.get("/settings")
+def project_settings(
+    project_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    require_project_access(db, user, project_id, "test_case:read")
+    row = db.query(CaseProjectSettings).filter_by(project_id=project_id).first()
+    return result({"autoResubmit": bool(row and row.auto_resubmit)})
+
+
+@router.put("/settings")
+def write_project_settings(
+    project_id: str,
+    body: ProjectSettingsWrite,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    require_project_access(db, user, project_id, "test_case:update")
+
+    def operation():
+        row = db.query(CaseProjectSettings).filter_by(project_id=project_id).first()
+        if not row:
+            row = CaseProjectSettings(project_id=project_id)
+        row.auto_resubmit = body.autoResubmit
+        db.add(row)
+
+    transact(db, operation)
+    return result(body.model_dump())
+
+
+@router.get("/cases/{case_id}/usage")
+def usage(
+    project_id: str,
+    case_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    service.find_case(db, user, project_id, case_id)
+    from models.test_plan import TestPlan, PlanCaseRelation
+    from models.test_suite import TestSuite
+    from models.case_governance import CaseReview, CaseReviewItem
+
+    plans = {
+        row.id: row
+        for row in db.query(TestPlan)
+        .join(PlanCaseRelation, PlanCaseRelation.plan_id == TestPlan.id)
+        .filter(TestPlan.project_id == project_id, PlanCaseRelation.case_id == case_id)
+        .all()
+    }
+    for suite, plan in (
+        db.query(TestSuite, TestPlan)
+        .join(TestPlan, TestPlan.id == TestSuite.plan_id)
+        .filter(TestPlan.project_id == project_id)
+        .all()
+    ):
+        if case_id in (suite.case_ids or []):
+            plans[plan.id] = plan
+    reviews = (
+        db.query(CaseReview)
+        .join(CaseReviewItem, CaseReviewItem.review_id == CaseReview.id)
+        .filter(CaseReview.project_id == project_id, CaseReviewItem.case_id == case_id)
+        .all()
+    )
+    return result(
+        {
+            "plans": [
+                {"id": p.id, "name": p.name, "status": p.status} for p in plans.values()
+            ],
+            "reviews": [
+                {"id": r.id, "name": r.name, "status": r.status} for r in reviews
+            ],
+        }
+    )
+
+
 @router.get("/templates")
 def templates(
     project_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)

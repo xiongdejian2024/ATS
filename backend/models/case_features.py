@@ -149,3 +149,14 @@ class CaseComment(Base, BaseModel):
     )
     author_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
+
+
+class CaseProjectSettings(Base, BaseModel):
+    __tablename__ = "case_project_settings"
+    project_id = Column(
+        String(36),
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    auto_resubmit = Column(Boolean, nullable=False, default=False)

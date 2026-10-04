@@ -11,6 +11,7 @@ from models.case_governance import (
     CaseReviewItem,
     CaseReviewComment,
     CaseSavedView,
+    CaseReviewFollow,
 )
 from schemas.case_governance import (
     RestoreVersion,
@@ -20,6 +21,8 @@ from schemas.case_governance import (
     SavedViewCreate,
     CaseBatchUpdate,
     CaseBatchCopy,
+    ReviewBatchVote,
+    ReviewResubmit,
 )
 from schemas.common import APIResponse
 from services import case_governance as service
@@ -157,6 +160,7 @@ def reviews(
     project_id: str,
     status: str | None = None,
     caseId: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
@@ -164,6 +168,8 @@ def reviews(
     query = db.query(CaseReview).filter_by(project_id=project_id)
     if status:
         query = query.filter(CaseReview.status == status)
+    if search:
+        query = query.filter(CaseReview.name.contains(search, autoescape=True))
     if caseId:
         service.case_for_project(db, project_id, caseId)
         query = query.join(
@@ -172,9 +178,141 @@ def reviews(
     return result(
         [
             service.review_data(db, review)
-            for review in query.order_by(CaseReview.created_at.desc()).limit(200).all()
+            for review in query.order_by(CaseReview.created_at.desc()).all()
         ]
     )
+
+
+@router.put("/reviews/{review_id}")
+def edit_review(
+    project_id: str,
+    review_id: str,
+    body: ReviewCreate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return result(
+        transact(
+            db,
+            lambda: service.review_data(
+                db, service.revise_review(db, user, project_id, review_id, body)
+            ),
+        )
+    )
+
+
+@router.post("/reviews/{review_id}/copy")
+def copy_review(
+    project_id: str,
+    review_id: str,
+    body: ReviewResubmit = ReviewResubmit(),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return result(
+        transact(
+            db,
+            lambda: service.review_data(
+                db, service.clone_review(db, user, project_id, review_id, body)
+            ),
+        )
+    )
+
+
+@router.post("/reviews/{review_id}/resubmit")
+def resubmit_review(
+    project_id: str,
+    review_id: str,
+    body: ReviewResubmit = ReviewResubmit(),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return result(
+        transact(
+            db,
+            lambda: service.review_data(
+                db, service.clone_review(db, user, project_id, review_id, body, True)
+            ),
+        )
+    )
+
+
+@router.post("/reviews/{review_id}/batch-decision")
+def batch_vote(
+    project_id: str,
+    review_id: str,
+    body: ReviewBatchVote,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    def operation():
+        review = None
+        vote = ReviewVote(decision=body.decision, comment=body.comment)
+        for identifier in dict.fromkeys(body.itemIds):
+            review = service.vote_review(
+                db, user, project_id, review_id, identifier, vote
+            )
+        return service.review_data(db, review)
+
+    return result(transact(db, operation))
+
+
+@router.get("/reviews/{review_id}/follow")
+def review_follow_state(
+    project_id: str,
+    review_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    service.get_review(db, user, project_id, review_id)
+    return result(
+        {
+            "followed": bool(
+                db.query(CaseReviewFollow)
+                .filter_by(review_id=review_id, user_id=str(user.id))
+                .first()
+            ),
+            "count": db.query(CaseReviewFollow).filter_by(review_id=review_id).count(),
+        }
+    )
+
+
+@router.post("/reviews/{review_id}/follow")
+def follow_review(
+    project_id: str,
+    review_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    service.get_review(db, user, project_id, review_id)
+
+    def operation():
+        if (
+            not db.query(CaseReviewFollow)
+            .filter_by(review_id=review_id, user_id=str(user.id))
+            .first()
+        ):
+            db.add(CaseReviewFollow(review_id=review_id, user_id=str(user.id)))
+
+    transact(db, operation)
+    return result({"followed": True})
+
+
+@router.delete("/reviews/{review_id}/follow")
+def unfollow_review(
+    project_id: str,
+    review_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    service.get_review(db, user, project_id, review_id)
+    transact(
+        db,
+        lambda: db.query(CaseReviewFollow)
+        .filter_by(review_id=review_id, user_id=str(user.id))
+        .delete(),
+    )
+    return result({"followed": False})
 
 
 @router.get("/reviews/{review_id}")

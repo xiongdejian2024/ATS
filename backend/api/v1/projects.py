@@ -16,6 +16,8 @@ from utils.serializer import serialize_model, serialize_list
 from services.module_service import ModuleService
 from core.logger import logger
 import uuid
+import json
+from pathlib import Path
 
 router = APIRouter()
 
@@ -219,6 +221,8 @@ async def get_project_modules(
     current_user: User = Depends(get_current_user)
 ):
     """获取项目模块列表（数据库持久化，包含用例数量）"""
+    from core.project_access import require_project_access
+    require_project_access(db,current_user,project_id,"test_case:read")
     module_list, total_case_count = ModuleService.get_modules_with_case_count(db, project_id)
     
     return APIResponse(
@@ -268,12 +272,23 @@ async def update_module(
     current_user: User = Depends(get_current_user)
 ):
     """更新模块（数据库持久化）"""
-    module = ModuleService.update_module(
-        db=db,
-        module_id=module_id,
-        module_data=module_data,
-        current_user_id=str(current_user.id)
-    )
+    from core.project_access import require_project_access
+    from models.module import Module
+    require_project_access(db,current_user,project_id,"test_case:update")
+    if not db.query(Module).filter_by(id=module_id,project_id=project_id).first():
+        raise HTTPException(404,"项目中不存在该模块")
+    try:
+        module = ModuleService.update_module(
+            db=db, module_id=module_id, module_data=module_data,
+            current_user_id=str(current_user.id)
+        )
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        logger.exception("更新模块失败 module_id={}",module_id)
+        raise
     
     if not module:
         raise HTTPException(status_code=404, detail="模块不存在")
@@ -346,6 +361,19 @@ async def export_test_cases(
     status: str = None,
     priority: str = None,
     type: str = None,
+    search: str = None,
+    case_ids: str = None,
+    filters: str = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+    mine: bool = False,
+    followed: bool = False,
+    tags: str = None,
+    review_status: str = None,
+    is_automated: bool = None,
+    format: str = "xlsx",
+    layout: str = "case",
+    fields: str = None,
 ):
     """导出测试用例到Excel"""
     from core.project_access import require_project_access
@@ -365,15 +393,33 @@ async def export_test_cases(
             project_id=project_id,
             page=1,
             size=99999,  # 获取所有用例
-            search=None,
+            search=search,
             module_id=module_id,
             module_ids=module_ids,
             status=status,
             priority=priority,
             type=type,
+            case_ids=case_ids, filters=filters,sort_by=sort_by,sort_order=sort_order,
+            mine=mine,followed=followed,tags=tags,review_status=review_status,
+            is_automated=is_automated,user_id=str(current_user.id),
         )
         
         cases = result["items"]
+        if format not in {"xlsx","xmind"}:
+            raise HTTPException(422,"不支持的导出格式")
+        if format == "xmind":
+            from services.case_interchange import export_xmind
+            rows=db.query(Module).filter_by(project_id=project_id).all()
+            by_id={m.id:m for m in rows}
+            paths={}
+            for module in rows:
+                cursor,parts,seen=module,[],set()
+                while cursor and cursor.id not in seen:
+                    seen.add(cursor.id);parts.append(cursor.name);cursor=by_id.get(cursor.parent_id)
+                paths[module.id]="/".join(reversed(parts))
+            return StreamingResponse(BytesIO(export_xmind(cases,paths)),media_type="application/octet-stream",headers={"Content-Disposition":"attachment; filename=cases.xmind"})
+        if layout not in {"case","step"}:
+            raise HTTPException(422,"不支持的导出布局")
         
         # 获取模块信息用于显示模块路径
         modules = db.query(Module).filter(Module.project_id == project_id).all()
@@ -464,7 +510,7 @@ async def export_test_cases(
                 "ID": case.case_code or str(case.id)[:8] if hasattr(case, 'id') else "",
                 "用例名称": case.name or "",
                 "用例等级": case.priority or "",
-                "评审结果": getattr(case, 'review_result', '未评审') or "未评审",
+                "评审结果": result['reviewStatuses'].get(case.id,'not_reviewed'),
                 "执行结果": case.status or "",
                 "所属模块": module_path,
                 "标签": tags_text,
@@ -476,8 +522,23 @@ async def export_test_cases(
                 "用例类型": case.type or "",
                 "前置条件": case.precondition or "",
                 "测试步骤": steps_text,
+                "需求关联": case.requirement_ref or "",
+                "模板ID": case.template_id or "",
+                "自定义字段": json.dumps(case.custom_fields or {},ensure_ascii=False),
             })
         
+        if layout=='step':
+            step_rows=[]
+            for case,row in zip(cases,export_data):
+                for index,step in enumerate(case.steps or [{}],1):
+                    step_rows.append({**row,'步骤序号':step.get('step',index),'操作':step.get('action',''),'预期结果':step.get('expected','')})
+            export_data=step_rows
+        if fields:
+            mapping={'caseCode':'ID','name':'用例名称','priority':'用例等级','reviewResult':'评审结果','status':'执行结果','modulePath':'所属模块','tags':'标签','isAutomated':'是否自动化','createdBy':'创建人','createdAt':'创建时间','updatedBy':'更新人','updatedAt':'更新时间','type':'用例类型','precondition':'前置条件','steps':'测试步骤','requirementRef':'需求关联','templateId':'模板ID','customFields':'自定义字段','step':'步骤序号','action':'操作','expected':'预期结果'}
+            selected=list(dict.fromkeys(mapping.get(value.strip(),value.strip()) for value in fields.split(',') if value.strip()))
+            allowed=set(mapping.values())-({'步骤序号','操作','预期结果'} if layout=='case' else set())
+            if not selected or not set(selected)<=allowed: raise HTTPException(422,'导出字段不合法')
+            export_data=[{key:row.get(key,'') for key in selected} for row in export_data]
         # 创建内存中的Excel文件
         from tempfile import NamedTemporaryFile
         import os
@@ -644,16 +705,24 @@ async def import_test_cases(
     import re
     
     # 保存上传的文件
-    suffix = '.csv' if (file.filename or '').lower().endswith('.csv') else '.xlsx'
+    suffix = Path(file.filename or '').suffix.lower()
+    if suffix not in {'.csv','.xlsx','.xls','.xmind'}:
+        raise HTTPException(422,'只支持Excel、CSV或XMind文件')
     with NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
         tmp_path = tmp_file.name
         content = await file.read()
+        if len(content)>10*1024*1024:
+            raise HTTPException(413,'导入文件超过10MiB')
         tmp_file.write(content)
     
     try:
         # 读取Excel文件
         # 编号按字符串读取，避免数字编号丢失前导零。
-        df = pd.read_csv(tmp_path, dtype={"ID": str}) if suffix == '.csv' else pd.read_excel(tmp_path, dtype={"ID": str})
+        if suffix == '.xmind':
+            from services.case_interchange import read_xmind
+            df=pd.DataFrame(read_xmind(content))
+        else:
+            df = pd.read_csv(tmp_path, dtype={"ID": str}) if suffix == '.csv' else pd.read_excel(tmp_path, dtype={"ID": str})
         
         # 验证必需的列
         required_columns = ["用例名称"]  # 至少需要用例名称
@@ -667,6 +736,17 @@ async def import_test_cases(
         # 获取项目下的所有模块，用于模块路径解析
         modules = db.query(Module).filter(Module.project_id == project_id).all()
         module_dict = {str(m.id): m for m in modules}
+        pending_modules=[]
+        if suffix=='.xmind':
+            for value in df.get('所属模块',[]):
+                parent_id=None
+                for level,name in enumerate(str(value).split('/'),1):
+                    if not name: continue
+                    existing=next((m for m in modules if m.name==name and m.parent_id==parent_id),None)
+                    if not existing:
+                        existing=Module(id=str(uuid.uuid4()),project_id=project_id,name=name,parent_id=parent_id,level=level,sort_order=0)
+                        modules.append(existing);pending_modules.append(existing)
+                    parent_id=existing.id
         
         # 构建模块路径映射：路径 -> 模块ID
         def get_module_id_by_path(module_path: str) -> Optional[str]:
@@ -713,6 +793,14 @@ async def import_test_cases(
             """解析测试步骤文本为结构化数据"""
             if not steps_text or pd.isna(steps_text):
                 return []
+            if str(steps_text).lstrip().startswith('['):
+                try:
+                    parsed=json.loads(steps_text)
+                    if not isinstance(parsed,list) or any(not isinstance(s,dict) or not isinstance(s.get('action',''),str) or not isinstance(s.get('expected',''),str) for s in parsed):
+                        raise ValueError('步骤格式不合法')
+                    return parsed
+                except ValueError as exc:
+                    raise HTTPException(422,'步骤JSON格式不合法') from exc
             
             steps = []
             lines = str(steps_text).split('\n')
@@ -829,6 +917,27 @@ async def import_test_cases(
             if '是否自动化' in df.columns and not pd.isna(row.get('是否自动化')):
                 automated_val = str(row['是否自动化']).strip()
                 is_automated = automated_val in ['是', 'true', 'True', '1', 'yes']
+            extra_values={}
+            for key,column in [('requirement_ref','需求关联'),('template_id','模板ID')]:
+                if column in df.columns:
+                    extra_values[key]=None if pd.isna(row.get(column)) else str(row[column]).strip() or None
+            if '自定义字段' in df.columns:
+                try:
+                    extra_values['custom_fields']={} if pd.isna(row.get('自定义字段')) else json.loads(str(row['自定义字段']))
+                except ValueError:
+                    row_errors.append('自定义字段必须为JSON对象')
+            try:
+                from services.case_features import prepare_case_template
+                existing_for_template=case_code_map.get(case_id) if case_id else None
+                data_for_template={'type':case_type,'priority':priority,'precondition':precondition,'steps':steps,'tags':tags,'is_automated':is_automated,**extra_values}
+                columns_for_template={'type':'用例类型','priority':'用例等级','precondition':'前置条件','steps':'测试步骤','tags':'标签','is_automated':'是否自动化'}
+                explicit_fields=set(extra_values)|{field for field,column in columns_for_template.items() if column in df.columns}
+                prepared=prepare_case_template(db,project_id,data_for_template,explicit_fields,existing=existing_for_template)
+                extra_values.update({key:prepared[key] for key in ['template_id','custom_fields']})
+                if existing_for_template is None:
+                    extra_values.update({field:prepared[field] for field,column in columns_for_template.items() if column not in df.columns})
+            except HTTPException as exc:
+                row_errors.append(str(exc.detail))
             
             # 收集该行的所有错误
             if row_errors:
@@ -846,6 +955,7 @@ async def import_test_cases(
                     'name': name, 'type': case_type, 'priority': priority,
                     'status': status, 'module_id': module_id, 'precondition': precondition,
                     'steps': steps, 'tags': tags, 'is_automated': is_automated,
+                    **extra_values,
                 }
                 
                 if case_id:
@@ -926,6 +1036,8 @@ async def import_test_cases(
         deleted_count = 0
         
         try:
+            db.add_all(pending_modules)
+            db.flush()
             # 执行新增和更新
             for item in import_data:
                 if item['operation'] == 'create':
@@ -953,6 +1065,8 @@ async def import_test_cases(
                         created_by=str(current_user.id),
                         updated_by=str(current_user.id)
                     )
+                    for field,value in item['data'].items():
+                        setattr(new_case,field,value)
                     db.add(new_case)
                     db.flush()
                     snapshot_case(db, new_case, str(current_user.id), "导入新增用例")
@@ -971,6 +1085,10 @@ async def import_test_cases(
                     existing_case.tags = item['data']['tags']
                     existing_case.is_automated = item['data']['is_automated']
                     existing_case.updated_by = str(current_user.id)
+                    for field,value in item['data'].items():
+                        setattr(existing_case,field,value)
+                    from utils.datetime_utils import beijing_now
+                    existing_case.updated_at=beijing_now()
                     snapshot_case(db, existing_case, str(current_user.id), "导入更新用例")
                     updated_count += 1
             

@@ -2,6 +2,8 @@
 
 from typing import Literal, Any
 from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import model_validator
+from datetime import date
 
 
 class StrictRequest(BaseModel):
@@ -18,6 +20,24 @@ class ReviewCreate(StrictRequest):
     caseIds: list[str] = Field(min_length=1, max_length=200)
     reviewerIds: list[str] = Field(min_length=1, max_length=50)
     policy: Literal["all", "any"] = "all"
+    mode: Literal["single", "multiple"] | None = None
+    description: str = Field(default="", max_length=10000)
+    itemReviewers: dict[str, list[str]] = Field(default_factory=dict)
+    startDate: date | None = None
+    endDate: date | None = None
+
+    @model_validator(mode="after")
+    def period_and_assignments(self):
+        if self.startDate and self.endDate and self.endDate < self.startDate:
+            raise ValueError("评审结束日期不能早于开始日期")
+        if set(self.itemReviewers) - set(self.caseIds):
+            raise ValueError("逐条评审人仅可指定本评审用例")
+        if any(
+            not ids or len(ids) > 50 or len(set(ids)) != len(ids)
+            for ids in self.itemReviewers.values()
+        ):
+            raise ValueError("每条用例必须有不重复的评审人")
+        return self
 
     @field_validator("caseIds", "reviewerIds")
     @classmethod
@@ -30,8 +50,23 @@ class ReviewCreate(StrictRequest):
 
 
 class ReviewVote(StrictRequest):
-    decision: Literal["approved", "rejected"]
+    decision: Literal["approved", "rejected", "suggestion"]
     comment: str = Field(min_length=1, max_length=10000)
+
+
+class ReviewBatchVote(ReviewVote):
+    itemIds: list[str] = Field(min_length=1, max_length=200)
+
+
+class ReviewResubmit(StrictRequest):
+    caseIds: list[str] | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    reviewerIds: list[str] | None = None
+    mode: Literal["single", "multiple"] | None = None
+    description: str | None = Field(default=None, max_length=10000)
+    itemReviewers: dict[str, list[str]] | None = None
+    startDate: date | None = None
+    endDate: date | None = None
 
 
 class ReviewCommentCreate(StrictRequest):
@@ -56,6 +91,11 @@ class SavedViewCreate(StrictRequest):
             "level",
             "executionResult",
             "reviewResult",
+            "sortBy",
+            "sortOrder",
+            "mine",
+            "followed",
+            "viewMode",
         }
         if set(values) - allowed or len(json.dumps(values, ensure_ascii=False)) > 20000:
             raise ValueError("筛选视图字段或大小不符合要求")
