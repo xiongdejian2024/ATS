@@ -14,6 +14,15 @@ class TestCaseService:
     """测试用例服务类"""
 
     @staticmethod
+    def validate_references(db: Session, project_id: str, data: dict):
+        from fastapi import HTTPException
+        from models.user import User
+        if data.get("module_id") and not db.query(Module).filter_by(id=str(data["module_id"]), project_id=str(project_id)).first():
+            raise HTTPException(422, "用例模块不属于当前项目")
+        if data.get("executor_id") and not db.get(User, str(data["executor_id"])):
+            raise HTTPException(422, "用例执行人不存在")
+
+    @staticmethod
     def get_test_cases(
         db: Session,
         project_id: str,
@@ -29,6 +38,7 @@ class TestCaseService:
         is_automated: Optional[bool] = None,  # 是否自动化
         requirement_ref: Optional[str] = None,  # 需求关联
         precondition: Optional[str] = None,  # 前置条件
+        review_status: Optional[str] = None,
     ):
         """获取测试用例列表"""
         from sqlalchemy import JSON
@@ -96,12 +106,20 @@ class TestCaseService:
         if precondition:
             query = query.filter(TestCase.precondition.contains(precondition))
 
+        # 评审按当前内容版本匹配，不能把旧版本的通过结论用于新内容。
+        from services.case_governance import current_review_statuses
+        if review_status:
+            review_candidates = query.all()
+            review_statuses = current_review_statuses(db, review_candidates)
+            query = query.filter(TestCase.id.in_([cid for cid, state in review_statuses.items() if state == review_status]))
+
         # 总数
         total = query.count()
 
         # 分页
         offset = (page - 1) * size
         items = query.order_by(TestCase.created_at.desc()).offset(offset).limit(size).all()
+        review_statuses = current_review_statuses(db, items)
 
         # 计算总页数
         pages = (total + size - 1) // size if total > 0 else 0
@@ -113,7 +131,8 @@ class TestCaseService:
             "size": size,
             "pages": pages,
             "hasNext": page < pages,
-            "hasPrev": page > 1
+            "hasPrev": page > 1,
+            "reviewStatuses": review_statuses,
         }
 
     @staticmethod
@@ -125,9 +144,12 @@ class TestCaseService:
     def create_test_case(
         db: Session,
         case_data: TestCaseCreate,
-        current_user_id: str
+        current_user_id: str,
+        *,
+        commit: bool = True,
     ) -> TestCase:
         """创建测试用例"""
+        TestCaseService.validate_references(db, str(case_data.project_id), case_data.model_dump())
         # 生成case_code（如果未提供）- 纯数字格式
         case_code = case_data.case_code
         if not case_code:
@@ -162,9 +184,19 @@ class TestCaseService:
             updated_by=current_user_id
         )
 
-        db.add(test_case)
-        db.commit()
-        db.refresh(test_case)
+        from services.case_governance import snapshot_case
+        from core.logger import logger
+        try:
+            db.add(test_case)
+            db.flush()
+            snapshot_case(db, test_case, current_user_id, "创建用例")
+            if commit:
+                db.commit()
+            db.refresh(test_case)
+        except Exception:
+            db.rollback()
+            logger.exception("创建用例及版本失败")
+            raise
 
         return test_case
 
@@ -176,34 +208,49 @@ class TestCaseService:
         current_user_id: str
     ) -> Optional[TestCase]:
         """更新测试用例"""
-        test_case = db.query(TestCase).filter(TestCase.id == case_id).first()
+        test_case = db.query(TestCase).filter(TestCase.id == case_id).with_for_update().first()
 
         if not test_case:
             return None
 
-        # 更新字段
-        update_data = case_data.dict(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(test_case, field, value)
-
-        test_case.updated_by = current_user_id
-        test_case.updated_at = beijing_now()
-
-        db.commit()
-        db.refresh(test_case)
+        from services.case_governance import snapshot_case
+        from core.logger import logger
+        try:
+            TestCaseService.validate_references(db, test_case.project_id, case_data.model_dump(exclude_unset=True))
+            snapshot_case(db, test_case, current_user_id, "修改前保存版本")
+            update_data = case_data.model_dump(exclude_unset=True)
+            for field, value in update_data.items():
+                setattr(test_case, field, value)
+            test_case.updated_by = current_user_id
+            test_case.updated_at = beijing_now()
+            snapshot_case(db, test_case, current_user_id, "编辑用例")
+            db.commit()
+            db.refresh(test_case)
+        except Exception:
+            db.rollback()
+            logger.exception("修改用例及版本失败 case_id={}", case_id)
+            raise
 
         return test_case
 
     @staticmethod
-    def delete_test_case(db: Session, case_id: str) -> bool:
+    def delete_test_case(db: Session, case_id: str, current_user_id: str | None = None) -> bool:
         """删除测试用例"""
-        test_case = db.query(TestCase).filter(TestCase.id == case_id).first()
+        test_case = db.query(TestCase).filter(TestCase.id == case_id).with_for_update().first()
 
         if not test_case:
             return False
 
-        db.delete(test_case)
-        db.commit()
+        from services.case_governance import snapshot_case
+        from core.logger import logger
+        try:
+            snapshot_case(db, test_case, current_user_id or test_case.updated_by or test_case.created_by, "删除前保留用例版本")
+            db.delete(test_case)
+            db.commit()
+        except Exception:
+            db.rollback()
+            logger.exception("删除用例失败 case_id={}", case_id)
+            raise
 
         return True
 

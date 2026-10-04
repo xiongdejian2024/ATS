@@ -35,7 +35,8 @@ export const testCaseApi = {
       tags: params?.tags,
       is_automated: params?.is_automated,
       requirement_ref: params?.requirement_ref,
-      precondition: params?.precondition
+      precondition: params?.precondition,
+      review_status: params?.review_status,
     }
     // 移除 undefined 和 null 值
     Object.keys(allParams).forEach(key => {

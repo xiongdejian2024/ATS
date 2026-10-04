@@ -15,6 +15,7 @@
           {{ project.name }}
         </a-select-option>
       </a-select>
+      <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" @changed="refreshGovernedCases" @apply-view="applySavedView" />
     </div>
 
     <a-layout class="test-cases-layout">
@@ -275,6 +276,7 @@
                         <a-menu-item key="execute" @click="handleExecuteCase(record)">
                           执行
                         </a-menu-item>
+                        <a-menu-item key="versions" @click="governancePanel?.openVersions(record.id)">版本与比较</a-menu-item>
                 </a-menu>
               </template>
             </a-dropdown>
@@ -409,6 +411,7 @@ import TestCaseEdit from '@/components/TestCase/TestCaseEdit.vue'
 import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
 import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
 import ImportCasesModal from '@/components/TestCase/ImportCasesModal.vue'
+import CaseGovernancePanel from '@/components/TestCase/CaseGovernancePanel.vue'
 import { testCaseApi } from '@/api/testCase';
 import { projectApi } from '@/api/project';
 import { useProjectStore } from '@/stores/project';
@@ -630,6 +633,22 @@ const filters = reactive({
   executionResult: undefined as string | undefined
 })
 
+const governancePanel = ref<InstanceType<typeof CaseGovernancePanel>>()
+const savedViewFilters = computed(() => ({ search: searchValue.value, moduleKeys: selectedModuleKeys.value, filterConditions: advancedFilters.value, filterLogic: filterLogic.value, ...filters }))
+const refreshGovernedCases = async () => { await loadTestCases(); await loadModuleTree() }
+const applySavedView = async (saved: Record<string, any>) => {
+  searchValue.value = typeof saved.search === 'string' ? saved.search : ''
+  selectedModuleKeys.value = Array.isArray(saved.moduleKeys) ? saved.moduleKeys : ['all']
+  advancedFilters.value = Array.isArray(saved.filterConditions) ? saved.filterConditions : []
+  filterLogic.value = saved.filterLogic === 'or' ? 'or' : 'and'
+  filters.level = saved.level
+  filters.executionResult = saved.executionResult
+  filters.reviewResult = saved.reviewResult
+  pagination.current = 1
+  selectedRowKeys.value = []
+  await loadTestCases()
+}
+
 // 分页
 const pagination = reactive({
   current: 1,
@@ -680,6 +699,7 @@ const allColumns = [
     width: 100,
     filters: [
       { text: '未评审', value: 'not_reviewed' },
+      { text: '待评审', value: 'pending' },
       { text: '已通过', value: 'passed' },
       { text: '不通过', value: 'rejected' },
       { text: '重新提审', value: 'resubmit' }
@@ -1038,6 +1058,7 @@ const loadTestCases = async () => {
     if (filters.executionResult) {
       params.status = filters.executionResult
     }
+    if (filters.reviewResult) params.review_status = filters.reviewResult
 
     // 高级筛选条件
     if (advancedFilters.value.length > 0) {
@@ -1260,6 +1281,9 @@ const handleFilterReset = () => {
 
 // 处理表格变化
 const handleTableChange = (pag: any, _filters: any, _sorter: any) => {
+  filters.level = _filters?.level?.[0]
+  filters.reviewResult = _filters?.reviewResult?.[0]
+  filters.executionResult = _filters?.executionResult?.[0]
   if (pag) {
     pagination.current = pag.current
     pagination.pageSize = pag.pageSize
@@ -1468,22 +1492,15 @@ const handleExport = async ({ key }: { key: string }) => {
 }
 
 const handleBatchEdit = () => {
-  if (selectedRowKeys.value.length === 1) {
-    const case_ = testCases.value.find(c => c.id === selectedRowKeys.value[0])
-    if (case_) {
-      handleEditCase(case_)
-    }
-  } else {
-    message.info('请选择单个用例进行编辑')
-  }
+  governancePanel.value?.openBatch()
 }
 
 const handleBatchMove = () => {
-  message.info('批量移动功能开发中...')
+  governancePanel.value?.openOrganize('move')
 }
 
 const handleBatchCopy = () => {
-  message.info('批量复制功能开发中...')
+  governancePanel.value?.openOrganize('copy')
 }
 
 const handleBatchDelete = () => {
@@ -1957,6 +1974,7 @@ const getLevelColor = (level: string) => {
 const getReviewResultColor = (result: string) => {
   const colors: Record<string, string> = {
     not_reviewed: 'default',
+    pending: 'blue',
     passed: 'green',
     rejected: 'red',
     resubmit: 'orange'
@@ -1967,6 +1985,7 @@ const getReviewResultColor = (result: string) => {
 const getReviewResultLabel = (result: string) => {
   const labels: Record<string, string> = {
     not_reviewed: '未评审',
+    pending: '待评审',
     passed: '已通过',
     rejected: '不通过',
     resubmit: '重新提审'

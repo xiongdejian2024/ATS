@@ -13,6 +13,7 @@ from services.test_case_service import TestCaseService
 from utils.serializer import serialize_model, serialize_list
 from core.logger import logger
 from services.suite_dispatch import is_xat_command
+from core.project_access import require_project_access
 
 
 router = APIRouter()
@@ -35,9 +36,11 @@ async def get_test_cases(
     is_automated: Optional[bool] = None,  # 是否自动化
     requirement_ref: Optional[str] = None,  # 需求关联
     precondition: Optional[str] = None,  # 前置条件
+    review_status: Optional[str] = None,
 ):
     """获取测试用例列表（按项目过滤，使用数据库持久化）"""
     try:
+        require_project_access(db, current_user, project_id, "test_case:read")
         result = TestCaseService.get_test_cases(
             db=db,
             project_id=project_id,
@@ -53,10 +56,13 @@ async def get_test_cases(
             is_automated=is_automated,
             requirement_ref=requirement_ref,
             precondition=precondition,
+            review_status=review_status,
         )
 
         # 序列化items为camelCase
         serialized_items = serialize_list(result["items"], camel_case=True)
+        for item in serialized_items:
+            item["reviewResult"] = result["reviewStatuses"].get(str(item["id"]), "not_reviewed")
         
         return APIResponse(
             status=ResponseStatus.SUCCESS,
@@ -87,6 +93,7 @@ async def get_case_tree(
 ):
     """获取用例树（包含模块和用例）"""
     try:
+        require_project_access(db, current_user, project_id, "test_case:read")
         tree_data = TestCaseService.get_case_tree(db=db, project_id=project_id)
 
         return APIResponse(
@@ -109,6 +116,7 @@ async def get_filter_fields(
 ):
     """获取测试用例筛选字段配置"""
     try:
+        require_project_access(db, current_user, project_id, "test_case:read")
         from models.filter_field import FilterField
         from services.filter_field_service import FilterFieldService
         from utils.serializer import serialize_list
@@ -152,6 +160,10 @@ async def get_test_case(
         if not test_case:
             raise HTTPException(status_code=404, detail="测试用例不存在")
 
+        if project_id and project_id != test_case.project_id:
+            raise HTTPException(status_code=404, detail="项目中不存在该用例")
+        require_project_access(db, current_user, test_case.project_id, "test_case:read")
+
         # 序列化为camelCase
         serialized_case = serialize_model(test_case, camel_case=True)
         
@@ -175,6 +187,7 @@ async def create_test_case(
 ):
     """创建测试用例（使用数据库持久化）"""
     try:
+        require_project_access(db, current_user, str(case_data.project_id), "test_case:create")
         # 确保steps不为None
         if case_data.steps is None:
             case_data.steps = []
@@ -209,6 +222,10 @@ async def update_test_case(
 ):
     """更新测试用例"""
     try:
+        existing = TestCaseService.get_test_case(db, case_id)
+        if not existing:
+            raise HTTPException(404, "测试用例不存在")
+        require_project_access(db, current_user, existing.project_id, "test_case:update")
         test_case = TestCaseService.update_test_case(
             db=db,
             case_id=case_id,
@@ -242,7 +259,11 @@ async def delete_test_case(
 ):
     """删除测试用例"""
     try:
-        success = TestCaseService.delete_test_case(db=db, case_id=case_id)
+        existing = TestCaseService.get_test_case(db, case_id)
+        if not existing:
+            raise HTTPException(404, "测试用例不存在")
+        require_project_access(db, current_user, existing.project_id, "test_case:delete")
+        success = TestCaseService.delete_test_case(db=db, case_id=case_id, current_user_id=str(current_user.id))
 
         if not success:
             raise HTTPException(status_code=404, detail="测试用例不存在")

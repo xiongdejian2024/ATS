@@ -11,7 +11,7 @@
     <a-spin :spinning="loading">
       <a-alert
         message="导入说明"
-        description="请选择要导入的用例文件。支持 Excel (.xlsx, .xls) 和 CSV 格式。导入将创建新的用例或更新现有用例。"
+        description="支持 Excel 和 CSV。导入采用增量合并，文件中未出现的既有用例保持不变；更新时保留历史版本，未提供的字段保持原值。"
         type="info"
         show-icon
         style="margin-bottom: 16px"
@@ -227,7 +227,7 @@ const validateFile = async () => {
     
     try {
       const response = await apiClient.getInstance().post(
-        `projects/${props.projectId}/cases/import?validate_only=true`,
+        `projects/${props.projectId}/cases/import?validate_only=true&overwrite=${importOptions.value.overwrite}`,
         formData,
         {
           headers: {
@@ -349,7 +349,7 @@ const handleImport = async () => {
     formData.append('file', selectedFile.value)
     
     const result = await apiClient.getInstance().post(
-      `projects/${props.projectId}/cases/import?validate_only=false`,
+      `projects/${props.projectId}/cases/import?validate_only=false&overwrite=${importOptions.value.overwrite}`,
       formData,
       {
         headers: {

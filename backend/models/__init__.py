@@ -13,6 +13,7 @@ from .test_report import TestReport
 from .task_queue import TaskQueue
 from .environment import Environment
 from .notification import Notification
+from .case_governance import CaseVersion, CaseReview, CaseReviewItem, CaseReviewDecision, CaseReviewComment, CaseSavedView
 from .role import Role, Permission, UserRole, RolePermission, ProjectPermission
 
 __all__ = [

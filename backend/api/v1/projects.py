@@ -310,65 +310,9 @@ async def get_case_tree(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """获取用例树（包含模块和用例）"""
-    # TODO: 从数据库获取真实数据
-    # 目前返回模拟数据
-    tree_data = [
-        {
-            "key": "module_1",
-            "title": "模块A",
-            "type": "module",
-            "level": "P0",
-            "children": [
-                {
-                    "key": "case_1",
-                    "title": "测试用例001",
-                    "type": "case",
-                    "caseCode": "TC-001",
-                    "level": "P0",
-                    "tags": ["回归", "冒烟"]
-                },
-                {
-                    "key": "case_2",
-                    "title": "测试用例002",
-                    "type": "case",
-                    "caseCode": "TC-002",
-                    "level": "P1",
-                    "tags": ["功能"]
-                }
-            ]
-        },
-        {
-            "key": "module_2",
-            "title": "模块B",
-            "type": "module",
-            "level": "P1",
-            "children": [
-                {
-                    "key": "case_3",
-                    "title": "测试用例003",
-                    "type": "case",
-                    "caseCode": "TC-003",
-                    "level": "P1",
-                    "tags": ["接口"]
-                }
-            ]
-        },
-        {
-            "key": "case_4",
-            "title": "测试用例004（无模块）",
-            "type": "case",
-            "caseCode": "TC-004",
-            "level": "P2",
-            "tags": ["UI"]
-        }
-    ]
-    
-    return APIResponse(
-        status=ResponseStatus.SUCCESS,
-        message="获取成功",
-        data=tree_data
-    )
+    """兼容入口：返回当前项目的真实模块与用例。"""
+    from api.v1.test_cases import get_case_tree as canonical
+    return await canonical(project_id=project_id, db=db, current_user=current_user)
 
 
 # 测试用例相关路由
@@ -385,38 +329,11 @@ async def get_test_cases(
     priority: str = None,
     type: str = None
 ):
-    """获取测试用例列表"""
-    # TODO: 从数据库获取真实数据
-    # 目前返回模拟数据
-    cases = [
-        {
-            "id": "case_1",
-            "projectId": str(project_id),
-            "moduleId": "module_1",
-            "caseCode": "TC-001",
-            "name": "测试用例001",
-            "type": "functional",
-            "priority": "P0",
-            "status": "not_executed",
-            "tags": ["回归", "冒烟"],
-            "createdAt": "2024-01-01T00:00:00",
-            "updatedAt": "2024-01-01T00:00:00"
-        }
-    ]
-    
-    return APIResponse(
-        status=ResponseStatus.SUCCESS,
-        message="获取成功",
-        data={
-            "items": cases,
-            "total": len(cases),
-            "page": page,
-            "size": size,
-            "pages": 1,
-            "hasNext": False,
-            "hasPrev": False
-        }
-    )
+    """兼容入口：返回真实用例与当前版本评审结果。"""
+    from api.v1.test_cases import get_test_cases as canonical
+    return await canonical(project_id=project_id, db=db, current_user=current_user,
+                           page=page, size=size, search=search, module_id=module_id,
+                           status=status, priority=priority, type=type)
 
 
 @router.get("/{project_id}/cases/export")
@@ -431,6 +348,8 @@ async def export_test_cases(
     type: str = None,
 ):
     """导出测试用例到Excel"""
+    from core.project_access import require_project_access
+    require_project_access(db, current_user, project_id, "test_case:export")
     from fastapi.responses import StreamingResponse
     from io import BytesIO
     from utils.excel_handler import export_to_excel
@@ -620,6 +539,8 @@ async def download_case_template(
     current_user: User = Depends(get_current_user),
 ):
     """下载测试用例导入模板"""
+    from core.project_access import require_project_access
+    require_project_access(db, current_user, project_id, "test_case:read")
     from fastapi.responses import StreamingResponse
     from io import BytesIO
     from utils.excel_handler import export_to_excel
@@ -703,10 +624,14 @@ async def import_test_cases(
     project_id: str,
     file: UploadFile = File(...),
     validate_only: bool = False,  # 是否只校验不导入
+    overwrite: bool = True,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """导入测试用例（支持只校验模式）"""
+    from core.project_access import require_project_access
+    from services.case_governance import snapshot_case
+    require_project_access(db, current_user, project_id, "test_case:import")
     from tempfile import NamedTemporaryFile
     import os
     import pandas as pd
@@ -719,14 +644,16 @@ async def import_test_cases(
     import re
     
     # 保存上传的文件
-    with NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
+    suffix = '.csv' if (file.filename or '').lower().endswith('.csv') else '.xlsx'
+    with NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
         tmp_path = tmp_file.name
         content = await file.read()
         tmp_file.write(content)
     
     try:
         # 读取Excel文件
-        df = read_excel_file(tmp_path)
+        # 编号按字符串读取，避免数字编号丢失前导零。
+        df = pd.read_csv(tmp_path, dtype={"ID": str}) if suffix == '.csv' else pd.read_excel(tmp_path, dtype={"ID": str})
         
         # 验证必需的列
         required_columns = ["用例名称"]  # 至少需要用例名称
@@ -768,7 +695,8 @@ async def import_test_cases(
             return str(found.id) if found else None
         
         # 获取项目下的所有用例，用于ID校验
-        existing_cases = db.query(TestCase).filter(TestCase.project_id == project_id).all()
+        existing_query = db.query(TestCase).filter(TestCase.project_id == project_id)
+        existing_cases = (existing_query if validate_only else existing_query.with_for_update()).all()
         case_code_map = {case.case_code: case for case in existing_cases if case.case_code}
         case_id_map = {str(case.id): case for case in existing_cases}
         
@@ -912,18 +840,25 @@ async def import_test_cases(
                 # 确定操作类型
                 operation = 'create'
                 existing_case = None
+                values = {
+                    'name': name, 'type': case_type, 'priority': priority,
+                    'status': status, 'module_id': module_id, 'precondition': precondition,
+                    'steps': steps, 'tags': tags, 'is_automated': is_automated,
+                }
                 
                 if case_id:
                     if case_id in case_code_map:
                         existing_case = case_code_map[case_id]
+                        # 局部列导入只更新文件中存在的字段，不清空未提供的步骤等内容。
+                        for field, column in {
+                            'type':'用例类型', 'priority':'用例等级', 'status':'执行结果',
+                            'module_id':'所属模块', 'precondition':'前置条件',
+                            'steps':'测试步骤', 'tags':'标签', 'is_automated':'是否自动化',
+                        }.items():
+                            if column not in df.columns:
+                                values[field] = getattr(existing_case, field)
                         # 检查内容是否有变化
-                        has_changes = (
-                            existing_case.name != name or
-                            existing_case.priority != priority or
-                            existing_case.type != case_type or
-                            existing_case.status != status or
-                            str(existing_case.module_id) != str(module_id) if module_id else existing_case.module_id is not None
-                        )
+                        has_changes = overwrite and any(getattr(existing_case, field) != value for field, value in values.items())
                         if has_changes:
                             operation = 'update'
                         else:
@@ -939,40 +874,10 @@ async def import_test_cases(
                     'operation': operation,
                     'case_id': case_id,
                     'existing_case': existing_case,
-                    'data': {
-                        'name': name,
-                        'type': case_type,
-                        'priority': priority,
-                        'status': status,
-                        'module_id': module_id,
-                        'precondition': precondition,
-                        'steps': steps,
-                        'tags': tags,
-                        'is_automated': is_automated,
-                    }
+                    'data': values
                 })
         
-        # 检测删除的用例（按模块分组：如果一个模块下的ID缺失表示用例删除）
-        # 按模块分组导入的用例ID
-        imported_cases_by_module: Dict[str, set] = {}
-        for item in import_data:
-            module_id = item['data']['module_id'] or 'null'
-            if module_id not in imported_cases_by_module:
-                imported_cases_by_module[module_id] = set()
-            if item['case_id']:
-                imported_cases_by_module[module_id].add(item['case_id'])
-        
-        deleted_cases = []
-        # 对于每个模块，检查该模块下现有的用例ID是否都在导入文件中
-        for module_id, cases in cases_by_module.items():
-            imported_ids = imported_cases_by_module.get(module_id, set())
-            for case in cases:
-                if case.case_code not in imported_ids:
-                    deleted_cases.append({
-                        'case_id': case.case_code,
-                        'case_name': case.name,
-                        'module_id': module_id
-                    })
+        # 增量合并：上传文件里未出现的用例保持不变，删除必须单独显式操作。
         
         # 如果有校验错误，返回错误信息
         if validation_errors:
@@ -1007,7 +912,7 @@ async def import_test_cases(
                     'preview': {
                         'to_create': len([item for item in import_data if item['operation'] == 'create']),
                         'to_update': len([item for item in import_data if item['operation'] == 'update']),
-                        'to_delete': len(deleted_cases),
+                        'to_delete': 0,
                         'no_change': len([item for item in import_data if item['operation'] == 'no_change'])
                     }
                 }
@@ -1047,10 +952,13 @@ async def import_test_cases(
                         updated_by=str(current_user.id)
                     )
                     db.add(new_case)
+                    db.flush()
+                    snapshot_case(db, new_case, str(current_user.id), "导入新增用例")
                     created_count += 1
                     
                 elif item['operation'] == 'update':
                     existing_case = item['existing_case']
+                    snapshot_case(db, existing_case, str(current_user.id), "导入更新前保存版本")
                     existing_case.name = item['data']['name']
                     existing_case.type = item['data']['type']
                     existing_case.priority = item['data']['priority']
@@ -1061,16 +969,11 @@ async def import_test_cases(
                     existing_case.tags = item['data']['tags']
                     existing_case.is_automated = item['data']['is_automated']
                     existing_case.updated_by = str(current_user.id)
+                    snapshot_case(db, existing_case, str(current_user.id), "导入更新用例")
                     updated_count += 1
             
-            # 执行删除
-            for deleted_case in deleted_cases:
-                case = case_code_map.get(deleted_case['case_id'])
-                if case:
-                    db.delete(case)
-                    deleted_count += 1
-            
             db.commit()
+            logger.info("用例增量导入完成 project_id={} created={} updated={} deleted=0", project_id, created_count, updated_count)
             
             return APIResponse(
                 status=ResponseStatus.SUCCESS,
@@ -1105,33 +1008,9 @@ async def get_test_case(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """获取测试用例详情"""
-    # TODO: 从数据库获取真实数据
-    case = {
-        "id": str(case_id),
-        "projectId": str(project_id),
-        "moduleId": "module_1",
-        "caseCode": "TC-001",
-        "name": "测试用例001",
-        "type": "functional",
-        "priority": "P0",
-        "precondition": "前置条件说明",
-        "steps": [
-            {"step": 1, "action": "打开登录页面", "expected": "页面正常显示"},
-            {"step": 2, "action": "输入用户名和密码", "expected": "输入成功"}
-        ],
-        "requirementRef": "REQ-001",
-        "status": "not_executed",
-        "tags": ["回归", "冒烟"],
-        "createdAt": "2024-01-01T00:00:00",
-        "updatedAt": "2024-01-01T00:00:00"
-    }
-    
-    return APIResponse(
-        status=ResponseStatus.SUCCESS,
-        message="获取成功",
-        data=case
-    )
+    """兼容入口：按项目读取真实用例。"""
+    from api.v1.test_cases import get_test_case as canonical
+    return await canonical(case_id=case_id, project_id=project_id, db=db, current_user=current_user)
 
 
 @router.post("/{project_id}/cases", response_model=APIResponse)
@@ -1141,31 +1020,11 @@ async def create_test_case(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """创建测试用例"""
-    # TODO: 实现真实的创建逻辑
-    import uuid
-    case_id = str(uuid.uuid4())
-    
-    return APIResponse(
-        status=ResponseStatus.SUCCESS,
-        message="创建成功",
-        data={
-            "id": case_id,
-            "projectId": str(project_id),
-            "moduleId": str(case_data.module_id) if case_data.module_id else None,
-            "caseCode": case_data.case_code,
-            "name": case_data.name,
-            "type": case_data.type,
-            "priority": case_data.priority,
-            "precondition": case_data.precondition,
-            "steps": case_data.steps,
-            "requirementRef": case_data.requirement_ref,
-            "tags": case_data.tags or [],
-            "status": "not_executed",
-            "createdAt": "2024-01-01T00:00:00",
-            "updatedAt": "2024-01-01T00:00:00"
-        }
-    )
+    """兼容入口：同一服务事务创建用例及初始版本。"""
+    from api.v1.test_cases import create_test_case as canonical
+    if str(case_data.project_id) != project_id:
+        raise HTTPException(422, "请求中的项目与路径不一致")
+    return await canonical(case_data=case_data, db=db, current_user=current_user)
 
 
 @router.put("/{project_id}/cases/{case_id}", response_model=APIResponse)
@@ -1176,21 +1035,11 @@ async def update_test_case(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """更新测试用例"""
-    # TODO: 实现真实的更新逻辑
-    return APIResponse(
-        status=ResponseStatus.SUCCESS,
-        message="更新成功",
-        data={
-            "id": str(case_id),
-            "projectId": str(project_id),
-            "name": case_data.name or "测试用例",
-            "type": case_data.type or "functional",
-            "priority": case_data.priority or "P2",
-            "status": case_data.status or "not_executed",
-            "tags": case_data.tags or []
-        }
-    )
+    """兼容入口：验证项目后保存用例与版本。"""
+    from services.case_governance import case_for_project
+    from api.v1.test_cases import update_test_case as canonical
+    case_for_project(db, project_id, case_id)
+    return await canonical(case_id=case_id, case_data=case_data, db=db, current_user=current_user)
 
 
 @router.delete("/{project_id}/cases/{case_id}", response_model=APIResponse)
@@ -1200,9 +1049,8 @@ async def delete_test_case(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """删除测试用例"""
-    # TODO: 实现真实的删除逻辑
-    return APIResponse(
-        status=ResponseStatus.SUCCESS,
-        message="删除成功"
-    )
+    """兼容入口：显式删除用例并保留版本。"""
+    from services.case_governance import case_for_project
+    from api.v1.test_cases import delete_test_case as canonical
+    case_for_project(db, project_id, case_id)
+    return await canonical(case_id=case_id, db=db, current_user=current_user)
