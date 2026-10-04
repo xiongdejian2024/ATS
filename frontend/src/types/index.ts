@@ -54,6 +54,10 @@ export interface TestCaseStep {
 }
 
 export interface TestCase {
+  templateId?: string | null
+  customFields?: Record<string, unknown>
+  deletedAt?: string | null
+  reviewResult?: string
   isAutomated?: boolean
   id: string
   projectId: string

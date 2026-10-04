@@ -37,6 +37,9 @@ export const testCaseApi = {
       requirement_ref: params?.requirement_ref,
       precondition: params?.precondition,
       review_status: params?.review_status,
+      filters: params?.filters ? JSON.stringify(params.filters) : undefined,
+      sort_by: params?.sortBy, sort_order: params?.sortOrder,
+      mine: params?.mine, followed: params?.followed, case_ids:params?.caseIds,
     }
     // 移除 undefined 和 null 值
     Object.keys(allParams).forEach(key => {
@@ -120,6 +123,7 @@ export const testCaseApi = {
     status?: string
     priority?: string
     type?: string
+    [key:string]:unknown
   }): Promise<Blob> => {
     const queryParams = new URLSearchParams()
     if (params) {
@@ -127,7 +131,7 @@ export const testCaseApi = {
         if (value !== undefined && value !== null && value !== '') {
           // 将 camelCase 转换为 snake_case
           const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase()
-          queryParams.append(snakeKey, String(value))
+          queryParams.append(snakeKey, typeof value==='object'?JSON.stringify(value):String(value))
         }
       })
     }
@@ -168,7 +172,7 @@ export const testCaseApi = {
     const formData = new FormData()
     formData.append('file', file)
     
-    return apiClient.post(`/projects/${projectId}/cases/import`, formData, {
+    return apiClient.post(`/projects/${projectId}/cases/import?validate_only=true`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -180,7 +184,11 @@ export const testCaseApi = {
     caseId: string,
     data?: { newName?: string; moduleId?: string }
   ): Promise<TestCase> => {
-    return apiClient.post(`/projects/${projectId}/cases/${caseId}/copy`, data || {})
+    const source=await apiClient.get<TestCase>(`/test-cases/${caseId}`,{params:{project_id:projectId}})
+    const copied=await apiClient.post<{caseIds:string[]}>(`/projects/${projectId}/case-governance/batch-copy`,{caseIds:[caseId],moduleId:data?.moduleId ?? source.moduleId ?? null})
+    const id=copied.caseIds[0]
+    if(data?.newName)return apiClient.put(`/test-cases/${id}`,{project_id:projectId,name:data.newName})
+    return apiClient.get(`/test-cases/${id}`,{params:{project_id:projectId}})
   },
 
   batchUpdate: async (

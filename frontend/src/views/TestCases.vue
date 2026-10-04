@@ -20,7 +20,7 @@
 
     <a-layout class="test-cases-layout">
       <!-- 左侧模块树 -->
-      <a-layout-sider width="240" class="module-tree-sider">
+      <a-layout-sider v-show="showModules" width="240" class="module-tree-sider">
         <a-input-search
           v-model:value="moduleSearchValue"
           placeholder="请输入模块名称"
@@ -97,7 +97,8 @@
       <a-layout-content class="cases-content">
         <!-- 固定顶部工具栏 -->
         <div class="fixed-toolbar">
-          <a-space class="toolbar">
+          <a-space class="toolbar" wrap>
+            <a-button @click="showModules=!showModules">{{showModules?'收起模块':'模块'}}</a-button>
             <a-button type="primary" @click="handleCreateCase">
               <template #icon><PlusOutlined /></template>
               新建
@@ -119,7 +120,8 @@
               style="width: 100px"
             >
               <a-select-option value="all">全部数据</a-select-option>
-              <a-select-option value="my">我的数据</a-select-option>
+              <a-select-option value="my">我创建的</a-select-option>
+              <a-select-option value="followed">我关注的</a-select-option>
             </a-select>
             <a-button @click="filterDrawerVisible = true">
               <template #icon><FilterOutlined /></template>
@@ -129,10 +131,13 @@
               <a-button :type="viewLayout === 'list' ? 'primary' : 'default'" @click="viewLayout = 'list'">
                 <template #icon><UnorderedListOutlined /></template>
               </a-button>
-              <a-button :type="viewLayout === 'grid' ? 'primary' : 'default'" @click="viewLayout = 'grid'">
-                <template #icon><AppstoreOutlined /></template>
+              <a-button :type="viewLayout === 'mind' ? 'primary' : 'default'" @click="viewLayout = 'mind'">
+                <template #icon><AppstoreOutlined /></template>脑图
               </a-button>
             </a-button-group>
+            <a-dropdown><a-button>导出</a-button><template #overlay><a-menu @click="handleExport"><a-menu-item key="excel">Excel</a-menu-item><a-menu-item key="xmind">XMind</a-menu-item></a-menu></template></a-dropdown>
+            <a-button @click="templateVisible = true">模板字段</a-button>
+            <a-button @click="recycleVisible = true">回收站</a-button>
             <a-button @click="loadTestCases">
               <template #icon><ReloadOutlined /></template>
             </a-button>
@@ -167,7 +172,8 @@
         <!-- 可滚动内容区域 -->
         <div class="scrollable-table-content">
           <!-- 表格 -->
-          <a-card class="table-card">
+          <CaseMindMap v-if="viewLayout === 'mind'" :cases="testCases" :modules="modules" :saving="mindSaving" @edit="saveMindNode" @create="createMindCase" @rename-module="renameMindModule" @select="handleViewCase($event as TestCase)" />
+          <a-card v-else class="table-card">
             <a-table
               :columns="columns"
               :data-source="testCases"
@@ -191,7 +197,7 @@
                   <ThunderboltOutlined v-else-if="record.type === 'interface'" style="color: #1890ff" />
                   <AppstoreOutlined v-else-if="record.type === 'ui'" style="color: #722ed1" />
                   <FileTextOutlined v-else style="color: #8c8c8c" />
-                  <span :title="record.name">{{ record.name }}</span>
+                  <a-typography-text :editable="{onChange:(value:string)=>saveInline(record,'name',value)}" :title="record.name">{{record.name}}</a-typography-text>
                 </div>
               </template>
 
@@ -345,7 +351,7 @@
     <a-drawer
       v-model:visible="detailCaseVisible"
       :title="viewingCaseId ? '用例详情' : ''"
-      width="60%"
+      width="min(1100px, 96vw)"
       placement="right"
       :mask-closable="false"
       :destroy-on-close="true"
@@ -357,6 +363,7 @@
         :project-id="projectId"
         :read-only="true"
         @edit="handleEditFromDetail"
+        @navigate="viewingCaseId=$event"
       />
     </a-drawer>
 
@@ -364,7 +371,7 @@
     <a-drawer
       v-model:visible="editCaseVisible"
       :title="editingCaseId ? '编辑用例' : '新建用例'"
-      width="60%"
+      width="min(1100px, 96vw)"
       placement="right"
       :mask-closable="false"
       :destroy-on-close="true"
@@ -383,11 +390,16 @@
     <TestCaseFilter
       v-model:visible="filterDrawerVisible"
       :available-fields="filterFields"
+      :conditions="advancedFilters"
+      :logic="filterLogic"
       :module-tree-data="moduleTreeData"
       @apply="handleFilterApply"
       @reset="handleFilterReset"
     />
 
+    <CaseExportDialog v-model:open="exportVisible" :initial-format="exportFormat" :busy="exportBusy" :selected-count="selectedRowKeys.length" @export="confirmExport" />
+    <CaseTemplateManager :project-id="projectId" v-model:open="templateVisible" @changed="loadFilterFields" />
+    <CaseRecycleBin :project-id="projectId" v-model:open="recycleVisible" @changed="refreshGovernedCases" />
     <!-- 导入用例对话框 -->
     <ImportCasesModal
       v-model:visible="importModalVisible"
@@ -416,7 +428,12 @@ import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
 import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
 import ImportCasesModal from '@/components/TestCase/ImportCasesModal.vue'
 import CaseGovernancePanel from '@/components/TestCase/CaseGovernancePanel.vue'
+import CaseMindMap from '@/components/TestCase/CaseMindMap.vue'
+import CaseRecycleBin from '@/components/TestCase/CaseRecycleBin.vue'
+import CaseTemplateManager from '@/components/TestCase/CaseTemplateManager.vue'
+import CaseExportDialog from '@/components/TestCase/CaseExportDialog.vue'
 import { testCaseApi } from '@/api/testCase';
+import {saveCaseBlob,caseFeaturesApi} from '@/api/caseFeatures'
 import { projectApi } from '@/api/project';
 import { useProjectStore } from '@/stores/project';
 import { useUserStore } from '@/stores/user';
@@ -457,6 +474,7 @@ const currentProjectId = computed<string | undefined>({
 })
 
 // 左侧模块树
+const showModules=ref(window.innerWidth>900)
 const moduleSearchValue = ref('')
 const moduleTreeData = ref<any[]>([])
 const selectedModuleKeys = ref<string[]>(['all'])
@@ -516,7 +534,10 @@ const testCases = ref<TestCase[]>([])
 const selectedRowKeys = ref<string[]>([])
 const searchValue = ref('')
 const viewMode = ref('all')
-const viewLayout = ref<'list' | 'grid'>('list')
+const viewLayout = ref<'list' | 'mind'>('list')
+const exportVisible=ref(false),exportBusy=ref(false),exportFormat=ref('xlsx')
+const recycleVisible = ref(false), templateVisible = ref(false), mindSaving = ref(false)
+const sortBy = ref('updated_at'), sortOrder = ref('desc')
 const filterDrawerVisible = ref(false)
 
 // 高级筛选条件
@@ -535,15 +556,17 @@ const loadFilterFields = async () => {
   if (!projectId.value) return
 
   try {
-    const fields = await testCaseApi.getFilterFields(projectId.value)
+    const [fields,templates] = await Promise.all([testCaseApi.getFilterFields(projectId.value),caseFeaturesApi.templates(projectId.value)])
     // 转换后端数据格式为前端需要的格式
     filterFields.value = fields.map((field: any) => ({
       key: field.fieldKey,
       label: field.fieldLabel,
       type: field.fieldType,
-      operators: field.operators,
+      operators: field.operators?.map((op:string)=>({greater_than:'gt',less_than:'lt',greater_equal:'gte',less_equal:'lte'}[op] || op)),
       options: field.options
     }))
+    const custom = new Map(templates.flatMap(t=>t.fields.map(f=>[f.key,f] as const)))
+    for(const f of custom.values()) filterFields.value.push({key:`customFields.${f.key}`,label:`自定义 · ${f.name}`,type:f.type==='textarea'?'text':f.type==='boolean'?'select':f.type==='multiselect'?'select':f.type,options:f.type==='boolean'?[{label:'是',value:true},{label:'否',value:false}]:f.options.map(value=>({label:value,value}))})
   } catch (error) {
     console.error('Failed to load filter fields:', error)
     // 如果加载失败，使用默认字段
@@ -638,10 +661,12 @@ const filters = reactive({
 })
 
 const governancePanel = ref<InstanceType<typeof CaseGovernancePanel>>()
-const savedViewFilters = computed(() => ({ search: searchValue.value, moduleKeys: selectedModuleKeys.value, filterConditions: advancedFilters.value, filterLogic: filterLogic.value, ...filters }))
+const savedViewFilters = computed(() => ({ search: searchValue.value, moduleKeys: selectedModuleKeys.value, filterConditions: advancedFilters.value, filterLogic: filterLogic.value, viewMode:viewMode.value, sortBy:sortBy.value,sortOrder:sortOrder.value, ...filters }))
 const refreshGovernedCases = async () => { await loadTestCases(); await loadModuleTree() }
 const applySavedView = async (saved: Record<string, any>) => {
   searchValue.value = typeof saved.search === 'string' ? saved.search : ''
+  viewMode.value = saved.viewMode || 'all'
+  sortBy.value = saved.sortBy || 'updated_at'; sortOrder.value = saved.sortOrder || 'desc'
   selectedModuleKeys.value = Array.isArray(saved.moduleKeys) ? saved.moduleKeys : ['all']
   advancedFilters.value = Array.isArray(saved.filterConditions) ? saved.filterConditions : []
   filterLogic.value = saved.filterLogic === 'or' ? 'or' : 'and'
@@ -806,7 +831,8 @@ const getInitialVisibleColumns = () => {
   if (saved) {
     try {
       return JSON.parse(saved)
-    } catch {
+    } catch (error) {
+      console.error('读取列配置失败',error)
       return allColumns.filter(col => col.defaultVisible).map(col => col.key)
     }
   }
@@ -853,6 +879,7 @@ const getCaseDisplayId = (record: TestCase, index: number) => {
 // 行选择配置
 const rowSelection = computed(() => ({
   selectedRowKeys: selectedRowKeys.value,
+  preserveSelectedRowKeys: true,
   onChange: (keys: string[]) => {
     selectedRowKeys.value = keys
   },
@@ -908,6 +935,7 @@ const loadModuleTree = async () => {
         count: totalCaseCount,
         isLeaf: true
       },
+      {title:'未规划用例',key:'unplanned',nodeType:'virtual',count:allCasesForTree.value.filter(c=>!c.moduleId).length,isLeaf:true},
       ...treeData
     ]
     rebuildFlatModuleKeys()
@@ -1048,11 +1076,8 @@ const loadTestCases = async () => {
       params.search = searchValue.value
     }
 
-    if (selectedModuleKeys.value[0] && selectedModuleKeys.value[0] !== 'all') {
-      // 获取当前模块及其所有子模块的 ID
-      const moduleIds = getModuleAndChildrenIds(selectedModuleKeys.value[0])
-      params.moduleIds = moduleIds.join(',')  // 传递逗号分隔的模块 ID 列表
-    }
+    if(selectedModuleKeys.value.includes('unplanned')) params.moduleId='null'
+    else if(!selectedModuleKeys.value.includes('all')){const ids=selectedModuleKeys.value.filter(k=>!k.startsWith('case_')).flatMap(getModuleAndChildrenIds);if(ids.length)params.moduleIds=[...new Set(ids)].join(',')}
 
     // 旧版筛选条件（兼容性）
     if (filters.level) {
@@ -1064,120 +1089,11 @@ const loadTestCases = async () => {
     }
     if (filters.reviewResult) params.review_status = filters.reviewResult
 
-    // 高级筛选条件
-    if (advancedFilters.value.length > 0) {
-      console.log('应用高级筛选条件:', advancedFilters.value, '逻辑:', filterLogic.value)
-
-      // 处理高级筛选条件
-      advancedFilters.value.forEach((condition, index) => {
-        const { field, operator, value } = condition
-        console.log(`筛选条件 ${index + 1}:`, { field, operator, value })
-
-        // 根据字段和操作符构建查询参数
-        switch (field) {
-          case 'id':
-            if (operator === 'contains' && value) {
-              // ID包含多个值，添加到搜索中
-              params.search = params.search
-                ? `${params.search} ${value}`
-                : value
-            } else if (operator === 'equals' && value) {
-              params.search = params.search
-                ? `${params.search} ${value}`
-                : value
-            }
-            break
-          case 'name':
-            if (operator === 'contains' && value) {
-              params.search = params.search
-                ? `${params.search} ${value}`
-                : value
-            } else if (operator === 'equals' && value) {
-              params.search = params.search
-                ? `${params.search} ${value}`
-                : value
-            }
-            break
-          case 'moduleId':
-            if (operator === 'belongs_to' && value) {
-              const moduleIds = Array.isArray(value) ? value : [value]
-              const allModuleIds: string[] = []
-              moduleIds.forEach((id: string) => {
-                allModuleIds.push(...getModuleAndChildrenIds(id))
-              })
-              // 如果使用 AND 逻辑，覆盖现有 moduleIds；如果使用 OR 逻辑，合并
-              if (filterLogic.value === 'and') {
-                params.moduleIds = [...new Set(allModuleIds)].join(',')
-              } else {
-                // OR 逻辑：合并到现有的moduleIds
-                if (params.moduleIds) {
-                  const existingIds = params.moduleIds.split(',')
-                  params.moduleIds = [...new Set([...existingIds, ...allModuleIds])].join(',')
-                } else {
-                  params.moduleIds = [...new Set(allModuleIds)].join(',')
-                }
-              }
-            } else if (operator === 'not_belongs_to' && value) {
-              // 不属于某个模块的筛选需要后端支持，暂时跳过
-              console.warn('not_belongs_to 操作符暂不支持')
-            }
-            break
-          case 'priority':
-            if (operator === 'equals' && value) {
-              // AND 逻辑：如果已有 priority，需要后端支持多条件；OR 逻辑：取第一个
-              if (filterLogic.value === 'and' && params.priority && params.priority !== value) {
-                console.warn('AND 逻辑下多个 priority 条件冲突，使用最后一个')
-              }
-              params.priority = value
-            } else if (operator === 'in' && Array.isArray(value) && value.length > 0) {
-              // 多个优先级，取第一个（API可能不支持多值）
-              params.priority = value[0]
-            }
-            break
-          case 'type':
-            if (operator === 'equals' && value) {
-              if (filterLogic.value === 'and' && params.type && params.type !== value) {
-                console.warn('AND 逻辑下多个 type 条件冲突，使用最后一个')
-              }
-              params.type = value
-            }
-            break
-          case 'status':
-            if (operator === 'equals' && value) {
-              if (filterLogic.value === 'and' && params.status && params.status !== value) {
-                console.warn('AND 逻辑下多个 status 条件冲突，使用最后一个')
-              }
-              params.status = value
-            }
-            break
-          case 'isAutomated':
-            if (operator === 'equals' && value !== undefined && value !== null) {
-              params.is_automated = value === true || value === 'true'
-            }
-            break
-          case 'tags':
-            if (operator === 'contains' && value) {
-              const tags = Array.isArray(value) ? value : [value]
-              params.tags = tags.join(',')
-            }
-            break
-          case 'requirementRef':
-            if (operator === 'contains' && value) {
-              params.requirement_ref = value
-            } else if (operator === 'equals' && value) {
-              params.requirement_ref = value
-            }
-            break
-          case 'precondition':
-            if (operator === 'contains' && value) {
-              params.precondition = value
-            }
-            break
-        }
-      })
-
-      console.log('筛选后的查询参数:', params)
-    }
+    if (advancedFilters.value.length) params.filters = { conditions: advancedFilters.value, logic: filterLogic.value }
+    params.mine = viewMode.value === 'my'
+    params.followed = viewMode.value === 'followed'
+    params.sortBy = sortBy.value
+    params.sortOrder = sortOrder.value
 
     console.log('调用 getTestCases API，参数:', params)
     const response = await testCaseApi.getTestCases(projectId.value, params)
@@ -1245,7 +1161,13 @@ const handleModuleExpand = (keys: string[]) => {
 }
 
 const handleModuleSearch = () => {
-  // 实现模块搜索逻辑
+  const needle=moduleSearchValue.value.trim().toLowerCase()
+  if(!needle){expandedModuleKeys.value=[];return}
+  const match=modules.value.filter(m=>m.name.toLowerCase().includes(needle))
+  const ancestors=new Set<string>()
+  for(const module of match){let current=module;while(current&&!ancestors.has(current.id)){ancestors.add(current.id);current=modules.value.find(m=>m.id===current.parentId)}}
+  expandedModuleKeys.value=[...ancestors]
+  if(match[0]){selectedModuleKeys.value=[match[0].id];pagination.current=1;loadTestCases()}else message.info('没有匹配模块')
 }
 
 // 处理搜索
@@ -1284,14 +1206,14 @@ const handleFilterReset = () => {
 
 
 // 处理表格变化
-const handleTableChange = (pag: any, _filters: any, _sorter: any) => {
+const handleTableChange = (_pag: any, _filters: any, sorter: any) => {
+  const keys: Record<string,string> = {id:'case_code',name:'name',createdAt:'created_at',updatedAt:'updated_at'}
+  sortBy.value = keys[sorter?.columnKey] || 'updated_at'
+  sortOrder.value = sorter?.order === 'ascend' ? 'asc' : 'desc'
+  pagination.current = 1
   filters.level = _filters?.level?.[0]
   filters.reviewResult = _filters?.reviewResult?.[0]
   filters.executionResult = _filters?.executionResult?.[0]
-  if (pag) {
-    pagination.current = pag.current
-    pagination.pageSize = pag.pageSize
-  }
   loadTestCases()
 }
 
@@ -1308,6 +1230,26 @@ const handleCreateCase = () => {
   defaultModuleId.value = ''  // 从工具栏创建时不设置默认模块
   editCaseVisible.value = true
 }
+
+// 脑图操作通过现有用例/模块 API 持久化。
+const saveInline=async(record:TestCase,field:string,value:unknown)=>{if(field==='name'&&!String(value).trim())return message.warning('用例名称不能为空');try{await testCaseApi.updateTestCase(projectId.value,record.id,{[field]:value});await refreshGovernedCases();message.success('用例已保存')}catch(error){console.error('行内编辑失败',error)}}
+const saveMindNode = async (id: string, patch: Partial<TestCase>) => {
+  mindSaving.value = true
+  try { await testCaseApi.updateTestCase(projectId.value,id,patch); await refreshGovernedCases(); message.success('脑图节点已保存') }
+  catch(error){ console.error('保存脑图节点失败',error) }
+  finally { mindSaving.value = false }
+}
+const createMindCase = async (moduleId?: string, draft?: Partial<TestCase>) => {
+  if (!draft) { editingCaseId.value=''; defaultModuleId.value=moduleId || ''; editCaseVisible.value=true; return }
+  mindSaving.value=true
+  try { await testCaseApi.createTestCase(projectId.value,draft); await refreshGovernedCases(); message.success('已粘贴为新用例') }
+  catch(error){console.error('粘贴脑图用例失败',error)} finally{mindSaving.value=false}
+}
+const renameMindModule = async (id:string,name:string) => {
+  if(!name.trim())return message.warning('请输入模块名称')
+  try{await projectApi.updateModule(projectId.value,id,{name:name.trim(),sortOrder:modules.value.find(m=>m.id===id)?.sortOrder || 0});await refreshGovernedCases();message.success('模块名称已保存')}catch(error){console.error('保存脑图模块失败',error)}
+}
+watch(viewMode,()=>{pagination.current=1;loadTestCases()})
 
 // 编辑用例
 const handleEditCase = (record: TestCase) => {
@@ -1351,6 +1293,7 @@ const handleDeleteCase = async (record: TestCase) => {
         await loadTestCases()
         await loadModuleTree()
   } catch (error) {
+    console.error('删除用例失败',error)
     message.error('删除失败')
       }
     }
@@ -1359,33 +1302,7 @@ const handleDeleteCase = async (record: TestCase) => {
 
 // 复制用例
 const handleCopyCase = async (record: TestCase) => {
-  try {
-    const originalCase = await testCaseApi.getTestCase(projectId.value, record.id)
-    // 后端期望 snake_case 字段名
-    const newCaseData: any = {
-      name: `${originalCase.name} (副本)`,
-      type: originalCase.type,
-      priority: originalCase.priority,
-      precondition: originalCase.precondition,
-      steps: originalCase.steps,
-      expected_result: originalCase.expectedResult,  // snake_case
-      requirement_ref: originalCase.requirementRef,  // snake_case
-      module_path: originalCase.modulePath,          // snake_case
-      module_id: originalCase.moduleId,              // snake_case
-      executor_id: originalCase.executorId,          // snake_case
-      tags: originalCase.tags,
-      level: originalCase.level,
-    }
-    // 不复制ID、创建时间、更新时间、创建人、更新人、case_code（让后端自动生成）
-
-    await testCaseApi.createTestCase(projectId.value, newCaseData)
-    message.success('复制成功')
-    await loadTestCases()
-    await loadModuleTree()
-  } catch (error) {
-    console.error('复制用例失败:', error)
-    message.error('复制失败')
-  }
+  try{await testCaseApi.copyCase(projectId.value,record.id,{newName:`${record.name}（副本）`});message.success('用例已复制');await refreshGovernedCases()}catch(error){console.error('复制用例失败',error)}
 }
 
 // 执行用例
@@ -1403,7 +1320,7 @@ const handleExecuteCase = async (record: TestCase) => {
     const groups = await Promise.all(plans.map(plan => testSuiteApi.getTestSuites(plan.id)))
     executionTemplates.value = groups.flatMap(group => group.items).filter(suite => suite.caseIds.includes(record.id) && /^(xat|ats-sat)(?:\s|$)/.test(suite.executionCommand.trim()))
     selectedExecutionTemplate.value = executionTemplates.value[0]?.id
-  } catch { message.error('无法加载执行模板') } finally { caseExecutionLoading.value = false }
+  } catch (error) { console.error('加载执行模板失败',error);message.error('无法加载执行模板') } finally { caseExecutionLoading.value = false }
 }
 const confirmCaseExecution = async () => {
   if (!executionCase.value || !selectedExecutionTemplate.value) { message.warning('请选包含该用例的 XAT模板'); return }
@@ -1411,7 +1328,7 @@ const confirmCaseExecution = async () => {
   try {
     await testCaseApi.executeCase(executionCase.value.id, selectedExecutionTemplate.value)
     message.success('单用例任务已提交；实际结果可在测试任务/执行记录查看'); caseExecutionVisible.value = false
-  } catch (error: any) { message.error(error.response?.data?.detail || '执行失败') }
+  } catch (error: any) { console.error('执行用例失败',error);message.error(error.response?.data?.detail || '执行失败') }
   finally { caseExecutionLoading.value = false }
 }
 
@@ -1421,78 +1338,26 @@ const handleImport = () => {
 }
 
 const handleImportSuccess = async (result: any) => {
-  message.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条`)
+  if(result) message.success(`导入完成：新增 ${result.created} 条，更新 ${result.updated} 条`)
   await loadTestCases()
   await loadModuleTree()
 }
 
 // 批量操作
-const handleExport = async ({ key }: { key: string }) => {
-  if (!projectId.value) {
-    message.warning('请先选择项目')
-    return
-  }
-
-  if (key === 'excel') {
-    try {
-      // 获取当前选中的模块
-      const selectedModule = selectedModuleKeys.value[0]
-
-      // 构建导出参数
-      const exportParams: any = {}
-
-      // 如果选中的是模块（不是"全部用例"），则传递模块ID
-      if (selectedModule && selectedModule !== 'all') {
-        // 获取当前模块及其所有子模块的 ID
-        const moduleIds = getModuleAndChildrenIds(selectedModule)
-        exportParams.moduleIds = moduleIds.join(',')
-      }
-      // 如果选中的是"全部用例"，则不传递 moduleIds，导出全部用例
-
-      // 应用当前的筛选条件
-      if (filters.level) {
-        exportParams.priority = filters.level
-      }
-      if (filters.executionResult) {
-        exportParams.status = filters.executionResult
-      }
-
-      // 显示加载提示
-      const hide = message.loading('正在导出，请稍候...', 0)
-
-      try {
-        // 调用导出API
-        const blob = await testCaseApi.exportCases(projectId.value, exportParams)
-
-        // 创建下载链接
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-
-        // 生成文件名
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_')
-        const moduleName = selectedModule && selectedModule !== 'all'
-          ? (findModuleById(selectedModule)?.name || '模块')
-          : '全部用例'
-        link.download = `测试用例_${moduleName}_${timestamp}.xlsx`
-
-        // 触发下载
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-
-        message.success('导出成功')
-      } finally {
-        hide()
-      }
-    } catch (error) {
-      console.error('导出失败:', error)
-      message.error('导出失败，请稍后重试')
-    }
-  } else if (key === 'xmind') {
-    message.info('导出思维导图功能开发中...')
-  }
+const handleExport = ({key}:{key:string})=>{exportFormat.value=key==='xmind'?'xmind':'xlsx';exportVisible.value=true}
+const confirmExport=async(options:{format:string;layout:string;fields:string})=>{
+  if(!projectId.value)return
+  exportBusy.value=true
+  const hide=message.loading('正在导出…',0)
+  try{
+    const params:Record<string,unknown>={...options,search:searchValue.value,priority:filters.level,status:filters.executionResult,reviewStatus:filters.reviewResult,mine:viewMode.value==='my',followed:viewMode.value==='followed',sortBy:sortBy.value,sortOrder:sortOrder.value}
+    if(selectedRowKeys.value.length)params.caseIds=selectedRowKeys.value.join(',')
+    else if(selectedModuleKeys.value.includes('unplanned'))params.moduleId='null'
+    else if(!selectedModuleKeys.value.includes('all'))params.moduleIds=[...new Set(selectedModuleKeys.value.filter(k=>!k.startsWith('case_')).flatMap(getModuleAndChildrenIds))].join(',')
+    if(advancedFilters.value.length)params.filters={conditions:advancedFilters.value,logic:filterLogic.value}
+    saveCaseBlob(await testCaseApi.exportCases(projectId.value,params),`测试用例_${new Date().toISOString().slice(0,10)}.${params.format}`)
+    message.success('导出文件已生成');exportVisible.value=false
+  }catch(error){console.error('导出用例失败',error)}finally{hide();exportBusy.value=false}
 }
 
 const handleBatchEdit = () => {
@@ -1523,6 +1388,7 @@ const handleBatchDelete = () => {
         await loadTestCases()
         await loadModuleTree()
   } catch (error) {
+        console.error('批量删除失败',error)
         message.error('批量删除失败')
       }
     }
@@ -2037,6 +1903,7 @@ watch(
   () => projectId.value,
   () => {
     if (projectId.value) {
+      selectedRowKeys.value=[];selectedModuleKeys.value=['all'];detailCaseVisible.value=false;editCaseVisible.value=false;recycleVisible.value=false;templateVisible.value=false;pagination.current=1
       loadTestCases()
       loadModuleTree()
       loadFilterFields()
@@ -2063,6 +1930,9 @@ onMounted(async () => {
   if (projects.value.length === 0) {
     await projectStore.fetchProjects()
   }
+  const linkedProject = projects.value.find(p=>p.id===route.query.projectId)
+  if(linkedProject) projectStore.setCurrentProject(linkedProject)
+  if(typeof route.query.caseId === 'string'){ viewingCaseId.value=route.query.caseId; detailCaseVisible.value=true }
   // 如果没有当前项目，设置第一个项目为当前项目
   if (!projectStore.currentProject && projects.value.length > 0) {
     projectStore.setCurrentProject(projects.value[0])
@@ -2087,12 +1957,13 @@ const paginationTotal = (total: number) => `共 ${total} 条`
 
 <style scoped>
 .test-cases-container {
+  display:flex;flex-direction:column;min-height:0;
   height: 100%;
   background: #f5f5f5;
   }
 
 .test-cases-layout {
-  height: 100%;
+  flex:1;min-height:0;
 }
 
 .module-tree-sider {
@@ -2208,7 +2079,7 @@ const paginationTotal = (total: number) => `共 ${total} 条`
 .toolbar {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -2289,15 +2160,11 @@ const paginationTotal = (total: number) => `共 ${total} 条`
 }
 
 @media (max-width: 768px) {
-  .toolbar {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-  }
-
-  .toolbar > * {
-    width: 100%;
-  }
+  .toolbar {gap:8px;align-items:center;}
+  .fixed-toolbar{padding:10px}
+  .module-tree-sider{position:absolute;inset:100px auto 0 0;z-index:110;box-shadow:4px 0 18px #0002}
+  .fixed-footer{flex-wrap:wrap;gap:12px;overflow:auto}
+  .scrollable-table-content{padding:0 8px}
 }
 
 /* 修复表格固定列重叠问题 */

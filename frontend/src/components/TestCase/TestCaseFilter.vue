@@ -1,8 +1,8 @@
 <template>
   <a-drawer
-    :visible="visible"
+    :open="visible"
     title="全部数据"
-    width="600"
+    width="min(760px, 96vw)"
     placement="right"
     :closable="true"
     @close="handleClose"
@@ -16,7 +16,7 @@
 
     <!-- 提示信息 -->
     <a-alert
-      message="筛选模式,模块过滤仅可在当前过滤器中操作"
+      message="组合条件使用所有（AND）或任一（OR）匹配，并叠加列表当前模块范围。"
       type="info"
       show-icon
       closable
@@ -72,7 +72,8 @@
           <template v-if="getValueComponent(condition.field) === 'a-tree-select'">
             <a-tree-select
               v-model:value="condition.value"
-              :tree-data="moduleTreeData"
+              :tree-data="onlyModules(moduleTreeData)"
+              :field-names="{value:'key',label:'title',children:'children'}"
               :placeholder="getValuePlaceholder(condition.field)"
               style="flex: 1; margin-left: 8px"
               :allow-clear="true"
@@ -89,7 +90,7 @@
               style="flex: 1; margin-left: 8px"
               :style="{ width: getValueWidth(condition.field) }"
               :allow-clear="true"
-              :mode="condition.field === 'tags' ? 'tags' : undefined"
+              :mode="['in','not_in'].includes(condition.operator)?'multiple':condition.field === 'tags' ? 'tags' : undefined"
             />
           </template>
           <a-input-number
@@ -105,6 +106,7 @@
             :placeholder="getValuePlaceholder(condition.field)"
             style="flex: 1; margin-left: 8px"
             :allow-clear="true"
+            value-format="YYYY-MM-DD"
           />
           <a-input
             v-else
@@ -171,6 +173,8 @@ interface Props {
   visible: boolean
   availableFields: FieldOption[]
   moduleTreeData?: any[]
+  conditions?: FilterCondition[]
+  logic?: 'and'|'or'
 }
 
 interface Emits {
@@ -192,6 +196,8 @@ const filterConditions = ref<FilterCondition[]>([
   { field: '', operator: '', value: null }
 ])
 
+function onlyModules(nodes:any[]):any[]{return nodes.filter(n=>n.nodeType==='module').map(n=>({...n,children:onlyModules(n.children || [])}))}
+
 // 操作符定义
 const operators = {
   text: [
@@ -205,10 +211,10 @@ const operators = {
   number: [
     { label: '等于', value: 'equals' },
     { label: '不等于', value: 'not_equals' },
-    { label: '大于', value: 'greater_than' },
-    { label: '小于', value: 'less_than' },
-    { label: '大于等于', value: 'greater_equal' },
-    { label: '小于等于', value: 'less_equal' }
+    { label: '大于', value: 'gt' },
+    { label: '小于', value: 'lt' },
+    { label: '大于等于', value: 'gte' },
+    { label: '小于等于', value: 'lte' }
   ],
   select: [
     { label: '等于', value: 'equals' },
@@ -228,15 +234,18 @@ const getOperators = (fieldKey: string) => {
   if (!field) return operators.text
 
   if (field.operators) {
-    return operators.text.filter(op => field.operators!.includes(op.value))
+    return [...new Map(Object.values(operators).flat().map(op=>[op.value,op])).values()].filter(op => field.operators!.includes(op.value))
   }
 
   switch (field.type) {
     case 'number':
       return operators.number
     case 'select':
-    case 'module':
       return operators.select
+    case 'module':
+      return operators.module
+    case 'date':
+      return operators.number
     case 'tags':
       return operators.text
     default:
@@ -326,7 +335,7 @@ const handleFieldChange = (index: number) => {
 
 // 模块选择过滤
 const filterModuleOption = (input: string, option: any) => {
-  return (option.label || '').toLowerCase().includes(input.toLowerCase())
+  return (option.title || option.label || '').toLowerCase().includes(input.toLowerCase())
 }
 
 // 添加条件
@@ -403,8 +412,8 @@ const handleVisibleChange = (val: boolean) => {
 // 监听visible变化，重置条件
 watch(() => props.visible, (newVal) => {
   if (newVal) {
-    filterConditions.value = [{ field: '', operator: '', value: null }]
-    filterLogic.value = 'and'
+    filterConditions.value = props.conditions?.length?JSON.parse(JSON.stringify(props.conditions)):[{field:'',operator:'',value:null}]
+    filterLogic.value = props.logic || 'and'
   }
 })
 </script>

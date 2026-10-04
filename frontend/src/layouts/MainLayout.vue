@@ -165,6 +165,7 @@ const menuItems = [
     icon: ExperimentOutlined,
     path: '/test-cases'
   },
+  { key: 'case-reviews', title: '用例评审', icon: ExperimentOutlined, path: '/case-reviews' },
   {
     key: 'test-plans',
     title: '测试计划',

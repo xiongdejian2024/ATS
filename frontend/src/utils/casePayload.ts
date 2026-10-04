@@ -4,7 +4,7 @@ import type { TestCase } from '@/types'
 export const casePayload = (data: Partial<TestCase>): Record<string, unknown> => {
   const fields: Record<string, string> = {
     caseCode: 'case_code', moduleId: 'module_id', executorId: 'executor_id',
-    requirementRef: 'requirement_ref',
+    requirementRef: 'requirement_ref', templateId: 'template_id', customFields: 'custom_fields',
     modulePath: 'module_path', isAutomated: 'is_automated'
   }
   return Object.fromEntries(

@@ -19,6 +19,7 @@ const routes = [
       requiresAuth: true
     },
     children: [
+      { path: 'case-reviews', name: 'CaseReviews', component: () => import('@views/CaseReviews.vue'), meta: { title: '用例评审' } },
       { path: 'task-center', name: 'TaskCenter', component: () => import('@views/TaskCenter.vue'), meta: { title: '测试任务' } },
       { path: 'ai-assistant', name: 'AIAssistant', component: () => import('@views/AIAssistant.vue'), meta: { title: 'AI 辅助' } },
       {

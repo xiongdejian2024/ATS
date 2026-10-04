@@ -29,6 +29,10 @@
           :wrapper-col="{ span: 20 }"
           layout="horizontal"
         >
+        <a-card title="用例模板" class="info-card">
+          <a-form-item label="内容模板"><a-select v-model:value="templateId" allow-clear placeholder="选择模板" :options="templates.map(t=>({label:t.name+(t.isDefault?'（默认）':''),value:t.id}))" @change="applyTemplate" /></a-form-item>
+          <CaseCustomFields v-model="customFields" :fields="activeTemplate?.fields || []" />
+        </a-card>
         <!-- 基本信息卡片 -->
         <a-card title="基本信息" class="info-card">
           <a-row :gutter="16">
@@ -218,44 +222,7 @@
           </div>
         </a-card>
 
-        <!-- 附件管理卡片 -->
-        <a-card title="附件" class="info-card">
-          <div class="attachments-header">
-            <a-space>
-              <a-upload
-                :before-upload="handleFileUpload"
-                :show-upload-list="false"
-                accept=".doc,.docx,.xls,.xlsx,.pdf,.txt,.png,.jpg,.jpeg"
-              >
-                <a-button>
-                  <template #icon><UploadOutlined /></template>
-                  上传附件
-                </a-button>
-              </a-upload>
-              <a-button @click="viewAttachments">
-                <template #icon><PaperClipOutlined /></template>
-                管理附件
-              </a-button>
-            </a-space>
-          </div>
-
-          <div v-if="attachments.length > 0" class="attachments-list">
-            <a-list :data-source="attachments" size="small">
-              <template #renderItem="{ item }">
-                <a-list-item>
-                  <a-list-item-meta
-                    :title="item.fileName"
-                    :description="`${(item.fileSize / 1024).toFixed(2)} KB`"
-                  />
-                  <template #actions>
-                    <a-button type="link" size="small">下载</a-button>
-                    <a-button type="link" size="small" danger>删除</a-button>
-                  </template>
-                </a-list-item>
-              </template>
-            </a-list>
-          </div>
-        </a-card>
+        <CaseAttachments :project-id="projectId" :case-id="caseId" class="info-card" />
         </a-form>
       </a-spin>
     </div>
@@ -346,12 +313,15 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue';
-import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined, UploadOutlined, PaperClipOutlined, MoreOutlined, CopyOutlined } from '@ant-design/icons-vue';
+import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined, MoreOutlined, CopyOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance, Rule } from 'ant-design-vue/es/form';
-import type { TestCase, TestCaseStep, CaseAttachment } from '@/types';
+import type { TestCase, TestCaseStep } from '@/types';
 import { testCaseApi } from '@/api/testCase';
 import { projectApi } from '@/api/project';
+import CaseAttachments from './CaseAttachments.vue'
+import CaseCustomFields from './CaseCustomFields.vue'
+import {caseFeaturesApi,type CaseTemplate} from '@/api/caseFeatures'
 
 interface Props {
   caseId?: string
@@ -397,14 +367,21 @@ const formData = reactive({
   isAutomated: false
 })
 
+const templates=ref<CaseTemplate[]>([]),templateId=ref<string>(),customFields=ref<Record<string,unknown>>({})
+const activeTemplate=computed(()=>templates.value.find(t=>t.id===templateId.value))
+function applyTemplate(){
+  const template=activeTemplate.value
+  customFields.value=Object.fromEntries((template?.fields||[]).map(f=>[f.key,f.default ?? null]))
+  if(template){const defaults=template.defaults; for(const key of ['type','priority','precondition','steps','tags'] as const){if(defaults[key]!==undefined)(formData as any)[key]=JSON.parse(JSON.stringify(defaults[key]))}formData.isAutomated=defaults.is_automated??defaults.isAutomated??false;updateStepNumber()}
+}
+async function loadTemplates(){try{templates.value=await caseFeaturesApi.templates(props.projectId);if(!props.caseId){templateId.value=templates.value.find(t=>t.isDefault)?.id;applyTemplate()}}catch(error){console.error('加载编辑模板失败',error)}}
+
 // 通用标签
 const commonTags = ['登录', '注册', '搜索', '支付', '订单', '用户管理', '权限', 'API']
 
 // 模块树数据
 const moduleTreeData = ref<any[]>([])
 
-// 附件数据
-const attachments = ref<CaseAttachment[]>([])
 
 // 导入步骤相关
 const importModalVisible = ref(false)
@@ -454,6 +431,8 @@ const loadTestCase = async () => {
     }
 
     Object.assign(testCase, data)
+    templateId.value=(data as any).templateId || undefined
+    customFields.value=(data as any).customFields || {}
 
     // 填充表单数据（处理字段名映射：后端可能返回下划线格式）
     formData.name = data.name || ''
@@ -577,6 +556,8 @@ const handleSave = async () => {
 
   try {
     await formRef.value.validateFields()
+    const missing=(activeTemplate.value?.fields || []).find(f=>f.required && (customFields.value[f.key]===null || customFields.value[f.key]===undefined || customFields.value[f.key]==='' || (Array.isArray(customFields.value[f.key]) && !(customFields.value[f.key] as unknown[]).length)))
+    if(missing){message.warning(`请填写自定义字段：${missing.name}`);return}
 
     saving.value = true
 
@@ -599,6 +580,8 @@ const handleSave = async () => {
       : []
 
     const submitData: any = {
+      template_id: templateId.value || null,
+      custom_fields: customFields.value,
       name: formData.name.trim(),
       type: formData.type || 'functional',
       priority: formData.priority || 'P2',
@@ -786,24 +769,6 @@ const handleImportTableChange = () => {
   }
 }
 
-const handleFileUpload = async (file: File) => {
-  try {
-    // 这里应该实现文件上传逻辑
-    message.success(`文件 ${file.name} 上传成功`)
-    return false // 阻止默认上传行为
-  } catch (error) {
-    message.error('文件上传失败')
-    return false
-  }
-}
-
-const viewAttachments = () => {
-  // 实现附件管理逻辑
-  message.info('附件管理功能开发中')
-}
-
-
-
 // 生命周期
 onMounted(async () => {
   // 如果是新建用例，不需要加载数据，直接设置默认值
@@ -814,6 +779,7 @@ onMounted(async () => {
     }
     // 只加载模块树（用于选择模块）
     loadModuleTree()
+    loadTemplates()
     return
   }
 
@@ -821,6 +787,7 @@ onMounted(async () => {
   // 使用 Promise.allSettled 确保即使一个失败，另一个也能完成
   await Promise.allSettled([
     loadTestCase(),
+    loadTemplates(),
     loadModuleTree()
   ])
 })
@@ -846,6 +813,7 @@ watch(
         steps: [],
         isAutomated: false
       })
+      templateId.value=templates.value.find(t=>t.isDefault)?.id;applyTemplate()
       updateStepNumber()
     }
   }
