@@ -29,124 +29,14 @@
           :model="formData"
           :disabled="loading || saving || loadError"
           :rules="formRules"
-          :label-col="{ span: 4 }"
-          :wrapper-col="{ span: 20 }"
-          layout="horizontal"
+          layout="vertical"
         >
-        <a-card title="用例模板" class="info-card">
-          <a-form-item label="内容模板"><a-select v-model:value="templateId" allow-clear placeholder="选择模板" :options="templates.map(t=>({label:t.name+(t.isDefault?'（默认）':''),value:t.id}))" @change="applyTemplate" /></a-form-item>
-          <CaseCustomFields v-model="customFields" :fields="activeTemplate?.fields || []" />
-        </a-card>
-        <!-- 基本信息卡片 -->
-        <a-card title="基本信息" class="info-card">
-          <a-row :gutter="16">
-            <a-col :span="12">
-              <a-form-item label="用例名称" name="name">
-                <a-input
-                  v-model:value="formData.name"
-                  placeholder="请输入用例名称"
-                  :maxlength="255"
-                  show-count
-                />
-              </a-form-item>
-            </a-col>
-            <a-col :span="12">
-              <a-form-item label="用例类型" name="type">
-                <a-select
-                  v-model:value="formData.type"
-                  placeholder="请选择用例类型"
-                  style="width: 100%"
-                >
-                  <a-select-option value="functional">功能测试</a-select-option>
-                  <a-select-option value="interface">接口测试</a-select-option>
-                  <a-select-option value="ui">UI测试</a-select-option>
-                  <a-select-option value="performance">性能测试</a-select-option>
-                  <a-select-option value="security">安全测试</a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-          </a-row>
-
-          <a-row :gutter="16">
-            <a-col :span="12">
-              <a-form-item label="优先级" name="priority">
-                <a-select
-                  v-model:value="formData.priority"
-                  placeholder="请选择优先级"
-                  style="width: 100%"
-                >
-                  <a-select-option value="P0">P0 - 最高</a-select-option>
-                  <a-select-option value="P1">P1 - 高</a-select-option>
-                  <a-select-option value="P2">P2 - 中</a-select-option>
-                  <a-select-option value="P3">P3 - 低</a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-            <a-col :span="12">
-              <a-form-item label="所属模块" name="moduleId">
-                <a-tree-select
-                  v-model:value="formData.moduleId"
-                  :tree-data="moduleTreeData"
-                  placeholder="请选择模块"
-                  style="width: 100%"
-                  :field-names="{ label: 'title', value: 'id', children: 'children' }"
-                  tree-default-expand-all
-                  allow-clear
-                  :tree-node-label-prop="'title'"
-                />
-              </a-form-item>
-            </a-col>
-          </a-row>
-
-          <a-row :gutter="16">
-            <a-col :span="12">
-              <a-form-item label="是否自动化" name="isAutomated">
-                <a-switch
-                  v-model:checked="formData.isAutomated"
-                  checked-children="是"
-                  un-checked-children="否"
-                />
-              </a-form-item>
-            </a-col>
-          </a-row>
-
-          <a-form-item label="需求关联" name="requirementRef">
-            <a-input
-              v-model:value="formData.requirementRef"
-              placeholder="请输入需求编号或描述"
-            />
-          </a-form-item>
-
-          <a-form-item label="标签">
-            <a-select
-              v-model:value="formData.tags"
-              mode="tags"
-              placeholder="请输入标签"
-              style="width: 100%"
-              :token-separators="[',']"
-            >
-              <a-select-option v-for="tag in commonTags" :key="tag" :value="tag">
-                {{ tag }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-        </a-card>
-
-        <!-- 前置条件卡片 -->
-        <a-card title="前置条件" class="info-card">
-          <a-form-item>
-            <a-textarea
-              v-model:value="formData.precondition"
-              placeholder="请输入前置条件"
-              :rows="4"
-              :maxlength="1000"
-              show-count
-            />
-          </a-form-item>
-        </a-card>
-
-        <!-- 测试步骤卡片 -->
-        <a-card title="测试步骤" class="info-card">
+        <div class="case-form-columns">
+          <section class="case-content-column">
+            <a-form-item label="用例名称" name="name"><a-input v-model:value="formData.name" placeholder="请输入用例名称" :maxlength="255" show-count /></a-form-item>
+            <a-form-item label="前置条件"><CaseRichText v-model="formData.precondition" label="前置条件" :disabled="loading || saving || loadError" /></a-form-item>
+            <div class="description-heading"><span>{{ formData.caseEditType === 'STEP' ? '步骤描述' : '文本描述' }}</span><a-select v-model:value="formData.caseEditType" aria-label="描述方式" :options="[{label:'步骤描述',value:'STEP'},{label:'文本描述',value:'TEXT'}]" style="width:120px" /></div>
+            <div v-if="formData.caseEditType === 'STEP'">
           <div class="steps-container">
               <div v-if="formData.steps.length > 0" class="steps-table-wrapper">
               <div class="steps-table-header">
@@ -224,9 +114,27 @@
               </a-button>
             </div>
           </div>
-        </a-card>
 
-        <CaseAttachmentDraft ref="attachmentRef" :project-id="projectId" :case-id="caseId" :disabled="loading || saving || loadError" class="info-card" @change="attachmentSignature = $event" />
+            </div>
+            <template v-else>
+              <a-form-item><CaseRichText v-model="formData.textDescription" label="文本描述" :disabled="loading || saving || loadError" /></a-form-item>
+              <a-form-item label="预期结果"><CaseRichText v-model="formData.expectedResult" label="预期结果" :disabled="loading || saving || loadError" /></a-form-item>
+            </template>
+            <a-form-item label="备注"><CaseRichText v-model="formData.description" label="备注" :disabled="loading || saving || loadError" /></a-form-item>
+            <CaseAttachmentDraft ref="attachmentRef" :project-id="projectId" :case-id="caseId" :disabled="loading || saving || loadError" @change="attachmentSignature = $event" />
+          </section>
+          <aside class="case-fields-column">
+            <a-form-item label="内容模板"><a-select v-model:value="templateId" allow-clear placeholder="选择模板" :options="templates.map(t=>({label:t.name+(t.isDefault?'（默认）':''),value:t.id}))" @change="applyTemplate" /></a-form-item>
+            <a-form-item label="所属模块" name="moduleId"><a-tree-select v-model:value="formData.moduleId" :tree-data="moduleTreeData" placeholder="请选择模块" :field-names="{label:'title',value:'id',children:'children'}" tree-default-expand-all allow-clear :tree-node-label-prop="'title'" show-search tree-node-filter-prop="title" /></a-form-item>
+            <a-form-item label="等级" name="priority"><a-select v-model:value="formData.priority" :options="['P0','P1','P2','P3'].map(p=>({label:p,value:p}))" /></a-form-item>
+            <a-form-item label="执行人"><a-select v-model:value="formData.executorId" allow-clear show-search option-filter-prop="label" placeholder="请选择执行人" :options="members" /></a-form-item>
+            <CaseCustomFields v-model="customFields" :fields="activeTemplate?.fields || []" />
+            <a-form-item label="标签"><a-select v-model:value="formData.tags" mode="tags" placeholder="请输入标签" :token-separators="[',']"><a-select-option v-for="tag in commonTags" :key="tag" :value="tag">{{tag}}</a-select-option></a-select></a-form-item>
+            <a-form-item label="用例类型" name="type"><a-select v-model:value="formData.type" :options="[{label:'功能测试',value:'functional'},{label:'接口测试',value:'interface'},{label:'UI测试',value:'ui'},{label:'性能测试',value:'performance'},{label:'安全测试',value:'security'}]" /></a-form-item>
+            <a-form-item label="是否自动化"><a-switch v-model:checked="formData.isAutomated" checked-children="是" un-checked-children="否" /></a-form-item>
+            <a-form-item label="需求关联"><a-input v-model:value="formData.requirementRef" placeholder="请输入需求编号或描述" /></a-form-item>
+          </aside>
+        </div>
         </a-form>
       </a-spin>
     </div>
@@ -325,8 +233,10 @@ import type { TestCase, TestCaseStep } from '@/types';
 import { testCaseApi } from '@/api/testCase';
 import { projectApi } from '@/api/project';
 import CaseAttachmentDraft from './CaseAttachmentDraft.vue'
+import CaseRichText from './CaseRichText.vue'
 import CaseCustomFields from './CaseCustomFields.vue'
 import {caseFeaturesApi,type CaseTemplate} from '@/api/caseFeatures'
+import { caseGovernanceApi } from '@/api/caseGovernance'
 
 interface Props {
   caseId?: string
@@ -374,6 +284,11 @@ const formData = reactive({
   priority: 'P2' as TestCase['priority'],
   moduleId: '',
   precondition: '',
+  caseEditType: 'STEP' as 'STEP' | 'TEXT',
+  textDescription: '',
+  expectedResult: '',
+  description: '',
+  executorId: undefined as string | undefined,
   requirementRef: '',
   tags: [] as string[],
   steps: [] as TestCaseStep[],
@@ -385,7 +300,7 @@ const activeTemplate=computed(()=>templates.value.find(t=>t.id===templateId.valu
 function applyTemplate(){
   const template=activeTemplate.value
   customFields.value=Object.fromEntries((template?.fields||[]).map(f=>[f.key,f.default ?? null]))
-  if(template){const defaults=template.defaults; for(const key of ['type','priority','precondition','steps','tags'] as const){if(defaults[key]!==undefined)(formData as any)[key]=JSON.parse(JSON.stringify(defaults[key]))}formData.isAutomated=defaults.is_automated??defaults.isAutomated??false;updateStepNumber()}
+  if(template){const defaults=template.defaults; for(const key of ['type','priority','precondition','steps','tags','description'] as const){if(defaults[key]!==undefined)(formData as any)[key]=JSON.parse(JSON.stringify(defaults[key]))}formData.caseEditType=defaults.case_edit_type??defaults.caseEditType??'STEP';formData.textDescription=defaults.text_description??defaults.textDescription??'';formData.expectedResult=defaults.expected_result??defaults.expectedResult??'';formData.isAutomated=defaults.is_automated??defaults.isAutomated??false;updateStepNumber()}
 }
 async function loadTemplates(){try{templates.value=await caseFeaturesApi.templates(props.projectId);if(!props.caseId){templateId.value=templates.value.find(t=>t.isDefault)?.id;applyTemplate()}}catch(error){console.error('加载编辑模板失败',error)}}
 
@@ -394,6 +309,13 @@ const commonTags = ['登录', '注册', '搜索', '支付', '订单', '用户管
 
 // 模块树数据
 const moduleTreeData = ref<any[]>([])
+const members = ref<Array<{label:string;value:string}>>([])
+async function loadMembers() {
+  try {
+    const rows = await caseGovernanceApi.reviewers(props.projectId)
+    members.value = rows.map(m => ({label: m.name, value: m.id}))
+  } catch(error) {console.error('加载用例执行人失败',error)}
+}
 
 
 // 导入步骤相关
@@ -454,6 +376,11 @@ const loadTestCase = async () => {
     formData.priority = data.priority || 'P2'
     formData.moduleId = (data.moduleId || '') as string
     formData.precondition = data.precondition || ''
+    formData.caseEditType = data.caseEditType || 'STEP'
+    formData.textDescription = data.textDescription || ''
+    formData.expectedResult = data.expectedResult || ''
+    formData.description = data.description || ''
+    formData.executorId = data.executorId || undefined
     formData.requirementRef = data.requirementRef || ''
     formData.tags = data.tags || []
     // 为步骤添加唯一ID（如果还没有）
@@ -605,6 +532,11 @@ const handleSave = async (continueCreation = false) => {
       precondition: formData.precondition && formData.precondition.trim() !== '' ? formData.precondition.trim() : null,
       requirement_ref: formData.requirementRef && formData.requirementRef.trim() !== '' ? formData.requirementRef.trim() : null,
       tags: Array.isArray(formData.tags) ? formData.tags : [],
+      case_edit_type: formData.caseEditType,
+      text_description: formData.textDescription || null,
+      expected_result: formData.expectedResult || null,
+      description: formData.description || null,
+      executor_id: formData.executorId || null,
       steps: processedSteps,  // 确保始终是数组
       is_automated: formData.isAutomated ?? false
     }
@@ -808,10 +740,10 @@ onMounted(async () => {
       formData.moduleId = props.defaultModuleId
     }
     // 只加载模块树（用于选择模块）
-    await Promise.allSettled([loadModuleTree(), loadTemplates()])
+    await Promise.allSettled([loadModuleTree(), loadTemplates(), loadMembers()])
     if (props.initialDraft) {
       const draft = JSON.parse(JSON.stringify(props.initialDraft))
-      Object.assign(formData, { name: draft.name || '', type: draft.type || 'functional', priority: draft.priority || 'P2', moduleId: draft.moduleId || '', precondition: draft.precondition || '', requirementRef: draft.requirementRef || '', tags: draft.tags || [], steps: draft.steps || [], isAutomated: draft.isAutomated || false })
+      Object.assign(formData, { name: draft.name || '', type: draft.type || 'functional', priority: draft.priority || 'P2', moduleId: draft.moduleId || '', precondition: draft.precondition || '', caseEditType: draft.caseEditType || 'STEP', textDescription: draft.textDescription || '', expectedResult: draft.expectedResult || '', description: draft.description || '', executorId: draft.executorId || undefined, requirementRef: draft.requirementRef || '', tags: draft.tags || [], steps: draft.steps || [], isAutomated: draft.isAutomated || false })
       templateId.value = draft.templateId || undefined
       customFields.value = draft.customFields || {}
       updateStepNumber()
@@ -827,7 +759,8 @@ onMounted(async () => {
   await Promise.allSettled([
     loadTestCase(),
     loadTemplates(),
-    loadModuleTree()
+    loadModuleTree(),
+    loadMembers()
   ])
   setDraftBaseline()
 })
@@ -848,6 +781,7 @@ watch(
         priority: 'P2',
         moduleId: props.defaultModuleId || '',
         precondition: '',
+        caseEditType: 'STEP', textDescription: '', expectedResult: '', description: '', executorId: undefined,
         requirementRef: '',
         tags: [],
         steps: [],
@@ -888,6 +822,7 @@ defineExpose({
       priority: 'P2',
       moduleId: '',
       precondition: '',
+      caseEditType: 'STEP', textDescription: '', expectedResult: '', description: '', executorId: undefined,
       requirementRef: '',
       tags: [],
       steps: [],
@@ -899,6 +834,13 @@ const handleStepMenuClick = (info: { key: string | number }, index: number) => h
 </script>
 
 <style scoped>
+.case-form-columns{display:grid;grid-template-columns:minmax(0,1fr) 428px;gap:0}
+.case-content-column{min-width:0;padding-right:16px;border-right:1px solid #f0f0f0}
+.case-fields-column{padding-left:16px;min-width:0}
+.description-heading{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-weight:500}
+@media(max-width:1000px){.case-form-columns{grid-template-columns:minmax(0,1fr) 300px}}
+@media(max-width:768px){.case-form-columns{display:flex;flex-direction:column}.case-content-column{padding-right:0;border-right:0}.case-fields-column{padding-left:0;margin-top:24px}}
+
 .test-case-edit {
   padding: 0;
   background: #fff;

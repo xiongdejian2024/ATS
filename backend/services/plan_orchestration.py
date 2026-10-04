@@ -458,7 +458,9 @@ def record_manual_result(db, run_id, case_id, data, user_id):
                 raise ValueError("请先完成串行配置要求的前序测试点")
         from services.plan_collaboration import validate_steps
         step_results = validate_steps(db, run, case, getattr(data, "step_results", []))
-        if (step_results or case.get("associationId")) and data.result == "passed" and (len(step_results) != len(case.get("snapshot", {}).get("steps") or []) or any(step["result"] != "passed" for step in step_results)):
+        frozen = case.get("snapshot", {})
+        expected_step_count = 0 if frozen.get("case_edit_type") == "TEXT" else len(frozen.get("steps") or [])
+        if (step_results or case.get("associationId")) and data.result == "passed" and (len(step_results) != expected_step_count or any(step["result"] != "passed" for step in step_results)):
             raise ValueError("整体通过需要所有步骤均已通过")
         updated = dict(run.manual_results or {})
         updated[case_id] = dict(result=data.result, notes=data.notes, executorId=user_id,

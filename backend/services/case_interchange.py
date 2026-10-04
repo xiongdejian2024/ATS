@@ -33,6 +33,8 @@ def export_xmind(cases, module_paths=None):
         fields = [
             topic("前置条件", [topic(case.precondition or "")]),
             topic("步骤", steps),
+            *([topic("文本描述", [topic(case.text_description or "")]), topic("预期结果", [topic(case.expected_result or "")])] if case.case_edit_type == "TEXT" else []),
+            topic("备注", [topic(case.description or "")]),
             topic("需求关联", [topic(case.requirement_ref or "")]),
         ]
         # 核心用例名、前置、步骤和预期为普通标准节点；ATS 属性只用于无损补充。
@@ -49,6 +51,10 @@ def export_xmind(cases, module_paths=None):
                 "template_id",
                 "custom_fields",
                 "steps",
+                "case_edit_type",
+                "text_description",
+                "expected_result",
+                "description",
             ]
         }
         parts = tuple(
@@ -139,6 +145,8 @@ def read_xmind(content):
             "预期结果",
             "期望结果",
             "需求关联",
+            "文本描述",
+            "备注",
         }
 
         def flatten(node):
@@ -215,6 +223,10 @@ def read_xmind(content):
                         ),
                         "标签": ",".join(metadata.get("tags") or []),
                         "是否自动化": "是" if metadata.get("is_automated") else "否",
+                        "描述方式": metadata.get("case_edit_type", "TEXT" if "文本描述" in by_title else "STEP"),
+                        "文本描述": metadata.get("text_description") or ("\n".join(flatten(c) for c in children(by_title["文本描述"])) if "文本描述" in by_title else ""),
+                        "文本预期结果": metadata.get("expected_result") or ("\n".join(flatten(c) for c in children(by_title["预期结果"])) if "预期结果" in by_title else ""),
+                        "备注": metadata.get("description") or ("\n".join(flatten(c) for c in children(by_title["备注"])) if "备注" in by_title else ""),
                         "模板ID": metadata.get("template_id"),
                         "自定义字段": json.dumps(
                             metadata.get("custom_fields") or {}, ensure_ascii=False

@@ -18,6 +18,10 @@ class TestCase(Base, BaseModel):
     type = Column(String(50), nullable=False, index=True)  # functional, interface, ui, performance, security
     priority = Column(String(20), default="P2", nullable=False, index=True)  # P0, P1, P2, P3
     precondition = Column(Text)
+    case_edit_type = Column(String(10), nullable=False, default="STEP", server_default="STEP")
+    text_description = Column(Text, nullable=True)
+    expected_result = Column(Text, nullable=True)
+    description = Column(Text, nullable=True)  # 用例备注
     steps = Column(JSON, nullable=False)  # 结构化步骤存储
     requirement_ref = Column(String(255))
     module_path = Column(String(500))

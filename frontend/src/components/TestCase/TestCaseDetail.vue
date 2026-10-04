@@ -83,9 +83,14 @@
             </template>
             <template v-else-if="tab.key === 'detail'">
               <a-card title="前置条件" size="small"
-                ><p class="text">{{ item.precondition || "无" }}</p></a-card
+                ><CaseRichText :model-value="item.precondition || '无'" readonly /></a-card
               >
+              <template v-if="item.caseEditType === 'TEXT'">
+                <a-card title="文本描述" size="small"><CaseRichText :model-value="item.textDescription || '无'" readonly /></a-card>
+                <a-card title="预期结果" size="small"><CaseRichText :model-value="item.expectedResult || '无'" readonly /></a-card>
+              </template>
               <a-table
+                v-else
                 :columns="stepColumns"
                 :data-source="item.steps || []"
                 :pagination="false"
@@ -94,6 +99,7 @@
                   ><p class="text">{{ record[column.dataIndex] }}</p></template
                 ></a-table
               >
+              <a-card title="备注" size="small"><CaseRichText :model-value="item.description || '无'" readonly /></a-card>
               <CaseAttachments :project-id="projectId" :case-id="caseId" />
             </template>
             <CaseLinks
@@ -212,6 +218,7 @@ import {
   type CaseTemplate,
 } from "@/api/caseFeatures";
 import CaseAttachments from "./CaseAttachments.vue";
+import CaseRichText from "./CaseRichText.vue";
 import CaseLinks from "./CaseLinks.vue";
 import CaseDiscussion from "./CaseDiscussion.vue";
 import CaseCustomFields from "./CaseCustomFields.vue";

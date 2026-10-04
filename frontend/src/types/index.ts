@@ -67,6 +67,9 @@ export interface TestCase {
   type: 'functional' | 'interface' | 'ui' | 'performance' | 'security'
   priority: 'P0' | 'P1' | 'P2' | 'P3' | 'high' | 'medium' | 'low'
   precondition?: string
+  caseEditType?: 'STEP' | 'TEXT'
+  textDescription?: string
+  description?: string
   steps: TestCaseStep[]
   expectedResult?: string
   requirementRef?: string

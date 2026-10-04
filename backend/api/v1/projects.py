@@ -523,6 +523,10 @@ async def export_test_cases(
                 "前置条件": case.precondition or "",
                 "测试步骤": steps_text,
                 "需求关联": case.requirement_ref or "",
+                "描述方式": case.case_edit_type,
+                "文本描述": case.text_description or "",
+                "文本预期结果": case.expected_result or "",
+                "备注": case.description or "",
                 "模板ID": case.template_id or "",
                 "自定义字段": json.dumps(case.custom_fields or {},ensure_ascii=False),
             })
@@ -534,7 +538,7 @@ async def export_test_cases(
                     step_rows.append({**row,'步骤序号':step.get('step',index),'操作':step.get('action',''),'预期结果':step.get('expected','')})
             export_data=step_rows
         if fields:
-            mapping={'caseCode':'ID','name':'用例名称','priority':'用例等级','reviewResult':'评审结果','status':'执行结果','modulePath':'所属模块','tags':'标签','isAutomated':'是否自动化','createdBy':'创建人','createdAt':'创建时间','updatedBy':'更新人','updatedAt':'更新时间','type':'用例类型','precondition':'前置条件','steps':'测试步骤','requirementRef':'需求关联','templateId':'模板ID','customFields':'自定义字段','step':'步骤序号','action':'操作','expected':'预期结果'}
+            mapping={'caseCode':'ID','name':'用例名称','priority':'用例等级','reviewResult':'评审结果','status':'执行结果','modulePath':'所属模块','tags':'标签','isAutomated':'是否自动化','createdBy':'创建人','createdAt':'创建时间','updatedBy':'更新人','updatedAt':'更新时间','type':'用例类型','precondition':'前置条件','steps':'测试步骤','requirementRef':'需求关联','templateId':'模板ID','customFields':'自定义字段','caseEditType':'描述方式','textDescription':'文本描述','expectedResult':'文本预期结果','description':'备注','step':'步骤序号','action':'操作','expected':'预期结果'}
             selected=list(dict.fromkeys(mapping.get(value.strip(),value.strip()) for value in fields.split(',') if value.strip()))
             allowed=set(mapping.values())-({'步骤序号','操作','预期结果'} if layout=='case' else set())
             if not selected or not set(selected)<=allowed: raise HTTPException(422,'导出字段不合法')
@@ -945,9 +949,15 @@ async def import_test_cases(
                 automated_val = str(row['是否自动化']).strip()
                 is_automated = automated_val in ['是', 'true', 'True', '1', 'yes']
             extra_values={}
-            for key,column in [('requirement_ref','需求关联'),('template_id','模板ID')]:
+            for key,column in [('requirement_ref','需求关联'),('template_id','模板ID'),('text_description','文本描述'),('expected_result','文本预期结果'),('description','备注')]:
                 if column in df.columns:
                     extra_values[key]=None if pd.isna(row.get(column)) else str(row[column]).strip() or None
+            if '描述方式' in df.columns:
+                value = 'STEP' if pd.isna(row.get('描述方式')) else str(row['描述方式']).strip()
+                if value not in {'STEP','TEXT'}:
+                    row_errors.append('描述方式必须为STEP或TEXT')
+                else:
+                    extra_values['case_edit_type'] = value
             if '自定义字段' in df.columns:
                 try:
                     extra_values['custom_fields']={} if pd.isna(row.get('自定义字段')) else json.loads(str(row['自定义字段']))

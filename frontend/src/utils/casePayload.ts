@@ -5,7 +5,8 @@ export const casePayload = (data: Partial<TestCase>): Record<string, unknown> =>
   const fields: Record<string, string> = {
     caseCode: 'case_code', moduleId: 'module_id', executorId: 'executor_id',
     requirementRef: 'requirement_ref', templateId: 'template_id', customFields: 'custom_fields',
-    modulePath: 'module_path', isAutomated: 'is_automated'
+    modulePath: 'module_path', isAutomated: 'is_automated',
+    caseEditType: 'case_edit_type', textDescription: 'text_description', expectedResult: 'expected_result'
   }
   return Object.fromEntries(
     Object.entries(data).map(([key, value]) => [fields[key] || key, value])

@@ -416,3 +416,26 @@ async def test_plan_send_uncertainty_keeps_slot_and_never_replays(lab, monkeypat
         assert db.query(TestSuiteExecution).count() == 4
         assert db.query(TaskQueue).count() == 1
     assert len(attempts) == 1
+
+
+@pytest.mark.asyncio
+async def test_text_manual_result_uses_frozen_description_not_hidden_steps(plan_lab):
+    """文本用例不要求回填保留的步骤草稿，并冻结文本内容。"""
+    db, sent = plan_lab
+    case = db.get(Case, 'case-2')
+    case.case_edit_type = 'TEXT'
+    case.text_description = '<p>冻结文本说明</p>'
+    case.expected_result = '<p>文本预期</p>'
+    case.description = '冻结备注'
+    case.steps = [{'step':1,'action':'隐藏的步骤草稿','expected':'草稿预期'}]
+    db.add(PlanCaseRelation(plan_id='plan',case_id=case.id,execution_order=2))
+    db.commit()
+    run = await start_plan_run(db,'plan','owner')
+    frozen = next(item for item in run.case_snapshot if item['id'] == case.id)
+    assert frozen['snapshot']['text_description'] == '<p>冻结文本说明</p>'
+    case.text_description = '后续编辑'
+    db.commit()
+    record_manual_result(db,run.id,case.id,ManualResultInput(result='passed',notes='文本验收通过'),'owner')
+    assert run.manual_results[case.id]['result'] == 'passed'
+    assert run.manual_results[case.id]['stepResults'] == []
+    assert next(item for item in build_report(db,run)['cases'] if item['caseId'] == case.id)['snapshot']['text_description'] == '<p>冻结文本说明</p>'

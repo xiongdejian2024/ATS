@@ -17,8 +17,9 @@
   <a-drawer v-model:open="caseOpen" :title="current?.caseName" width="min(100vw,900px)">
     <template v-if="current">
       <a-alert v-if="current.linkedAutomation" type="info" message="该功能用例的结果由关联自动化批次更新。" />
-      <p>前置条件：{{current.snapshot?.precondition || '无'}}</p>
-      <a-table :data-source="stepRows" :columns="stepColumns" row-key="index" :pagination="false" size="small" :scroll="{x:700}">
+      <h4>前置条件</h4><CaseRichText :model-value="current.snapshot?.precondition || '无'" readonly />
+      <template v-if="current.snapshot?.case_edit_type === 'TEXT'"><h4>文本描述</h4><CaseRichText :model-value="current.snapshot?.text_description || '无'" readonly /><h4>预期结果</h4><CaseRichText :model-value="current.snapshot?.expected_result || '无'" readonly /></template>
+      <a-table v-else :data-source="stepRows" :columns="stepColumns" row-key="index" :pagination="false" size="small" :scroll="{x:700}">
         <template #bodyCell="{column,record}">
           <template v-if="column.key==='index'">{{record.index+1}}</template>
           <template v-else-if="column.key==='result'"><a-select v-model:value="record.result" :disabled="!canFill(current)" :options="resultOptions" style="width:95px" /></template>
@@ -26,7 +27,8 @@
           <template v-else-if="column.key==='evidence'"><a-select v-model:value="record.defectIds" mode="multiple" :disabled="!canFill(current)" style="width:160px" placeholder="关联缺陷" :options="defects.map(d=>({value:d.id,label:d.title}))" /><a-select v-model:value="record.attachments" mode="multiple" :disabled="!canFill(current)" style="width:160px;margin-top:6px" placeholder="关联附件" :options="collab.attachments.map(a=>({value:a.id,label:a.name}))" /></template>
         </template>
       </a-table>
-      <a-empty v-if="!stepRows.length" description="此用例未定义步骤，可回填整体结果" />
+      <a-empty v-if="!stepRows.length && current.snapshot?.case_edit_type !== 'TEXT'" description="此用例未定义步骤，可回填整体结果" />
+      <h4>备注</h4><CaseRichText :model-value="current.snapshot?.description || '无'" readonly />
       <a-space style="margin:16px 0"><span>整体结果</span><a-select v-model:value="manual.result" :disabled="!canFill(current)" :options="resultOptions" style="width:130px" /><a-button v-if="canFill(current)" type="primary" @click="saveResult">保存步骤和结果</a-button></a-space>
       <a-textarea v-model:value="manual.notes" :disabled="!canFill(current)" placeholder="实际结果与说明" :rows="3" />
       <a-divider>证据与缺陷</a-divider>
@@ -47,6 +49,7 @@
 import {ref,reactive,computed,onMounted,watch} from 'vue'
 import {message} from 'ant-design-vue'
 import type {TestCase} from '@/types'
+import CaseRichText from '@/components/TestCase/CaseRichText.vue'
 import CaseMindMap from '@/components/TestCase/CaseMindMap.vue'
 import {planCollaborationApi,downloadPlanFile,type ReportRun,type ReportCase,type StepResult} from '@/api/planCollaboration'
 import {caseFeaturesApi,type CaseIssue} from '@/api/caseFeatures'
@@ -75,7 +78,7 @@ const stepColumns=[{title:'#',key:'index',width:40},{title:'步骤',dataIndex:'a
 const canFill=(row:ReportCase)=>!row.executionId && !row.linkedAutomation && ['queued','running'].includes(run.value?.status||'')
 const association=()=>current.value?.associationId||current.value?.caseId||''
 async function reloadCollab(){Object.assign(collab,await planCollaborationApi.collaboration(props.runId,association()));defects.value=await caseFeaturesApi.issues(props.projectId,{kind:'defect'})}
-async function openCase(row:ReportCase){current.value=row;manual.result=row.result==='pending'?'passed':row.result;manual.notes=row.notes||'';stepRows.value=(row.snapshot?.steps||[]).map((step,index)=>({index,action:step.action||'',expected:step.expected||'',result:'pending',actual:'',notes:'',defectIds:[],attachments:[],...(row.stepResults||[]).find(s=>s.index===index)}));caseOpen.value=true;try{await reloadCollab()}catch(error){console.error('读取计划执行协作失败',error);message.error('读取执行协作失败')}}
+async function openCase(row:ReportCase){current.value=row;manual.result=row.result==='pending'?'passed':row.result;manual.notes=row.notes||'';stepRows.value=(row.snapshot?.case_edit_type==='TEXT'?[]:row.snapshot?.steps||[]).map((step,index)=>({index,action:step.action||'',expected:step.expected||'',result:'pending',actual:'',notes:'',defectIds:[],attachments:[],...(row.stepResults||[]).find(s=>s.index===index)}));caseOpen.value=true;try{await reloadCollab()}catch(error){console.error('读取计划执行协作失败',error);message.error('读取执行协作失败')}}
 async function saveResult(){try{await planCollaborationApi.result(props.runId,association(),{...manual,stepResults:stepRows.value.map(({action,expected,...step})=>step)});message.success('执行结果已保存');caseOpen.value=false;await load();emit('changed')}catch(error){console.error('保存步骤执行结果失败',error);message.error('保存失败，请核对步骤结果')}}
 async function upload(file:File){if(file.size>5*1024*1024){message.error('附件超过5MB');return false}try{const encoded=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(file)});await planCollaborationApi.attachment(props.runId,association(),{name:file.name,mimeType:file.type,contentBase64:encoded});await reloadCollab();message.success('附件已保存，可关联到步骤')}catch(error){console.error('上传计划附件失败',error);message.error('上传失败')}return false}
 async function downloadAttachment(file:{id:string;name:string}){try{await downloadPlanFile(`attachments/${file.id}`,file.name)}catch(error){console.error('下载计划附件失败',error);message.error('下载失败')}}

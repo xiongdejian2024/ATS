@@ -1,6 +1,6 @@
 """测试用例相关模式"""
 from pydantic import BaseModel, field_validator
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Literal
 from uuid import UUID
 from datetime import datetime
 
@@ -19,6 +19,10 @@ class TestCaseBase(BaseModel):
     type: str  # functional, interface, ui, performance, security
     priority: str = "P2"  # P0, P1, P2, P3
     precondition: Optional[str] = None
+    case_edit_type: Literal["STEP", "TEXT"] = "STEP"
+    text_description: Optional[str] = None
+    expected_result: Optional[str] = None
+    description: Optional[str] = None
     steps: Optional[List[Dict[str, Any]]] = None  # JSONB格式，默认为None，在服务层处理
     requirement_ref: Optional[str] = None
     module_path: Optional[str] = None
@@ -105,6 +109,10 @@ class TestCaseUpdate(BaseModel):
     type: Optional[str] = None
     priority: Optional[str] = None
     precondition: Optional[str] = None
+    case_edit_type: Optional[Literal["STEP", "TEXT"]] = None
+    text_description: Optional[str] = None
+    expected_result: Optional[str] = None
+    description: Optional[str] = None
     steps: Optional[List[Dict[str, Any]]] = None
     requirement_ref: Optional[str] = None
     module_path: Optional[str] = None
@@ -116,6 +124,13 @@ class TestCaseUpdate(BaseModel):
     is_automated: Optional[bool] = None  # 是否自动化
     template_id: Optional[str] = None
     custom_fields: Optional[Dict[str, Any]] = None
+
+    @field_validator('case_edit_type')
+    @classmethod
+    def validate_edit_type(cls, value):
+        if value is None:
+            raise ValueError('用例描述类型不能为空')
+        return value
 
 
 class TestCaseResponse(TestCaseBase):

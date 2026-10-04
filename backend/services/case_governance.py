@@ -24,6 +24,10 @@ SNAPSHOT_FIELDS = (
     "type",
     "priority",
     "precondition",
+    "case_edit_type",
+    "text_description",
+    "expected_result",
+    "description",
     "steps",
     "requirement_ref",
     "module_path",
@@ -174,7 +178,10 @@ def restore_version(db, user, project_id, case_id, version_id, request):
     if executor_id and not db.get(User, executor_id):
         raise HTTPException(409, "历史版本执行人已不存在")
     for field in SNAPSHOT_FIELDS:
-        setattr(case, field, deepcopy(target.snapshot.get(field)))
+        value = target.snapshot.get(field)
+        if field == "case_edit_type":
+            value = value or "STEP"  # 兼容新增文本字段前的不可变历史快照。
+        setattr(case, field, deepcopy(value))
     from services.case_features import prepare_case_template
 
     prepared = prepare_case_template(

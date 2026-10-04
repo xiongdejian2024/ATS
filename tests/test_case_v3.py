@@ -399,3 +399,55 @@ def test_excel_actual_roundtrip_retains_steps_template_custom_and_requirement(fe
     assert current['steps']==payload['steps']
     assert current['precondition']==payload['precondition'] and current['requirementRef']==payload['requirement_ref']
     assert current['customFields']==payload['custom_fields'] and current['templateId']==template['id']
+
+
+def test_text_case_content_copy_versions_and_legacy_restore(governance):
+    """文本与步骤草稿分别保留，复制/版本完整，旧快照按步骤模式恢复。"""
+    from models.case_governance import CaseVersion
+
+    g = governance
+    c, case = g['client'], g['cases'][0]
+    url = f'/api/v1/test-cases/{case.id}'
+    payload = dict(case_edit_type='TEXT', text_description='<p><strong>输入边界</strong></p>',
+                   expected_result='<p>返回校验提示</p>', description='<p>保留备注</p>',
+                   executor_id=g['users'][1].id)
+    response = c.put(url, json=payload)
+    assert response.status_code == 200, response.text
+    data = response.json()['data']
+    assert data['caseEditType'] == 'TEXT'
+    assert data['textDescription'] == payload['text_description']
+    assert data['description'] == payload['description']
+    assert data['executorId'] == g['users'][1].id
+    assert data['steps'][0]['action'] == '打开'
+    exported = c.get(f"/api/v1/projects/{g['project'].id}/cases/export", params={'case_ids':case.id,'format':'xmind'})
+    assert exported.status_code == 200
+    row = read_xmind(exported.content)[0]
+    assert row['描述方式'] == 'TEXT'
+    assert row['文本描述'] == payload['text_description']
+    assert row['文本预期结果'] == payload['expected_result']
+    assert row['备注'] == payload['description']
+    xlsx = c.get(f"/api/v1/projects/{g['project'].id}/cases/export", params={'case_ids':case.id,'fields':'caseEditType,textDescription,expectedResult,description'})
+    import pandas as pd
+    table = pd.read_excel(io.BytesIO(xlsx.content))
+    assert table.iloc[0]['描述方式'] == 'TEXT'
+    assert table.iloc[0]['文本描述'] == payload['text_description']
+
+    response = c.post(g['base']+'/batch-copy', json={'caseIds':[case.id], 'moduleId':None})
+    assert response.status_code == 200, response.text
+    copied = response.json()['data']['caseIds'][0]
+    clone = c.get(f'/api/v1/test-cases/{copied}', params={'project_id':g['project'].id}).json()['data']
+    for key in ['caseEditType','textDescription','expectedResult','description','executorId','steps']:
+        assert clone[key] == data[key]
+    assert c.put(url, json={'case_edit_type':'STEP'}).status_code == 200
+    assert c.get(url, params={'project_id':g['project'].id}).json()['data']['textDescription'] == payload['text_description']
+    assert c.put(url, json={'case_edit_type':None}).status_code == 422
+    assert c.put(url, json={'case_edit_type':'OTHER'}).status_code == 422
+    old = g['db'].query(CaseVersion).filter_by(case_id=case.id, version=1).one()
+    old.snapshot = {k:v for k,v in old.snapshot.items() if k not in {'case_edit_type','text_description','expected_result','description'}}
+    g['db'].commit()
+    response = c.post(g['base']+f'/cases/{case.id}/versions/{old.id}/restore', json={'expectedVersion':3,'reason':'兼容历史快照'})
+    assert response.status_code == 200, response.text
+    restored = c.get(url, params={'project_id':g['project'].id}).json()['data']
+    assert restored['caseEditType'] == 'STEP'
+    assert restored['textDescription'] is None
+    assert restored['steps'][0]['action'] == '打开'

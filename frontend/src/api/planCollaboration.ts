@@ -2,7 +2,7 @@ import { apiClient } from '@/utils/api'
 import {useUserStore} from '@/stores/user'
 import type {PlanRun,RunCase} from './planOrchestration'
 export interface StepResult {index:number;result:string;actual:string;notes:string;defectIds:string[];attachments:string[]}
-export interface ReportCase extends RunCase {associationId?:string;category?:string;snapshot?:{precondition?:string;steps?:{action?:string;expected?:string}[]};stepResults?:StepResult[];linkedAutomation?:boolean;assignedTo?:string}
+export interface ReportCase extends RunCase {associationId?:string;category?:string;snapshot?:{precondition?:string;case_edit_type?:string;text_description?:string;expected_result?:string;description?:string;steps?:{action?:string;expected?:string}[]};stepResults?:StepResult[];linkedAutomation?:boolean;assignedTo?:string}
 export type ReportRun=PlanRun & {summary?:{conclusion?:string;risk?:string;notes?:string};report:PlanRun['report'] & {categories?:Record<string,{total:number;counts:Record<string,number>}>;cases:ReportCase[]}}
 const base='/plan-orchestration'
 export const planCollaborationApi={

@@ -18,7 +18,8 @@ def require_association(run, association_id):
 
 def validate_steps(db, run, case, steps):
     from models.case_features import CaseIssue
-    size = len(case.get("snapshot", {}).get("steps") or [])
+    frozen = case.get("snapshot", {})
+    size = 0 if frozen.get("case_edit_type") == "TEXT" else len(frozen.get("steps") or [])
     seen = set()
     clean = []
     project_id = db.get(TestPlan, run.plan_id).project_id
