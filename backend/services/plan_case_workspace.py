@@ -68,7 +68,7 @@ def entries(db, plan, category):
             result=result['result'] if result else (RESULTS.get(association.execution_status,'pending') if source == 'legacy' else 'pending'),
             bugCount=len(bugs.get(case.id,set())), runId=run.id if result else None,
             grouped=grouped, precondition=case.precondition, steps=case.steps, caseEditType=case.case_edit_type,
-            textDescription=case.text_description, expectedResult=case.expected_result))
+            textDescription=case.text_description, expectedResult=case.expected_result, description=case.description))
     from services.plan_case_execution import overlay
     return overlay(db, plan.id, items, run), list(points.values()), modules, uses
 

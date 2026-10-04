@@ -32,6 +32,7 @@ export interface PlanCaseEntry {
   caseEditType?: string;
   textDescription?: string;
   expectedResult?: string;
+  description?: string;
 }
 export interface CaseFolder {
   id: string;

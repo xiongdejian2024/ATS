@@ -50,3 +50,5 @@ __all__ = [
     "RolePermission",
     "ProjectPermission",
 ]
+
+from . import plan_case_media

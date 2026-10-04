@@ -76,12 +76,17 @@ def execute(db, user, plan, data):
         if {row.association_key for row in previous} != set(body['selections']) or any(row.payload_hash != digest for row in previous):
             raise HTTPException(409, '同一请求编号不能提交不同的执行内容')
         return dict(updated=len(previous), replayed=True)
+    from services.plan_case_media import description_media
+    from models.plan_case_media import PlanCaseMediaLink
+    media_ids=description_media(db,user,plan,data.description)
     timestamp = beijing_now()
     for row in rows:
         case = db.get(TestCase, row['caseId'])
-        db.add(PlanCaseExecution(plan_id=plan.id, association_key=row['id'], case_id=case.id, request_id=request,
+        record=PlanCaseExecution(plan_id=plan.id, association_key=row['id'], case_id=case.id, request_id=request,
             payload_hash=digest, executor_id=str(user.id), executor_name=user.username, result=data.result,
-            description=data.description, step_results=steps, case_snapshot=serialize_model(case, camel_case=True), created_at=timestamp))
+            description=data.description, step_results=steps, case_snapshot=serialize_model(case, camel_case=True), created_at=timestamp)
+        db.add(record);db.flush()
+        for media_id in media_ids:db.add(PlanCaseMediaLink(execution_id=record.id,media_id=media_id))
         if row['source'] == 'legacy':
             relation = db.get(PlanCaseRelation, row['associationId'])
             relation.execution_status = {'passed':'pass', 'failed':'fail'}.get(data.result, data.result)

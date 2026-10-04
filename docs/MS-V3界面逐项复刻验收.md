@@ -34,7 +34,7 @@
 | 计划详情 | 独立页面、测试规划/功能用例/API用例/API场景/缺陷列表/执行历史 | 第十一部分已提供独立页面、按关联数量显示分类页签、缺陷与历史真实数据；分类内完整字段、关联弹窗及执行入口仍需逐项对齐 |
 | 测试点/执行配置 | 各分类层级、关联用例/场景、继承/覆盖、环境资源池、串并行、重复关联和分工 | 第十一部分已按分类过滤树并保留公共祖先，配置迁入详情更多菜单抽屉；完整分类操作及字段仍待对照 |
 | 功能用例工作区 | 测试集/模块双栏、目录计数、列表/脑图、筛选、分配、移动、取消关联、缺陷 | 第十二、十三、十七部分已提供真实列表、目录、关联抽屉、批量管理、行内与批量结果回填；个人视图、列设置及完整官方菜单仍待补齐 |
-| 功能用例执行详情 | 步骤/文本执行、备注、缺陷、证据、历史、关联结果、脑图执行 | 第十七部分已提供318px侧栏、独立执行页、步骤/文本、结果与描述、缺陷、独立执行历史及自动下一条；完整附件、提及、编辑、脑图执行及活动批次整合仍待补齐 |
+| 功能用例执行详情 | 步骤/文本执行、备注、缺陷、证据、历史、关联结果、脑图执行 | 第十七部分已提供318px侧栏、独立执行页、步骤/文本、结果与描述、缺陷、独立执行历史及自动下一条；第十九部分已补主附件只读预览/下载、备注和执行描述图片及历史显示；文件库关联、临时图片自动清理、提及、编辑、脑图执行及活动批次整合仍待补齐 |
 | 计划报告首页 | 独立报告列表、筛选/排序、状态/指标、批量与分享入口 | 第九/十部分已提供独立列表、三类切换、真实组合筛选/排序、改名、单条/批量删除及列表导出；个人视图、列设置和筛选控件位置仍待逐项对齐 |
 | 计划报告详情 | 指标、执行分析、用例/测试集/缺陷明细、总结、配置卡片、PDF、分享 | 第九部分独立详情、组成员报告导航、总结、PDF/分享已接入；完整配置卡片及分析仍待补齐 |
 | 通知/权限/项目模板 | 与上述页面交互一致，异常与禁用状态真实，不提供假按钮 | 后端有权限和通知；逐UI条件/错误/空态需复核 |
@@ -207,6 +207,20 @@
 - 实际浏览器输入草稿→执行历史（提交区隐藏）→用例详情（草稿原样保留）→返回计划触发未提交确认→丢弃并离开。全程没有提交结果。桌面历史截图更新并检查；前端类型与构建通过，后端沿用上一部分171项完整回归，无后端改动。
 - 第十七部分已推送远程 `8256e2f`。本小功能单独提交；剩余附件、完整交互及其他清单缺口继续执行，目标仍未完成。
 
+## 第十九部分变更日志
+
+- 2026-10-05：按照固定官方版本核对两类文件位置：主用例附件及备注在“用例详情”内显示；执行图片插入执行描述，随当次描述在“执行历史”内显示。保留基本信息、用例详情、缺陷、执行历史四个页签，未另造附件页签。主附件在计划执行入口只读，即使负责人也不显示上传和删除按钮。
+- 检查已有依赖后，复用 Tiptap 编辑器并增加同版本 `@tiptap/extension-image@3.31.4`；使用 Vue 节点视图经登录鉴权读取 Blob，持久化内容保存规范 API 地址，浏览器临时 Blob 地址不进入历史。只有明确私有图片路由接收登录凭据，外域图片不携带 ATS 登录凭据。后端显式声明已有 Pillow 12 依赖，以实际解码结果确认 PNG/JPEG/GIF/WebP，拒绝空文件、伪装文件、截断图片和超限内容。
+- 图片及其历史引用保存到新增 `plan_case_media`、`plan_case_media_links`。提交前草稿仅上传人可访问，提交后按计划和项目读权限访问。跨计划引用被拒绝；同批量图片可引用到多个独立记录；幂等重试不会重复引用。图片关联与结果在同一事务提交，提交失败整体回滚；已引用图片不能删除，取消用例关联后仍可查看历史图片。未引用草稿提供本人删除接口。
+- 上传中禁止提交及离开当前执行上下文。单条上传期间四个页签禁用；批量弹窗提交/取消禁用且不提供关闭按钮。附件加载失败可重试，切换用例不会显示上个用例的附件，预览使用请求序号及 Blob 回收避免旧请求覆盖当前图片。
+- 自动验证：后端完整 `tests` 回归 **174 项通过**；前端 **34 项单元测试通过**；类型检查和生产构建通过。新增测试覆盖真实 MIME、鉴权、归档、跨计划引用、批量幂等、失败回滚、历史引用和未引用草稿删除；前端测试覆盖私有图片路由与外域/目录穿越/伪装地址的凭据边界。
+- 实际浏览器在原隔离库验证主附件预览及下载，下载文件与源文件逐字节相同；单条描述插入图片→切页签保留草稿→提交→历史查看→刷新→图片仍加载→下载逐字节相同；批量两条共享图片后两条独立历史有效。只读用户可读取已提交图片，但看不到上传、提交入口；真实未登录请求被拒绝，未提交图片对其他成员返回403。
+- 2500ms网络延迟验收确认：单条上传时四个页签均为禁用、提交按钮禁用；批量上传时上传/提交/取消均禁用且关闭按钮不存在，上传完成后恢复。丢弃单条图片草稿触发离开确认，未新增结果；验收草稿随后通过本人删除接口显式清理。**丢弃草稿后的自动临时图片清理和完整文件库交互尚未完成，未将显式清理冒充自动清理。**
+- 桌面和390px窄屏截图已检查：窄屏可用宽度及滚动宽度均390px，图片宽344px。证据保存于本机 `evidence/ms-v3-execution-history-image.png`、`ms-v3-execution-image-readonly.png`、`ms-v3-execution-image-mobile.png`、`ms-v3-execution-master-preview-stable.png`。
+- 隔离库最终共7条独立结果、2张已提交图片、3条图片引用；保留原2个批次、1个组批次，任务队列0。原冻结报告SHA256（`json.dumps(report,sort_keys=True)`）继续匹配 `6fdc6746dc5401ecf4002aaf0da159dd4ddca166560bd315b6ab2cf87ad661d6` 及 `518a79092541ac2b61cbb50497cba7fa2446c56c98619162b47768218a1fd98e`。
+- 正式原 Docker MySQL 先保存私有备份 `ms-functional-backup-20261005-074229/database.sql`（388627字节），预览升级仅包含2张新表及4个索引，执行后重复预览0项。再重启原后端、Agent和Celery；只读核验仍为100用例、7计划、0活动任务、1在线节点，独立回填/执行图片/图片引用均0，正式前后端及历史接口200。没有在正式库写验收结果，没有真实台架执行。
+- 本部分完成图片和主附件显示链路，整体目标仍在进行。双击大编辑器、提及、草稿自动清理、完整缺陷关联和主用例编辑、活动批次统一历史、脑图执行，以及矩阵中的API/场景列表、列设置、评审和环境/资源池语义等缺口继续保留，不表示100%复刻完成。
+
 ## 官方依据
 
 - [公共布局源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/layout/default-layout.vue)
@@ -237,3 +251,9 @@
 
 - [功能用例独立执行详情官方源码](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/featureCase/detail/index.vue)
 - [功能用例执行提交官方源码](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/featureCase/detail/executeSubmit.vue)
+
+- [用例详情附件与备注官方源码](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/case-management/caseManagementFeature/components/tabContent/tabDetail.vue)
+- [执行描述图片上传官方源码](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/featureCase/components/executeForm.vue)
+- [功能用例执行历史官方源码](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/featureCase/detail/executionHistory/index.vue)
+- [Tiptap Image文档](https://tiptap.dev/docs/editor/extensions/nodes/image)
+- [Tiptap Vue节点视图文档](https://tiptap.dev/docs/editor/extensions/custom-extensions/node-views/vue)

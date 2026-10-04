@@ -1,6 +1,8 @@
 """计划分类列表与关联管理接口。"""
 from typing import Literal
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, UploadFile, File
+from fastapi.responses import Response
+from urllib.parse import quote
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from database import get_db
@@ -77,3 +79,38 @@ def execution_detail(plan_id: str, source: Literal['legacy','node'], association
     plan = plan_access(db,user,plan_id)
     require_project_access(db,user,plan.project_id,'test_case:read')
     return ok(detail(db,user,plan,source,associationId,caseId,page,size))
+
+
+@router.post('/plans/{plan_id}/execution-media')
+def upload_execution_image(plan_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_media import upload
+    plan=plan_access(db,user,plan_id,'execute')
+    require_project_access(db,user,plan.project_id,'test_case:read')
+    return ok(transact(db,lambda:upload(db,user,plan,file)))
+
+
+def execution_image(db,user,plan_id,media_id):
+    from services.plan_case_media import find
+    plan=plan_access(db,user,plan_id)
+    require_project_access(db,user,plan.project_id,'test_case:read')
+    return find(db,user,plan,media_id)
+
+
+@router.get('/plans/{plan_id}/execution-media/{media_id}/preview')
+def preview_execution_image(plan_id: str, media_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    row=execution_image(db,user,plan_id,media_id)
+    return Response(row.content,media_type=row.mime_type,headers={'X-Content-Type-Options':'nosniff','Cache-Control':'private, no-store'})
+
+
+@router.get('/plans/{plan_id}/execution-media/{media_id}/download')
+def download_execution_image(plan_id: str, media_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    row=execution_image(db,user,plan_id,media_id)
+    return Response(row.content,media_type='application/octet-stream',headers={'Content-Disposition':"attachment; filename*=UTF-8''"+quote(row.file_name,safe=''),'X-Content-Type-Options':'nosniff','Cache-Control':'private, no-store'})
+
+
+@router.delete('/plans/{plan_id}/execution-media/{media_id}')
+def delete_execution_image(plan_id: str, media_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_media import remove
+    plan=plan_access(db,user,plan_id,'execute')
+    require_project_access(db,user,plan.project_id,'test_case:read')
+    return ok(transact(db,lambda:remove(db,user,plan,media_id)))

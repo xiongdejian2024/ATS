@@ -246,8 +246,10 @@
     title="批量执行"
     width="min(800px,100vw)"
     :confirm-loading="executeSaving"
-    :mask-closable="!executeSaving"
-    :cancel-button-props="{ disabled: executeSaving }"
+    :mask-closable="!executeSaving && !executeMediaUploading"
+    :closable="!executeSaving && !executeMediaUploading"
+    :ok-button-props="{ disabled: executeMediaUploading }"
+    :cancel-button-props="{ disabled: executeSaving || executeMediaUploading }"
     ok-text="提交结果"
     @ok="executeBatch"
     ><p>已选择 {{ executeTargets.length }} 个用例</p>
@@ -255,6 +257,8 @@
       v-model:result="executeResult"
       v-model:description="executeDescription"
       :disabled="executeSaving"
+      :plan-id="plan.id"
+      v-model:uploading="executeMediaUploading"
   /></a-modal>
   <a-modal
     v-model:open="batchOpen"
@@ -292,7 +296,12 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, reactive, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import {
+  onBeforeRouteLeave,
+  onBeforeRouteUpdate,
+  useRoute,
+  useRouter,
+} from "vue-router";
 import { message } from "ant-design-vue";
 import {
   FolderOpenOutlined,
@@ -555,9 +564,19 @@ function openExecution(row: PlanCaseEntry) {
 const executing = ref(new Set<string>()),
   executeBatchOpen = ref(false),
   executeSaving = ref(false),
+  executeMediaUploading = ref(false),
   executeResult = ref("passed"),
   executeDescription = ref(""),
   executeTargets = ref<PlanCaseEntry[]>([]);
+function allowNavigation() {
+  if (executeMediaUploading.value || executeSaving.value) {
+    message.info("图片上传或结果提交中，请稍候");
+    return false;
+  }
+  return true;
+}
+onBeforeRouteLeave(allowNavigation);
+onBeforeRouteUpdate(allowNavigation);
 async function inlineResult(row: PlanCaseEntry, value: unknown) {
   if (
     !data.value?.canExecute ||
@@ -592,7 +611,7 @@ function openExecuteBatch() {
   executeBatchOpen.value = true;
 }
 async function executeBatch() {
-  if (!data.value?.canExecute) return;
+  if (!data.value?.canExecute || executeMediaUploading.value) return;
   executeSaving.value = true;
   try {
     await planCaseWorkspaceApi.execute(props.plan.id, {

@@ -105,7 +105,10 @@
                 message="主用例已回收，当前关联不可执行"
               />
               <a-tabs v-model:active-key="tab">
-                <a-tab-pane key="basic" tab="基本信息"
+                <a-tab-pane
+                  :disabled="mediaUploading || saving"
+                  key="basic"
+                  tab="基本信息"
                   ><a-descriptions bordered :column="1"
                     ><a-descriptions-item label="优先级">{{
                       currentCase.priority
@@ -128,7 +131,11 @@
                     ></a-descriptions
                   ></a-tab-pane
                 >
-                <a-tab-pane key="details" tab="用例详情">
+                <a-tab-pane
+                  :disabled="mediaUploading || saving"
+                  key="details"
+                  tab="用例详情"
+                >
                   <h4>前置条件</h4>
                   <CaseRichText
                     :model-value="currentCase.precondition || ''"
@@ -180,8 +187,24 @@
                         placeholder="实际结果"
                     /></a-space>
                   </div>
+                  <h4>备注</h4>
+                  <CaseRichText
+                    :model-value="currentCase.description || ''"
+                    readonly
+                    label="用例备注"
+                  />
+                  <CaseAttachments
+                    v-if="!detail.detached && !detail.entry?.recycled"
+                    :key="selectedKey"
+                    :project-id="projectId"
+                    :case-id="caseId"
+                    read-only
+                  />
                 </a-tab-pane>
-                <a-tab-pane key="defects" tab="缺陷"
+                <a-tab-pane
+                  :disabled="mediaUploading || saving"
+                  key="defects"
+                  tab="缺陷"
                   ><PlanDefects
                     :key="selectedKey"
                     :plan-id="planId"
@@ -192,7 +215,10 @@
                       !detail.entry?.recycled
                     "
                 /></a-tab-pane>
-                <a-tab-pane key="history" :tab="`执行历史 (${detail.total})`"
+                <a-tab-pane
+                  :disabled="mediaUploading || saving"
+                  key="history"
+                  :tab="`执行历史 (${detail.total})`"
                   ><a-empty
                     v-if="!detail.history.length"
                     description="暂无独立执行记录" />
@@ -238,12 +264,18 @@
                   v-model:result="result"
                   v-model:description="description"
                   :disabled="saving"
+                  :plan-id="planId"
+                  v-model:uploading="mediaUploading"
                 /><a-space wrap
                   ><a-switch
                     v-model:checked="autoNext"
                     :disabled="saving"
                   /><span>提交后自动切换下一条</span
-                  ><a-button type="primary" :loading="saving" @click="submit"
+                  ><a-button
+                    type="primary"
+                    :loading="saving"
+                    :disabled="mediaUploading"
+                    @click="submit"
                     >提交结果</a-button
                   ></a-space
                 >
@@ -275,6 +307,7 @@ import {
 } from "@/api/planCaseWorkspace";
 import { useProjectStore } from "@/stores/project";
 import type { TestPlan } from "@/types";
+import CaseAttachments from "@/components/TestCase/CaseAttachments.vue";
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
 import PlanCaseExecuteForm from "@/components/TestPlan/PlanCaseExecuteForm.vue";
 import PlanDefects from "@/components/TestPlan/PlanDefects.vue";
@@ -307,7 +340,8 @@ const loading = ref(false),
   listFailed = ref(false),
   detailLoading = ref(false),
   detailFailed = ref(false),
-  saving = ref(false);
+  saving = ref(false),
+  mediaUploading = ref(false);
 const initialListing = functionalListingState(route.query);
 const listSize = initialListing.size;
 const search = ref(initialListing.search),
@@ -341,7 +375,7 @@ let contextSequence = 0,
 const formatTime = (value: string) =>
   dayjs(value).format("YYYY-MM-DD HH:mm:ss");
 useEventListener(window, "beforeunload", (event) => {
-  if (dirty.value || saving.value) {
+  if (dirty.value || saving.value || mediaUploading.value) {
     event.preventDefault();
     event.returnValue = "";
   }
@@ -355,7 +389,7 @@ function resultColor(value: string) {
   )[value];
 }
 function confirmLeave(): Promise<boolean> {
-  if (saving.value) return Promise.resolve(false);
+  if (saving.value || mediaUploading.value) return Promise.resolve(false);
   if (!dirty.value) return Promise.resolve(true);
   return new Promise((resolve) =>
     Modal.confirm({
@@ -521,7 +555,13 @@ function openMainCase() {
 }
 async function submit() {
   const entry = detail.value?.entry;
-  if (!entry || !detail.value?.canExecute || saving.value) return;
+  if (
+    !entry ||
+    !detail.value?.canExecute ||
+    saving.value ||
+    mediaUploading.value
+  )
+    return;
   if (!functionalResults.some((option) => option.value === result.value)) {
     message.warning("请选择通过、失败或阻塞");
     return;
