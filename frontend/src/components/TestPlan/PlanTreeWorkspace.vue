@@ -51,7 +51,7 @@ const pointTree=computed(()=>{const convert=(parent:string|null=null):any[]=>nod
 function configText(config:NodeConfig){return [config.executionMode==='parallel'?'并行':config.executionMode==='serial'?'串行':'继承计划策略',config.environmentId?environments.value.find(e=>e.id===config.environmentId)?.name:config.resourcePool?.length?`${config.resourcePool.length} 个节点资源池`:'测试套环境'].join(' · ')}
 async function searchCases(search=''){try{const result=await testCaseApi.getTestCases(props.projectId,{page:1,size:100,search});cases.value=result.items}catch(error){console.error('搜索计划关联用例失败',error)}}
 async function load(){try{const [n,s,e,u]=await Promise.all([planTreeApi.list(props.planId),testSuiteApi.getTestSuites(props.planId,{limit:1000}),environmentApi.getEnvironments({size:100}),planTreeApi.executors(props.planId)]);nodes.value=n;suites.value=s.items;environments.value=e.items;executors.value=u;await searchCases()}catch(error){console.error('加载计划测试点失败',error);message.error('加载测试点失败')}}
-function edit(node?:PlanNode){editingId.value=node?.id||'';Object.assign(form,blank(),node?JSON.parse(JSON.stringify(node)):{});open.value=true}
+function edit(node?:PlanNode){editingId.value=node?.id||'';Object.assign(form,blank(),node?JSON.parse(JSON.stringify(node)):{position:Math.max(-1,...nodes.value.filter(n=>!n.parentId).map(n=>n.position))+1});open.value=true}
 function addCase(){edit();form.nodeType='case'}
 function addSuite(){edit();form.nodeType='suite';form.category='scenario'}
 function chooseCase(id:string){const selected=cases.value.find(c=>c.id===id);if(selected){form.name=selected.name;form.category=selected.isAutomated?'api':'functional'}}

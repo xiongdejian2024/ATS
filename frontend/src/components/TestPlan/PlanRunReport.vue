@@ -5,7 +5,7 @@
       <a-row :gutter="16" class="stats"><a-col :span="6"><a-statistic title="执行项" :value="run.report.total" /></a-col><a-col :span="6"><a-statistic title="通过" :value="run.report.counts.passed" /></a-col><a-col :span="6"><a-statistic title="失败 / 错误" :value="run.report.counts.failed+run.report.counts.error" /></a-col><a-col :span="6"><a-statistic title="通过率" :value="run.report.passRate" suffix="%" /></a-col></a-row>
       <a-tabs>
         <a-tab-pane key="results" tab="用例与步骤执行">
-          <a-space style="margin:8px 0"><a-select v-model:value="category" allow-clear placeholder="全部分类" style="width:120px" :options="[{value:'functional',label:'功能'},{value:'api',label:'API'},{value:'scenario',label:'场景'}]" /><a-select v-model:value="resultFilter" allow-clear placeholder="全部结果" style="width:120px" :options="resultOptions" /><a-radio-group v-model:value="view"><a-radio-button value="table">列表</a-radio-button><a-radio-button value="mind">脑图执行</a-radio-button></a-radio-group></a-space>
+          <a-space wrap class="result-filters" style="margin:8px 0"><a-select v-model:value="category" allow-clear placeholder="全部分类" style="width:120px" :options="[{value:'functional',label:'功能'},{value:'api',label:'API'},{value:'scenario',label:'场景'}]" /><a-select v-model:value="resultFilter" allow-clear placeholder="全部结果" style="width:120px" :options="resultOptions" /><a-radio-group v-model:value="view"><a-radio-button value="table">列表</a-radio-button><a-radio-button value="mind">脑图执行</a-radio-button></a-radio-group></a-space>
           <CaseMindMap v-if="view==='mind'" :cases="mindCases" :modules="mindModules" readonly @select="selectMind" />
           <a-table v-else :data-source="filtered" :columns="columns" :row-key="rowKey" size="small" :scroll="{x:650}"><template #bodyCell="{column,record}"><template v-if="column.key==='result'"><a-tag>{{label(record.result)}}</a-tag></template><template v-else-if="column.key==='actions'"><a-button type="link" size="small" @click="openCase(record)">{{canFill(record)?'执行 / 逐步骤回填':'查看步骤 / 协作'}}</a-button></template></template></a-table>
         </a-tab-pane>
@@ -87,4 +87,4 @@ async function createShare(){try{const result=await planCollaborationApi.share(p
 async function revoke(id:string){try{await planCollaborationApi.revoke(id);await loadShares()}catch(error){console.error('撤销报告分享失败',error);message.error('撤销失败')}}
 onMounted(load);watch(()=>props.runId,load)
 </script>
-<style scoped>.stats{margin:20px 0}</style>
+<style scoped>.stats{margin:20px 0}.result-filters :deep(.ant-radio-group){white-space:nowrap}.result-filters :deep(.ant-space-item){flex-shrink:0}</style>

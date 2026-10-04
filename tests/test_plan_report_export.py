@@ -35,3 +35,15 @@ def test_pdf_long_report_paginates_without_losing_last_case():
 def test_pdf_requires_explicit_report():
     with pytest.raises(ValueError, match="report"):
         render_plan_report({"id": "无报告"})
+
+
+def test_pdf_partial_step_uses_recorded_index_and_group_defects():
+    data = render_plan_report(dict(id="部分步骤", groupName="版本回归组", summary={"conclusion":"已复核"},
+        report=dict(total=1, cases=[dict(caseId="c", caseName="分步用例", result="failed",
+            snapshot={"steps":[{"action":"第一步"},{"action":"第二步操作","expected":"第二步预期"}]},
+            stepResults=[dict(index=1,result="failed",actual="第二步实际结果")])],
+            bugs=[dict(title="界面缺陷",status="open",description="显示异常")]),
+        children=[dict(planName="子计划",status="failed",report={"total":1,"passRate":0})]))
+    extracted = "\n".join(p.extract_text() for p in PdfReader(BytesIO(data)).pages)
+    assert all(value in extracted for value in ["第二步操作","第二步预期","第二步实际结果","界面缺陷","显示异常","已复核"])
+    assert "操作：第一步" not in extracted

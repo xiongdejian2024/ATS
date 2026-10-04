@@ -49,12 +49,14 @@ def aggregate(db, run):
             for child in details for case in child["report"]["cases"]]
     counts = {state: sum(row["result"] == state for row in rows)
               for state in ("passed", "failed", "error", "blocked", "skipped", "cancelled", "pending")}
+    bugs = list({defect["id"]: defect for row in rows for step in row.get("stepResults", [])
+                 for defect in step.get("defects", [])}.values())
     rate = round(100 * counts["passed"] / len(rows), 2) if rows else 0
     settled = bool(details) and all(child["status"] in TERMINAL for child in details)
     outcome = "cancelled" if run.status in ("cancelled", "cancelling") else (
         "running" if not settled else "passed" if rows and rate >= run.config_snapshot["passThreshold"] else "failed")
     return dict(total=len(rows), counts=counts, passRate=rate, passThreshold=run.config_snapshot["passThreshold"],
-                outcome=outcome, cases=rows, plans=details)
+                outcome=outcome, cases=rows, plans=details, bugs=bugs)
 
 
 def run_data(db, run):

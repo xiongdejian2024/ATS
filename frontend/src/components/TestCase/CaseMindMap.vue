@@ -146,24 +146,26 @@ const option = computed(() => ({
       type: "tree",
       data: [buildCaseMindMap(props.cases, props.modules)],
       top: 35,
-      left: 70,
+      left: 150,
       bottom: 35,
-      right: 240,
+      right: 190,
       orient: "LR",
       roam: true,
       expandAndCollapse: false,
       initialTreeDepth: -1,
       symbolSize: 9,
       label: {
-        position: "right",
+        position: "left",
+        align: "right",
         fontSize: 12,
-        width: 160,
+        width: 120,
         overflow: "truncate",
         backgroundColor: "#f4f7fb",
         padding: [5, 8],
         borderRadius: 4,
       },
       lineStyle: { curveness: 0.5, color: "#c3d2e7" },
+      leaves: { label: { position: "right", align: "left", width: 160 } },
       emphasis: { focus: "descendant" },
       animationDuration: 180,
     },
@@ -278,7 +280,7 @@ watch(
 <style scoped>
 .case-mind-map {
   position: relative;
-  min-height: 600px;
+  overflow: auto;
   background: #fff;
   border: 1px solid #e4e9f0;
   border-radius: 10px;
@@ -292,7 +294,8 @@ watch(
   border-bottom: 1px solid #edf0f5;
 }
 .mind-chart {
-  height: 650px;
+  height: clamp(360px, calc(100vh - 360px), 650px);
+  min-width: 800px;
   width: 100%;
 }
 .mind-hint {
