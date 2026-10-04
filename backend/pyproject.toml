@@ -26,6 +26,8 @@ dependencies = [
     "structlog>=23.2.0",
     "slowapi>=0.1.9",
     "loguru>=0.7.2",
+    "reportlab>=4.4,<5",
+    "defusedxml>=0.7.1,<1",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +39,7 @@ dev = [
     "isort>=5.12.0",
     "flake8>=6.1.0",
     "mypy>=1.7.1",
+    "pypdf>=5,<7",
 ]
 
 [build-system]
@@ -73,4 +76,3 @@ addopts = [
     "--cov-fail-under=80",
     "-v"
 ]
-
