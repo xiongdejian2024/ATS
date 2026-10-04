@@ -297,13 +297,22 @@ async def advance_plan_runs(db):
                     db.query(PlanRun).filter_by(id=run.id, status="queued").update({"status": "running"}, synchronize_session=False)
                     db.commit()
                     db.refresh(run)
-                    if not await manager.send_message(item.environment_id, message):
-                        task.status = item.status = "pending"
-                        task.started_at = None
-                        item.delivery_state = "queued"
+                    try:
+                        sent = await manager.send_message(item.environment_id, message)
+                    except Exception:
+                        logger.exception("计划派发消息异常：批次={}，执行={}", run.id, item.execution_id)
+                        sent = False
+                    if not sent:
+                        # 已尝试写入连接后无法证明节点未收到，保持槽位且禁止自动重发。
+                        item.status = run.status = "needs_confirmation"
+                        item.delivery_state = "uncertain"
+                        item.error_message = "派发已尝试但未确认交付，请核对节点执行状态；系统不会自动重发"
+                        logger.warning("计划派发结果待核对，保留运行槽：批次={}，执行={}", run.id, item.execution_id)
                     else:
                         item.delivery_state = "delivered"
                     db.commit()
+                    if not sent:
+                        break
             db.refresh(run)
             report = build_report(db, run)
             if all(i.status in TERMINAL for i in items) and (report["counts"]["pending"] == 0 or run.status == "cancelling"):

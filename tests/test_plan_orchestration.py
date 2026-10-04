@@ -376,3 +376,43 @@ async def test_empty_new_tables_do_not_dispatch_legacy_pending_task(plan_lab):
     await scheduler_tick(db)
     assert sent == []
     assert db.get(TaskQueue, "legacy-task").status == "pending"
+
+
+@pytest.mark.parametrize("failure_mode", ["false", "exception"])
+@pytest.mark.asyncio
+async def test_plan_send_uncertainty_keeps_slot_and_never_replays(lab, monkeypatch, failure_mode):
+    """消息真实交付后注入本地发送失败，证明不能依据 False 重发。"""
+    from models.test_suite import TestSuiteExecution
+    manager = lab["manager"]
+    original_send = manager.send_message
+    attempts = []
+    async def deliver_then_fail(environment_id, message):
+        delivered = await original_send(environment_id, message)
+        if message.get("type") != "execute_test_suite":
+            return delivered
+        attempts.append(message["execution_id"])
+        assert delivered
+        if failure_mode == "exception":
+            raise ConnectionError("测试注入：节点已收到，本地连接随后异常")
+        return False
+    monkeypatch.setattr(manager, "send_message", deliver_then_fail)
+    response = await lab["client"].post(f'/api/v1/test-plans/{lab["plan"]["id"]}/execute', json={})
+    assert response.status_code == 200, response.text
+    run_id = response.json()["data"]["id"]
+    with SessionLocal() as db:
+        await advance_plan_runs(db)
+        run = db.get(PlanRun, run_id)
+        item = db.query(PlanRunItem).filter_by(run_id=run_id).one()
+        assert run.status == item.status == "needs_confirmation"
+        assert item.delivery_state == "uncertain"
+        assert db.query(TaskQueue).one().status == "running"
+        await advance_plan_runs(db)
+        await advance_plan_runs(db)
+        assert len(attempts) == 1
+    await until(lambda: set(queue_states(lab["suite"]["id"]).values()) == {"completed"})
+    with SessionLocal() as db:
+        await advance_plan_runs(db)
+        assert db.get(PlanRun, run_id).status == "completed"
+        assert db.query(TestSuiteExecution).count() == 4
+        assert db.query(TaskQueue).count() == 1
+    assert len(attempts) == 1

@@ -252,3 +252,42 @@ async def test_offline_node_preserves_queue_then_resumes(lab):
         await scheduler_tick(db)
     await until(lambda: queue_states(lab["suite"]["id"])[run["executionId"]] in {"completed", "failed"})
     assert len(queue_states(lab["suite"]["id"])) == 1
+
+
+@pytest.mark.parametrize("failure_mode", ["false", "exception"])
+@pytest.mark.asyncio
+async def test_task_send_uncertainty_keeps_slot_and_never_replays(lab, monkeypatch, failure_mode):
+    """Agent 已实际收到消息后注入本地失败，保持未知状态直到真实 ACK。"""
+    from database import SessionLocal
+    from models import TestSuiteExecution
+    from models.task_queue import TaskQueue
+    from services.task_scheduler import scheduler_tick
+    original_send = lab["manager"].send_message
+    attempts = []
+    async def deliver_then_fail(environment_id, message):
+        delivered = await original_send(environment_id, message)
+        if message.get("type") != "execute_test_suite":
+            return delivered
+        attempts.append(message["execution_id"])
+        assert delivered
+        if failure_mode == "exception":
+            raise ConnectionError("测试注入：节点已收到，本地连接随后异常")
+        return False
+    monkeypatch.setattr(lab["manager"], "send_message", deliver_then_fail)
+    schedule = await make_schedule(lab)
+    run = await trigger(lab, schedule)
+    with SessionLocal() as db:
+        await scheduler_tick(db)
+        row = db.get(TaskScheduleRun, run["id"])
+        assert row.status == "needs_confirmation" and row.delivery_state == "uncertain"
+        assert db.query(TaskQueue).one().status == "running"
+        await scheduler_tick(db)
+        await scheduler_tick(db)
+        assert len(attempts) == 1
+    await until(lambda: queue_states(lab["suite"]["id"])[run["executionId"]] == "completed")
+    with SessionLocal() as db:
+        await scheduler_tick(db)
+        assert db.get(TaskScheduleRun, run["id"]).status == "completed"
+        assert db.query(TestSuiteExecution).count() == 4
+        assert db.query(TaskQueue).count() == 1
+    assert len(attempts) == 1

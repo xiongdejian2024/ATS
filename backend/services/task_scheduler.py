@@ -242,14 +242,12 @@ async def dispatch_pending(db):
             logger.exception("派发消息异常：执行={}", task.execution_id)
             sent = False
         if not sent:
-            # 未成功写入连接才恢复排队；不重发已经运行的任务。
-            db.execute(update(TaskQueue).where(
-                TaskQueue.id == task.id, TaskQueue.status == "running",
-            ).values(status="pending", started_at=None))
-            run.status = "queued"
-            run.delivery_state = "queued"
-            suite.status = "pending"
+            # 已通过在线检查并尝试发送，异常不能证明节点未收到，保留运行槽。
+            run.status = "needs_confirmation"
+            run.delivery_state = "uncertain"
+            run.error_message = "派发已尝试但未确认交付，请核对节点执行状态；系统不会自动重发。"
             db.commit()
+            logger.warning("任务派发结果待核对，保留运行槽：执行={}", task.execution_id)
         else:
             run.delivery_state = "delivered"
             run.error_message = None
