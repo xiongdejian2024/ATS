@@ -1,7 +1,8 @@
 <template>
   <div class="test-plans-container">
     <a-page-header
-      title="测试计划管理"
+      title="测试计划"
+      sub-title="分组组织测试范围，按策略执行并保留独立批次报告"
     >
       <template #extra>
         <a-space>
@@ -35,6 +36,15 @@
     <!-- 固定顶部工具栏和筛选区域 -->
     <div class="fixed-header">
       <div class="content-wrapper">
+        <a-space wrap class="plan-groups">
+          <a-select v-model:value="groupFilter" style="min-width: 200px" placeholder="全部计划组" allow-clear @change="handleFilterChange">
+            <a-select-option value="__ungrouped__">未分组</a-select-option>
+            <a-select-option v-for="group in planGroups" :key="group.id" :value="group.id">{{ group.name }}（{{ group.planCount }}）</a-select-option>
+          </a-select>
+          <a-button :disabled="!projectId" @click="openGroup()">新建计划组</a-button>
+          <a-button v-if="selectedGroup" @click="openGroup(selectedGroup)">编辑计划组</a-button>
+          <a-popconfirm v-if="selectedGroup" title="删除分组？组内计划将保留并移至未分组。" @confirm="deleteGroup"><a-button danger>删除分组</a-button></a-popconfirm>
+        </a-space>
         <!-- 筛选和搜索区域 -->
         <a-card class="filter-card" size="small">
         <a-row :gutter="16" align="middle">
@@ -112,8 +122,7 @@
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'name'">
               <a
-                v-if="record.status !== 'not_started'"
-                @click="viewPlanExecution(record)"
+                @click="viewPlanDetail(record.id)"
                 class="plan-name-link"
               >
                 <div class="plan-icon">
@@ -126,17 +135,7 @@
                   </div>
                 </div>
               </a>
-              <span v-else class="plan-name-disabled">
-                <div class="plan-icon icon-disabled">
-                  <ExperimentOutlined />
-                </div>
-                <div class="plan-info">
-                  <span class="plan-name">{{ record.name }}</span>
-                  <div class="plan-subtitle">
-                    {{ record.planNumber }}
-                  </div>
-                </div>
-              </span>
+
             </template>
 
             <template v-else-if="column.key === 'status'">
@@ -214,14 +213,15 @@
                   </a-button>
                   <template #overlay>
                     <a-menu @click="handleActionMenuEvent($event, record)">
+                      <a-menu-item key="workspace">用例与测试套</a-menu-item>
                       <a-menu-item key="execute" v-if="canExecutePlan(record)">
                         执行
                       </a-menu-item>
                       <a-menu-item key="pause" v-if="canPausePlan(record)">
-                        暂停
+                        停止执行
                       </a-menu-item>
                       <a-menu-item key="resume" v-if="canResumePlan(record)">
-                        恢复
+                        重新执行
                       </a-menu-item>
                       <a-menu-item key="complete" v-if="canCompletePlan(record)">
                         完成
@@ -255,16 +255,21 @@
       </div>
     </div>
 
+    <a-modal v-model:open="groupModal" :title="groupId ? '编辑计划组' : '新建计划组'" @ok="saveGroup" :confirm-loading="groupSaving">
+      <a-form layout="vertical"><a-form-item label="计划组名称" required><a-input v-model:value="groupForm.name" :maxlength="100" /></a-form-item><a-form-item label="说明"><a-textarea v-model:value="groupForm.description" :rows="3" /></a-form-item></a-form>
+    </a-modal>
+
     <!-- 计划详情抽屉 -->
     <a-drawer
       v-model:visible="detailDrawerVisible"
-      :width="600"
+      :width="'min(960px, 100vw)'"
       :title="selectedPlan ? selectedPlan.name : '计划详情'"
       @close="closeDetailDrawer"
     >
       <TestPlanDetail
         v-if="selectedPlan"
         :plan="selectedPlan"
+        :run-id="String(route.query.runId || '')"
         @edit="editSelectedPlan"
         @execute="executeSelectedPlan"
         @close="closeDetailDrawer"
@@ -297,25 +302,7 @@
       :confirm-loading="executing"
     >
       <a-form layout="vertical">
-        <a-form-item
-          v-if="selectedPlan && selectedPlan.planType !== 'manual'"
-          label="执行环境"
-          :rules="[{ required: selectedPlan && selectedPlan.planType !== 'manual', message: '请选择执行环境' }]"
-        >
-          <a-select
-            v-model:value="executeForm.environmentId"
-            placeholder="请选择执行环境"
-            style="width: 100%"
-          >
-            <a-select-option
-              v-for="env in environments"
-              :key="env.id"
-              :value="env.id"
-            >
-              {{ env.name }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
+        <a-alert message="按本计划已保存的执行配置创建新批次。自动化用例使用各测试套绑定的 Agent 节点；手工用例在批次报告中回填。" type="info" show-icon style="margin-bottom: 16px" />
         <a-form-item label="执行说明">
           <a-textarea
             v-model:value="executeForm.notes"
@@ -331,18 +318,20 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { PlusOutlined, ReloadOutlined, DownloadOutlined, ExperimentOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
 import type { Dayjs } from 'dayjs';
 import type { TestPlan, Environment, Project, CaseStatusCounts } from '@/types';
-import { testPlanApi } from '@/api/testPlan';
+import { testPlanApi } from '@/api/testPlan'
+import { planOrchestrationApi, type PlanGroup } from '@/api/planOrchestration';
 import { useProjectStore } from '@/stores/project';
 import TestPlanDetail from '@/components/TestPlan/TestPlanDetail.vue'
 import TestPlanEdit from '@/components/TestPlan/TestPlanEdit.vue'
 
 
 const router = useRouter()
+const route = useRoute()
 const projectStore = useProjectStore()
 
 // 项目选择
@@ -454,6 +443,24 @@ const columns = [
   }
 ]
 
+const groupFilter = ref<string>()
+const planGroups = ref<PlanGroup[]>([])
+const selectedGroup = computed(() => planGroups.value.find(g => g.id === groupFilter.value))
+const groupModal = ref(false)
+const groupSaving = ref(false)
+const groupId = ref('')
+const groupForm = ref({ name: '', description: '' })
+function openGroup(group?: PlanGroup) { groupId.value = group?.id || ''; groupForm.value = { name: group?.name || '', description: group?.description || '' }; groupModal.value = true }
+async function saveGroup() {
+  if (!projectId.value) return
+  if (!groupForm.value.name.trim()) { message.warning('请输入计划组名称'); return }
+  groupSaving.value = true
+  try { if (groupId.value) await planOrchestrationApi.updateGroup(groupId.value, groupForm.value); else await planOrchestrationApi.createGroup(projectId.value, groupForm.value); groupModal.value = false; message.success('计划组已保存'); await loadPlans() }
+  catch (error) { console.error('保存计划组失败', error); message.error('保存计划组失败') }
+  finally { groupSaving.value = false }
+}
+async function deleteGroup() { if (!selectedGroup.value) return; try { await planOrchestrationApi.deleteGroup(selectedGroup.value.id); groupFilter.value = undefined; await loadPlans(); message.success('分组已删除，计划已保留') } catch (error) { console.error('删除计划组失败', error); message.error('删除失败') } }
+
 // 方法
 const loadPlans = async () => {
   loading.value = true
@@ -464,6 +471,7 @@ const loadPlans = async () => {
       search: searchValue.value || undefined,
       status: statusFilter.value || undefined,
       type: typeFilter.value || undefined,
+      group_id: groupFilter.value || undefined,
       startDate: dateRange.value?.[0]?.format('YYYY-MM-DD'),
       endDate: dateRange.value?.[1]?.format('YYYY-MM-DD')
     }
@@ -476,6 +484,7 @@ const loadPlans = async () => {
     console.log('开始加载测试计划，projectId:', projectId.value, 'params:', params)
 
     const response = await testPlanApi.getTestPlans(projectId.value, params)
+    planGroups.value = await planOrchestrationApi.groups(projectId.value)
     console.log('获取测试计划响应:', response)
     console.log('响应类型:', typeof response)
     console.log('响应是否为数组:', Array.isArray(response))
@@ -554,6 +563,7 @@ const handleDateFilterChange = () => {
 
 const resetFilters = () => {
   searchValue.value = ''
+  groupFilter.value = undefined
   statusFilter.value = undefined
   typeFilter.value = undefined
   dateRange.value = null
@@ -632,6 +642,9 @@ const handlePlanSaved = () => {
 
 const handleActionClick = (action: string, plan: TestPlan) => {
   switch (action) {
+    case 'workspace':
+      viewPlanExecution(plan)
+      break
     case 'execute':
       executePlan(plan)
       break
@@ -663,12 +676,6 @@ const executePlan = (plan: TestPlan) => {
 }
 
 const confirmExecutePlan = async () => {
-  // 只有非手动测试才需要选择环境
-  if (selectedPlan.value && selectedPlan.value.planType !== 'manual' && !executeForm.value.environmentId) {
-    message.warning('请选择执行环境')
-    return
-  }
-
   executing.value = true
   try {
     // 执行计划（如果是手动测试，environmentId 可以为空）
@@ -690,8 +697,8 @@ const confirmExecutePlan = async () => {
 
 const pausePlan = async (plan: TestPlan) => {
   try {
-    await testPlanApi.pausePlan(plan.id)
-    message.success('计划已暂停')
+    await testPlanApi.stopPlanExecution(plan.id)
+    message.success('已请求停止计划执行')
     loadPlans()
   } catch (error) {
     message.error('暂停计划失败')
@@ -701,7 +708,7 @@ const pausePlan = async (plan: TestPlan) => {
 const resumePlan = async (plan: TestPlan) => {
   try {
     await testPlanApi.resumePlan(plan.id)
-    message.success('计划已恢复')
+    message.success('已创建新的执行批次')
     loadPlans()
   } catch (error) {
     message.error('恢复计划失败')
@@ -904,6 +911,7 @@ const formatDateTime = (dateStr: string) => {
 }
 
 const handleProjectChange = () => {
+  groupFilter.value = undefined
   loadPlans()
 }
 
@@ -919,6 +927,7 @@ onMounted(async () => {
   }
   loadPlans()
   loadEnvironments()
+  if (typeof route.query.planId === 'string') await viewPlanDetail(route.query.planId)
 })
 
 // 监听项目变化
@@ -941,6 +950,7 @@ const handleActionMenuEvent = (info: { key: string | number }, record: TestPlan)
 </script>
 
 <style scoped>
+.plan-groups { margin-bottom: 12px; }
 .test-plans-container {
   height: 100vh;
   display: flex;

@@ -25,7 +25,12 @@ class TestSuiteService:
             TaskQueue.suite_id == suite_id,
             TaskQueue.status.in_(["pending", "running"]),
         ).first()
-        if active:
+        from models.plan_orchestration import PlanRunItem
+        plan_active = db.query(PlanRunItem.id).filter(
+            PlanRunItem.suite_id == suite_id,
+            PlanRunItem.status.in_(["waiting", "pending", "running", "needs_confirmation"]),
+        ).first()
+        if active or plan_active:
             raise ValueError("测试任务正在排队或执行，请结束后再编辑或删除")
 
     @staticmethod

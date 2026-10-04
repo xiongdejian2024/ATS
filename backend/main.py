@@ -1,6 +1,5 @@
 """FastAPI应用入口"""
 # 首先导入 logger 以初始化日志系统
-from api.v1 import ai_assistance, case_governance
 from core.logger import logger
 
 from fastapi import FastAPI, Request, status
@@ -15,7 +14,9 @@ from api.v1 import auth, users, dashboard, projects, environments, test_cases, t
 from api.v1.websocket import websocket_endpoint, frontend_manager
 from core.security import verify_token
 from models import User
-from api.v1 import ai_assistance, case_governance
+from api.v1 import ai_assistance
+from api.v1 import case_governance, plan_orchestration
+from contextlib import asynccontextmanager
 from core.logger import logger
 import json
 import asyncio
@@ -64,8 +65,27 @@ if settings.ENVIRONMENT == "development":
         
         logger.warning("请确保 MySQL 服务已启动，或稍后使用 alembic 进行数据库迁移")
 
+@asynccontextmanager
+async def application_lifespan(app):
+    scheduler_task = None
+    if settings.ENVIRONMENT != "test" and settings.TASK_SCHEDULER_ENABLED:
+        from services.task_scheduler import scheduler_loop
+        scheduler_task = asyncio.create_task(scheduler_loop(), name="ats-task-scheduler")
+        logger.info("ATS 任务调度已启动，仅处理显式启用的定时任务与已有执行批次")
+    try:
+        yield
+    finally:
+        if scheduler_task:
+            scheduler_task.cancel()
+            try:
+                await scheduler_task
+            except asyncio.CancelledError:
+                logger.info("ATS 任务调度已停止")
+
+
 # 创建FastAPI应用
 app = FastAPI(
+    lifespan=application_lifespan,
     title=settings.PROJECT_NAME,
     version=settings.PROJECT_VERSION,
     docs_url=f"{settings.API_V1_STR}/docs",
@@ -140,6 +160,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # 注册路由
 app.include_router(ai_assistance.router, prefix=settings.API_V1_STR)
 app.include_router(case_governance.router, prefix=settings.API_V1_STR)
+app.include_router(plan_orchestration.router, prefix=f"{settings.API_V1_STR}/plan-orchestration", tags=["计划编排"])
 app.include_router(reports.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["真实报告"])
 app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifications", tags=["站内通知"])
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["认证"])
@@ -290,4 +311,3 @@ if __name__ == "__main__":
         port=8000,
         reload=settings.ENVIRONMENT == "development"
     )
-

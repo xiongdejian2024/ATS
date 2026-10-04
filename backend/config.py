@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     
     # 环境
     ENVIRONMENT: str = "development"
+    TASK_SCHEDULER_ENABLED: bool = True
     
     # 文件上传配置
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB

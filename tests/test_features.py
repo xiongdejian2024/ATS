@@ -256,20 +256,29 @@ async def test_existing_project_module_plan_and_dashboard(lab):
     assert (
         await client.put(base + "/cases/missing/status", json={"status": "pass"})
     ).status_code == 404
+    # 恢复会创建真实批次；自动化用例必须由 Agent 回传，不能人工伪造通过。
     assert (
         await client.put(base + f'/cases/{case["id"]}/status', json={"status": "pass"})
-    ).status_code == 200
+    ).status_code == 409
     clone = await post(f"/test-plans/{plan_id}/clone", {"project_id": project_id})
     clone_detail = (await client.get("/api/v1/test-plans/" + clone["id"])).json()[
         "data"
     ]
     assert len(clone_detail["testCases"]) == 4
     suite_id = lab["suite"]["id"]
-    await client.post(f"/api/v1/test-plans/suites/{suite_id}/execute")
+    from services.plan_orchestration import advance_plan_runs
+    from database import SessionLocal
+    # 软件 fixture 关闭 FastAPI lifespan，显式推进刚才恢复创建的计划批次。
+    with SessionLocal() as db:
+        await advance_plan_runs(db)
     await until(
         lambda: bool(queue_states(suite_id))
         and set(queue_states(suite_id).values()) == {"completed"}
     )
+    with SessionLocal() as db:
+        await advance_plan_runs(db)
+    history = (await client.get(base + "/executions")).json()["data"]
+    assert history["total"] == 1 and history["items"][0]["report"]["counts"]["passed"] == 4
     overview = (
         await client.get("/api/v1/dashboard/overview", params={"projectId": project_id})
     ).json()["data"]

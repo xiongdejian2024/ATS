@@ -25,6 +25,7 @@ class TestPlanService:
         status: Optional[str] = None,
         plan_type: Optional[str] = None,
         owner_id: Optional[str] = None,
+        group_id: Optional[str] = None,
     ):
         """获取测试计划列表"""
         logger.debug(f"TestPlanService.get_test_plans - project_id: {project_id}, type: {type(project_id)}")
@@ -58,6 +59,14 @@ class TestPlanService:
         # 检查过滤后的数量
         count_before_pagination = query.count()
         logger.debug(f"过滤后计划数量 (project_id={project_id_str}): {count_before_pagination}")
+
+        if group_id:
+            from models.plan_orchestration import PlanSettings
+            query = query.outerjoin(PlanSettings, PlanSettings.plan_id == TestPlan.id)
+            if group_id == "__ungrouped__":
+                query = query.filter(PlanSettings.group_id.is_(None))
+            else:
+                query = query.filter(PlanSettings.group_id == group_id)
 
         # 搜索条件
         if search:

@@ -15,6 +15,8 @@ from .environment import Environment
 from .notification import Notification
 from .ai_assistance import AIModelConfig, AIConversation, AICaseDraft
 from .case_governance import CaseVersion, CaseReview, CaseReviewItem, CaseReviewDecision, CaseReviewComment, CaseSavedView
+from .plan_orchestration import PlanGroup, PlanSettings, PlanRun, PlanRunItem
+from .task_schedule import TaskSchedule, TaskScheduleRun
 from .role import Role, Permission, UserRole, RolePermission, ProjectPermission
 
 __all__ = [
@@ -43,4 +45,3 @@ __all__ = [
     "RolePermission",
     "ProjectPermission",
 ]
-

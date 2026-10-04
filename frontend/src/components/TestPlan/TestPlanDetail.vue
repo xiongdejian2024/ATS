@@ -1,490 +1,125 @@
 <template>
-  <div class="test-plan-detail">
-    <a-spin :spinning="loading">
-      <div v-if="plan" class="plan-content">
-        <a-space style="margin-bottom: 12px">
-          <a-button @click="emit('edit')">编辑计划</a-button>
-          <a-button @click="emit('execute')">执行计划</a-button>
-        </a-space>
-        <!-- 基本信息 -->
-        <a-card title="基本信息" class="info-card">
-          <a-descriptions :column="2" bordered>
-            <a-descriptions-item label="计划编号">
-              {{ plan.planNumber }}
-            </a-descriptions-item>
-            <a-descriptions-item label="计划名称">
-              {{ plan.name }}
-            </a-descriptions-item>
-            <a-descriptions-item label="计划类型">
-              <a-tag :color="getTypeColor(plan.planType)">
-                {{ getTypeLabel(plan.planType) }}
-              </a-tag>
-            </a-descriptions-item>
-            <a-descriptions-item label="执行状态">
-              <a-tag :color="getStatusColor(plan.status)">
-                {{ getStatusLabel(plan.status) }}
-              </a-tag>
-            </a-descriptions-item>
-            <a-descriptions-item label="执行进度">
-              <div class="progress-info">
-                <a-progress
-                  :percent="getProgressPercent()"
-                  size="small"
-                  :status="getProgressStatus()"
-                />
-                <span class="progress-text">
-                  {{ plan.executedCases || 0 }}/{{ plan.totalCases || 0 }}
-                </span>
-              </div>
-            </a-descriptions-item>
-            <a-descriptions-item label="时间范围">
-              <div class="date-range">
-                <div>{{ formatDate(plan.startDate) }}</div>
-                <div v-if="plan.endDate">至 {{ formatDate(plan.endDate) }}</div>
-              </div>
-            </a-descriptions-item>
-            <a-descriptions-item label="执行环境">
-              {{ plan.environmentId || '未设置' }}
-            </a-descriptions-item>
-            <a-descriptions-item label="创建时间">
-              {{ formatDate(plan.createdAt) }}
-            </a-descriptions-item>
-          </a-descriptions>
-        </a-card>
-
-        <!-- 计划描述 -->
-        <a-card v-if="plan.description" title="计划描述" class="info-card">
-          <div class="description-content">
-            {{ plan.description }}
-          </div>
-        </a-card>
-
-        <!-- 环境配置 -->
-        <a-card title="环境配置" class="info-card">
-          <div v-if="plan.environmentConfig && Object.keys(plan.environmentConfig).length > 0">
-            <a-descriptions :column="2" bordered>
-              <template
-                v-for="(value, key) in plan.environmentConfig"
-                :key="key"
-              >
-                <a-descriptions-item :label="key">
-                  {{ formatConfigValue(value) }}
-                </a-descriptions-item>
-              </template>
-            </a-descriptions>
-          </div>
-          <a-empty v-else description="暂无环境配置" />
-        </a-card>
-
-        <!-- 用例统计 -->
-        <a-card title="用例统计" class="info-card">
-          <a-row :gutter="16">
-            <a-col :span="6">
-              <div class="stat-item">
-                <div class="stat-value">{{ plan.totalCases || 0 }}</div>
-                <div class="stat-label">总用例数</div>
-              </div>
-            </a-col>
-            <a-col :span="6">
-              <div class="stat-item">
-                <div class="stat-value">{{ plan.executedCases || 0 }}</div>
-                <div class="stat-label">已执行</div>
-              </div>
-            </a-col>
-            <a-col :span="6">
-              <div class="stat-item">
-                <div class="stat-value">{{ getPassedCases() }}</div>
-                <div class="stat-label">通过</div>
-              </div>
-            </a-col>
-            <a-col :span="6">
-              <div class="stat-item">
-                <div class="stat-value">{{ getFailedCases() }}</div>
-                <div class="stat-label">失败</div>
-              </div>
-            </a-col>
-          </a-row>
-        </a-card>
-
-        <!-- 执行历史 -->
-        <a-card title="执行历史" class="info-card">
-          <a-table
-            :columns="executionColumns"
-            :data-source="executions"
-            :loading="executionsLoading"
-            :pagination="executionPagination"
-            row-key="id"
-            size="small"
-            @change="handleExecutionTableChange"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'result'">
-                <a-tag :color="getResultColor(record.result)">
-                  {{ getResultLabel(record.result) }}
-                </a-tag>
-              </template>
-
-              <template v-else-if="column.key === 'duration'">
-                {{ formatDuration(record.duration) }}
-              </template>
-
-              <template v-else-if="column.key === 'executedAt'">
-                {{ formatDateTime(record.executedAt) }}
-              </template>
-
-              <template v-else-if="column.key === 'actions'">
-                <a-space>
-                  <a-button
-                    type="link"
-                    size="small"
-                    @click="viewExecutionLogs(record.id)"
-                  >
-                    日志
-                  </a-button>
-                  <a-button
-                    type="link"
-                    size="small"
-                    @click="viewExecutionDetail(record.id)"
-                  >
-                    详情
-                  </a-button>
-                </a-space>
-              </template>
+  <div class="plan-detail">
+    <a-space wrap>
+      <a-button @click="emit('edit')">编辑计划</a-button>
+      <a-button type="primary" @click="emit('execute')">执行计划</a-button>
+      <a-button :loading="loading" @click="loadRuns">刷新执行历史</a-button>
+    </a-space>
+    <a-descriptions :column="2" bordered size="small">
+      <a-descriptions-item label="计划编号">{{ plan.planNumber }}</a-descriptions-item>
+      <a-descriptions-item label="用例数">{{ plan.totalCases || 0 }}</a-descriptions-item>
+      <a-descriptions-item label="计划描述" :span="2">{{ plan.description || '暂无描述' }}</a-descriptions-item>
+    </a-descriptions>
+    <a-tabs>
+      <a-tab-pane key="runs" tab="执行历史与报告">
+        <a-alert message="每次执行独立保存用例和策略快照，报告按该批次实际结果统计。通过率以全部用例执行项为分母，跳过与未执行不算通过。" type="info" show-icon />
+        <a-table :columns="runColumns" :data-source="runs" :loading="loading" row-key="id" size="small" :pagination="pagination" :scroll="{ x: 650 }" @change="onPage">
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'status'"><a-tag :color="color(record.status)">{{ label(record.status) }}</a-tag></template>
+            <template v-else-if="column.key === 'startedAt'">{{ formatTime(record.startedAt) }}</template>
+            <template v-else-if="column.key === 'rate'">{{ record.report.passRate }}% / {{ record.report.passThreshold }}%</template>
+            <template v-else-if="column.key === 'actions'">
+              <a-space><a-button type="link" size="small" @click="openReport(record.id)">报告</a-button><a-button type="link" size="small" @click="openLogs(record.id)">日志</a-button>
+                <a-popconfirm v-if="record.status === 'needs_confirmation'" title="请先检查 Agent，确认任务未执行或已经停止。确认后会将该批次记为失败，不自动重试。" @confirm="resolveRun(record.id)"><a-button type="link" danger size="small">确认已停止</a-button></a-popconfirm>
+                <a-popconfirm v-else-if="active(record.status)" title="取消该批次尚未完成的执行？" @confirm="cancel(record.id)"><a-button type="link" danger size="small">取消</a-button></a-popconfirm>
+              </a-space>
             </template>
-          </a-table>
-        </a-card>
-      </div>
-    </a-spin>
-
-    <!-- 执行日志对话框 -->
-    <a-modal
-      v-model:visible="logsModalVisible"
-      title="执行日志"
-      width="800px"
-      :footer="null"
-      @cancel="logsModalVisible = false"
-    >
-      <div class="execution-logs">
-        <pre>{{ executionLogs }}</pre>
-      </div>
+          </template>
+        </a-table>
+      </a-tab-pane>
+      <a-tab-pane key="settings" tab="执行配置">
+        <a-form layout="vertical" class="policy-form">
+          <a-form-item label="所属计划组"><a-select v-model:value="policy.groupId" allow-clear placeholder="未分组" :options="groups.map(g => ({ label: g.name, value: g.id }))" /></a-form-item>
+          <a-form-item label="测试套执行方式"><a-radio-group v-model:value="policy.executionMode"><a-radio value="serial">串行</a-radio><a-radio value="parallel">并行</a-radio></a-radio-group></a-form-item>
+          <a-form-item label="失败停止"><a-switch v-model:checked="policy.stopOnFailure" /> <span class="muted">任一测试套失败后停止后续等待项；已在运行的测试套继续回传结果。</span></a-form-item>
+          <a-form-item label="通过阈值"><a-input-number v-model:value="policy.passThreshold" :min="0" :max="100" :precision="1" /> %</a-form-item>
+          <a-form-item label="测试套顺序">
+            <a-empty v-if="!orderedSuites.length" description="暂无测试套，可在计划执行工作区添加；手工用例可直接创建批次。" />
+            <div v-for="(suite, index) in orderedSuites" :key="suite.id" class="suite-row"><span>{{ index + 1 }}. {{ suite.name }}</span><a-space><a-button size="small" :disabled="index === 0" @click="move(index, -1)">上移</a-button><a-button size="small" :disabled="index === orderedSuites.length - 1" @click="move(index, 1)">下移</a-button></a-space></div>
+          </a-form-item>
+          <a-alert message="保存后的策略应用于下一执行批次；正在执行和历史批次的配置保持原快照。并行度仍受各 Agent 节点容量限制。" type="info" />
+          <a-button type="primary" :loading="saving" @click="save">保存执行配置</a-button>
+        </a-form>
+      </a-tab-pane>
+    </a-tabs>
+    <a-modal v-model:open="reportOpen" title="计划执行报告" width="1000px" :footer="null">
+      <template v-if="selectedRun">
+        <a-space wrap><a-tag :color="color(selectedRun.status)">{{ label(selectedRun.status) }}</a-tag><span>批次 {{ selectedRun.id }}</span><a-button @click="openReport(selectedRun.id)">刷新报告</a-button><a-button @click="exportReport">导出报告 JSON</a-button></a-space>
+        <a-row :gutter="16" class="report-stats"><a-col :span="6"><a-statistic title="执行项" :value="selectedRun.report.total" /></a-col><a-col :span="6"><a-statistic title="通过" :value="selectedRun.report.counts.passed" /></a-col><a-col :span="6"><a-statistic title="失败 / 错误" :value="selectedRun.report.counts.failed + selectedRun.report.counts.error" /></a-col><a-col :span="6"><a-statistic title="通过率" :value="selectedRun.report.passRate" suffix="%" /></a-col></a-row>
+        <p>通过阈值 {{ selectedRun.report.passThreshold }}% · {{ selectedRun.configSnapshot.executionMode === 'serial' ? '串行' : '并行' }} · {{ selectedRun.configSnapshot.stopOnFailure ? '失败后停止等待项' : '失败后继续' }}</p>
+        <a-table :columns="caseColumns" :data-source="selectedRun.report.cases" :row-key="(r: RunCase) => `${r.executionId || 'manual'}-${r.caseId}`" size="small" :scroll="{ x: 680 }">
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'result'"><a-tag :color="color(record.result)">{{ label(record.result) }}</a-tag></template>
+            <template v-else-if="column.key === 'actions'"><a-button v-if="!record.executionId && active(selectedRun.status)" type="link" size="small" @click="editResult(record)">回填结果</a-button></template>
+          </template>
+        </a-table>
+      </template>
     </a-modal>
+    <a-modal v-model:open="manualOpen" title="回填手工用例结果" @ok="saveManual" :confirm-loading="saving">
+      <p>{{ manualCase?.caseName }}</p><a-select v-model:value="manual.result" style="width: 100%" :options="['passed', 'failed', 'error', 'skipped'].map(v => ({ label: label(v), value: v }))" /><a-textarea v-model:value="manual.notes" placeholder="实际结果与说明" :rows="4" style="margin-top: 16px" />
+    </a-modal>
+    <a-modal v-model:open="logsOpen" title="批次执行日志" width="850px" :footer="null"><pre class="execution-log">{{ logs || '暂无执行日志' }}</pre></a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { message } from 'ant-design-vue';
-import type { TestPlan, TestExecution } from '@/types';
-import { testPlanApi } from '@/api/testPlan';
-
-interface Props {
-  plan: TestPlan
+import { computed, onMounted, ref, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import type { TestPlan } from '@/types'
+import { testPlanApi } from '@/api/testPlan'
+import { testSuiteApi, type TestSuite } from '@/api/testSuite'
+import { planOrchestrationApi, type PlanGroup, type PlanPolicy, type PlanRun, type RunCase } from '@/api/planOrchestration'
+const props = defineProps<{ plan: TestPlan; runId?: string }>()
+const emit = defineEmits<{ (event: 'edit'): void; (event: 'execute'): void }>()
+const loading = ref(false), saving = ref(false), reportOpen = ref(false), logsOpen = ref(false), manualOpen = ref(false)
+const runs = ref<PlanRun[]>([]), groups = ref<PlanGroup[]>([]), suites = ref<TestSuite[]>([])
+const policy = ref<PlanPolicy>({ groupId: null, executionMode: 'serial', stopOnFailure: false, passThreshold: 100, suiteOrder: [] })
+const selectedRun = ref<PlanRun>(), manualCase = ref<RunCase>(), logs = ref('')
+const manual = ref({ result: 'passed', notes: '' })
+const pagination = ref({ current: 1, pageSize: 10, total: 0 })
+const orderedSuites = computed(() => [...suites.value].sort((a, b) => {
+  const index = (id: string) => { const i = policy.value.suiteOrder.indexOf(id); return i < 0 ? 99999 : i }
+  return index(a.id) - index(b.id)
+}))
+const runColumns = [{ title: '发起时间', key: 'startedAt', width: 180 }, { title: '状态', key: 'status', width: 90 }, { title: '通过率 / 阈值', key: 'rate', width: 140 }, { title: '操作', key: 'actions', width: 200 }]
+const caseColumns = [{ title: '用例', dataIndex: 'caseName' }, { title: '测试套', dataIndex: 'suiteName' }, { title: '结果', key: 'result' }, { title: '说明', dataIndex: 'notes' }, { title: '操作', key: 'actions' }]
+const active = (s: string) => ['queued', 'running', 'cancelling'].includes(s)
+const label = (s: string) => ({ queued: '排队中', pending: '未执行', waiting: '等待前序', running: '进行中', needs_confirmation: '等待核对节点', cancelling: '取消中', cancelled: '已取消', completed: '已通过', passed: '通过', failed: '失败', error: '错误', skipped: '跳过' }[s] || s)
+const color = (s: string) => ['passed', 'completed'].includes(s) ? 'green' : ['failed', 'error'].includes(s) ? 'red' : active(s) ? 'blue' : 'default'
+const formatTime = (value: string) => value ? new Date(value).toLocaleString('zh-CN') : '-'
+async function loadRuns() {
+  loading.value = true
+  try { const data = await testPlanApi.getPlanExecutions(props.plan.id, { page: pagination.value.current, size: pagination.value.pageSize }); runs.value = data.items; pagination.value.total = data.total }
+  catch (error) { console.error('加载计划批次失败', error); message.error('加载执行历史失败') }
+  finally { loading.value = false }
 }
-
-const props = defineProps<Props>()
-const emit = defineEmits<{
-  (event: 'edit'): void
-  (event: 'execute'): void
-}>()
-
-// 响应式数据
-const loading = ref(false)
-const executions = ref<TestExecution[]>([])
-const executionsLoading = ref(false)
-const executionLogs = ref('')
-const logsModalVisible = ref(false)
-
-// 执行历史分页
-const executionPagination = ref({
-  current: 1,
-  pageSize: 10,
-  total: 0
-})
-
-// 执行历史表格列（改为显示测试套执行记录）
-const executionColumns = [
-  {
-    title: '用例名称',
-    dataIndex: 'caseName',
-    key: 'caseName',
-    width: 200
-  },
-  {
-    title: '执行环境',
-    dataIndex: 'environmentName',
-    key: 'environmentName',
-    width: 150
-  },
-  {
-    title: '执行结果',
-    key: 'result',
-    width: 100,
-    align: 'center' as const
-  },
-  {
-    title: '执行时长',
-    key: 'duration',
-    width: 100,
-    align: 'center' as const
-  },
-  {
-    title: '执行时间',
-    key: 'executedAt',
-    width: 200
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 120,
-    align: 'center' as const
-  }
-]
-
-// 计算属性
-const plan = computed(() => props.plan)
-
-// 方法
-const loadExecutions = async () => {
-  if (!props.plan.id) return
-
-  executionsLoading.value = true
-  try {
-    const response = await testPlanApi.getPlanExecutions(
-      props.plan.id,
-      {
-        page: executionPagination.value.current,
-        size: executionPagination.value.pageSize
-      }
-    )
-    executions.value = response.items || []
-    executionPagination.value.total = response.total || 0
-  } catch (error) {
-    console.error('Failed to load executions:', error)
-    message.error('加载执行历史失败')
-  } finally {
-    executionsLoading.value = false
-  }
+async function load() {
+  try { const [p, g, s] = await Promise.all([planOrchestrationApi.settings(props.plan.id), planOrchestrationApi.groups(props.plan.projectId), testSuiteApi.getTestSuites(props.plan.id, { limit: 1000 })]); policy.value = p; groups.value = g; suites.value = s.items }
+  catch (error) { console.error('加载计划配置失败', error); message.error('加载执行配置失败') }
+  await loadRuns()
+  if (props.runId) await openReport(props.runId)
 }
-
-const handleExecutionTableChange = (pagination: any) => {
-  executionPagination.value.current = pagination.current
-  executionPagination.value.pageSize = pagination.pageSize
-  loadExecutions()
-}
-
-const viewExecutionLogs = async (executionId: string) => {
-  try {
-    const logs = await testPlanApi.getPlanExecutionLogs(props.plan.id, executionId)
-    executionLogs.value = logs.executionLog || logs || '暂无执行日志'
-    logsModalVisible.value = true
-  } catch (error) {
-    console.error('Failed to load execution logs:', error)
-    message.error('加载执行日志失败')
-  }
-}
-
-const viewExecutionDetail = (_executionId: string) => {
-  // 这里可以打开执行详情的抽屉或模态框
-  message.info('执行详情功能开发中')
-}
-
-// 辅助方法
-const getTypeColor = (type: string) => {
-  const colorMap: Record<string, string> = {
-    manual: 'blue',
-    automated: 'green',
-    mixed: '#722ed1'
-  }
-  return colorMap[type] || 'default'
-}
-
-const getTypeLabel = (type: string) => {
-  const labelMap: Record<string, string> = {
-    manual: '手动测试',
-    automated: '自动化测试',
-    mixed: '混合测试'
-  }
-  return labelMap[type] || type
-}
-
-const getStatusColor = (status: string) => {
-  const colorMap: Record<string, string> = {
-    not_started: 'default',
-    running: 'blue',
-    completed: 'green',
-    paused: 'orange',
-    overdue: 'red'
-  }
-  return colorMap[status] || 'default'
-}
-
-const getStatusLabel = (status: string) => {
-  const labelMap: Record<string, string> = {
-    not_started: '未开始',
-    running: '进行中',
-    completed: '已完成',
-    paused: '已暂停',
-    overdue: '已逾期'
-  }
-  return labelMap[status] || status
-}
-
-const getResultColor = (result: string) => {
-  const colorMap: Record<string, string> = {
-    passed: 'green',
-    failed: 'red',
-    blocked: 'orange',
-    skipped: 'default'
-  }
-  return colorMap[result] || 'default'
-}
-
-const getResultLabel = (result: string) => {
-  const labelMap: Record<string, string> = {
-    passed: '通过',
-    failed: '失败',
-    blocked: '阻塞',
-    skipped: '跳过'
-  }
-  return labelMap[result] || result
-}
-
-const getProgressPercent = () => {
-  const total = plan.value.totalCases || 0
-  const executed = plan.value.executedCases || 0
-  return total > 0 ? Math.round((executed / total) * 100) : 0
-}
-
-const getProgressStatus = () => {
-  const percent = getProgressPercent()
-  if (percent === 100) return 'success'
-  if (plan.value.status === 'overdue') return 'exception'
-  return 'active'
-}
-
-const getPassedCases = () => {
-  return plan.value.caseStatusCounts?.pass || 0
-}
-
-const getFailedCases = () => {
-  return (plan.value.caseStatusCounts?.fail || 0) + (plan.value.caseStatusCounts?.error || 0)
-}
-
-const formatDate = (date?: string) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleDateString('zh-CN')
-}
-
-const formatDateTime = (date: string) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleString('zh-CN')
-}
-
-const formatDuration = (duration: number) => {
-  if (!duration) return '-'
-  if (duration < 60) return `${duration}s`
-  if (duration < 3600) return `${Math.floor(duration / 60)}m${duration % 60}s`
-  return `${Math.floor(duration / 3600)}h${Math.floor((duration % 3600) / 60)}m`
-}
-
-const formatConfigValue = (value: any) => {
-  if (typeof value === 'object') {
-    return JSON.stringify(value)
-  }
-  return String(value)
-}
-
-// 生命周期
-onMounted(() => {
-  loadExecutions()
-})
-
-// 监听计划变化
-watch(
-  () => props.plan.id,
-  () => {
-    if (props.plan.id) {
-      loadExecutions()
-    }
-  }
-)
-
-// 暴露方法给父组件
-defineExpose({
-  refresh: loadExecutions
-})
+function move(index: number, delta: number) { const ids = orderedSuites.value.map(s => s.id); [ids[index], ids[index + delta]] = [ids[index + delta], ids[index]]; policy.value.suiteOrder = ids }
+async function save() { saving.value = true; try { policy.value = await planOrchestrationApi.saveSettings(props.plan.id, { ...policy.value, groupId: policy.value.groupId || null }); message.success('执行配置已保存') } catch (error) { console.error('保存计划策略失败', error); message.error('保存失败') } finally { saving.value = false } }
+async function openReport(id: string) { try { selectedRun.value = await planOrchestrationApi.run(id); reportOpen.value = true } catch (error) { console.error('加载计划报告失败', error); message.error('加载报告失败') } }
+async function openLogs(id: string) { try { const data = await testPlanApi.getPlanExecutionLogs(props.plan.id, id); logs.value = data.executionLog; logsOpen.value = true } catch (error) { console.error('加载批次日志失败', error); message.error('加载日志失败') } }
+async function resolveRun(id: string) { try { await planOrchestrationApi.resolve(id); message.success('已按核对结果终止批次'); await loadRuns() } catch (error) { console.error('确认执行状态失败', error); message.error('确认失败') } }
+async function cancel(id: string) { try { await planOrchestrationApi.cancel(id); message.success('已请求取消'); await loadRuns() } catch (error) { console.error('取消计划批次失败', error); message.error('取消失败') } }
+function editResult(row: RunCase) { manualCase.value = row; manual.value = { result: row.result === 'pending' ? 'passed' : row.result, notes: row.notes || '' }; manualOpen.value = true }
+async function saveManual() { if (!selectedRun.value || !manualCase.value) return; saving.value = true; try { selectedRun.value = await planOrchestrationApi.manualResult(selectedRun.value.id, manualCase.value.caseId, manual.value.result, manual.value.notes); manualOpen.value = false; message.success('手工结果已保存'); await loadRuns() } catch (error) { console.error('回填手工结果失败', error); message.error('保存失败') } finally { saving.value = false } }
+function exportReport() { if (!selectedRun.value) return; const blob = new Blob([JSON.stringify(selectedRun.value, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `ATS-计划报告-${selectedRun.value.id}.json`; a.click(); URL.revokeObjectURL(url) }
+function onPage(p: any) { pagination.value.current = p.current; pagination.value.pageSize = p.pageSize; loadRuns() }
+onMounted(load)
+watch(() => props.plan.id, () => { pagination.value.current = 1; load() })
+defineExpose({ refresh: loadRuns })
 </script>
 
 <style scoped>
-.test-plan-detail {
-  height: 100%;
-}
-
-.plan-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.info-card {
-  margin-bottom: 0;
-}
-
-.progress-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.progress-text {
-  font-size: 12px;
-  color: #8c8c8c;
-  text-align: center;
-}
-
-.date-range {
-  font-size: 12px;
-  color: #8c8c8c;
-}
-
-.description-content {
-  white-space: pre-wrap;
-  line-height: 1.6;
-}
-
-.stat-item {
-  text-align: center;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 6px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1890ff;
-  margin-bottom: 4px;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #8c8c8c;
-}
-
-.execution-logs {
-  max-height: 400px;
-  overflow-y: auto;
-  background: #f5f5f5;
-  padding: 16px;
-  border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.execution-logs pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
+.plan-detail { display: flex; flex-direction: column; gap: 20px; }
+.policy-form { max-width: 640px; }
+.policy-form > .ant-btn { margin-top: 16px; }
+.suite-row { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee; }
+.muted { color: #666; font-size: 12px; }
+.report-stats { margin: 20px 0; }
+.execution-log { white-space: pre-wrap; max-height: 65vh; overflow: auto; background: #141820; color: #d7e2ed; padding: 16px; }
 </style>

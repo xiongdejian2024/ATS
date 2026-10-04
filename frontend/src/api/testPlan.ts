@@ -13,6 +13,7 @@ export const testPlanApi = {
       startDate?: string
       endDate?: string
       ownerId?: string
+      group_id?: string
     }
   ): Promise<PaginationResponse<TestPlan>> => {
     const queryParams = new URLSearchParams()
