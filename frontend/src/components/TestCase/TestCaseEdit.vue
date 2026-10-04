@@ -327,6 +327,7 @@ interface Props {
   caseId?: string
   projectId: string
   defaultModuleId?: string  // 默认模块ID（右键创建用例时使用）
+  initialDraft?: Partial<TestCase>  // 复制只加载可编辑内容，创建确认前不写库
 }
 
 interface Emits {
@@ -422,9 +423,9 @@ const loadTestCase = async () => {
   console.log('开始加载用例数据，loading 已设置为 true')
 
   try {
-    console.log('Loading test case:', { caseId: props.caseId, projectId: props.projectId })
+    console.info('加载测试用例：', { caseId: props.caseId, projectId: props.projectId })
     const data = await testCaseApi.getTestCase(props.projectId, props.caseId)
-    console.log('Test case loaded:', data)
+    console.info('测试用例内容已加载', { caseId: data.id })
 
     if (!data) {
       throw new Error('用例数据为空')
@@ -454,18 +455,18 @@ const loadTestCase = async () => {
 
     console.log('用例数据加载完成')
   } catch (error: any) {
-    console.error('Failed to load test case:', error)
+    console.error('加载测试用例失败：', error)
     const errorMessage = error?.response?.data?.message || error?.message || '加载用例失败'
     message.error(errorMessage)
   } finally {
-    console.log('loadTestCase finally: 设置 loading.value = false')
+    console.info('结束测试用例加载')
     loading.value = false
   }
 }
 
 const loadModuleTree = async () => {
   if (!props.projectId) {
-    console.warn('Project ID is missing, skipping module tree load')
+    console.warn('缺少项目ID，无法加载模块树')
     return
   }
 
@@ -604,7 +605,7 @@ const handleSave = async () => {
     if (isNewCase.value) {
       // 调试：打印发送的数据
       console.log('创建测试用例 - projectId:', props.projectId)
-      console.log('创建测试用例 - submitData:', submitData)
+      console.info('提交测试用例创建请求', { projectId: props.projectId })
       try {
       result = await testCaseApi.createTestCase(props.projectId, submitData)
       message.success('用例创建成功')
@@ -626,7 +627,7 @@ const handleSave = async () => {
 
     emit('save', result)
   } catch (error) {
-    console.error('Failed to save test case:', error)
+    console.error('保存测试用例失败：', error)
     if (error instanceof Error) {
       message.error(error.message || '保存失败')
     }
@@ -778,8 +779,15 @@ onMounted(async () => {
       formData.moduleId = props.defaultModuleId
     }
     // 只加载模块树（用于选择模块）
-    loadModuleTree()
-    loadTemplates()
+    await Promise.allSettled([loadModuleTree(), loadTemplates()])
+    if (props.initialDraft) {
+      const draft = JSON.parse(JSON.stringify(props.initialDraft))
+      Object.assign(formData, { name: draft.name || '', type: draft.type || 'functional', priority: draft.priority || 'P2', moduleId: draft.moduleId || '', precondition: draft.precondition || '', requirementRef: draft.requirementRef || '', tags: draft.tags || [], steps: draft.steps || [], isAutomated: draft.isAutomated || false })
+      templateId.value = draft.templateId || undefined
+      customFields.value = draft.customFields || {}
+      updateStepNumber()
+      console.info('已加载复制用例草稿，等待用户确认创建')
+    }
     return
   }
 

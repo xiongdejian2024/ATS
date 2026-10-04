@@ -2,12 +2,13 @@
   <div class="test-cases-container" @click="hideModuleContextMenu">
     <!-- 顶部项目选择器 -->
     <div class="project-selector-bar">
-      <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" @changed="refreshGovernedCases" @apply-view="applySavedView" />
+      <CaseGovernancePanel v-if="projectId && !recycleVisible" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" @changed="refreshGovernedCases" @apply-view="applySavedView" />
     </div>
 
     <a-layout class="test-cases-layout">
       <!-- 左侧模块树 -->
       <a-layout-sider v-show="showModules" width="240" class="module-tree-sider">
+        <div class="module-tree-body">
         <a-input-search
           v-model:value="moduleSearchValue"
           placeholder="请输入模块名称"
@@ -17,7 +18,7 @@
 
         <a-tree
           :tree-data="moduleTreeData"
-          :selected-keys="selectedModuleKeys"
+          :selected-keys="recycleVisible ? [] : selectedModuleKeys"
           :expanded-keys="expandedModuleKeys"
           block-node
           show-icon
@@ -29,10 +30,14 @@
           @rightClick="handleModuleRightClick"
           @drop="handleModuleDrop"
         >
-          <template #title="{ title, count, nodeType }">
-            <span class="tree-node-title">
+          <template #title="{ title, count, nodeType, key: nodeKey }">
+            <span class="tree-node-title" :class="{ 'root-module-title': nodeKey === 'all' }">
               {{ title }}
               <span v-if="count !== undefined && nodeType !== 'case'" class="count-badge">({{ count }})</span>
+              <a-space v-if="nodeKey === 'all'" :size="0" class="root-module-actions" @click.stop>
+                <a-button type="text" size="small" :title="expandedModuleKeys.length ? '收起全部模块' : '展开全部模块'" aria-label="展开或收起全部模块" @click="expandedModuleKeys = expandedModuleKeys.length ? [] : modules.map(m => m.id)"><FolderOutlined /></a-button>
+                <a-button type="text" size="small" aria-label="新建根模块" @click="handleAddModule({ key: 'all' })"><PlusOutlined /></a-button>
+              </a-space>
             </span>
           </template>
           <template #icon="{ nodeType, isLeaf }">
@@ -78,12 +83,14 @@
             </template>
           </a-menu>
         </div>
+        </div>
+        <button class="recycle-module-entry" :class="{ active: recycleVisible }" @click="recycleVisible = true"><DeleteOutlined /><span>回收站</span><span class="recycle-total">{{ recycleTotal }}</span></button>
       </a-layout-sider>
 
       <!-- 右侧主内容区 -->
       <a-layout-content class="cases-content">
         <!-- 固定顶部工具栏 -->
-        <div class="fixed-toolbar">
+        <div v-if="!recycleVisible" class="fixed-toolbar">
           <a-space class="toolbar" wrap>
             <a-button @click="showModules=!showModules">{{showModules?'收起模块':'模块'}}</a-button>
             <a-button type="primary" @click="handleCreateCase">
@@ -124,7 +131,6 @@
             </a-button-group>
             <a-dropdown><a-button>导出</a-button><template #overlay><a-menu @click="handleExport"><a-menu-item key="excel">Excel</a-menu-item><a-menu-item key="xmind">XMind</a-menu-item></a-menu></template></a-dropdown>
             <a-button @click="templateVisible = true">模板字段</a-button>
-            <a-button @click="recycleVisible = true">回收站</a-button>
             <a-button @click="loadTestCases">
               <template #icon><ReloadOutlined /></template>
             </a-button>
@@ -159,7 +165,8 @@
         <!-- 可滚动内容区域 -->
         <div class="scrollable-table-content">
           <!-- 表格 -->
-          <CaseMindMap v-if="viewLayout === 'mind'" :cases="testCases" :modules="modules" :saving="mindSaving" @edit="saveMindNode" @create="createMindCase" @rename-module="renameMindModule" @select="handleViewCase($event as TestCase)" />
+          <CaseRecycleBin v-if="recycleVisible" :project-id="projectId" :open="true" embedded @changed="refreshGovernedCases" @total="recycleTotal = $event" @close="recycleVisible = false" />
+          <CaseMindMap v-else-if="viewLayout === 'mind'" :cases="testCases" :modules="modules" :saving="mindSaving" @edit="saveMindNode" @create="createMindCase" @rename-module="renameMindModule" @select="handleViewCase($event as TestCase)" />
           <a-card v-else class="table-card">
             <a-table
               :columns="columns"
@@ -285,7 +292,7 @@
         </div>
 
         <!-- 固定底部分页器和批量操作栏 -->
-        <div class="fixed-footer">
+        <div v-if="!recycleVisible" class="fixed-footer">
           <!-- 批量操作栏 -->
           <div v-if="selectedRowKeys.length > 0" class="batch-actions">
             <a-space>
@@ -357,7 +364,7 @@
     <!-- 编辑用例抽屉 -->
     <a-drawer
       v-model:visible="editCaseVisible"
-      :title="editingCaseId ? '编辑用例' : '新建用例'"
+      :title="editingCaseId ? '编辑用例' : copyingDraft ? '复制用例' : '新建用例'"
       width="min(1100px, 96vw)"
       placement="right"
       :mask-closable="false"
@@ -368,6 +375,7 @@
         :case-id="editingCaseId"
         :project-id="projectId"
         :default-module-id="defaultModuleId"
+        :initial-draft="copyingDraft"
         @save="handleSaveCase"
         @cancel="editCaseVisible = false"
       />
@@ -386,7 +394,6 @@
 
     <CaseExportDialog v-model:open="exportVisible" :initial-format="exportFormat" :busy="exportBusy" :selected-count="selectedRowKeys.length" @export="confirmExport" />
     <CaseTemplateManager :project-id="projectId" v-model:open="templateVisible" @changed="loadFilterFields" />
-    <CaseRecycleBin :project-id="projectId" v-model:open="recycleVisible" @changed="refreshGovernedCases" />
     <!-- 导入用例对话框 -->
     <ImportCasesModal
       v-model:visible="importModalVisible"
@@ -407,7 +414,7 @@
 import { testSuiteApi, type TestSuite } from '@/api/testSuite'
 import { testPlanApi } from '@/api/testPlan'
 import { ref, reactive, computed, onMounted, onUnmounted, watch, createVNode } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { message, Modal, Input } from 'ant-design-vue';
 import { PlusOutlined, ImportOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
 import TestCaseEdit from '@/components/TestCase/TestCaseEdit.vue'
@@ -416,6 +423,7 @@ import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
 import ImportCasesModal from '@/components/TestCase/ImportCasesModal.vue'
 import CaseGovernancePanel from '@/components/TestCase/CaseGovernancePanel.vue'
 import CaseMindMap from '@/components/TestCase/CaseMindMap.vue'
+import { copyCaseDraft } from '@/components/TestCase/caseMindMap'
 import CaseRecycleBin from '@/components/TestCase/CaseRecycleBin.vue'
 import CaseTemplateManager from '@/components/TestCase/CaseTemplateManager.vue'
 import CaseExportDialog from '@/components/TestCase/CaseExportDialog.vue'
@@ -428,6 +436,7 @@ import type { TestCase, Project } from '@/types';
 import dayjs from 'dayjs'
 
 const route = useRoute()
+const router = useRouter()
 const projectStore = useProjectStore()
 const userStore = useUserStore()
 
@@ -441,6 +450,7 @@ const projectId = computed<string>(() => {
 })
 
 // 左侧模块树
+const recycleTotal = ref(0)
 const showModules=ref(window.innerWidth>900)
 const moduleSearchValue = ref('')
 const moduleTreeData = ref<any[]>([])
@@ -503,9 +513,15 @@ const searchValue = ref('')
 const viewMode = ref('all')
 const viewLayout = ref<'list' | 'mind'>('list')
 const exportVisible=ref(false),exportBusy=ref(false),exportFormat=ref('xlsx')
-const recycleVisible = ref(false), templateVisible = ref(false), mindSaving = ref(false)
+const recycleVisible = ref(route.query.view === 'recycle'), templateVisible = ref(false), mindSaving = ref(false)
 const sortBy = ref('updated_at'), sortOrder = ref('desc')
 const filterDrawerVisible = ref(false)
+watch(recycleVisible, async value => {
+  const query = { ...route.query }
+  if (value) query.view = 'recycle'; else delete query.view
+  try { await router.replace({ path: route.path, query }) }
+  catch (error) { console.error('同步回收站页面地址失败', error) }
+})
 
 // 高级筛选条件
 const advancedFilters = ref<Array<{
@@ -867,6 +883,7 @@ const viewingCaseId = ref<string>('')
 // 编辑用例
 const editCaseVisible = ref(false)
 const editingCaseId = ref<string>('')
+const copyingDraft = ref<Partial<TestCase>>()
 const defaultModuleId = ref<string>('')  // 右键创建用例时的默认模块
 
 // 导入对话框
@@ -906,8 +923,9 @@ const loadModuleTree = async () => {
       ...treeData
     ]
     rebuildFlatModuleKeys()
+    recycleTotal.value = (await caseFeaturesApi.recycle(projectId.value, { page: 1, size: 1 })).total
   } catch (error) {
-    console.error('Failed to load module tree:', error)
+    console.error('加载模块树与回收站计数失败', error)
   }
 }
 
@@ -1077,6 +1095,7 @@ const loadTestCases = async () => {
 
 // 处理模块/用例选择（支持 Shift + 左键 批量选择）
 const handleModuleSelect = (_keys: string[], info: any) => {
+  recycleVisible.value = false
   moduleContextMenu.visible = false
   const currentKey = info?.node?.key as string | undefined
   const currentNodeType = info?.node?.nodeType as string | undefined
@@ -1196,6 +1215,7 @@ const handlePaginationChange = (page: number, pageSize: number) => {
 
 // 创建用例
 const handleCreateCase = () => {
+  copyingDraft.value = undefined
   editingCaseId.value = ''
   defaultModuleId.value = ''  // 从工具栏创建时不设置默认模块
   editCaseVisible.value = true
@@ -1210,7 +1230,7 @@ const saveMindNode = async (id: string, patch: Partial<TestCase>) => {
   finally { mindSaving.value = false }
 }
 const createMindCase = async (moduleId?: string, draft?: Partial<TestCase>) => {
-  if (!draft) { editingCaseId.value=''; defaultModuleId.value=moduleId || ''; editCaseVisible.value=true; return }
+  if (!draft) { copyingDraft.value=undefined; editingCaseId.value=''; defaultModuleId.value=moduleId || ''; editCaseVisible.value=true; return }
   mindSaving.value=true
   try { await testCaseApi.createTestCase(projectId.value,draft); await refreshGovernedCases(); message.success('已粘贴为新用例') }
   catch(error){console.error('粘贴脑图用例失败',error)} finally{mindSaving.value=false}
@@ -1223,6 +1243,7 @@ watch(viewMode,()=>{pagination.current=1;loadTestCases()})
 
 // 编辑用例
 const handleEditCase = (record: TestCase) => {
+  copyingDraft.value = undefined
   editingCaseId.value = record.id
   editCaseVisible.value = true
 }
@@ -1236,6 +1257,7 @@ const handleViewCase = (record: TestCase) => {
 // 从详情页面跳转到编辑页面
 const handleEditFromDetail = () => {
   detailCaseVisible.value = false
+  copyingDraft.value = undefined
   editingCaseId.value = viewingCaseId.value
   editCaseVisible.value = true
 }
@@ -1272,7 +1294,14 @@ const handleDeleteCase = async (record: TestCase) => {
 
 // 复制用例
 const handleCopyCase = async (record: TestCase) => {
-  try{await testCaseApi.copyCase(projectId.value,record.id,{newName:`${record.name}（副本）`});message.success('用例已复制');await refreshGovernedCases()}catch(error){console.error('复制用例失败',error)}
+  try {
+    const source = await testCaseApi.getTestCase(projectId.value, record.id)
+    editingCaseId.value = ''
+    copyingDraft.value = copyCaseDraft(source)
+    defaultModuleId.value = source.moduleId || ''
+    editCaseVisible.value = true
+    console.info('打开用例复制编辑页面', { sourceId: record.id, projectId: projectId.value })
+  } catch (error) { console.error('加载复制用例失败', error); message.error('加载复制用例失败') }
 }
 
 // 执行用例
@@ -1618,6 +1647,7 @@ const handleAddCase = (node: any) => {
     return
   }
 
+  copyingDraft.value = undefined
   editingCaseId.value = ''
 
   // 设置默认模块ID（如果不是虚拟节点）
@@ -1873,7 +1903,7 @@ watch(
   () => projectId.value,
   () => {
     if (projectId.value) {
-      selectedRowKeys.value=[];selectedModuleKeys.value=['all'];detailCaseVisible.value=false;editCaseVisible.value=false;recycleVisible.value=false;templateVisible.value=false;pagination.current=1
+      selectedRowKeys.value=[];selectedModuleKeys.value=['all'];detailCaseVisible.value=false;editCaseVisible.value=false;recycleVisible.value=route.query.view === 'recycle';templateVisible.value=false;pagination.current=1
       loadTestCases()
       loadModuleTree()
       loadFilterFields()
@@ -1929,7 +1959,7 @@ const paginationTotal = (total: number) => `共 ${total} 条`
 .test-cases-container {
   display:flex;flex-direction:column;min-height:0;
   height: 100%;
-  background: #f5f5f5;
+  background: #fff;
   }
 
 .test-cases-layout {
@@ -1939,10 +1969,17 @@ const paginationTotal = (total: number) => `共 ${total} 条`
 .module-tree-sider {
   background: #fff;
   border-right: 1px solid #f0f0f0;
-    padding: 16px;
-  overflow-y: auto;
+  padding:0;
+  overflow:hidden;
   }
 
+.module-tree-body { height:calc(100% - 40px); padding:16px; overflow:auto; }
+.root-module-title { display:flex !important; align-items:center; max-width:none !important; width:100%; overflow:visible !important; }
+.root-module-actions { margin-left:auto; }
+.root-module-actions :deep(.ant-btn) { padding:2px; width:24px; }
+.recycle-module-entry { display:flex; align-items:center; gap:8px; width:100%; height:40px; padding:0 24px; border:0; border-top:1px solid var(--ms-border); background:#fff; color:var(--ms-text-secondary); cursor:pointer; font:inherit; }
+.recycle-module-entry:hover,.recycle-module-entry.active { background:var(--ms-primary-soft); color:var(--primary-color); }
+.recycle-total { margin-left:auto; color:var(--ms-text-muted); }
 .module-search {
   margin-bottom: 16px;
 }
@@ -2094,7 +2131,7 @@ const paginationTotal = (total: number) => `共 ${total} 条`
 
 /* 用例链接样式 */
 .case-link {
-  color: #1890ff;
+  color: var(--primary-color);
   cursor: pointer;
   }
 
