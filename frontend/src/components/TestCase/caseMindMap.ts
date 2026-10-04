@@ -136,7 +136,7 @@ export function copyCaseDraft(
   return {
     templateId: c.templateId,
     customFields: JSON.parse(JSON.stringify(c.customFields || {})),
-    name: `${c.name || "用例"}（副本）`,
+    name: `${(c.name || "用例").slice(0, 251)}（副本）`,
     type: c.type || "functional",
     priority: c.priority || "P2",
     moduleId: moduleId || c.moduleId || undefined,

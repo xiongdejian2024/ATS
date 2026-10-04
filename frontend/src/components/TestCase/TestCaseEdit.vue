@@ -3,14 +3,15 @@
     <!-- 固定顶部区域 -->
     <div class="edit-header">
       <div class="header-title">
-        <span class="title-text">{{ isNewCase ? '新建用例' : '编辑用例' }}</span>
+        <span class="title-text">{{ initialDraft ? '复制用例' : isNewCase ? '新建用例' : '编辑用例' }}</span>
         <span v-if="testCase.caseCode" class="sub-title">{{ testCase.caseCode }}</span>
         <span v-else class="sub-title">自动生成编号</span>
       </div>
       <div class="header-actions">
         <a-space>
           <a-button :disabled="loading" @click="handleCancel">取消</a-button>
-          <a-button type="primary" :loading="saving" :disabled="loading" @click="handleSave">
+          <a-button v-if="allowContinue && isNewCase" :loading="saving" :disabled="loading || loadError" @click="handleSave(true)">保存并继续</a-button>
+          <a-button type="primary" :loading="saving" :disabled="loading || loadError" @click="handleSave()">
             <template #icon><SaveOutlined /></template>
             保存
           </a-button>
@@ -20,10 +21,12 @@
 
     <!-- 可滚动内容区域 -->
     <div class="edit-scroll-content">
+      <a-alert v-if="loadError" message="用例加载失败，请重试后编辑" type="error" show-icon><template #action><a-button @click="loadTestCase">重试</a-button></template></a-alert>
       <a-spin :spinning="loading">
         <a-form
           ref="formRef"
           :model="formData"
+          :disabled="loading || saving || loadError"
           :rules="formRules"
           :label-col="{ span: 4 }"
           :wrapper-col="{ span: 20 }"
@@ -41,7 +44,7 @@
                 <a-input
                   v-model:value="formData.name"
                   placeholder="请输入用例名称"
-                  :maxlength="100"
+                  :maxlength="255"
                   show-count
                 />
               </a-form-item>
@@ -231,7 +234,8 @@
     <div class="edit-footer">
       <a-space>
         <a-button :disabled="loading" @click="handleCancel">取消</a-button>
-        <a-button type="primary" :loading="saving" :disabled="loading" @click="handleSave">
+        <a-button v-if="allowContinue && isNewCase" :loading="saving" :disabled="loading || loadError" @click="handleSave(true)">保存并继续</a-button>
+          <a-button type="primary" :loading="saving" :disabled="loading || loadError" @click="handleSave()">
           保存
         </a-button>
       </a-space>
@@ -327,11 +331,13 @@ interface Props {
   caseId?: string
   projectId: string
   defaultModuleId?: string  // 默认模块ID（右键创建用例时使用）
+  allowContinue?: boolean
   initialDraft?: Partial<TestCase>  // 复制只加载可编辑内容，创建确认前不写库
 }
 
 interface Emits {
-  (e: 'save', testCase: TestCase): void
+  (e: 'save', testCase: TestCase, continueCreation?: boolean): void
+  (e: 'dirty', value: boolean): void
   (e: 'cancel'): void
 }
 
@@ -345,6 +351,7 @@ const emit = defineEmits<Emits>()
 // 响应式数据
 const loading = ref(false)
 const saving = ref(false)
+const loadError = ref(false)
 const formRef = ref<FormInstance>()
 const testCase = reactive<Partial<TestCase>>({
   id: '',
@@ -407,7 +414,7 @@ const isNewCase = computed(() => !props.caseId)
 const formRules: Record<string, Rule[]> = {
   name: [
     { required: true, message: '请输入用例名称', trigger: 'blur' },
-    { min: 2, max: 100, message: '用例名称长度应在2-100个字符之间', trigger: 'blur' }
+    { min: 1, max: 255, message: '用例名称长度应在1-255个字符之间', trigger: 'blur' }
   ],
   type: [{ required: true, message: '请选择用例类型', trigger: 'change' }],
   priority: [{ required: true, message: '请选择优先级', trigger: 'change' }]
@@ -423,6 +430,7 @@ const loadTestCase = async () => {
   console.log('开始加载用例数据，loading 已设置为 true')
 
   try {
+    loadError.value=false
     console.info('加载测试用例：', { caseId: props.caseId, projectId: props.projectId })
     const data = await testCaseApi.getTestCase(props.projectId, props.caseId)
     console.info('测试用例内容已加载', { caseId: data.id })
@@ -455,6 +463,7 @@ const loadTestCase = async () => {
 
     console.log('用例数据加载完成')
   } catch (error: any) {
+    loadError.value=true
     console.error('加载测试用例失败：', error)
     const errorMessage = error?.response?.data?.message || error?.message || '加载用例失败'
     message.error(errorMessage)
@@ -552,8 +561,8 @@ const handleCancel = () => {
   emit('cancel')
 }
 
-const handleSave = async () => {
-  if (!formRef.value) return
+const handleSave = async (continueCreation = false) => {
+  if (!formRef.value || saving.value || loading.value || loadError.value) return
 
   try {
     await formRef.value.validateFields()
@@ -625,7 +634,8 @@ const handleSave = async () => {
       message.success('用例更新成功')
     }
 
-    emit('save', result)
+    setDraftBaseline()
+    emit('save', result, continueCreation)
   } catch (error) {
     console.error('保存测试用例失败：', error)
     if (error instanceof Error) {
@@ -770,11 +780,16 @@ const handleImportTableChange = () => {
   }
 }
 
+const draftBaseline = ref('')
+const draftSnapshot = () => JSON.stringify({ formData, templateId:templateId.value, customFields:customFields.value })
+function setDraftBaseline() { draftBaseline.value=draftSnapshot();emit('dirty',false) }
+watch(draftSnapshot, value => { if(draftBaseline.value)emit('dirty',value!==draftBaseline.value) })
+
 // 生命周期
 onMounted(async () => {
   // 如果是新建用例，不需要加载数据，直接设置默认值
   if (!props.caseId) {
-    loading.value = false
+    loading.value = true
     if (props.defaultModuleId) {
       formData.moduleId = props.defaultModuleId
     }
@@ -788,6 +803,8 @@ onMounted(async () => {
       updateStepNumber()
       console.info('已加载复制用例草稿，等待用户确认创建')
     }
+    setDraftBaseline()
+    loading.value=false
     return
   }
 
@@ -798,6 +815,7 @@ onMounted(async () => {
     loadTemplates(),
     loadModuleTree()
   ])
+  setDraftBaseline()
 })
 
 // 监听 props 变化
@@ -844,6 +862,7 @@ watch(
 
 // 暴露方法给父组件
 defineExpose({
+  save: handleSave,
   resetForm: () => {
     if (formRef.value) {
       formRef.value.resetFields()
@@ -1251,5 +1270,13 @@ const handleStepMenuClick = (info: { key: string | number }, index: number) => h
   .info-card :deep(.ant-input-textarea) {
     font-size: 14px;
   }
+}
+@media (max-width: 768px) {
+  .edit-header { flex-wrap:wrap; gap:12px; padding:12px 16px; }
+  .header-title { width:100%; min-width:0; flex-shrink:0; }
+  .title-text,.sub-title { white-space:nowrap; }
+  .header-actions { width:100%; }
+  .edit-scroll-content { padding:12px 16px; }
+  .info-card :deep(.ant-card-body) { padding:16px; }
 }
 </style>

@@ -19,6 +19,9 @@ const routes = [
       requiresAuth: true
     },
     children: [
+      { path: 'test-cases/create', name: 'CaseCreate', component: () => import('@views/CaseEditorPage.vue'), meta: { title: '新建用例' } },
+      { path: 'test-cases/:caseId/edit', name: 'CaseEdit', component: () => import('@views/CaseEditorPage.vue'), meta: { title: '编辑用例' } },
+      { path: 'test-cases/:caseId/created', name: 'CaseCreated', component: () => import('@views/CaseCreated.vue'), meta: { title: '创建成功' } },
       { path: 'case-reviews', name: 'CaseReviews', component: () => import('@views/CaseReviews.vue'), meta: { title: '用例评审' } },
       { path: 'task-center', name: 'TaskCenter', component: () => import('@views/TaskCenter.vue'), meta: { title: '测试任务' } },
       { path: 'ai-assistant', name: 'AIAssistant', component: () => import('@views/AIAssistant.vue'), meta: { title: 'AI 辅助' } },

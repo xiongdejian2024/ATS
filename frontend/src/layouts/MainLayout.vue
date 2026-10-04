@@ -10,7 +10,7 @@
         class="global-project-select" :bordered="false" show-search option-filter-prop="label"
         placeholder="选择项目" aria-label="当前项目" @change="changeGlobalProject" />
       <nav class="context-tabs" aria-label="当前模块导航">
-        <a v-for="tab in contextTabs" :key="tab.path" :href="projectPageHref(tab.path)" :class="{ active: route.path === tab.path }"
+        <a v-for="tab in contextTabs" :key="tab.path" :href="projectPageHref(tab.path)" :class="{ active: route.path === tab.path || route.path.startsWith(tab.path + '/') }"
           :aria-current="route.path === tab.path ? 'page' : undefined" @click.prevent="navigateProjectPage(tab.path)">{{ tab.title }}</a>
       </nav>
         <div class="header-right">
@@ -72,8 +72,8 @@
       <div v-if="isMobile && !collapsed" class="mobile-mask" role="button" tabindex="0" aria-label="关闭导航菜单"
         @click="collapsed = true" @keydown.enter="collapsed = true" />
       <a-layout-content class="layout-content">
-        <div class="page-breadcrumb"><span>{{ caseRoutes.includes(route.path) ? '测试用例' : route.meta?.title || '仪表盘' }}</span>
-          <template v-if="caseRoutes.includes(route.path)"><span class="breadcrumb-separator">/</span><span>{{ route.path === '/case-reviews' ? '评审' : '用例' }}</span></template>
+        <div class="page-breadcrumb"><span>{{ isCaseWorkspace ? '测试用例' : route.meta?.title || '仪表盘' }}</span>
+          <template v-if="isCaseWorkspace"><span class="breadcrumb-separator">/</span><span>{{ route.path === '/case-reviews' ? '评审' : '用例' }}</span></template>
         </div>
         <div class="page-workspace"><router-view /></div>
       </a-layout-content>
@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { ref, computed, h, onMounted, onUnmounted, watch } from 'vue';
 import { useWindowSize } from '@vueuse/core';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter, useRoute, isNavigationFailure } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { MenuFoldOutlined, MenuUnfoldOutlined, DashboardOutlined, ProjectOutlined, ExperimentOutlined, ScheduleOutlined, AppstoreOutlined, SettingOutlined, BellOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons-vue';
 import { useUserStore } from '@/stores/user';
@@ -105,16 +105,18 @@ watch(isMobile, value => { collapsed.value = value }, { immediate: true })
 const selectedKeys = ref<string[]>([])
 const openKeys = ref<string[]>([])
 const currentProjectId = computed(() => projectStore.currentProject?.id)
-const caseRoutes = ['/test-cases', '/case-reviews']
+const isCaseWorkspace = computed(() => route.path.startsWith('/test-cases') || route.path.startsWith('/case-reviews'))
 const projectPageHref = (path: string) => router.resolve({ path, query: currentProjectId.value ? { projectId: currentProjectId.value } : {} }).href
-const navigateProjectPage = (path: string) => router.push(projectPageHref(path))
-const contextTabs = computed(() => caseRoutes.includes(route.path) ? [{ path: '/test-cases', title: '用例' }, { path: '/case-reviews', title: '评审' }] : [])
+const navigateProjectPage = async (path: string) => { const failure=await router.push(projectPageHref(path));if(isNavigationFailure(failure)){const selected=menuItems.find(item=>route.path===item.path || route.path.startsWith(item.path+'/'));selectedKeys.value=route.path==='/case-reviews' ? ['test-cases'] : selected ? [selected.key] : []} }
+const contextTabs = computed(() => isCaseWorkspace.value ? [{ path: '/test-cases', title: '用例' }, { path: '/case-reviews', title: '评审' }] : [])
 async function changeGlobalProject(id: string) {
   const target = projectStore.projects.find(item => item.id === id)
   if (!target) return
   try {
     // 切换项目时移除旧项目实体链接，不能把旧用例/批次带入新项目。
-    await router.replace({ path: route.path, query: { projectId: id } })
+    const path=['CaseEdit','CaseCreated'].includes(String(route.name)) ? '/test-cases' : route.path
+    const failure=await router.replace({ path, query: { projectId: id } })
+    if(isNavigationFailure(failure)) { console.info('项目切换已取消，保留原项目'); return }
     projectStore.setCurrentProject(target)
     console.info('已切换当前项目', { projectId: id })
   } catch (error) {

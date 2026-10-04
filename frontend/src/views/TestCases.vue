@@ -312,26 +312,6 @@
       />
     </a-drawer>
 
-    <!-- 编辑用例抽屉 -->
-    <a-drawer
-      v-model:visible="editCaseVisible"
-      :title="editingCaseId ? '编辑用例' : copyingDraft ? '复制用例' : '新建用例'"
-      width="min(1100px, 96vw)"
-      placement="right"
-      :mask-closable="false"
-      :destroy-on-close="true"
-      :closable="true"
-    >
-      <TestCaseEdit
-        :case-id="editingCaseId"
-        :project-id="projectId"
-        :default-module-id="defaultModuleId"
-        :initial-draft="copyingDraft"
-        @save="handleSaveCase"
-        @cancel="editCaseVisible = false"
-      />
-    </a-drawer>
-
     <!-- 筛选抽屉 -->
     <TestCaseFilter
       v-model:visible="filterDrawerVisible"
@@ -368,13 +348,11 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch, createVNode } f
 import { useRoute, useRouter } from 'vue-router';
 import { message, Modal, Input } from 'ant-design-vue';
 import { LeftOutlined, RightOutlined, PlusOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
-import TestCaseEdit from '@/components/TestCase/TestCaseEdit.vue'
 import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
 import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
 import ImportCasesModal from '@/components/TestCase/ImportCasesModal.vue'
 import CaseGovernancePanel from '@/components/TestCase/CaseGovernancePanel.vue'
 import CaseMindMap from '@/components/TestCase/CaseMindMap.vue'
-import { copyCaseDraft } from '@/components/TestCase/caseMindMap'
 import CaseRecycleBin from '@/components/TestCase/CaseRecycleBin.vue'
 import CaseTemplateManager from '@/components/TestCase/CaseTemplateManager.vue'
 import CaseExportDialog from '@/components/TestCase/CaseExportDialog.vue'
@@ -840,10 +818,6 @@ const detailCaseVisible = ref(false)
 const viewingCaseId = ref<string>('')
 
 // 编辑用例
-const editCaseVisible = ref(false)
-const editingCaseId = ref<string>('')
-const copyingDraft = ref<Partial<TestCase>>()
-const defaultModuleId = ref<string>('')  // 右键创建用例时的默认模块
 
 // 导入对话框
 const importModalVisible = ref(false)
@@ -1175,14 +1149,8 @@ const handlePaginationChange = (page: number, pageSize: number) => {
 }
 
 // 创建用例
-const handleCreateCase = () => {
-  copyingDraft.value = undefined
-  editingCaseId.value = ''
-  defaultModuleId.value = ''  // 从工具栏创建时不设置默认模块
-  editCaseVisible.value = true
-}
+const handleCreateCase = () => { void router.push({path:'/test-cases/create',query:{projectId:projectId.value,moduleId:!['all','unplanned'].includes(selectedModuleKeys.value[0]) ? selectedModuleKeys.value[0] : undefined}}) }
 
-// 脑图操作通过现有用例/模块 API 持久化。
 const saveInline=async(record:TestCase,field:string,value:unknown)=>{if(field==='name'&&!String(value).trim())return message.warning('用例名称不能为空');try{await testCaseApi.updateTestCase(projectId.value,record.id,{[field]:value});await refreshGovernedCases();message.success('用例已保存')}catch(error){console.error('行内编辑失败',error)}}
 const saveMindNode = async (id: string, patch: Partial<TestCase>) => {
   mindSaving.value = true
@@ -1191,7 +1159,7 @@ const saveMindNode = async (id: string, patch: Partial<TestCase>) => {
   finally { mindSaving.value = false }
 }
 const createMindCase = async (moduleId?: string, draft?: Partial<TestCase>) => {
-  if (!draft) { copyingDraft.value=undefined; editingCaseId.value=''; defaultModuleId.value=moduleId || ''; editCaseVisible.value=true; return }
+  if (!draft) { await router.push({path:'/test-cases/create',query:{projectId:projectId.value,moduleId}});return }
   mindSaving.value=true
   try { await testCaseApi.createTestCase(projectId.value,draft); await refreshGovernedCases(); message.success('已粘贴为新用例') }
   catch(error){console.error('粘贴脑图用例失败',error)} finally{mindSaving.value=false}
@@ -1202,11 +1170,7 @@ const renameMindModule = async (id:string,name:string) => {
 }
 
 // 编辑用例
-const handleEditCase = (record: TestCase) => {
-  copyingDraft.value = undefined
-  editingCaseId.value = record.id
-  editCaseVisible.value = true
-}
+const handleEditCase = (record: TestCase) => { void router.push({path:`/test-cases/${record.id}/edit`,query:{projectId:projectId.value}}) }
 
 // 查看用例（打开详情页面）
 const handleViewCase = (record: TestCase) => {
@@ -1232,20 +1196,7 @@ const copyFromDetail = async () => { try { const row=testCases.value.find(c=>c.i
 const deleteFromDetail = async () => { try { const row=await testCaseApi.getTestCase(projectId.value,viewingCaseId.value); await handleDeleteCase(row) } catch(error) { console.error('加载待删除用例失败',error) } }
 const handleEditFromDetail = () => {
   detailCaseVisible.value = false
-  copyingDraft.value = undefined
-  editingCaseId.value = viewingCaseId.value
-  editCaseVisible.value = true
-}
-
-// 保存用例
-const handleSaveCase = async (caseData: any) => {
-  editCaseVisible.value = false
-  // 如果详情页面打开着，刷新详情数据
-  if (detailCaseVisible.value && viewingCaseId.value === caseData.id) {
-    // 详情组件会自动刷新
-  }
-  await loadTestCases()
-  await loadModuleTree()
+  void router.push({path:`/test-cases/${viewingCaseId.value}/edit`,query:{projectId:projectId.value}})
 }
 
 // 删除用例
@@ -1269,16 +1220,7 @@ const handleDeleteCase = async (record: TestCase) => {
 }
 
 // 复制用例
-const handleCopyCase = async (record: TestCase) => {
-  try {
-    const source = await testCaseApi.getTestCase(projectId.value, record.id)
-    editingCaseId.value = ''
-    copyingDraft.value = copyCaseDraft(source)
-    defaultModuleId.value = source.moduleId || ''
-    editCaseVisible.value = true
-    console.info('打开用例复制编辑页面', { sourceId: record.id, projectId: projectId.value })
-  } catch (error) { console.error('加载复制用例失败', error); message.error('加载复制用例失败') }
-}
+const handleCopyCase = async (record: TestCase) => { await router.push({path:'/test-cases/create',query:{projectId:projectId.value,copyFrom:record.id}}) }
 
 // 执行用例
 const executionCase = ref<TestCase | null>(null)
@@ -1616,26 +1558,7 @@ const handleAddModule = (node: any) => {
   })
 }
 
-const handleAddCase = (node: any) => {
-  // 右键新增用例：直接打开用例编辑弹窗，自动关联到选中的模块
-  if (!projectId.value) {
-    message.warning('请先选择项目')
-    return
-  }
-
-  copyingDraft.value = undefined
-  editingCaseId.value = ''
-
-  // 设置默认模块ID（如果不是虚拟节点）
-  const nodeKey = node?.key as string
-  if (nodeKey && nodeKey !== 'all' && nodeKey !== 'unplanned') {
-    defaultModuleId.value = nodeKey
-  } else {
-    defaultModuleId.value = ''
-  }
-
-  editCaseVisible.value = true
-}
+const handleAddCase = (node: any) => { const key=node?.key as string;void router.push({path:'/test-cases/create',query:{projectId:projectId.value,moduleId:key && !['all','unplanned'].includes(key) ? key : undefined}}) }
 
 const handleRenameModule = (node: any) => {
   if (!projectId.value) {
@@ -1869,7 +1792,7 @@ watch(
   () => projectId.value,
   () => {
     if (projectId.value) {
-      selectedRowKeys.value=[];selectedModuleKeys.value=['all'];detailCaseVisible.value=false;editCaseVisible.value=false;recycleVisible.value=route.query.view === 'recycle';templateVisible.value=false;pagination.current=1
+      selectedRowKeys.value=[];selectedModuleKeys.value=['all'];detailCaseVisible.value=false;recycleVisible.value=route.query.view === 'recycle';templateVisible.value=false;pagination.current=1
       loadTestCases()
       loadModuleTree()
       loadFilterFields()

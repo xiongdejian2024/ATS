@@ -41,6 +41,13 @@ describe("用例脑图内容映射", () => {
     expect(draft.templateId).toBe("模板");
     expect(draft.customFields).toEqual({ model: "车型" });
   });
+  it("最长用例名复制仍满足255字符限制并保留副本标记", () => {
+    const source = "测".repeat(255);
+    const copy = copyCaseDraft({ name: source });
+    expect(copy.name).toHaveLength(255);
+    expect(copy.name).toContain("（副本）");
+    expect(source).toHaveLength(255);
+  });
   it("循环模块数据仍可序列化", () => {
     expect(() =>
       JSON.stringify(
