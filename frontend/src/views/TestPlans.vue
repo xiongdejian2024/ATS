@@ -96,7 +96,7 @@
               <a-button @click="resetFilters">重置</a-button>
               <a-button type="primary" @click="exportPlans">
                 <template #icon><DownloadOutlined /></template>
-                导出
+                导出本页
               </a-button>
             </a-space>
           </a-col>
@@ -755,7 +755,13 @@ const refreshPlans = () => {
 }
 
 const exportPlans = () => {
-  message.info('导出功能开发中')
+  const blob = new Blob([JSON.stringify(plans.value, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `ATS-测试计划-第${pagination.value.current}页.json`
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 // 权限检查方法
