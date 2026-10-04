@@ -31,6 +31,8 @@
         </a-menu-item>
       </a-menu>
     </a-layout-sider>
+    <div v-if="isMobile && !collapsed" class="mobile-mask" role="button" tabindex="0" aria-label="关闭导航菜单"
+      @click="collapsed = true" @keydown.enter="collapsed = true" />
 
     <!-- 主要内容区域 -->
     <a-layout style="background: transparent;">
@@ -40,6 +42,7 @@
           <a-button
             type="text"
             class="collapse-btn"
+            aria-label="切换导航菜单"
             :icon="h(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined)"
             @click="toggleCollapsed"
           />
@@ -106,6 +109,7 @@
 
 <script setup lang="ts">
 import { ref, computed, h, onMounted, onUnmounted, watch } from 'vue';
+import { useWindowSize } from '@vueuse/core';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { MenuFoldOutlined, MenuUnfoldOutlined, DashboardOutlined, ProjectOutlined, ExperimentOutlined, ScheduleOutlined, AppstoreOutlined, SettingOutlined, BellOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons-vue';
@@ -121,6 +125,9 @@ const userStore = useUserStore()
 const projectStore = useProjectStore()
 
 const collapsed = ref(false)
+const { width: windowWidth } = useWindowSize()
+const isMobile = computed(() => windowWidth.value <= 768)
+watch(isMobile, value => { collapsed.value = value }, { immediate: true })
 const selectedKeys = ref<string[]>([])
 const openKeys = ref<string[]>([])
 const currentProjectId = ref<string>()
@@ -128,7 +135,7 @@ const currentProjectId = ref<string>()
 const notifications = ref<Notification[]>([])
 const refreshNotifications = async () => {
   try { notifications.value = (await notificationApi.getNotifications({ size: 1000 })).items }
-  catch { notifications.value = [] }
+  catch (error) { console.error('加载通知失败', error); notifications.value = [] }
 }
 const readNotification = async (item: Notification) => { await notificationApi.markAsRead(item.id); await refreshNotifications() }
 let inboxTimer: ReturnType<typeof setInterval> | undefined
@@ -205,6 +212,7 @@ const handleMenuClick = (item: any) => {
     return
   }
   router.push(item.path)
+  if (isMobile.value) collapsed.value = true
 }
 
 
@@ -348,6 +356,8 @@ onMounted(async () => {
   margin-left: 16px;
 }
 
+.header-left { display: flex; align-items: center; min-width: 0; }
+
 .header-right {
   display: flex;
   align-items: center;
@@ -427,6 +437,8 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .layout-sider {
     position: fixed;
+    margin: 0;
+    border-radius: 0 20px 20px 0;
     height: 100vh;
     left: 0;
     top: 0;
