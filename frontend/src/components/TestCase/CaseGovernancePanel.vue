@@ -112,7 +112,7 @@ const versionOptions = computed(()=>versions.value.map(v=>({label:`v${v.version}
 const diffColumns = [{title:'字段',dataIndex:'field',key:'field'},{title:'旧内容',key:'before'},{title:'新内容',key:'after'}]
 const stepColumns = [{title:'步骤',dataIndex:'step'},{title:'操作',dataIndex:'action'},{title:'预期结果',dataIndex:'expected'}]
 const statusName = (v:string)=>({pending:'待评审',approved:'通过',rejected:'驳回',cancelled:'已取消'}[v] || v)
-const fieldName = (v:string)=>({name:'名称',priority:'优先级',steps:'步骤',precondition:'前置条件',tags:'标签',is_automated:'是否自动化',module_id:'模块',requirement_ref:'需求关联'}[v] || v)
+const fieldName = (v:string)=>({case_code:'用例编号',name:'名称',type:'用例类型',priority:'优先级',level:'用例等级',steps:'步骤',precondition:'前置条件',tags:'标签',is_automated:'是否自动化',module_id:'模块',module_path:'模块路径',executor_id:'执行人',requirement_ref:'需求关联'}[v] || v)
 const display = (value:any)=> typeof value === 'string' ? value : JSON.stringify(value, null, 2)
 const memberName = (id:string)=>members.value.find(m=>m.id === id)?.name || id
 async function run(work:()=>Promise<void>) {busy.value=true; try {await work()} catch(error:any) {console.error('用例治理操作失败',error); message.error(error.response?.data?.detail || '操作失败，请重试')} finally {busy.value=false}}

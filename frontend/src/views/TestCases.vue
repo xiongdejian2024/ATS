@@ -213,6 +213,10 @@
                 </a-tag>
               </template>
 
+              <template v-else-if="column.key === 'executionResult'">
+                {{ executionResultLabel(record.status) }}
+              </template>
+
               <template v-else-if="column.key === 'modulePath'">
                 <span :title="getModuleName(record.moduleId) || '未规划用例'" style="color: #8c8c8c">
                   <FolderOutlined /> {{ getModuleName(record.moduleId) || '未规划用例' }}
@@ -1992,6 +1996,8 @@ const getReviewResultLabel = (result: string) => {
   }
   return labels[result] || result
 }
+
+const executionResultLabel = (result: string) => ({ not_executed: '未执行', pending: '待执行', running: '执行中', passed: '成功', failed: '失败', error: '错误', blocked: '阻塞', skipped: '跳过' }[result] || result)
 
 
 
