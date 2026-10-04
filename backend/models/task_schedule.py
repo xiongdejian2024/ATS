@@ -32,6 +32,7 @@ class TaskScheduleRun(Base):
     executor_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     execution_id = Column(String(36), nullable=True, unique=True)
     plan_run_id = Column(String(36), nullable=True, unique=True)
+    group_run_id = Column(String(36), nullable=True, unique=True, index=True)
     status = Column(String(20), nullable=False, default="queued", index=True)
     error_message = Column(Text, nullable=True)
     delivery_state = Column(String(20), nullable=False, default="queued")

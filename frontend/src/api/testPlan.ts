@@ -13,6 +13,10 @@ export const testPlanApi = {
       startDate?: string
       endDate?: string
       ownerId?: string
+      module_id?: string
+      archived?: boolean
+      followed?: boolean
+      tag?: string
       group_id?: string
     }
   ): Promise<PaginationResponse<TestPlan>> => {
@@ -20,7 +24,7 @@ export const testPlanApi = {
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          queryParams.append(key, String(value))
+          queryParams.append(({ startDate: "start_date", endDate: "end_date", ownerId: "owner_id" } as Record<string, string>)[key] || key, String(value))
         }
       })
     }

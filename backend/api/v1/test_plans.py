@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """测试计划相关 API（独立 URL 前缀）- 使用数据库存储"""
 from typing import Optional, List
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -19,6 +20,7 @@ from models.test_case import TestCase
 from models.test_plan import PlanCaseRelation
 from schemas.plan_orchestration import ManualResultInput
 from services.plan_orchestration import record_manual_result
+from services.plan_workspace import apply_tree_statistics
 from services.plan_orchestration import start_plan_run, cancel_plan_run, run_data, run_logs, get_policy, ACTIVE
 
 
@@ -28,7 +30,7 @@ router = APIRouter()
 def validate_plan_cases(db, project_id, case_ids):
     if not isinstance(case_ids, list) or len(case_ids) != len(set(case_ids)):
         raise HTTPException(400, "用例必须为不重复的列表")
-    cases = db.query(TestCase).filter(TestCase.id.in_(case_ids)).all()
+    cases = db.query(TestCase).filter(TestCase.id.in_(case_ids), TestCase.deleted_at.is_(None)).all()
     if len(cases) != len(case_ids) or any(c.project_id != project_id for c in cases):
         raise HTTPException(400, "选择的用例不存在或不属于当前项目")
 
@@ -61,10 +63,14 @@ async def get_test_plans(
     status: Optional[str] = None,
     type: Optional[str] = None,  # 前端使用的参数名
     plan_type: Optional[str] = None,  # 备用参数名
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     owner_id: Optional[str] = None,
     group_id: Optional[str] = None,
+    module_id: Optional[str] = None,
+    archived: Optional[bool] = False,
+    followed: bool = False,
+    tag: Optional[str] = None,
 ):
     """获取测试计划列表（按项目过滤）"""
     try:
@@ -104,7 +110,8 @@ async def get_test_plans(
             status=status,
             plan_type=actual_plan_type,  # 使用实际的值
             owner_id=owner_id,
-            group_id=group_id
+            group_id=group_id, start_date=start_date, end_date=end_date, module_id=module_id,
+            archived=archived, followed_by=current_user.id if followed else None, tag=tag
         )
 
         logger.debug(f"Service返回结果 - 总数: {result['total']}, 项目数: {len(result['items'])}")
@@ -117,6 +124,8 @@ async def get_test_plans(
         for item in items:
             plan_id = item.get("id")
             item["executionPolicy"] = get_policy(db, plan_id)
+            from services.plan_workspace import metadata
+            item.update(metadata(db, plan_id, current_user.id))
             try:
                 cases = TestPlanService.get_plan_cases(db, plan_id)
                 item["totalCases"] = len(cases)
@@ -158,6 +167,9 @@ async def get_test_plans(
         }
         
         logger.debug(f"返回数据 - items数量: {len(response_data['items'])}, total: {response_data['total']}")
+
+        for item in items:
+            apply_tree_statistics(db, item["id"], item)
 
         return APIResponse(
             status=ResponseStatus.SUCCESS,
@@ -206,6 +218,7 @@ async def get_test_plan(
         "error": sum(1 for case in cases if case.get("executionStatus") == "error"),
         "skip": sum(1 for case in cases if case.get("executionStatus") == "skip")
     }
+    apply_tree_statistics(db, plan_id, plan_data)
     # 确保 plan_data 包含 projectId（用于前端加载模块列表）
     if "projectId" not in plan_data and plan.project_id:
         plan_data["projectId"] = str(plan.project_id)

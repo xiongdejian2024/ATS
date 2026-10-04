@@ -1,5 +1,6 @@
 """在现有 Agent 队列上编排计划，批次与报告永久独立。"""
 import uuid
+from copy import deepcopy
 from sqlalchemy.orm import Session
 from models.test_plan import TestPlan, PlanCaseRelation
 from models.test_case import TestCase
@@ -16,7 +17,7 @@ from utils.datetime_utils import beijing_now
 from utils.serializer import serialize_model
 from core.logger import logger
 
-ACTIVE = ("queued", "running", "cancelling", "needs_confirmation")
+ACTIVE = ("queued", "running", "cancelling", "needs_confirmation", "group_waiting")
 TERMINAL = ("completed", "failed", "cancelled", "skipped")
 
 
@@ -65,7 +66,7 @@ def _enqueue(db, run, item):
 
 
 async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None,
-                         notes=None, idempotency_key=None, commit=True):
+                         notes=None, idempotency_key=None, commit=True, defer=False):
     """先持久化批次与任务，派发由调度循环在事务提交后完成。"""
     if idempotency_key:
         existing = db.query(PlanRun).filter_by(idempotency_key=idempotency_key).first()
@@ -78,6 +79,10 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
         raise ValueError("测试计划不存在")
     if db.query(PlanRun).filter(PlanRun.plan_id == plan_id, PlanRun.status.in_(ACTIVE)).first():
         raise ValueError("当前计划已有执行中的批次，请完成或取消后再次执行")
+    from models.plan_workspace import PlanWorkspace
+    workspace = db.get(PlanWorkspace, plan_id)
+    if workspace and workspace.archived:
+        raise ValueError("归档计划不能执行，请先取消归档")
     suites = db.query(TestSuite).filter_by(plan_id=plan_id).order_by(TestSuite.created_at, TestSuite.id).all()
     if suite_ids is not None:
         requested = list(suite_ids)
@@ -86,11 +91,20 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
             raise ValueError("选择的测试套不属于当前计划或存在重复")
         suites = [s for s in suites if s.id in requested]
     policy = get_policy(db, plan_id)
+    from services.plan_tree import compile_tree
+    tree_entries = compile_tree(db, plan, policy) if suite_ids is None else None
+    if tree_entries is not None:
+        suites = [e["suite"] for e in tree_entries if e["suite"]]
+        policy = dict(policy, nodeGraph=True)
     ordering = {sid: i for i, sid in enumerate(policy["suiteOrder"])}
-    suites.sort(key=lambda s: ordering.get(s.id, len(ordering)))
+    if tree_entries is None:
+        suites.sort(key=lambda s: ordering.get(s.id, len(ordering)))
     relations = db.query(PlanCaseRelation).filter_by(plan_id=plan_id).order_by(PlanCaseRelation.execution_order).all()
-    case_ids = list(dict.fromkeys([r.case_id for r in relations] + [cid for s in suites for cid in s.case_ids]))
-    cases = {c.id: c for c in db.query(TestCase).filter(TestCase.id.in_(case_ids)).all()}
+    selected_ids = [e["node"].case_id for e in tree_entries if e["node"].case_id] if tree_entries is not None else [r.case_id for r in relations]
+    case_ids = list(dict.fromkeys(selected_ids + [cid for s in suites for cid in s.case_ids]))
+    cases = {c.id: c for c in db.query(TestCase).filter(TestCase.id.in_(case_ids), TestCase.deleted_at.is_(None)).all()}
+    if len(cases) != len(case_ids):
+        raise ValueError("计划包含已删除或不存在的用例，请先更新关联")
     if not cases:
         raise ValueError("请先为计划关联用例或添加测试套")
     if any(c.project_id != plan.project_id for c in cases.values()):
@@ -104,23 +118,47 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
         if not db.get(Environment, suite.environment_id):
             raise ValueError("执行环境不存在")
         build_suite_message(db, suite, "校验", str(user_id))
+    from services.case_governance import snapshot_case
+    snapshots = []
+    for cid in case_ids:
+        case = cases[cid]
+        version = snapshot_case(db, case, str(user_id), "计划执行冻结用例版本")
+        snapshots.append(dict(id=cid, name=case.name, caseCode=case.case_code, isAutomated=case.is_automated,
+                              versionId=version.id, version=version.version, snapshot=deepcopy(version.snapshot)))
+    if tree_entries is not None:
+        snapshot_map = {c["id"]: c for c in snapshots}
+        snapshots = []
+        for entry in tree_entries:
+            node, suite = entry["node"], entry["suite"]
+            for cid in suite.case_ids if suite else [node.case_id]:
+                frozen = deepcopy(snapshot_map[cid])
+                frozen.update(associationId=node.id, nodeName=node.name, category=node.category,
+                              assignedTo=node.assigned_to, prerequisites=entry["prerequisites"],
+                              linkedFunctionalId=node.linked_functional_id)
+                snapshots.append(frozen)
     run = PlanRun(id=str(uuid.uuid4()), plan_id=plan_id, executor_id=str(user_id),
-                  idempotency_key=idempotency_key, status="queued" if suites else "running",
+                  idempotency_key=idempotency_key, status="group_waiting" if defer else ("queued" if suites else "running"),
                   plan_name=plan.name, config_snapshot=policy, notes=notes,
-                  case_snapshot=[dict(id=cid, name=cases[cid].name, caseCode=cases[cid].case_code,
-                                      isAutomated=cases[cid].is_automated) for cid in case_ids],
+                  case_snapshot=snapshots,
                   manual_results={})
     db.add(run)
     db.flush()
+    automatic_entries = [e for e in tree_entries or [] if e["suite"]]
     for i, suite in enumerate(suites):
+        entry = automatic_entries[i] if tree_entries is not None else None
         item = PlanRunItem(id=str(uuid.uuid4()), run_id=run.id, suite_id=suite.id,
                            execution_id=str(uuid.uuid4()), environment_id=suite.environment_id,
                            sequence=i, status="waiting",
                            suite_snapshot=dict(name=suite.name, caseIds=list(suite.case_ids),
                                                executionCommand=suite.execution_command,
-                                               environmentId=suite.environment_id))
+                                               environmentId=suite.environment_id,
+                                               nodeId=entry["node"].id if entry else None,
+                                               category=entry["node"].category if entry else "api",
+                                               linkedFunctionalId=entry["node"].linked_functional_id if entry else None,
+                                               prerequisites=entry["prerequisites"] if entry else [],
+                                               resourcePool=entry["config"].get("resourcePool", []) if entry else []))
         db.add(item)
-        if i == 0 or policy["executionMode"] == "parallel":
+        if not defer and ((entry is not None and not entry["prerequisites"]) or (entry is None and (i == 0 or policy["executionMode"] == "parallel"))):
             _enqueue(db, run, item)
     plan.status = "running"
     if commit:
@@ -134,6 +172,23 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
 def _items(db, run_id):
     return db.query(PlanRunItem).filter_by(run_id=run_id).order_by(PlanRunItem.sequence).all()
 
+
+
+def release_plan_run(db, run):
+    """组编排释放已冻结批次；仅入队，事务提交后才允许发送。"""
+    items = _items(db, run.id)
+    claimed = db.query(PlanRun).filter_by(id=run.id, status="group_waiting").update(
+        {"status": "queued" if items else "running"}, synchronize_session=False)
+    if not claimed:
+        return False
+    db.refresh(run)
+    for index, item in enumerate(items):
+        ready = not item.suite_snapshot.get("prerequisites") if run.config_snapshot.get("nodeGraph") else (index == 0 or run.config_snapshot["executionMode"] == "parallel")
+        if ready:
+            _enqueue(db, run, item)
+    db.flush()
+    logger.info("已释放计划组中的冻结批次：批次={}", run.id)
+    return True
 
 def build_report(db, run):
     """只读取本批次 execution_id 对应结果，绝不混入历史或最新用例状态。"""
@@ -150,13 +205,24 @@ def build_report(db, run):
             rows.append(dict(caseId=cid, caseName=cases.get(cid, {}).get("name", cid),
                              suiteName=item.suite_snapshot["name"], executionId=item.execution_id,
                              result=state, notes=result.error_message if result else item.error_message,
-                             duration=result.duration if result else None))
+                             duration=result.duration if result else None, snapshot=cases.get(cid, {}).get("snapshot", {}),
+                             associationId=item.suite_snapshot.get("nodeId") or cid, category=item.suite_snapshot.get("category", "api"),
+                             linkedFunctionalId=item.suite_snapshot.get("linkedFunctionalId")))
     for case in run.case_snapshot:
         if not case["isAutomated"]:
-            result = (run.manual_results or {}).get(case["id"], {})
+            key = case.get("associationId", case["id"])
+            result = (run.manual_results or {}).get(key, {})
+            if run.status == "cancelled" and result.get("result", "pending") == "pending":
+                result = dict(result, result="cancelled")
+            linked = [r for r in rows if r.get("linkedFunctionalId") == key]
+            if linked:
+                state = "pending" if any(r["result"] == "pending" for r in linked) else "failed" if any(r["result"] in ("failed", "error") for r in linked) else "passed" if all(r["result"] == "passed" for r in linked) else "skipped"
+                result = dict(result, result=state, notes="结果由关联的自动化执行更新")
             rows.append(dict(caseId=case["id"], caseName=case["name"], suiteName="手工测试",
                              executionId=None, result=result.get("result", "cancelled" if run.status == "cancelled" else "pending"),
-                             notes=result.get("notes"), duration=None))
+                             notes=result.get("notes"), duration=None, snapshot=case.get("snapshot", {}), executorId=result.get("executorId"),
+                             associationId=key, category=case.get("category", "functional"), assignedTo=case.get("assignedTo"),
+                             stepResults=result.get("stepResults", []), linkedAutomation=bool(linked)))
     counts = {key: sum(r["result"] == key for r in rows)
               for key in ("passed", "failed", "error", "skipped", "cancelled", "pending")}
     total = len(rows)
@@ -222,7 +288,7 @@ async def cancel_plan_run(db, run_id, user_id=None):
 async def advance_plan_runs(db):
     """由后台调度循环推进，页面关闭和后端重启不丢失编排状态。"""
     from api.v1.websocket import manager
-    runs = db.query(PlanRun).filter(PlanRun.status.in_(ACTIVE)).order_by(PlanRun.created_at).all()
+    runs = db.query(PlanRun).filter(PlanRun.status.in_(ACTIVE), PlanRun.status != "group_waiting").order_by(PlanRun.created_at).all()
     for run in runs:
         try:
             items = _items(db, run.id)
@@ -245,11 +311,31 @@ async def advance_plan_runs(db):
             if run.status == "cancelling":
                 await cancel_plan_run(db, run.id)
             else:
-                failed = any(i.status == "failed" for i in items)
+                failed = any(i.status == "failed" for i in items) or any(r.get("result") in ("failed", "error") for r in (run.manual_results or {}).values())
                 if failed and run.config_snapshot["stopOnFailure"]:
                     for item in items:
                         if item.status in ("waiting", "pending"):
                             _cancel_waiting_item(db, item, "skipped", "前序测试套失败，已停止后续执行")
+                    updated = deepcopy(run.manual_results or {})
+                    for case in run.case_snapshot:
+                        key = case.get("associationId", case["id"])
+                        if not case["isAutomated"] and updated.get(key, {}).get("result", "pending") == "pending":
+                            updated[key] = dict(result="skipped", notes="前序失败，根据策略停止后续执行")
+                    if updated != (run.manual_results or {}):
+                        claimed = db.query(PlanRun).filter_by(id=run.id, manual_revision=run.manual_revision).update(
+                            {"manual_results": updated, "manual_revision": run.manual_revision + 1}, synchronize_session=False)
+                        if not claimed:
+                            db.rollback()
+                            continue
+                        db.flush()
+                        db.refresh(run)
+                elif run.config_snapshot.get("nodeGraph"):
+                    outcomes = {}
+                    for row in build_report(db, run)["cases"]:
+                        outcomes.setdefault(row.get("associationId", row["caseId"]), []).append(row["result"])
+                    for item in items:
+                        if item.status == "waiting" and all(dep in outcomes and all(value != "pending" for value in outcomes[dep]) for dep in item.suite_snapshot.get("prerequisites", [])):
+                            _enqueue(db, run, item)
                 elif run.config_snapshot["executionMode"] == "serial":
                     active = any(i.status in ("pending", "running") for i in items)
                     waiting = next((i for i in items if i.status == "waiting"), None)
@@ -259,6 +345,18 @@ async def advance_plan_runs(db):
                 for item in items:
                     if item.status != "pending":
                         continue
+                    pool = item.suite_snapshot.get("resourcePool", [])
+                    if pool:
+                        candidates = db.query(Environment).filter(Environment.id.in_(pool), Environment.status.is_(True)).all()
+                        for candidate in sorted(candidates, key=lambda env: db.query(TaskQueue).filter_by(environment_id=env.id, status="running").count()):
+                            if candidate.id in manager.active_connections and TaskQueueService.can_execute_immediately(db, candidate.id):
+                                moved = db.query(TaskQueue).filter_by(execution_id=item.execution_id, status="pending").update({"environment_id": candidate.id})
+                                if not moved:
+                                    db.rollback()
+                                    break
+                                item.environment_id = candidate.id
+                                db.commit()
+                                break
                     environment = db.query(Environment).filter_by(id=item.environment_id).with_for_update().first()
                     if not environment or not environment.status or item.environment_id not in manager.active_connections:
                         db.commit()
@@ -273,7 +371,11 @@ async def advance_plan_runs(db):
                             raise ValueError("计划执行人不存在或已被禁用")
                         require_project_access(db, executor, plan.project_id, "test_plan:execute")
                         suite = db.get(TestSuite, item.suite_id)
-                        message = build_suite_message(db, suite, item.execution_id, run.executor_id)
+                        from types import SimpleNamespace
+                        view = SimpleNamespace(**{column.name: getattr(suite, column.name) for column in TestSuite.__table__.columns})
+                        view.case_ids = item.suite_snapshot["caseIds"]
+                        view.execution_command = item.suite_snapshot["executionCommand"]
+                        message = build_suite_message(db, view, item.execution_id, run.executor_id, run.case_snapshot)
                     except Exception:
                         logger.exception("计划派发前校验失败：批次={}，执行={}", run.id, item.execution_id)
                         _cancel_waiting_item(db, item, "failed", "派发前校验失败，请检查执行人权限与测试套配置")
@@ -284,7 +386,7 @@ async def advance_plan_runs(db):
                     runnable_items = db.query(PlanRunItem.execution_id).join(PlanRun, PlanRun.id == PlanRunItem.run_id).filter(
                         PlanRun.status.in_(("queued", "running")))
                     claimed = db.query(TaskQueue).filter(TaskQueue.execution_id == item.execution_id,
-                        TaskQueue.status == "pending", TaskQueue.execution_id.in_(runnable_items)).update(
+                        TaskQueue.status == "pending", TaskQueue.environment_id == item.environment_id, TaskQueue.execution_id.in_(runnable_items)).update(
                         {"status": "running", "started_at": beijing_now()}, synchronize_session=False)
                     if claimed != 1:
                         db.rollback()
@@ -343,12 +445,24 @@ def record_manual_result(db, run_id, case_id, data, user_id):
         run = db.query(PlanRun).filter_by(id=run_id).populate_existing().first()
         if not run or run.status not in ("queued", "running"):
             raise ValueError("只有进行中的批次可以回填手工结果")
-        case = next((c for c in run.case_snapshot if c["id"] == case_id), None)
+        case = next((c for c in run.case_snapshot if c.get("associationId", c["id"]) == case_id), None)
         if not case or case["isAutomated"]:
             raise ValueError("只能回填本批次关联的手工用例")
+        if any(c.get("linkedFunctionalId") == case_id for c in run.case_snapshot):
+            raise ValueError("此功能用例由关联自动化结果更新")
+        if case.get("prerequisites"):
+            outcomes = {}
+            for row in build_report(db, run)["cases"]:
+                outcomes.setdefault(row.get("associationId", row["caseId"]), []).append(row["result"])
+            if any(dep not in outcomes or "pending" in outcomes[dep] for dep in case["prerequisites"]):
+                raise ValueError("请先完成串行配置要求的前序测试点")
+        from services.plan_collaboration import validate_steps
+        step_results = validate_steps(db, run, case, getattr(data, "step_results", []))
+        if (step_results or case.get("associationId")) and data.result == "passed" and (len(step_results) != len(case.get("snapshot", {}).get("steps") or []) or any(step["result"] != "passed" for step in step_results)):
+            raise ValueError("整体通过需要所有步骤均已通过")
         updated = dict(run.manual_results or {})
         updated[case_id] = dict(result=data.result, notes=data.notes, executorId=user_id,
-                               updatedAt=beijing_now().isoformat())
+                               updatedAt=beijing_now().isoformat(), stepResults=step_results)
         changed = db.query(PlanRun).filter(PlanRun.id == run_id,
             PlanRun.status.in_(("queued", "running")), PlanRun.manual_revision == run.manual_revision).update(
                 {"manual_results": updated, "manual_revision": run.manual_revision + 1}, synchronize_session=False)
@@ -356,9 +470,9 @@ def record_manual_result(db, run_id, case_id, data, user_id):
             db.rollback()
             logger.info("手工结果并发更新冲突，重新读取后合并：批次={}，重试={}", run_id, attempt + 1)
             continue
-        relation = db.query(PlanCaseRelation).filter_by(plan_id=run.plan_id, case_id=case_id).first()
+        relation = db.query(PlanCaseRelation).filter_by(plan_id=run.plan_id, case_id=case["id"]).first()
         if relation:
-            relation.execution_status = {"passed": "pass", "failed": "fail", "error": "error", "skipped": "skip"}[data.result]
+            relation.execution_status = {"pending": "pending", "passed": "pass", "failed": "fail", "error": "error", "skipped": "skip"}[data.result]
             relation.execution_updated_at = beijing_now()
         db.commit()
         db.refresh(run)

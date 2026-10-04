@@ -11,6 +11,7 @@
       <a-descriptions-item label="计划描述" :span="2">{{ plan.description || '暂无描述' }}</a-descriptions-item>
     </a-descriptions>
     <a-tabs>
+      <a-tab-pane key="tree" tab="测试点与三类用例"><PlanTreeWorkspace :plan-id="plan.id" :project-id="plan.projectId" /></a-tab-pane>
       <a-tab-pane key="runs" tab="执行历史与报告">
         <a-alert message="每次执行独立保存用例和策略快照，报告按该批次实际结果统计。通过率以全部用例执行项为分母，跳过与未执行不算通过。" type="info" show-icon />
         <a-table :columns="runColumns" :data-source="runs" :loading="loading" row-key="id" size="small" :pagination="pagination" :scroll="{ x: 650 }" @change="onPage">
@@ -42,21 +43,8 @@
         </a-form>
       </a-tab-pane>
     </a-tabs>
-    <a-modal v-model:open="reportOpen" title="计划执行报告" width="1000px" :footer="null">
-      <template v-if="selectedRun">
-        <a-space wrap><a-tag :color="color(selectedRun.status)">{{ label(selectedRun.status) }}</a-tag><span>批次 {{ selectedRun.id }}</span><a-button @click="openReport(selectedRun.id)">刷新报告</a-button><a-button @click="exportReport">导出报告 JSON</a-button></a-space>
-        <a-row :gutter="16" class="report-stats"><a-col :span="6"><a-statistic title="执行项" :value="selectedRun.report.total" /></a-col><a-col :span="6"><a-statistic title="通过" :value="selectedRun.report.counts.passed" /></a-col><a-col :span="6"><a-statistic title="失败 / 错误" :value="selectedRun.report.counts.failed + selectedRun.report.counts.error" /></a-col><a-col :span="6"><a-statistic title="通过率" :value="selectedRun.report.passRate" suffix="%" /></a-col></a-row>
-        <p>通过阈值 {{ selectedRun.report.passThreshold }}% · {{ selectedRun.configSnapshot.executionMode === 'serial' ? '串行' : '并行' }} · {{ selectedRun.configSnapshot.stopOnFailure ? '失败后停止等待项' : '失败后继续' }}</p>
-        <a-table :columns="caseColumns" :data-source="selectedRun.report.cases" :row-key="(r: RunCase) => `${r.executionId || 'manual'}-${r.caseId}`" size="small" :scroll="{ x: 680 }">
-          <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'result'"><a-tag :color="color(record.result)">{{ label(record.result) }}</a-tag></template>
-            <template v-else-if="column.key === 'actions'"><a-button v-if="!record.executionId && active(selectedRun.status)" type="link" size="small" @click="editResult(record)">回填结果</a-button></template>
-          </template>
-        </a-table>
-      </template>
-    </a-modal>
-    <a-modal v-model:open="manualOpen" title="回填手工用例结果" @ok="saveManual" :confirm-loading="saving">
-      <p>{{ manualCase?.caseName }}</p><a-select v-model:value="manual.result" style="width: 100%" :options="['passed', 'failed', 'error', 'skipped'].map(v => ({ label: label(v), value: v }))" /><a-textarea v-model:value="manual.notes" placeholder="实际结果与说明" :rows="4" style="margin-top: 16px" />
+    <a-modal v-model:open="reportOpen" title="计划执行报告" width="min(95vw,1200px)" :footer="null">
+      <PlanRunReport v-if="selectedRun && reportOpen" :key="selectedRun.id" :run-id="selectedRun.id" :project-id="plan.projectId" @changed="loadRuns" />
     </a-modal>
     <a-modal v-model:open="logsOpen" title="批次执行日志" width="850px" :footer="null"><pre class="execution-log">{{ logs || '暂无执行日志' }}</pre></a-modal>
   </div>
@@ -65,26 +53,26 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
+import PlanTreeWorkspace from './PlanTreeWorkspace.vue'
+import PlanRunReport from './PlanRunReport.vue'
 import type { TestPlan } from '@/types'
 import { testPlanApi } from '@/api/testPlan'
 import { testSuiteApi, type TestSuite } from '@/api/testSuite'
-import { planOrchestrationApi, type PlanGroup, type PlanPolicy, type PlanRun, type RunCase } from '@/api/planOrchestration'
+import { planOrchestrationApi, type PlanGroup, type PlanPolicy, type PlanRun } from '@/api/planOrchestration'
 const props = defineProps<{ plan: TestPlan; runId?: string }>()
 const emit = defineEmits<{ (event: 'edit'): void; (event: 'execute'): void }>()
-const loading = ref(false), saving = ref(false), reportOpen = ref(false), logsOpen = ref(false), manualOpen = ref(false)
+const loading = ref(false), saving = ref(false), reportOpen = ref(false), logsOpen = ref(false)
 const runs = ref<PlanRun[]>([]), groups = ref<PlanGroup[]>([]), suites = ref<TestSuite[]>([])
 const policy = ref<PlanPolicy>({ groupId: null, executionMode: 'serial', stopOnFailure: false, passThreshold: 100, suiteOrder: [] })
-const selectedRun = ref<PlanRun>(), manualCase = ref<RunCase>(), logs = ref('')
-const manual = ref({ result: 'passed', notes: '' })
+const selectedRun = ref<PlanRun>(), logs = ref('')
 const pagination = ref({ current: 1, pageSize: 10, total: 0 })
 const orderedSuites = computed(() => [...suites.value].sort((a, b) => {
   const index = (id: string) => { const i = policy.value.suiteOrder.indexOf(id); return i < 0 ? 99999 : i }
   return index(a.id) - index(b.id)
 }))
 const runColumns = [{ title: '发起时间', key: 'startedAt', width: 180 }, { title: '状态', key: 'status', width: 90 }, { title: '通过率 / 阈值', key: 'rate', width: 140 }, { title: '操作', key: 'actions', width: 200 }]
-const caseColumns = [{ title: '用例', dataIndex: 'caseName' }, { title: '测试套', dataIndex: 'suiteName' }, { title: '结果', key: 'result' }, { title: '说明', dataIndex: 'notes' }, { title: '操作', key: 'actions' }]
-const active = (s: string) => ['queued', 'running', 'cancelling'].includes(s)
-const label = (s: string) => ({ queued: '排队中', pending: '未执行', waiting: '等待前序', running: '进行中', needs_confirmation: '等待核对节点', cancelling: '取消中', cancelled: '已取消', completed: '已通过', passed: '通过', failed: '失败', error: '错误', skipped: '跳过' }[s] || s)
+const active = (s: string) => ['group_waiting', 'queued', 'running', 'cancelling'].includes(s)
+const label = (s: string) => ({ group_waiting: '等待计划组前序', queued: '排队中', pending: '未执行', waiting: '等待前序', running: '进行中', needs_confirmation: '等待核对节点', cancelling: '取消中', cancelled: '已取消', completed: '已通过', passed: '通过', failed: '失败', error: '错误', skipped: '跳过' }[s] || s)
 const color = (s: string) => ['passed', 'completed'].includes(s) ? 'green' : ['failed', 'error'].includes(s) ? 'red' : active(s) ? 'blue' : 'default'
 const formatTime = (value: string) => value ? new Date(value).toLocaleString('zh-CN') : '-'
 async function loadRuns() {
@@ -105,9 +93,6 @@ async function openReport(id: string) { try { selectedRun.value = await planOrch
 async function openLogs(id: string) { try { const data = await testPlanApi.getPlanExecutionLogs(props.plan.id, id); logs.value = data.executionLog; logsOpen.value = true } catch (error) { console.error('加载批次日志失败', error); message.error('加载日志失败') } }
 async function resolveRun(id: string) { try { await planOrchestrationApi.resolve(id); message.success('已按核对结果终止批次'); await loadRuns() } catch (error) { console.error('确认执行状态失败', error); message.error('确认失败') } }
 async function cancel(id: string) { try { await planOrchestrationApi.cancel(id); message.success('已请求取消'); await loadRuns() } catch (error) { console.error('取消计划批次失败', error); message.error('取消失败') } }
-function editResult(row: RunCase) { manualCase.value = row; manual.value = { result: row.result === 'pending' ? 'passed' : row.result, notes: row.notes || '' }; manualOpen.value = true }
-async function saveManual() { if (!selectedRun.value || !manualCase.value) return; saving.value = true; try { selectedRun.value = await planOrchestrationApi.manualResult(selectedRun.value.id, manualCase.value.caseId, manual.value.result, manual.value.notes); manualOpen.value = false; message.success('手工结果已保存'); await loadRuns() } catch (error) { console.error('回填手工结果失败', error); message.error('保存失败') } finally { saving.value = false } }
-function exportReport() { if (!selectedRun.value) return; const blob = new Blob([JSON.stringify(selectedRun.value, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `ATS-计划报告-${selectedRun.value.id}.json`; a.click(); URL.revokeObjectURL(url) }
 function onPage(p: any) { pagination.value.current = p.current; pagination.value.pageSize = p.pageSize; loadRuns() }
 onMounted(load)
 watch(() => props.plan.id, () => { pagination.value.current = 1; load() })

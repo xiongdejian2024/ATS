@@ -43,8 +43,12 @@
           </a-select>
           <a-button :disabled="!projectId" @click="openGroup()">新建计划组</a-button>
           <a-button v-if="selectedGroup" @click="openGroup(selectedGroup)">编辑计划组</a-button>
+          <a-button v-if="selectedGroup" @click="cloneGroup">完整复制计划组</a-button>
+          <a-checkbox v-model:checked="archivedGroups" @change="groupFilter=undefined; loadPlans()">已归档组</a-checkbox>
           <a-popconfirm v-if="selectedGroup" title="删除分组？组内计划将保留并移至未分组。" @confirm="deleteGroup"><a-button danger>删除分组</a-button></a-popconfirm>
         </a-space>
+        <PlanGroupExecution :group-id="selectedGroup?.id" :group-name="selectedGroup?.name" :project-id="projectId || ''" :run-id="typeof route.query.groupRunId === 'string' ? route.query.groupRunId : undefined" />
+        <PlanWorkspaceToolbar :project-id="projectId || ''" :selected-ids="selectedPlanIds" :groups="planGroups" @filter="applyWorkspaceFilter" @saved="selectedPlanIds = []; loadPlans()" />
         <!-- 筛选和搜索区域 -->
         <a-card class="filter-card" size="small">
         <a-row :gutter="16" align="middle">
@@ -115,6 +119,7 @@
           :loading="loading"
           :pagination="false"
           row-key="id"
+          :row-selection="{ selectedRowKeys: selectedPlanIds, onChange: (keys: any[]) => selectedPlanIds = keys.map(String) }"
           :scroll="{ x: 1200, y: 'calc(100vh - 420px)' }"
           @change="handleTableChange"
           size="middle"
@@ -130,6 +135,9 @@
                 </div>
                 <div class="plan-info">
                   <span class="plan-name">{{ record.name }}</span>
+                  <a-button type="text" size="small" @click.stop="toggleFollow(record)">{{ record.followed ? '★' : '☆' }}</a-button>
+                  <a-tag v-for="tag in record.tags || []" :key="tag">{{ tag }}</a-tag>
+                  <a-tag v-if="record.archived">已归档</a-tag>
                   <div class="plan-subtitle">
                     {{ record.planNumber }}
                   </div>
@@ -256,7 +264,7 @@
     </div>
 
     <a-modal v-model:open="groupModal" :title="groupId ? '编辑计划组' : '新建计划组'" @ok="saveGroup" :confirm-loading="groupSaving">
-      <a-form layout="vertical"><a-form-item label="计划组名称" required><a-input v-model:value="groupForm.name" :maxlength="100" /></a-form-item><a-form-item label="说明"><a-textarea v-model:value="groupForm.description" :rows="3" /></a-form-item></a-form>
+      <a-form layout="vertical"><a-form-item label="计划组名称" required><a-input v-model:value="groupForm.name" :maxlength="100" /></a-form-item><a-form-item label="说明"><a-textarea v-model:value="groupForm.description" :rows="3" /></a-form-item><a-form-item label="计划模块"><a-select v-model:value="groupForm.moduleId" allow-clear :options="groupModules.map(m=>({value:m.id,label:m.name}))" /></a-form-item><a-form-item label="标签"><a-select v-model:value="groupForm.tags" mode="tags" /></a-form-item><a-form-item label="归档"><a-switch v-model:checked="groupForm.archived" /></a-form-item></a-form>
     </a-modal>
 
     <!-- 计划详情抽屉 -->
@@ -328,6 +336,9 @@ import { planOrchestrationApi, type PlanGroup } from '@/api/planOrchestration';
 import { useProjectStore } from '@/stores/project';
 import TestPlanDetail from '@/components/TestPlan/TestPlanDetail.vue'
 import TestPlanEdit from '@/components/TestPlan/TestPlanEdit.vue'
+import PlanWorkspaceToolbar from '@/components/TestPlan/PlanWorkspaceToolbar.vue'
+import PlanGroupExecution from '@/components/TestPlan/PlanGroupExecution.vue'
+import { planWorkspaceApi } from '@/api/planWorkspace'
 
 
 const router = useRouter()
@@ -358,6 +369,11 @@ const projectId = computed<string | undefined>(() => {
 // 响应式数据
 const loading = ref(false)
 const plans = ref<TestPlan[]>([])
+const selectedPlanIds = ref<string[]>([])
+const workspaceFilter = ref<{module_id?:string;followed:boolean;archived:boolean;tag?:string}>({followed:false,archived:false})
+function applyWorkspaceFilter(value:typeof workspaceFilter.value) { workspaceFilter.value=value; pagination.value.current=1; void loadPlans() }
+async function toggleFollow(plan: TestPlan & {followed?:boolean}) { try { await planWorkspaceApi.follow(plan.id,!plan.followed); await loadPlans() } catch(error) { console.error('关注计划失败',error); message.error('关注失败') } }
+
 const selectedPlan = ref<TestPlan | null>(null)
 const environments = ref<Environment[]>([])
 
@@ -443,14 +459,16 @@ const columns = [
   }
 ]
 
-const groupFilter = ref<string>()
+const groupFilter = ref<string | undefined>(typeof route.query.groupId === 'string' ? route.query.groupId : undefined)
+const archivedGroups = ref(false)
+const groupModules = ref<{id:string;name:string}[]>([])
 const planGroups = ref<PlanGroup[]>([])
 const selectedGroup = computed(() => planGroups.value.find(g => g.id === groupFilter.value))
 const groupModal = ref(false)
 const groupSaving = ref(false)
 const groupId = ref('')
-const groupForm = ref({ name: '', description: '' })
-function openGroup(group?: PlanGroup) { groupId.value = group?.id || ''; groupForm.value = { name: group?.name || '', description: group?.description || '' }; groupModal.value = true }
+const groupForm = ref({ name: '', description: '', tags: [] as string[], archived: false, moduleId: null as string|null })
+function openGroup(group?: PlanGroup) { groupId.value = group?.id || ''; groupForm.value = { name: group?.name || '', description: group?.description || '', tags: group?.tags || [], archived: group?.archived || false, moduleId:group?.moduleId || null }; groupModal.value = true }
 async function saveGroup() {
   if (!projectId.value) return
   if (!groupForm.value.name.trim()) { message.warning('请输入计划组名称'); return }
@@ -459,6 +477,7 @@ async function saveGroup() {
   catch (error) { console.error('保存计划组失败', error); message.error('保存计划组失败') }
   finally { groupSaving.value = false }
 }
+async function cloneGroup() { if (!selectedGroup.value) return; try { const group = await planOrchestrationApi.cloneGroup(selectedGroup.value.id); groupFilter.value=group.id; await loadPlans(); message.success('计划组与成员计划已完整复制') } catch(error) {console.error('复制计划组失败',error);message.error('复制计划组失败')} }
 async function deleteGroup() { if (!selectedGroup.value) return; try { await planOrchestrationApi.deleteGroup(selectedGroup.value.id); groupFilter.value = undefined; await loadPlans(); message.success('分组已删除，计划已保留') } catch (error) { console.error('删除计划组失败', error); message.error('删除失败') } }
 
 // 方法
@@ -466,6 +485,7 @@ const loadPlans = async () => {
   loading.value = true
   try {
     const params = {
+      ...workspaceFilter.value,
       page: pagination.value.current,
       size: pagination.value.pageSize,
       search: searchValue.value || undefined,
@@ -484,7 +504,8 @@ const loadPlans = async () => {
     console.log('开始加载测试计划，projectId:', projectId.value, 'params:', params)
 
     const response = await testPlanApi.getTestPlans(projectId.value, params)
-    planGroups.value = await planOrchestrationApi.groups(projectId.value)
+    planGroups.value = await planOrchestrationApi.groups(projectId.value, archivedGroups.value)
+    groupModules.value = await planWorkspaceApi.modules(projectId.value)
     console.log('获取测试计划响应:', response)
     console.log('响应类型:', typeof response)
     console.log('响应是否为数组:', Array.isArray(response))
@@ -935,6 +956,9 @@ onMounted(async () => {
   loadEnvironments()
   if (typeof route.query.planId === 'string') await viewPlanDetail(route.query.planId)
 })
+
+watch(() => route.query.groupId, (value) => { if (typeof value === 'string') {groupFilter.value=value; void loadPlans()} })
+watch(() => route.query.planId, (value) => { if (typeof value === 'string') void viewPlanDetail(value) })
 
 // 监听项目变化
 watch(

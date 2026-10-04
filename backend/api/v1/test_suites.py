@@ -16,6 +16,17 @@ from services.suite_dispatch import is_xat_command
 router = APIRouter()
 
 
+def require_suite_access(db, user, suite_id, action="read"):
+    from models.test_suite import TestSuite
+    from api.v1.plan_orchestration import require_plan
+    suite = db.get(TestSuite, suite_id)
+    if not suite:
+        raise HTTPException(404, "测试套不存在")
+    require_plan(db, user, suite.plan_id, action)
+    return suite
+
+
+
 @router.get("/{plan_id}/suites", response_model=APIResponse)
 async def get_test_suites(
     plan_id: str,
@@ -25,6 +36,8 @@ async def get_test_suites(
     limit: int = 100
 ):
     """获取测试套列表"""
+    from api.v1.plan_orchestration import require_plan
+    require_plan(db, current_user, plan_id, "read")
     try:
         result = TestSuiteService.get_test_suites(db, plan_id, skip=skip, limit=limit)
         items = serialize_list(result["items"], camel_case=True)
@@ -56,6 +69,7 @@ async def get_test_suite(
     current_user: User = Depends(get_current_user)
 ):
     """获取测试套详情"""
+    require_suite_access(db, current_user, suite_id, "read")
     suite = TestSuiteService.get_test_suite(db, suite_id)
     if not suite:
         raise HTTPException(
@@ -78,6 +92,8 @@ async def create_test_suite(
     current_user: User = Depends(get_current_user)
 ):
     """创建测试套"""
+    from api.v1.plan_orchestration import require_plan
+    require_plan(db, current_user, plan_id, "create")
     try:
         suite = TestSuiteService.create_test_suite(
             db=db,
@@ -114,6 +130,7 @@ async def update_test_suite(
     current_user: User = Depends(get_current_user)
 ):
     """更新测试套"""
+    require_suite_access(db, current_user, suite_id, "update")
     try:
         # 获取所有字段，包括None值（用于清除Git配置）
         # 使用model_dump(exclude_unset=True)来区分"未设置"和"设置为None"
@@ -159,6 +176,7 @@ async def delete_test_suite(
     current_user: User = Depends(get_current_user)
 ):
     """删除测试套"""
+    require_suite_access(db, current_user, suite_id, "delete")
     try:
         success = TestSuiteService.delete_test_suite(db, suite_id)
     except ValueError as exc:
@@ -183,6 +201,7 @@ async def execute_test_suite(
     current_user: User = Depends(get_current_user)
 ):
     """执行测试套"""
+    require_suite_access(db, current_user, suite_id, "execute")
     try:
         # 先检查测试套是否存在
         from models.test_suite import TestSuite
@@ -315,6 +334,7 @@ async def cancel_test_suite(
     current_user: User = Depends(get_current_user)
 ):
     """取消测试套执行（支持通过execution_id取消特定执行）"""
+    require_suite_access(db, current_user, suite_id, "execute")
     try:
         from models.test_suite import TestSuite, TestSuiteLog
         from api.v1.websocket import manager
@@ -497,6 +517,7 @@ async def get_suite_executions(
     limit: int = 100
 ):
     """获取测试套执行记录（旧接口，保留兼容性）"""
+    require_suite_access(db, current_user, suite_id, "read")
     try:
         result = TestSuiteService.get_suite_executions(db, suite_id, skip=skip, limit=limit)
         
@@ -549,6 +570,7 @@ async def get_suite_logs(
     log_id: Optional[str] = Query(None, alias="logId")
 ):
     """获取测试套日志"""
+    require_suite_access(db, current_user, suite_id, "read")
     from models.test_suite import TestSuiteLog
     from utils.serializer import serialize_model
     from core.logger import logger
@@ -603,6 +625,7 @@ async def get_suite_suite_executions(
     end_date: Optional[str] = None
 ):
     """获取测试套的执行历史（按execution_id分组）"""
+    require_suite_access(db, current_user, suite_id, "read")
     from models.test_suite import TestSuiteExecution, TestSuite, TestSuiteLog
     from models.user import User
     from sqlalchemy import func
@@ -968,6 +991,10 @@ async def delete_suite_execution(
     current_user: User = Depends(get_current_user)
 ):
     """删除测试套执行历史"""
+    require_suite_access(db, current_user, suite_id, "delete")
+    from models.plan_orchestration import PlanRunItem
+    if db.query(PlanRunItem).filter_by(suite_id=suite_id, execution_id=execution_id).first():
+        raise HTTPException(409, "计划批次报告引用了此执行，不能单独删除")
     from models.test_suite import TestSuite, TestSuiteLog, TestSuiteExecution
     from datetime import timedelta
     

@@ -27,7 +27,7 @@
     <a-modal v-model:open="editorOpen" :title="editingId ? '编辑任务' : '新建任务'" :confirm-loading="saving" @ok="save">
       <a-form layout="vertical">
         <a-form-item label="任务名称" required><a-input v-model:value="form.name" :maxlength="255" /></a-form-item>
-        <a-form-item label="执行类型" required><a-radio-group v-model:value="form.targetType" :disabled="!!editingId" @change="form.targetId = ''"><a-radio value="suite">测试套</a-radio><a-radio value="plan">测试计划</a-radio></a-radio-group></a-form-item>
+        <a-form-item label="执行类型" required><a-radio-group v-model:value="form.targetType" :disabled="!!editingId" @change="form.targetId = ''"><a-radio value="suite">测试套</a-radio><a-radio value="plan">测试计划</a-radio><a-radio value="group">计划组</a-radio></a-radio-group></a-form-item>
         <a-form-item label="执行目标" required><a-select v-model:value="form.targetId" :disabled="!!editingId" :options="targetOptions" placeholder="请选择已配置的测试套或计划" /></a-form-item>
         <a-form-item label="Cron 表达式" extra="留空为手动任务。例如：0 9 * * 1-5 表示周一至周五 09:00。"><a-input v-model:value="form.cronExpression" placeholder="分 时 日 月 周" :maxlength="100" /></a-form-item>
         <a-form-item label="时区"><a-select v-model:value="form.timezone" :options="[{ value: 'Asia/Shanghai', label: '中国标准时间（Asia/Shanghai）' }, { value: 'UTC', label: 'UTC' }]" /></a-form-item>
@@ -39,12 +39,12 @@
         <template #renderItem="{ item }"><a-list-item>
           <a-space><a-tag :color="statusColor(item.status)">{{ statusText(item.status) }}</a-tag><span>{{ item.triggerType === 'manual' ? '手动执行' : '定时执行' }}</span></a-space>
           <p>{{ formatTime(item.createdAt) }}</p>
-          <div class="run-id">执行编号：{{ item.executionId || item.planRunId || item.id }}</div>
+          <div class="run-id">执行编号：{{ item.executionId || item.planRunId || item.groupRunId || item.id }}</div>
           <a-alert v-if="item.errorMessage" type="error" :message="item.errorMessage" show-icon />
           <a-space class="run-actions">
             <a-button v-if="['queued', 'running', 'cancelling'].includes(item.status)" danger size="small" :disabled="item.status === 'cancelling'" @click="cancel(item)">取消执行</a-button>
-            <a-popconfirm v-if="item.status === 'needs_confirmation' && !item.planRunId" title="已确认节点未执行或已停止？此操作将记录为异常结束，不会终止节点进程。" ok-text="已核对，结束记录" cancel-text="继续核对" @confirm="resolve(item)"><a-button danger size="small">人工确认结束</a-button></a-popconfirm>
-            <a-button v-if="item.planRunId" size="small" @click="openPlan(item)">计划批次详情</a-button>
+            <a-popconfirm v-if="item.status === 'needs_confirmation' && !item.planRunId && !item.groupRunId" title="已确认节点未执行或已停止？此操作将记录为异常结束，不会终止节点进程。" ok-text="已核对，结束记录" cancel-text="继续核对" @confirm="resolve(item)"><a-button danger size="small">人工确认结束</a-button></a-popconfirm>
+            <a-button v-if="item.groupRunId" size="small" @click="openGroup(item)">计划组报告</a-button><a-button v-if="item.planRunId" size="small" @click="openPlan(item)">计划批次详情</a-button>
             <a-button v-if="item.executionId && selected?.targetType === 'suite'" size="small" @click="openLogs(item)">查看日志</a-button>
           </a-space>
         </a-list-item></template>
@@ -67,7 +67,7 @@ const projectStore = useProjectStore()
 const projectId = ref('')
 const projects = computed(() => projectStore.projects.map(p => ({ value: p.id, label: p.name })))
 const items = ref<TaskSchedule[]>([])
-const targets = ref<{ plans: TargetOption[]; suites: TargetOption[] }>({ plans: [], suites: [] })
+const targets = ref<{ plans: TargetOption[]; suites: TargetOption[]; groups: TargetOption[] }>({ plans: [], suites: [], groups: [] })
 const loading = ref(false)
 const busy = reactive(new Set<string>())
 const pendingRequests = new Map<string, string>()
@@ -75,7 +75,7 @@ const editorOpen = ref(false)
 const saving = ref(false)
 const editingId = ref('')
 const form = reactive<ScheduleForm>({ projectId: '', name: '', targetType: 'suite', targetId: '', cronExpression: '', timezone: 'Asia/Shanghai' })
-const targetOptions = computed(() => targets.value[form.targetType === 'suite' ? 'suites' : 'plans'].map(t => ({ value: t.id, label: t.name })))
+const targetOptions = computed(() => targets.value[form.targetType === 'suite' ? 'suites' : form.targetType === 'group' ? 'groups' : 'plans'].map(t => ({ value: t.id, label: t.name })))
 const columns = [
   { title: '任务 / 目标', key: 'name' }, { title: '执行周期', key: 'cron' },
   { title: '定时启用', key: 'enabled' }, { title: '下次执行', key: 'next' }, { title: '操作', key: 'actions' },
@@ -91,7 +91,7 @@ const drawerWidth = computed(() => Math.min(width.value - 24, 640))
 const formatTime = (value: string | null) => value ? new Date(value).toLocaleString('zh-CN') : '—'
 const statusText = (value: string) => ({ queued: '排队中', running: '执行中', cancelling: '取消中', completed: '已完成', failed: '失败', cancelled: '已取消', needs_confirmation: '派发待确认' }[value] || value)
 const statusColor = (value: string) => ({ queued: 'default', running: 'blue', cancelling: 'orange', completed: 'green', failed: 'red', cancelled: 'default', needs_confirmation: 'orange' }[value] || 'default')
-const targetName = (row: TaskSchedule) => (row.targetType === 'suite' ? '测试套：' : '计划：') + (targets.value[row.targetType === 'suite' ? 'suites' : 'plans'].find(t => t.id === row.targetId)?.name || '目标已删除')
+const targetName = (row: TaskSchedule) => (row.targetType === 'suite' ? '测试套：' : row.targetType === 'group' ? '计划组：' : '计划：') + (targets.value[row.targetType === 'suite' ? 'suites' : row.targetType === 'group' ? 'groups' : 'plans'].find(t => t.id === row.targetId)?.name || '目标已删除')
 const reportError = (error: unknown) => console.error('任务中心操作失败', error)
 
 async function refresh() {
@@ -157,6 +157,9 @@ async function resolve(run: ScheduleRun) {
 }
 function openLogs(run: ScheduleRun) {
   router.push({ path: '/test-suites/execution-log', query: { suiteId: selected.value?.targetId, executionId: run.executionId || undefined } })
+}
+function openGroup(run: ScheduleRun) {
+  router.push({ path: '/test-plans', query: { groupId: selected.value?.targetId, groupRunId: run.groupRunId || undefined } })
 }
 function openPlan(run: ScheduleRun) {
   router.push({ path: '/test-plans', query: { planId: selected.value?.targetId, runId: run.planRunId || undefined } })

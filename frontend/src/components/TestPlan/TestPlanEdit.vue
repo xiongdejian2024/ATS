@@ -243,9 +243,6 @@ const formData = reactive({
   endDate: null as Dayjs | null,
   environmentId: '',
   environmentConfig: {} as PlanEnvironmentConfig,
-  executionStrategy: 'sequential' as 'sequential' | 'parallel' | 'priority',
-  retryOnFailure: false,
-  retryCount: 2,
   notificationMethods: [] as string[],
   notificationRecipients: [] as string[],
   notificationEvents: [] as string[]
@@ -360,9 +357,6 @@ const loadPlanData = async () => {
       endDate: (plan.endDate || (plan as any).end_date) ? dayjs(plan.endDate || (plan as any).end_date) : null,
       environmentId: plan.environmentId || (plan as any).environment_id || '',
       environmentConfig: plan.environmentConfig || (plan as any).environment_config || {},
-      executionStrategy: settings.executionStrategy || 'sequential',
-      retryOnFailure: settings.retryOnFailure ?? false,
-      retryCount: settings.retryCount ?? 2,
       notificationMethods: settings.notificationMethods || [],
       notificationRecipients: settings.notificationRecipients || [],
       notificationEvents: settings.notificationEvents || []
@@ -503,16 +497,10 @@ const handleSubmit = async () => {
       environmentConfig: {
         ...formData.environmentConfig,
         notes: formData.notes,
-        executionStrategy: formData.executionStrategy,
-        retryOnFailure: formData.retryOnFailure,
-        retryCount: formData.retryCount,
         notificationMethods: formData.notificationMethods,
         notificationRecipients: formData.notificationRecipients,
         notificationEvents: formData.notificationEvents
       },
-      executionStrategy: formData.executionStrategy || 'sequential',
-      retryOnFailure: formData.retryOnFailure || false,
-      retryCount: formData.retryCount || 2,
       notificationMethods: formData.notificationMethods || [],
       notificationRecipients: formData.notificationRecipients || [],
       notificationEvents: formData.notificationEvents || [],

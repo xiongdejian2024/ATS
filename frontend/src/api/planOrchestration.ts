@@ -1,6 +1,6 @@
 import { apiClient } from '@/utils/api'
 
-export interface PlanGroup { id: string; name: string; description?: string; planCount: number }
+export interface PlanGroup { id: string; name: string; description?: string; planCount: number; moduleId?: string | null; tags?: string[]; archived?: boolean }
 export interface PlanPolicy {
   groupId: string | null; executionMode: 'serial' | 'parallel'; stopOnFailure: boolean
   passThreshold: number; suiteOrder: string[]
@@ -18,9 +18,10 @@ export interface PlanRun {
     items: { suiteId: string; suiteName: string; status: string; executionId: string }[] }
 }
 export const planOrchestrationApi = {
-  groups: (projectId: string): Promise<PlanGroup[]> => apiClient.get(`/plan-orchestration/projects/${projectId}/groups`),
-  createGroup: (projectId: string, data: { name: string; description?: string }): Promise<PlanGroup> => apiClient.post(`/plan-orchestration/projects/${projectId}/groups`, data),
-  updateGroup: (id: string, data: { name: string; description?: string }): Promise<PlanGroup> => apiClient.put(`/plan-orchestration/groups/${id}`, data),
+  groups: (projectId: string, archived=false): Promise<PlanGroup[]> => apiClient.get(`/plan-orchestration/projects/${projectId}/groups`, {params:{archived}}),
+  cloneGroup: (id: string): Promise<PlanGroup> => apiClient.post(`/plan-orchestration/groups/${id}/clone`),
+  createGroup: (projectId: string, data: { name: string; description?: string; tags?: string[]; archived?: boolean; moduleId?: string|null }): Promise<PlanGroup> => apiClient.post(`/plan-orchestration/projects/${projectId}/groups`, data),
+  updateGroup: (id: string, data: { name: string; description?: string; tags?: string[]; archived?: boolean; moduleId?: string|null }): Promise<PlanGroup> => apiClient.put(`/plan-orchestration/groups/${id}`, data),
   deleteGroup: (id: string) => apiClient.delete(`/plan-orchestration/groups/${id}`),
   settings: (planId: string): Promise<PlanPolicy> => apiClient.get(`/plan-orchestration/plans/${planId}/settings`),
   saveSettings: (planId: string, policy: PlanPolicy): Promise<PlanPolicy> => apiClient.put(`/plan-orchestration/plans/${planId}/settings`, policy),

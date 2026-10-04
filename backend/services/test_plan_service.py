@@ -26,6 +26,12 @@ class TestPlanService:
         plan_type: Optional[str] = None,
         owner_id: Optional[str] = None,
         group_id: Optional[str] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        module_id: Optional[str] = None,
+        archived: Optional[bool] = False,
+        followed_by: Optional[str] = None,
+        tag: Optional[str] = None,
     ):
         """获取测试计划列表"""
         logger.debug(f"TestPlanService.get_test_plans - project_id: {project_id}, type: {type(project_id)}")
@@ -89,6 +95,22 @@ class TestPlanService:
         if owner_id:
             query = query.filter(TestPlan.owner_id == owner_id)
 
+        from models.plan_workspace import PlanWorkspace, PlanFollow
+        if start_date:
+            query = query.filter(TestPlan.end_date >= start_date)
+        if end_date:
+            query = query.filter(TestPlan.start_date <= end_date)
+        query = query.outerjoin(PlanWorkspace, PlanWorkspace.plan_id == TestPlan.id)
+        if archived is not None:
+            query = query.filter(PlanWorkspace.archived.is_(True)) if archived else query.filter(or_(PlanWorkspace.archived.is_(False), PlanWorkspace.plan_id.is_(None)))
+        if module_id:
+            query = query.filter(PlanWorkspace.module_id.is_(None)) if module_id == "__ungrouped__" else query.filter(PlanWorkspace.module_id == module_id)
+        if followed_by:
+            query = query.filter(TestPlan.id.in_(db.query(PlanFollow.plan_id).filter_by(user_id=followed_by)))
+        if tag:
+            # JSON 数组的精确匹配同时兼容 SQLite 和 MySQL。
+            matched = [m.plan_id for m in db.query(PlanWorkspace).join(TestPlan, TestPlan.id == PlanWorkspace.plan_id).filter(TestPlan.project_id == project_id_str) if tag in (m.tags or [])]
+            query = query.filter(TestPlan.id.in_(matched))
         # 总数
         total = query.count()
 
@@ -519,12 +541,17 @@ class TestPlanService:
                 db.commit()
 
     @staticmethod
-    def clone_plan(db: Session, plan_id: str, project_id: str, current_user_id: str) -> Optional[TestPlan]:
+    def clone_plan(db: Session, plan_id: str, project_id: str, current_user_id: str, commit: bool = True) -> Optional[TestPlan]:
         """克隆计划"""
         source_plan = db.query(TestPlan).filter(TestPlan.id == plan_id).first()
 
         if not source_plan:
             return None
+
+        from copy import deepcopy
+        from services.plan_workspace import clone_extensions
+        if source_plan.project_id != project_id:
+            raise ValueError("复制目标必须为当前项目")
 
         # 生成新计划编号
         timestamp = int(beijing_now().timestamp() * 1000) % 1000000
@@ -545,13 +572,13 @@ class TestPlanService:
             plan_type=source_plan.plan_type,
             start_date=source_plan.start_date,
             end_date=source_plan.end_date,
-            environment_config=source_plan.environment_config,
+            environment_config=deepcopy(source_plan.environment_config),
+            environment_id=source_plan.environment_id,
             status="not_started"
         )
 
         db.add(new_plan)
-        db.commit()
-        db.refresh(new_plan)
+        db.flush()
 
         # 复制用例关联
         relations = db.query(PlanCaseRelation).filter(
@@ -563,12 +590,17 @@ class TestPlanService:
                 id=str(uuid.uuid4()),
                 plan_id=new_plan.id,
                 case_id=relation.case_id,
-                execution_order=relation.execution_order
+                execution_order=relation.execution_order,
+                assigned_to=relation.assigned_to
             )
             db.add(new_relation)
 
-        db.commit()
-
+        clone_extensions(db, source_plan, new_plan, current_user_id)
+        if commit:
+            db.commit()
+        else:
+            db.flush()
+        logger.info("已完整复制计划配置和测试套：源计划={}，新计划={}", plan_id, new_plan.id)
         return new_plan
 
     @staticmethod

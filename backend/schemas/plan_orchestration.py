@@ -13,10 +13,16 @@ class PlanPolicy(BaseModel):
 
 
 class GroupInput(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    module_id: str | None = Field(None, alias="moduleId")
+    tags: list[str] = Field(default_factory=list, max_length=50)
+    archived: bool = False
     name: str = Field(min_length=1, max_length=100)
     description: str | None = Field(None, max_length=2000)
 
 
 class ManualResultInput(BaseModel):
-    result: Literal["passed", "failed", "error", "skipped"]
+    model_config = ConfigDict(populate_by_name=True)
+    step_results: list[dict] = Field(default_factory=list, alias="stepResults", max_length=1000)
+    result: Literal["pending", "passed", "failed", "error", "skipped"]
     notes: str = Field("", max_length=10000)

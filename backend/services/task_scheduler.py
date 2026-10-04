@@ -48,6 +48,12 @@ def next_fire_time(expression, timezone, now=None):
 
 def check_target(db, user, project_id, target_type, target_id):
     require_project_access(db, user, project_id, "test_plan:execute")
+    if target_type == "group":
+        from models.plan_orchestration import PlanGroup
+        group = db.get(PlanGroup, target_id)
+        if not group or group.project_id != project_id:
+            raise HTTPException(400, "计划组必须属于当前项目")
+        return group
     if target_type == "suite":
         suite = db.get(TestSuite, target_id)
         plan = db.get(TestPlan, suite.plan_id) if suite else None
@@ -117,7 +123,11 @@ async def _prepare_run(db, row, user, trigger_key, trigger_type, scheduled_for):
     db.add(run)
     # 唯一触发键先落入事务，竞争请求只能有一个继续创建执行批次。
     db.flush()
-    if row.target_type == "plan":
+    if row.target_type == "group":
+        from services.plan_group_execution import start_group_run
+        group_run = await start_group_run(db, target.id, str(user.id), idempotency_key=trigger_key, commit=False)
+        run.group_run_id = group_run.id
+    elif row.target_type == "plan":
         from services.plan_orchestration import start_plan_run
         plan_run = await start_plan_run(
             db, target.id, str(user.id), idempotency_key=trigger_key, commit=False,
@@ -260,7 +270,13 @@ async def cancel_run(db, user, run):
     require_project_access(db, user, schedule.project_id, "test_plan:execute")
     if run.status in TERMINAL:
         return run
-    if run.plan_run_id:
+    if run.group_run_id:
+        from models.plan_group_execution import PlanGroupRun
+        from services.plan_group_execution import cancel_group_run
+        group = db.get(PlanGroupRun, run.group_run_id)
+        await cancel_group_run(db, group, user)
+        run.status = group.status
+    elif run.plan_run_id:
         from services.plan_orchestration import cancel_plan_run
         await cancel_plan_run(db, run.plan_run_id, user_id=str(user.id))
         run.status = "cancelling"
@@ -286,7 +302,12 @@ async def reconcile_runs(db):
     from api.v1.websocket import manager
     from models.plan_orchestration import PlanRun
     for run in db.query(TaskScheduleRun).filter(TaskScheduleRun.status.notin_(TERMINAL)).all():
-        if run.plan_run_id:
+        if run.group_run_id:
+            from models.plan_group_execution import PlanGroupRun
+            group = db.get(PlanGroupRun, run.group_run_id)
+            if group:
+                run.status = group.status
+        elif run.plan_run_id:
             plan = db.get(PlanRun, run.plan_run_id)
             if plan:
                 run.status = plan.status
@@ -337,9 +358,12 @@ def resolve_uncertain_run(db, user, run):
 
 async def scheduler_tick(db, now=None):
     from services.plan_orchestration import advance_plan_runs
+    from services.plan_group_execution import advance_group_runs
     await enqueue_due(db, now)
     await reconcile_runs(db)
+    await advance_group_runs(db)
     await advance_plan_runs(db)
+    await advance_group_runs(db)
     await dispatch_pending(db)
     await reconcile_runs(db)
 

@@ -37,6 +37,7 @@ def run_json(row):
         "id": row.id, "scheduleId": row.schedule_id, "triggerType": row.trigger_type,
         "scheduledFor": timestamp(row.scheduled_for), "status": row.status,
         "executionId": row.execution_id, "planRunId": row.plan_run_id,
+        "groupRunId": row.group_run_id,
         "errorMessage": row.error_message, "createdAt": timestamp(row.created_at),
         "deliveryState": row.delivery_state,
         "completedAt": timestamp(row.completed_at),
@@ -54,6 +55,8 @@ def find_schedule(db, user, schedule_id, action="read"):
 @router.get("/targets")
 def targets(projectId: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     require_project_access(db, user, projectId, "test_plan:read")
+    from models.plan_orchestration import PlanGroup
+    groups = db.query(PlanGroup).filter_by(project_id=projectId).order_by(PlanGroup.name).all()
     plans = db.query(TestPlan).filter_by(project_id=projectId).order_by(TestPlan.name).all()
     suites = db.query(TestSuite).join(TestPlan, TestPlan.id == TestSuite.plan_id).filter(
         TestPlan.project_id == projectId,
@@ -61,6 +64,7 @@ def targets(projectId: str, db: Session = Depends(get_db), user: User = Depends(
     return output({
         "plans": [{"id": p.id, "name": p.name} for p in plans],
         "suites": [{"id": s.id, "name": s.name, "planId": s.plan_id} for s in suites],
+        "groups": [{"id": g.id, "name": g.name} for g in groups],
     })
 
 

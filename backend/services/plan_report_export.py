@@ -55,7 +55,7 @@ def _render(payload: dict) -> bytes:
                               wordWrap="CJK", spaceAfter=5))
     styles.add(ParagraphStyle("ATS小字", parent=styles["ATS正文"], fontSize=8, leading=12))
     styles.add(ParagraphStyle("ATS小标题", parent=styles["Heading2"], fontSize=12, leading=18,
-                              spaceBefore=10, spaceAfter=8, textColor=colors.HexColor("#17365D")))
+                              spaceBefore=10, spaceAfter=8, keepWithNext=True, textColor=colors.HexColor("#17365D")))
 
     def p(text, style="ATS正文"):
         # 报告内容只作为纯文本，阻止用户输入变成 ReportLab 标记或外部图片地址。
@@ -133,9 +133,10 @@ def _render(payload: dict) -> bytes:
         rows = [["步骤", "操作与预期", "结果", "实际结果"]]
         original = snapshot.get("steps") or []
         for i, step in enumerate(steps):
-            source = original[i] if i < len(original) and isinstance(original[i], dict) else {}
+            index = step.get("index", i)
+            source = original[index] if 0 <= index < len(original) and isinstance(original[index], dict) else {}
             value = step.get("result", "pending")
-            rows.append([i + 1,
+            rows.append([index + 1,
                          f"操作：{step.get('action', source.get('action', '—'))}\n预期：{step.get('expected', source.get('expected', '—'))}",
                          STATUS_NAMES.get(value, value), step.get("actual") or step.get("actualResult") or step.get("notes") or "—"])
         story.append(table(rows, [width * .08, width * .45, width * .13, width * .34]))
