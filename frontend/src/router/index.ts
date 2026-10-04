@@ -19,6 +19,7 @@ const routes = [
       requiresAuth: true
     },
     children: [
+      { path: 'task-center', name: 'TaskCenter', component: () => import('@views/TaskCenter.vue'), meta: { title: '测试任务' } },
       { path: 'ai-assistant', name: 'AIAssistant', component: () => import('@views/AIAssistant.vue'), meta: { title: 'AI 辅助' } },
       {
         path: 'dashboard',
@@ -70,7 +71,7 @@ const routes = [
         name: 'TestSuites',
         component: () => import('@views/TestSuites.vue'),
         meta: {
-          title: '测试任务',
+          title: '测试套',
           icon: 'AppstoreOutlined'
         }
       },

@@ -166,10 +166,11 @@ const menuItems = [
   },
   {
     key: 'test-suites',
-    title: '测试任务',
+    title: '测试套',
     icon: AppstoreOutlined,
     path: '/test-suites'
   },
+  { key: 'task-center', title: '测试任务', icon: ScheduleOutlined, path: '/task-center' },
   { key: 'ai-assistant', title: 'AI 辅助', icon: ExperimentOutlined, path: '/ai-assistant' },
   {
     key: 'executions', title: '执行记录', icon: ScheduleOutlined, path: '/executions'
