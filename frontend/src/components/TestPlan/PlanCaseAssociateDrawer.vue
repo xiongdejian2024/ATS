@@ -191,6 +191,7 @@ const props = defineProps<{
     planId: string;
     canEdit: boolean;
     category?: "functional" | "api" | "scenario";
+    collectionId?: string | null;
   }>(),
   emit = defineEmits<{ "update:open": [value: boolean]; associated: [] }>();
 const activeCategory = ref<"functional" | "api" | "scenario">(
@@ -351,7 +352,7 @@ watch(
     sequence++;
     data.value = undefined;
     selected.value.clear();
-    collectionId.value = undefined;
+    collectionId.value = props.collectionId || undefined;
     suiteId.value = undefined;
     search.value = "";
     moduleSearch.value = "";

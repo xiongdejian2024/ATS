@@ -169,3 +169,46 @@ async def test_tree_association_validates_full_selection_suite_and_preserves_dup
         assert len(rows)==3 and len({row['associationId'] for row in rows if row['caseId']=='case-2'})==2
         assert (await client.get(base+'/candidates')).json()['data']['usesTree']
     assert db.query(TaskQueue).count()==0
+
+
+@pytest.mark.asyncio
+async def test_node_configuration_archived_and_batch_validation_roll_back(workspace_http,monkeypatch):
+    from fastapi import HTTPException
+    import services.plan_tree as tree
+    db,app,identity=workspace_http
+    plan=db.get(Plan,'plan')
+    point=save_node(db,plan,dict(name='配置测试集',nodeType='point'))
+    first=save_node(db,plan,dict(name='实例甲',nodeType='case',category='functional',caseId='case-2',parentId=point.id))
+    second=save_node(db,plan,dict(name='实例乙',nodeType='case',category='functional',caseId='case-2',parentId=point.id))
+    db.get(PlanWorkspace,'plan').archived=True;db.commit()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
+        base='/orchestration/plans/plan/nodes'
+        assert (await client.post(base,json={'name':'归档后创建'})).status_code==409
+        assert (await client.put('/orchestration/nodes/'+point.id,json={'name':'归档后编辑'})).status_code==409
+        assert (await client.delete('/orchestration/nodes/'+point.id)).status_code==409
+        assert (await client.post(base+'/assign',json={'nodeIds':[first.id],'assignedTo':'owner'})).status_code==409
+        assert (await client.get(base)).status_code==200
+        db.get(PlanWorkspace,'plan').archived=False;db.commit()
+        original=tree.save_node;calls=[]
+        def rejected_second(db,plan,data,existing=None):
+            calls.append(existing.id)
+            if len(calls)==2:raise HTTPException(422,'模拟第二项校验失败')
+            return original(db,plan,data,existing)
+        monkeypatch.setattr(tree,'save_node',rejected_second)
+        assert (await client.post(base+'/assign',json={'nodeIds':[first.id,second.id],'assignedTo':'owner'})).status_code==422
+        assert len(calls)==2 and db.get(PlanNode,first.id).assigned_to is None and db.get(PlanNode,second.id).assigned_to is None
+        monkeypatch.setattr(tree,'save_node',original)
+        assert (await client.post(base+'/assign',json={'nodeIds':[first.id,first.id],'assignedTo':'owner'})).status_code==422
+    assert db.query(TaskQueue).count()==0
+
+
+@pytest.mark.asyncio
+async def test_node_create_commit_failure_rolls_back_insert(workspace_http,monkeypatch):
+    db,app,identity=workspace_http
+    original=db.commit
+    def broken_commit():raise RuntimeError('模拟提交失败')
+    monkeypatch.setattr(db,'commit',broken_commit)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app,raise_app_exceptions=False),base_url='http://test') as client:
+        assert (await client.post('/orchestration/plans/plan/nodes',json={'name':'提交失败不残留','nodeType':'point'})).status_code==500
+    monkeypatch.setattr(db,'commit',original)
+    assert db.query(PlanNode).count()==0 and db.query(TaskQueue).count()==0

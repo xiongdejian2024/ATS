@@ -46,14 +46,15 @@ def transact(db, operation):
         return data
     except HTTPException:
         db.rollback()
+        logger.exception("业务校验失败，事务已回滚")
         raise
     except IntegrityError:
         db.rollback()
-        logger.exception("用例治理写入冲突，事务已回滚")
+        logger.exception("业务写入冲突，事务已回滚")
         raise HTTPException(409, "数据已被修改或名称重复，请刷新后重试")
     except Exception:
         db.rollback()
-        logger.exception("用例治理写入失败，事务已回滚")
+        logger.exception("业务写入失败，事务已回滚")
         raise
 
 

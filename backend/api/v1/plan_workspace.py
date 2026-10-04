@@ -26,6 +26,14 @@ def plan_access(db, user, plan_id, action="read"):
     return plan
 
 
+def editable_node_plan(db, user, plan_id):
+    plan = plan_access(db, user, plan_id, "update")
+    workspace = db.get(PlanWorkspace, plan_id)
+    if workspace and workspace.archived:
+        raise HTTPException(409, "归档计划不可修改测试集或关联配置")
+    return plan
+
+
 class PlanDefectWrite(BaseModel):
     caseId: str = Field(min_length=1, max_length=36)
     title: str = Field(min_length=1, max_length=300)
@@ -178,9 +186,9 @@ def list_nodes(plan_id: str, db: Session = Depends(get_db), user=Depends(get_cur
 @router.post("/plans/{plan_id}/nodes")
 def create_node(plan_id: str, data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
     from services.plan_tree import save_node, node_data
-    plan = plan_access(db, user, plan_id, "update")
-    row = save_node(db, plan, data)
-    db.commit()
+    from api.v1.case_governance import transact
+    plan = editable_node_plan(db, user, plan_id)
+    row = transact(db, lambda: save_node(db, plan, data))
     return ok(node_data(db, row))
 
 
@@ -191,9 +199,9 @@ def update_node(node_id: str, data: dict, db: Session = Depends(get_db), user=De
     row = db.get(PlanNode, node_id)
     if not row:
         raise HTTPException(404, "测试点节点不存在")
-    plan = plan_access(db, user, row.plan_id, "update")
-    save_node(db, plan, data, row)
-    db.commit()
+    from api.v1.case_governance import transact
+    plan = editable_node_plan(db, user, row.plan_id)
+    transact(db, lambda: save_node(db, plan, data, row))
     return ok(node_data(db, row))
 
 
@@ -203,21 +211,29 @@ def delete_node(node_id: str, db: Session = Depends(get_db), user=Depends(get_cu
     row = db.get(PlanNode, node_id)
     if not row:
         raise HTTPException(404, "测试点节点不存在")
-    plan_access(db, user, row.plan_id, "update")
+    editable_node_plan(db, user, row.plan_id)
     from services.plan_tree import uses_tree, remember_tree
-    if uses_tree(db, row.plan_id):
-        remember_tree(db, row.plan_id)
+    from api.v1.case_governance import transact
+    from core.logger import logger
     # 显式清子树让 SQLite（FK可未启用）与 MySQL 一致；批次保存独立快照。
+    visited = set()
     def remove(node):
-        for child in db.query(PlanNode).filter_by(parent_id=node.id).all():
+        if node.id in visited:
+            raise HTTPException(409, "旧测试集层级形成循环，已停止删除")
+        visited.add(node.id)
+        for child in db.query(PlanNode).filter_by(parent_id=node.id, plan_id=row.plan_id).all():
             remove(child)
         db.query(PlanNode).filter_by(linked_functional_id=node.id).update({"linked_functional_id": None})
         from models.test_plan import PlanCaseRelation
         db.query(PlanCaseRelation).filter_by(collection_id=node.id).update({"collection_id": None})
         db.delete(node)
         db.flush()
-    remove(row)
-    db.commit()
+    def operation():
+        if uses_tree(db, row.plan_id):
+            remember_tree(db, row.plan_id)
+        remove(row)
+    transact(db, operation)
+    logger.info("已删除计划测试集或关联节点：计划={}，节点数={}", row.plan_id, len(visited))
     return ok()
 
 
@@ -225,16 +241,18 @@ def delete_node(node_id: str, db: Session = Depends(get_db), user=Depends(get_cu
 def assign_nodes(plan_id: str, data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
     from models.plan_workspace import PlanNode
     from services.plan_tree import save_node
-    plan = plan_access(db, user, plan_id, "update")
+    plan = editable_node_plan(db, user, plan_id)
     ids = data.get("nodeIds", [])
-    if not isinstance(ids, list) or not 1 <= len(ids) <= 500:
+    if not isinstance(ids, list) or not 1 <= len(ids) <= 500 or any(not isinstance(value, str) for value in ids) or len(set(ids)) != len(ids):
         raise HTTPException(422, "请选择1到500个用例节点")
     rows = db.query(PlanNode).filter(PlanNode.plan_id == plan_id, PlanNode.id.in_(ids), PlanNode.node_type != "point").all()
     if len(rows) != len(set(ids)):
         raise HTTPException(400, "关联节点不存在或不属于当前计划")
-    for row in rows:
-        save_node(db, plan, {"assignedTo": data.get("assignedTo")}, row)
-    db.commit()
+    from api.v1.case_governance import transact
+    def operation():
+        for row in rows:
+            save_node(db, plan, {"assignedTo": data.get("assignedTo")}, row)
+    transact(db, operation)
     return ok({"updated": len(rows)})
 
 

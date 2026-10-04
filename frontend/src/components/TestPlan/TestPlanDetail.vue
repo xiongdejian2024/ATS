@@ -2,12 +2,7 @@
   <div class="plan-detail">
     <a-tabs :active-key="tab" @change="changeTab">
       <a-tab-pane key="plan" tab="测试规划">
-        <a-descriptions :column="{xs:1,md:2}" bordered size="small" class="plan-information">
-          <a-descriptions-item label="计划编号">{{ plan.planNumber }}</a-descriptions-item><a-descriptions-item label="计划类型">{{({manual:'手动测试',automated:'自动化测试',mixed:'混合测试'}[plan.planType]||plan.planType)}}</a-descriptions-item>
-          <a-descriptions-item label="计划周期">{{plan.startDate||'未设置'}} ～ {{plan.endDate||'未设置'}}</a-descriptions-item><a-descriptions-item label="用例数">{{plan.totalCases||0}}</a-descriptions-item>
-          <a-descriptions-item label="计划描述" :span="2">{{ plan.description || '暂无描述' }}</a-descriptions-item>
-        </a-descriptions>
-        <PlanTreeWorkspace :plan-id="plan.id" :project-id="plan.projectId" :can-edit="canEdit" @changed="emit('changed')" />
+        <PlanPlanningMinder :plan="plan" :can-edit="canEdit" @changed="emit('changed')" @configure-plan="policyOpen=true" />
       </a-tab-pane>
       <a-tab-pane v-if="plan.categoryCounts?.functional" key="featureCase" :tab="`功能用例 (${plan.categoryCounts.functional})`"><PlanCategoryWorkspace :plan="plan" category="functional" :can-edit="canEdit" @changed="emit('changed')" /></a-tab-pane>
       <a-tab-pane v-if="plan.categoryCounts?.api" key="apiCase" :tab="`API 用例 (${plan.categoryCounts.api})`"><PlanCategoryWorkspace :plan="plan" category="api" :can-edit="canEdit" @changed="emit('changed')" /></a-tab-pane>
@@ -52,7 +47,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
-import PlanTreeWorkspace from './PlanTreeWorkspace.vue'
+import PlanPlanningMinder from './PlanPlanningMinder.vue'
 import PlanCategoryWorkspace from './PlanCategoryWorkspace.vue'
 import PlanDefects from './PlanDefects.vue'
 import {useRouter,useRoute} from 'vue-router'
