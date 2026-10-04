@@ -19,6 +19,7 @@ async def main(args):
     root = Path(__file__).resolve().parents[1]
     directory = Path(tempfile.mkdtemp(prefix="ats-local-lab-"))
     os.environ["DATABASE_URL"] = "sqlite:///" + str(directory / "ats.sqlite")
+    os.environ["CASE_ATTACHMENT_DIR"] = str(directory / "attachments")
     os.environ["ENVIRONMENT"] = "test"
     sys.path.insert(0, str(root))
     sys.path.insert(0, str(root / "backend"))

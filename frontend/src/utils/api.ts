@@ -135,7 +135,8 @@ class ApiClient {
         } else if (response?.status >= 500) {
           message.error('服务器内部错误，请稍后重试')
         } else if (response?.status >= 400) {
-          const errorMessage = response.data?.message || '请求失败'
+          const detail = response.data?.detail
+          const errorMessage = response.data?.message || (typeof detail === 'string' ? detail : '请求失败')
           message.error(errorMessage)
         }
         

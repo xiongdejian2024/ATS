@@ -51,7 +51,8 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     ALLOWED_EXTENSIONS: List[str] = [
         ".pdf", ".doc", ".docx", ".xls", ".xlsx",
-        ".png", ".jpg", ".jpeg", ".gif"
+        ".png", ".jpg", ".jpeg", ".gif",
+        ".txt", ".log", ".csv", ".xmind", ".zip"
     ]
     
     # Celery配置
