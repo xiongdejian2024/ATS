@@ -31,7 +31,7 @@ import {
   onBeforeRouteLeave,
   onBeforeRouteUpdate,
 } from "vue-router";
-import { Modal } from "ant-design-vue";
+import { Modal, message } from "ant-design-vue";
 import { useProjectStore } from "@/stores/project";
 import { useUserStore } from "@/stores/user";
 import { testCaseApi } from "@/api/testCase";
@@ -92,6 +92,7 @@ watch(
   { immediate: true },
 );
 function canLeave() {
+  if (editorRef.value?.isSaving()) { message.info('正在保存用例，请稍候'); return false; }
   if (!dirty.value) return true;
   return new Promise<boolean>((resolve) =>
     Modal.confirm({

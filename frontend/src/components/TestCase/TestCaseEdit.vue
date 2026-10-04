@@ -22,6 +22,7 @@
     <!-- 可滚动内容区域 -->
     <div class="edit-scroll-content">
       <a-alert v-if="loadError" message="用例加载失败，请重试后编辑" type="error" show-icon><template #action><a-button @click="loadTestCase">重试</a-button></template></a-alert>
+      <a-alert v-if="attachmentSaveError" type="warning" show-icon message="用例内容已保存，附件尚未全部保存。再次保存将重试剩余附件，不会重复创建用例。" />
       <a-spin :spinning="loading">
         <a-form
           ref="formRef"
@@ -225,7 +226,7 @@
           </div>
         </a-card>
 
-        <CaseAttachments :project-id="projectId" :case-id="caseId" class="info-card" />
+        <CaseAttachmentDraft ref="attachmentRef" :project-id="projectId" :case-id="caseId" :disabled="loading || saving || loadError" class="info-card" @change="attachmentSignature = $event" />
         </a-form>
       </a-spin>
     </div>
@@ -316,14 +317,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined, MoreOutlined, CopyOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance, Rule } from 'ant-design-vue/es/form';
 import type { TestCase, TestCaseStep } from '@/types';
 import { testCaseApi } from '@/api/testCase';
 import { projectApi } from '@/api/project';
-import CaseAttachments from './CaseAttachments.vue'
+import CaseAttachmentDraft from './CaseAttachmentDraft.vue'
 import CaseCustomFields from './CaseCustomFields.vue'
 import {caseFeaturesApi,type CaseTemplate} from '@/api/caseFeatures'
 
@@ -352,6 +353,10 @@ const emit = defineEmits<Emits>()
 const loading = ref(false)
 const saving = ref(false)
 const loadError = ref(false)
+const savedCaseId = ref('')
+const attachmentSaveError = ref(false)
+const attachmentRef = ref<InstanceType<typeof CaseAttachmentDraft>>()
+const attachmentSignature = ref('')
 const formRef = ref<FormInstance>()
 const testCase = reactive<Partial<TestCase>>({
   id: '',
@@ -566,6 +571,7 @@ const handleSave = async (continueCreation = false) => {
 
   try {
     await formRef.value.validateFields()
+    if (!attachmentRef.value?.canSave()) { message.warning('请等待附件加载成功后再保存'); return }
     const missing=(activeTemplate.value?.fields || []).find(f=>f.required && (customFields.value[f.key]===null || customFields.value[f.key]===undefined || customFields.value[f.key]==='' || (Array.isArray(customFields.value[f.key]) && !(customFields.value[f.key] as unknown[]).length)))
     if(missing){message.warning(`请填写自定义字段：${missing.name}`);return}
 
@@ -611,13 +617,13 @@ const handleSave = async (continueCreation = false) => {
     })
 
     let result: TestCase
-    if (isNewCase.value) {
+    if (isNewCase.value && !savedCaseId.value) {
       // 调试：打印发送的数据
       console.log('创建测试用例 - projectId:', props.projectId)
       console.info('提交测试用例创建请求', { projectId: props.projectId })
       try {
       result = await testCaseApi.createTestCase(props.projectId, submitData)
-      message.success('用例创建成功')
+      savedCaseId.value = result.id
       } catch (error: any) {
         console.error('创建测试用例失败:', error)
         console.error('错误详情:', error.response?.data)
@@ -630,10 +636,18 @@ const handleSave = async (continueCreation = false) => {
         throw error
       }
     } else {
-      result = await testCaseApi.updateTestCase(props.projectId, props.caseId, submitData)
-      message.success('用例更新成功')
+      result = await testCaseApi.updateTestCase(props.projectId, props.caseId || savedCaseId.value, submitData)
     }
 
+    try {
+      await attachmentRef.value.flush(result.id)
+      attachmentSaveError.value = false
+    } catch (error) {
+      attachmentSaveError.value = true
+      throw error
+    }
+    await nextTick()
+    message.success(isNewCase.value ? '用例创建成功' : '用例更新成功')
     setDraftBaseline()
     emit('save', result, continueCreation)
   } catch (error) {
@@ -781,7 +795,7 @@ const handleImportTableChange = () => {
 }
 
 const draftBaseline = ref('')
-const draftSnapshot = () => JSON.stringify({ formData, templateId:templateId.value, customFields:customFields.value })
+const draftSnapshot = () => JSON.stringify({ formData, templateId:templateId.value, customFields:customFields.value, attachmentSignature: attachmentSignature.value })
 function setDraftBaseline() { draftBaseline.value=draftSnapshot();emit('dirty',false) }
 watch(draftSnapshot, value => { if(draftBaseline.value)emit('dirty',value!==draftBaseline.value) })
 
@@ -863,6 +877,7 @@ watch(
 // 暴露方法给父组件
 defineExpose({
   save: handleSave,
+  isSaving: () => saving.value,
   resetForm: () => {
     if (formRef.value) {
       formRef.value.resetFields()
