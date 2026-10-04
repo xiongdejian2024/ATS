@@ -1,6 +1,6 @@
 """Actual single-case dispatch, local upload, private HTML snapshots and inbox."""
 
-from datetime import date
+from datetime import datetime
 import uuid
 import httpx
 import pytest
@@ -73,14 +73,18 @@ async def test_single_case_real_history_report_and_private_inbox(lab):
     log = await client.get("/api/v1/executions/" + execution_id + "/logs")
     assert "<script>" in str(log.json())
     assert (await client.get("/api/v1/executions/missing")).status_code == 404
-    today = date.today().isoformat()
+    # 报告按执行记录的业务日期筛选。UTC runner 的“今天”在北京时间
+    # 00:00—07:59 期间仍是前一天；不能用宿主日期代替执行日期。
+    execution_day = datetime.fromisoformat(
+        history.json()["data"]["items"][0]["executedAt"]
+    ).date().isoformat()
     request = dict(
         name="<script>Report</script>",
         projectId=case["projectId"],
         type="detailed",
         format="html",
-        startDate=today,
-        endDate=today,
+        startDate=execution_day,
+        endDate=execution_day,
     )
     response = await client.post("/api/v1/dashboard/reports", json=request)
     assert response.status_code == 200, response.text
@@ -375,3 +379,61 @@ async def test_workspace_read_mkdir_delete_and_traversal(lab):
     assert (
         await client.get(base + "/read", params={"path": "回归目录/说明.txt"})
     ).status_code >= 400
+
+
+@pytest.mark.asyncio
+async def test_report_date_range_includes_business_day_boundaries(lab):
+    """报告包含北京时间首末秒，排除相邻日期，与宿主 TZ 无关。"""
+    from database import SessionLocal
+    from models import TestExecution
+    from utils.datetime_utils import BEIJING_TZ
+
+    markers = ("前一天末秒", "当天首秒", "当天末秒", "后一天首秒")
+    dates = (
+        datetime(2026, 10, 4, 23, 59, 59, tzinfo=BEIJING_TZ),
+        datetime(2026, 10, 5, 0, 0, 0, tzinfo=BEIJING_TZ),
+        datetime(2026, 10, 5, 23, 59, 59, tzinfo=BEIJING_TZ),
+        datetime(2026, 10, 6, 0, 0, 0, tzinfo=BEIJING_TZ),
+    )
+    with SessionLocal() as db:
+        for case, executed_at, marker in zip(lab["cases"], dates, markers):
+            db.add(
+                TestExecution(
+                    id=str(uuid.uuid4()),
+                    plan_id=lab["plan"]["id"],
+                    case_id=case["id"],
+                    executor_id=case["createdBy"],
+                    environment_id=lab["environment"]["id"],
+                    result="passed",
+                    executed_at=executed_at,
+                    execution_log=marker,
+                )
+            )
+        db.commit()
+
+    for start, end, expected_markers in (
+        ("2026-10-05", "2026-10-05", {"当天首秒", "当天末秒"}),
+        ("2026-10-04", "2026-10-04", {"前一天末秒"}),
+        ("2026-10-06", "2026-10-06", {"后一天首秒"}),
+        ("2026-10-04", "2026-10-06", set(markers)),
+    ):
+        response = await lab["client"].post(
+            "/api/v1/dashboard/reports",
+            json=dict(
+                name=f"日期边界验收 {start} 至 {end}",
+                projectId=lab["cases"][0]["projectId"],
+                startDate=start,
+                endDate=end,
+            ),
+        )
+        assert response.status_code == 200, response.text
+        report = response.json()["data"]
+        assert report["passedCases"] == len(expected_markers)
+        assert report["executedCases"] == len(expected_markers)
+        assert report["totalCases"] == 4
+        download = await lab["client"].get(
+            f"/api/v1/dashboard/reports/{report['id']}/download"
+        )
+        assert download.status_code == 200, download.text
+        for marker in markers:
+            assert (marker in download.text) == (marker in expected_markers)
