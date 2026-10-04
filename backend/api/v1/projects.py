@@ -759,6 +759,8 @@ async def import_test_cases(
                     # 检查ID是否存在
                     if case_id not in case_code_map:
                         row_errors.append(f"ID '{case_id}' 在数据库中不存在")
+                    elif case_code_map[case_id].deleted_at:
+                        row_errors.append(f"ID '{case_id}' 已在回收站，请先恢复后再导入")
             
             # 校验用例名称（必填）
             name = None

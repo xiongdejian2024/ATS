@@ -28,6 +28,10 @@ class TestCase(Base, BaseModel):
     is_automated = Column(Boolean, default=False, nullable=False, comment="是否自动化")
     created_by = Column(String(36), ForeignKey("users.id"), nullable=False)
     updated_by = Column(String(36), ForeignKey("users.id"), nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    deleted_by = Column(String(36), ForeignKey("users.id"), nullable=True)
+    template_id = Column(String(36), nullable=True, index=True)
+    custom_fields = Column(JSON, nullable=True, default=dict)
     
     # 关系
     project = relationship("Project", back_populates="test_cases")
@@ -66,4 +70,3 @@ class CaseAttachment(Base):
     
     def __repr__(self):
         return f"<CaseAttachment(id={self.id}, file_name={self.file_name})>"
-

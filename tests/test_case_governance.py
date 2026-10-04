@@ -444,7 +444,8 @@ def test_batch_move_copy_and_preserved_review_after_case_delete(governance):
     assert db.query(CaseVersion).filter_by(case_id=copy.id).count() == 1
     review = request_review(g, reviewers=[g["users"][0].id])
     assert client.delete(f"/api/v1/test-cases/{case.id}").status_code == 200
-    assert db.get(Case, case.id) is None
+    assert db.get(Case, case.id).deleted_at is not None
+    assert TestCaseService.get_test_case(db, case.id) is None
     assert db.query(CaseVersion).filter_by(case_id=case.id).count() == 2
     preserved = client.get(g["base"] + f"/reviews/{review['id']}").json()["data"]
     assert preserved["items"][0]["snapshot"]["name"] == "用例0"
@@ -481,4 +482,5 @@ def test_project_case_compatibility_routes_persist_and_reject_foreign_access(
     assert client.get(prefix + "/export").status_code == 403
     g["state"]["user"] = g["users"][0]
     assert client.delete(prefix + f"/{case_id}").status_code == 200
-    assert db.get(Case, case_id) is None
+    assert db.get(Case, case_id).deleted_at is not None
+    assert TestCaseService.get_test_case(db, case_id) is None

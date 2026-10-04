@@ -291,7 +291,7 @@ async def execute_case(case_id: str, body: dict, db: Session=Depends(get_db), cu
     from api.v1.test_suites import execute_test_suite
     case=db.get(TestCase,case_id)
     template=db.get(TestSuite,body.get('suiteId',''))
-    if not case or not template: raise HTTPException(404,'用例或执行模板不存在')
+    if not case or case.deleted_at or not template: raise HTTPException(404,'用例或执行模板不存在')
     require_project(db,current_user,case.project_id,'test_plan','execute')
     plan=db.get(TestPlan,template.plan_id)
     if plan.project_id!=case.project_id or case_id not in template.case_ids:

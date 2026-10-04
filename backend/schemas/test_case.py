@@ -25,6 +25,8 @@ class TestCaseBase(BaseModel):
     level: Optional[str] = None
     tags: Optional[List[str]] = None
     is_automated: bool = False  # 是否自动化，默认否
+    template_id: Optional[str] = None
+    custom_fields: Optional[Dict[str, Any]] = None
     
     @field_validator('steps', mode='before')
     @classmethod
@@ -112,6 +114,8 @@ class TestCaseUpdate(BaseModel):
     tags: Optional[List[str]] = None
     module_id: Optional[str] = None  # 支持移动用例到不同模块
     is_automated: Optional[bool] = None  # 是否自动化
+    template_id: Optional[str] = None
+    custom_fields: Optional[Dict[str, Any]] = None
 
 
 class TestCaseResponse(TestCaseBase):
@@ -136,4 +140,3 @@ class TestCaseListResponse(BaseModel):
     pages: int
     has_next: bool
     has_prev: bool
-

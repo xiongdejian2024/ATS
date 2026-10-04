@@ -31,6 +31,8 @@ SNAPSHOT_FIELDS = (
     "executor_id",
     "tags",
     "is_automated",
+    "template_id",
+    "custom_fields",
 )
 
 
@@ -40,7 +42,7 @@ def project_access(db, user, project_id, action="read"):
 
 
 def case_for_project(db, project_id, case_id, lock=False):
-    query = db.query(TestCase).filter_by(project_id=project_id, id=case_id)
+    query = db.query(TestCase).filter_by(project_id=project_id, id=case_id).filter(TestCase.deleted_at.is_(None))
     case = (query.with_for_update() if lock else query).first()
     if not case:
         raise HTTPException(404, "项目中不存在该用例")
@@ -195,7 +197,7 @@ def review_data(db, review):
     ):
         version = db.get(CaseVersion, item.version_id)
         case = db.get(TestCase, item.case_id)
-        outdated = case is None or any(
+        outdated = case is None or case.deleted_at is not None or any(
             getattr(case, field) != version.snapshot.get(field)
             for field in SNAPSHOT_FIELDS
         )
