@@ -6,14 +6,7 @@
         <p>按锁定版本审阅，记录建议和每次结论变更。</p>
       </div>
       <a-space wrap
-        ><a-select
-          v-model:value="projectId"
-          style="width: 220px"
-          :options="
-            projectStore.projects.map((p) => ({ label: p.name, value: p.id }))
-          "
-          placeholder="选择项目"
-        /><a-button type="primary" :disabled="!projectId" @click="openEditor()"
+        ><a-button type="primary" :disabled="!projectId" @click="openEditor()"
           >新建评审</a-button
         ><a-button @click="load">刷新</a-button></a-space
       >
@@ -707,6 +700,9 @@ watch(activeId, async (id) => {
     } catch (error) {
       console.error("加载评审关注失败", error);
     }
+});
+watch(() => projectStore.currentProject?.id, id => {
+  if (id && id !== projectId.value) projectId.value = id;
 });
 watch(projectId, async (id) => {
   activeId.value = undefined;

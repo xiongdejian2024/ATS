@@ -1,55 +1,18 @@
 <template>
   <a-layout class="main-layout">
-    <!-- 侧边栏 -->
-    <a-layout-sider
-      v-model:collapsed="collapsed"
-      :trigger="null"
-      collapsible
-      class="layout-sider"
-      :width="240"
-    >
-      <div class="logo">
-        <ExperimentOutlined :style="{ fontSize: '24px', color: '#1890ff' }" />
-        <span v-if="!collapsed">自动化测试平台</span>
-      </div>
-
-      <a-menu
-        v-model:selectedKeys="selectedKeys"
-        v-model:openKeys="openKeys"
-        mode="inline"
-        class="layout-menu"
-      >
-        <a-menu-item
-          v-for="item in menuItems"
-          :key="item.key"
-          @click="handleMenuClick(item)"
-        >
-          <template #icon>
-            <component :is="item.icon" />
-          </template>
-          {{ item.title }}
-        </a-menu-item>
-      </a-menu>
-    </a-layout-sider>
-    <div v-if="isMobile && !collapsed" class="mobile-mask" role="button" tabindex="0" aria-label="关闭导航菜单"
-      @click="collapsed = true" @keydown.enter="collapsed = true" />
-
-    <!-- 主要内容区域 -->
-    <a-layout style="background: transparent;">
-      <!-- 顶部导航栏 -->
-      <a-layout-header class="layout-header">
-        <div class="header-left">
-          <a-button
-            type="text"
-            class="collapse-btn"
-            aria-label="切换导航菜单"
-            :icon="h(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined)"
-            @click="toggleCollapsed"
-          />
-
-          <div class="page-title">{{ route.meta?.title || '仪表盘' }}</div>
-        </div>
-
+    <a-layout-header class="layout-header">
+      <a class="platform-brand" href="/dashboard" @click.prevent="navigateProjectPage('/dashboard')" aria-label="ATS 首页">
+        <ExperimentOutlined /><span>ATS</span>
+      </a>
+      <a-button type="text" class="collapse-btn" aria-label="切换导航菜单"
+        :icon="h(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined)" @click="toggleCollapsed" />
+      <a-select :value="currentProjectId" :options="projects.map(project => ({ value: project.id, label: project.name }))"
+        class="global-project-select" :bordered="false" show-search option-filter-prop="label"
+        placeholder="选择项目" aria-label="当前项目" @change="changeGlobalProject" />
+      <nav class="context-tabs" aria-label="当前模块导航">
+        <a v-for="tab in contextTabs" :key="tab.path" :href="projectPageHref(tab.path)" :class="{ active: route.path === tab.path }"
+          :aria-current="route.path === tab.path ? 'page' : undefined" @click.prevent="navigateProjectPage(tab.path)">{{ tab.title }}</a>
+      </nav>
         <div class="header-right">
           <a-button type="text" @click="router.push('/ai-assistant')">AI 辅助</a-button>
           <!-- 通知 -->
@@ -96,12 +59,23 @@
             </template>
           </a-dropdown>
         </div>
-      </a-layout-header>
 
-      <!-- 页面内容 -->
+    </a-layout-header>
+    <a-layout class="layout-body">
+      <a-layout-sider v-model:collapsed="collapsed" :trigger="null" collapsible class="layout-sider" :width="200" :collapsed-width="72">
+        <a-menu v-model:selectedKeys="selectedKeys" v-model:openKeys="openKeys" mode="inline" class="layout-menu">
+          <a-menu-item v-for="item in menuItems" :key="item.key" @click="handleMenuClick(item)">
+            <template #icon><component :is="item.icon" /></template>{{ item.title }}
+          </a-menu-item>
+        </a-menu>
+      </a-layout-sider>
+      <div v-if="isMobile && !collapsed" class="mobile-mask" role="button" tabindex="0" aria-label="关闭导航菜单"
+        @click="collapsed = true" @keydown.enter="collapsed = true" />
       <a-layout-content class="layout-content">
-        <!-- 页面包含抽屉和多根节点时，out-in 过渡会阻塞下一页挂载。 -->
-        <router-view />
+        <div class="page-breadcrumb"><span>{{ caseRoutes.includes(route.path) ? '测试用例' : route.meta?.title || '仪表盘' }}</span>
+          <template v-if="caseRoutes.includes(route.path)"><span class="breadcrumb-separator">/</span><span>{{ route.path === '/case-reviews' ? '评审' : '用例' }}</span></template>
+        </div>
+        <div class="page-workspace"><router-view /></div>
       </a-layout-content>
     </a-layout>
   </a-layout>
@@ -130,7 +104,24 @@ const isMobile = computed(() => windowWidth.value <= 768)
 watch(isMobile, value => { collapsed.value = value }, { immediate: true })
 const selectedKeys = ref<string[]>([])
 const openKeys = ref<string[]>([])
-const currentProjectId = ref<string>()
+const currentProjectId = computed(() => projectStore.currentProject?.id)
+const caseRoutes = ['/test-cases', '/case-reviews']
+const projectPageHref = (path: string) => router.resolve({ path, query: currentProjectId.value ? { projectId: currentProjectId.value } : {} }).href
+const navigateProjectPage = (path: string) => router.push(projectPageHref(path))
+const contextTabs = computed(() => caseRoutes.includes(route.path) ? [{ path: '/test-cases', title: '用例' }, { path: '/case-reviews', title: '评审' }] : [])
+async function changeGlobalProject(id: string) {
+  const target = projectStore.projects.find(item => item.id === id)
+  if (!target) return
+  try {
+    // 切换项目时移除旧项目实体链接，不能把旧用例/批次带入新项目。
+    await router.replace({ path: route.path, query: { projectId: id } })
+    projectStore.setCurrentProject(target)
+    console.info('已切换当前项目', { projectId: id })
+  } catch (error) {
+    console.error('切换项目失败', error)
+    message.error('切换项目失败')
+  }
+}
 
 const notifications = ref<Notification[]>([])
 const refreshNotifications = async () => {
@@ -165,7 +156,6 @@ const menuItems = [
     icon: ExperimentOutlined,
     path: '/test-cases'
   },
-  { key: 'case-reviews', title: '用例评审', icon: ExperimentOutlined, path: '/case-reviews' },
   {
     key: 'test-plans',
     title: '测试计划',
@@ -198,7 +188,7 @@ const menuItems = [
 const projects = computed(() => projectStore.projects)
 watch(() => route.path, path => {
   const selected = menuItems.find(item => path === item.path || path.startsWith(item.path + '/'))
-  selectedKeys.value = selected ? [selected.key] : []
+  selectedKeys.value = path === '/case-reviews' ? ['test-cases'] : selected ? [selected.key] : []
 }, { immediate: true })
 
 
@@ -212,7 +202,7 @@ const handleMenuClick = (item: any) => {
     message.warning('请先选择一个项目')
     return
   }
-  router.push(item.path)
+  navigateProjectPage(item.path)
   if (isMobile.value) collapsed.value = true
 }
 
@@ -251,272 +241,52 @@ onMounted(async () => {
 
   // 设置当前项目
   if (projects.value.length > 0 && !currentProjectId.value) {
-    currentProjectId.value = projects.value[0].id
-    projectStore.setCurrentProject(projects.value[0])
+    const linked = projects.value.find(project => project.id === route.query.projectId)
+    projectStore.setCurrentProject(linked || projects.value[0])
   }
 
   // 设置当前菜单选中状态
   const item = menuItems.find(item => route.path === item.path || route.path.startsWith(item.path + '/'))
-  selectedKeys.value = item ? [item.key] : []
+  selectedKeys.value = route.path === '/case-reviews' ? ['test-cases'] : item ? [item.key] : []
 })
 </script>
 
+
 <style scoped>
-.main-layout {
-  height: 100vh;
-  background: #f0f2f5;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(124, 58, 237, 0.05) 0px, transparent 50%);
-}
-
-.layout-sider {
-  margin: 16px 8px 16px 16px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  overflow: hidden;
-}
-
-.logo {
-  height: 80px;
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.logo span {
-  font-size: 18px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px;
-}
-
-.layout-menu {
-  background: transparent !important;
-  border-right: none;
-}
-
-:deep(.ant-menu-item) {
-  margin: 6px 14px !important;
-  border-radius: 14px !important;
-  width: calc(100% - 28px) !important;
-  height: 48px !important;
-  line-height: 48px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-:deep(.ant-menu-item:hover) {
-  background: rgba(99, 102, 241, 0.05) !important;
-  transform: translateX(4px);
-}
-
-:deep(.ant-menu-item-selected) {
-  background: rgba(99, 102, 241, 0.1) !important;
-  /* box-shadow: 0 8px 16px -4px rgba(99, 102, 241, 0.4); */
-}
-
-:deep(.ant-menu-item-selected),
-:deep(.ant-menu-item-selected .ant-menu-title-content),
-:deep(.ant-menu-item-selected .anticon) {
-  color: #6366f1 !important;
-  font-weight: 600;
-}
-
-/* 移除 Ant Design 默认的选中右侧边框线 */
-:deep(.ant-menu-rtl .ant-menu-item::after),
-:deep(.ant-menu-item::after) {
-  border-right: none !important;
-}
-
-/* 修复点击时的全白或过亮效果 */
-:deep(.ant-menu-item:active),
-:deep(.ant-menu-item-selected:active) {
-  background: rgba(99, 102, 241, 0.2) !important;
-}
-
-.layout-header {
-  background: transparent !important;
-  padding: 0 24px;
-  height: 88px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.page-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-left: 16px;
-}
-
-.header-left { display: flex; align-items: center; min-width: 0; }
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.7);
-  padding: 6px 12px;
-  border-radius: 50px;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
-}
-
-.collapse-btn {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.layout-content {
-  padding: 0 24px 24px 24px;
-  overflow-y: auto;
-  height: calc(100vh - 88px);
-}
-
-.notification-item {
-  max-width: 280px;
-  padding: 8px 0;
-}
-
-.notification-title {
-  font-weight: 500;
-  margin-bottom: 4px;
-  color: #262626;
-}
-
-.notification-content {
-  font-size: 12px;
-  color: #8c8c8c;
-  margin-bottom: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.notification-time {
-  font-size: 12px;
-  color: #bfbfbf;
-}
-
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .layout-content {
-    padding: 16px;
-  }
-}
-
-@media (max-width: 992px) {
-  .layout-content {
-    padding: 12px;
-  }
-
-  .header-right {
-    gap: 8px;
-  }
-
-  .header-right .ant-select {
-    width: 150px !important;
-    margin-right: 8px !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .layout-sider {
-    position: fixed;
-    margin: 0;
-    border-radius: 0 20px 20px 0;
-    height: 100vh;
-    left: 0;
-    top: 0;
-    z-index: 999;
-    transition: transform 0.3s ease;
-  }
-
-  .layout-sider.ant-layout-sider-collapsed {
-    transform: translateX(-100%);
-  }
-
-  .layout-header {
-    padding: 0 16px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .header-left {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .breadcrumb {
-    display: none;
-  }
-
-  .header-right {
-    gap: 4px;
-  }
-
-  .header-right .ant-select {
-    width: 120px !important;
-    margin-right: 4px !important;
-  }
-
-  .layout-content {
-    padding: 8px;
-  }
-}
-
-@media (max-width: 576px) {
-  .layout-header {
-    padding: 0 12px;
-  }
-
-  .layout-content {
-    padding: 6px;
-  }
-
-  .header-right .ant-select {
-    display: none;
-  }
-
-  .notification-item {
-    max-width: 200px;
-  }
-}
-
-/* 移动端侧边栏遮罩 */
-.mobile-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 998;
-  transition: opacity 0.3s ease;
-}
-
-.mobile-mask.fade-enter-active,
-.mobile-mask.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.mobile-mask.fade-enter-from,
-.mobile-mask.fade-leave-to {
-  opacity: 0;
+.main-layout { height:100vh; background:var(--ms-page-bg); }
+.layout-header { height:56px; line-height:normal; padding:0 16px 0 0; display:flex; align-items:center; flex-shrink:0; background:#fff; border-bottom:1px solid var(--ms-border); z-index:1000; }
+.platform-brand { display:flex; gap:8px; align-items:center; width:200px; flex-shrink:0; padding:0 16px; color:var(--primary-color); font-size:16px; font-weight:700; }
+.platform-brand .anticon { font-size:28px; }
+.collapse-btn { width:32px; height:32px; padding:0; flex-shrink:0; color:var(--ms-text-secondary); }
+.global-project-select { width:200px; flex-shrink:0; }
+.context-tabs { display:flex; height:56px; align-items:stretch; flex:1; gap:24px; min-width:0; padding-left:16px; }
+.context-tabs a { display:flex; align-items:center; border-bottom:2px solid transparent; color:var(--ms-text-secondary); padding:0 4px; white-space:nowrap; }
+.context-tabs a.active { color:var(--primary-color); border-bottom-color:var(--primary-color); font-weight:500; }
+.header-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+.layout-body { min-height:0; flex:1; }
+.layout-sider { background:#fff !important; border-right:1px solid var(--ms-border); overflow-y:auto; }
+.layout-menu { border-right:0; padding:8px; }
+:deep(.layout-menu .ant-menu-item) { height:40px; line-height:40px; border-radius:4px; margin:4px 0; width:100%; }
+:deep(.layout-menu .ant-menu-item-selected) { background:var(--ms-primary-soft); color:var(--primary-color); }
+.layout-content { display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; padding:0 16px 16px; }
+.page-breadcrumb { display:flex; align-items:center; gap:8px; height:40px; flex-shrink:0; font-size:12px; color:var(--ms-text-secondary); }
+.breadcrumb-separator { color:var(--ms-text-muted); }
+.page-workspace { flex:1; min-height:0; overflow:auto; }
+.notification-item { max-width:280px; padding:8px 0; }
+.notification-title { font-weight:500; margin-bottom:4px; color:var(--ms-text); }
+.notification-content { font-size:12px; color:var(--ms-text-secondary); margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.notification-time { font-size:12px; color:var(--ms-text-muted); }
+@media(max-width:768px) {
+  .platform-brand { width:62px; padding:0 8px; gap:4px; }
+  .platform-brand .anticon { display:none; }
+  .layout-header { padding-right:8px; }
+  .global-project-select { width:128px; }
+  .context-tabs { gap:12px; padding-left:4px; }
+  .header-right { gap:0; }
+  .header-right > .ant-btn { display:none; }
+  .layout-sider { position:fixed; left:0; top:56px; bottom:0; height:calc(100vh - 56px); z-index:999; transition:transform .2s ease; }
+  .layout-sider.ant-layout-sider-collapsed { transform:translateX(-100%); }
+  .mobile-mask { position:fixed; inset:56px 0 0; background:rgb(0 0 0 / 35%); z-index:998; }
+  .layout-content { padding:0 8px 8px; }
 }
 </style>

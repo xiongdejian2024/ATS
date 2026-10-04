@@ -6,21 +6,6 @@
     >
       <template #extra>
         <a-space>
-          <!-- 项目选择器 -->
-          <a-select
-            v-model:value="currentProjectId"
-            style="width: 200px"
-            placeholder="选择项目"
-            @change="handleProjectChange"
-          >
-            <a-select-option
-              v-for="project in projects"
-              :key="project.id"
-              :value="project.id"
-            >
-              {{ project.name }}
-            </a-select-option>
-          </a-select>
           <a-button type="primary" @click="createPlan" :disabled="!projectId">
             <template #icon><PlusOutlined /></template>
             新建计划
@@ -347,18 +332,6 @@ const projectStore = useProjectStore()
 
 // 项目选择
 const projects = computed<Project[]>(() => projectStore.projects)
-const currentProjectId = computed<string | undefined>({
-  get() {
-    return projectStore.currentProject?.id || projects.value[0]?.id
-  },
-  set(value: string | undefined) {
-    if (!value) return
-    const target = projects.value.find(p => p.id === value) || null
-    projectStore.setCurrentProject(target)
-    loadPlans()
-  }
-})
-
 const projectId = computed<string | undefined>(() => {
   if (projectStore.currentProject) return projectStore.currentProject.id
   return projects.value[0]?.id
@@ -937,11 +910,6 @@ const formatDateTime = (dateStr: string) => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-const handleProjectChange = () => {
-  groupFilter.value = undefined
-  loadPlans()
-}
-
 // 生命周期
 onMounted(async () => {
   // 确保项目列表已加载
@@ -964,6 +932,8 @@ watch(() => route.query.planId, (value) => { if (typeof value === 'string') void
 watch(
   () => projectStore.currentProject?.id,
   () => {
+    groupFilter.value = undefined
+    selectedPlanIds.value = []
     if (projectId.value) {
       loadPlans()
       loadEnvironments()

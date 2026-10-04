@@ -3,8 +3,14 @@
     :locale="zhCN"
     :theme="{
       token: {
-        colorPrimary: '#1890ff',
-        borderRadius: 6,
+        colorPrimary: '#811fa3',
+        colorLink: '#811fa3',
+        colorLinkHover: '#6e1a8b',
+        colorLinkActive: '#6e1a8b',
+        colorText: '#1d2129',
+        colorTextSecondary: '#4e5969',
+        colorBorder: '#e5e6eb',
+        borderRadius: 4,
         fontSize: 14
       }
     }"
@@ -43,6 +49,6 @@ onMounted(async () => {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Helvetica Neue', Arial, 'PingFang SC', sans-serif;
 }
 </style>

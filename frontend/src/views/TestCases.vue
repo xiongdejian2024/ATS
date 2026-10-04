@@ -2,19 +2,6 @@
   <div class="test-cases-container" @click="hideModuleContextMenu">
     <!-- 顶部项目选择器 -->
     <div class="project-selector-bar">
-      <a-select
-        v-model:value="currentProjectId"
-        style="width: 220px"
-        placeholder="选择项目"
-      >
-        <a-select-option
-          v-for="project in projects"
-          :key="project.id"
-          :value="project.id"
-        >
-          {{ project.name }}
-        </a-select-option>
-      </a-select>
       <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" @changed="refreshGovernedCases" @apply-view="applySavedView" />
     </div>
 
@@ -420,7 +407,7 @@
 import { testSuiteApi, type TestSuite } from '@/api/testSuite'
 import { testPlanApi } from '@/api/testPlan'
 import { ref, reactive, computed, onMounted, onUnmounted, watch, createVNode } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { message, Modal, Input } from 'ant-design-vue';
 import { PlusOutlined, ImportOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
 import TestCaseEdit from '@/components/TestCase/TestCaseEdit.vue'
@@ -441,7 +428,6 @@ import type { TestCase, Project } from '@/types';
 import dayjs from 'dayjs'
 
 const route = useRoute()
-const router = useRouter()
 const projectStore = useProjectStore()
 const userStore = useUserStore()
 
@@ -452,25 +438,6 @@ const projectId = computed<string>(() => {
     return projectStore.currentProject.id
   }
   return projects.value[0]?.id || ''
-})
-
-// 页面内部的项目下拉（示例项目选择）
-const currentProjectId = computed<string | undefined>({
-  get() {
-    return projectId.value
-  },
-  set(value: string | undefined) {
-    if (!value) return
-    const target = projects.value.find(p => p.id === value) || null
-    projectStore.setCurrentProject(target)
-    // 路由固定为 /test-cases，不需要携带 projectId
-    if (route.path !== '/test-cases') {
-      router.push('/test-cases')
-    }
-    // 重新加载数据
-    loadTestCases()
-    loadModuleTree()
-  }
 })
 
 // 左侧模块树
