@@ -96,11 +96,8 @@
 
       <!-- 页面内容 -->
       <a-layout-content class="layout-content">
-        <router-view v-slot="{ Component }">
-          <transition name="fade-transform" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
+        <!-- 页面包含抽屉和多根节点时，out-in 过渡会阻塞下一页挂载。 -->
+        <router-view />
       </a-layout-content>
     </a-layout>
   </a-layout>

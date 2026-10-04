@@ -493,7 +493,7 @@ const getResultText = (result: string) => {
 }
 
 const formatDuration = (seconds?: number) => {
-  if (!seconds) return '-'
+  if (seconds == null) return '-'
   if (seconds < 60) return `${seconds.toFixed(1)}秒`
   const minutes = Math.floor(seconds / 60)
   const secs = seconds % 60

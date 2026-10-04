@@ -2,6 +2,7 @@
 """项目相关API"""
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import List, Optional, Dict, Any
 from database import get_db
 from models import Project
@@ -1205,4 +1206,3 @@ async def delete_test_case(
         status=ResponseStatus.SUCCESS,
         message="删除成功"
     )
-

@@ -1,4 +1,5 @@
 """All regression state lives in a fresh SQLite database and temporary workspace."""
+
 import os
 import sys
 import tempfile
@@ -19,6 +20,7 @@ os.environ["LOG_FILE"] = str(TEST_DIRECTORY / "backend.log")
 def isolated_database():
     from database import engine, Base
     import models
+
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     yield
@@ -27,10 +29,11 @@ def isolated_database():
 @pytest.fixture
 def sat_config(tmp_path):
     from agent.config import Config
+
     config = Config()
     config.work_dir = tmp_path / "agent"
     config.work_dir.mkdir()
-    config.sat_root = os.environ.get("ATS_SAT_ROOT", "/Users/xiongdejian/project/python_project/sat")
-    config.ecu_root = os.environ.get("ATS_ECU_ROOT", "/Users/xiongdejian/project/python_project/ecu-simulator")
+    config.sat_root = os.environ.get("ATS_SAT_ROOT", config.sat_root)
+    config.ecu_root = os.environ.get("ATS_ECU_ROOT", config.ecu_root)
     config.default_timeout = 20
     return config

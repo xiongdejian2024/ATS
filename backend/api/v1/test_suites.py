@@ -158,7 +158,11 @@ async def delete_test_suite(
     current_user: User = Depends(get_current_user)
 ):
     """删除测试套"""
-    success = TestSuiteService.delete_test_suite(db, suite_id)
+    try:
+        success = TestSuiteService.delete_test_suite(db, suite_id)
+    except ValueError as exc:
+        logger.exception("删除测试套被拒绝：{}", suite_id)
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -211,6 +215,10 @@ async def execute_test_suite(
         # 注意：允许多次执行，每次执行都会创建新的执行记录和任务队列项
         import uuid
         execution_id = str(uuid.uuid4())
+
+        # 在写入队列之前校验，避免无效模板留下永远运行中的任务。
+        from services.suite_dispatch import build_suite_message
+        task_message = build_suite_message(db, suite, execution_id, str(current_user.id))
         
         # 检查是否可以立即执行
         can_execute = TaskQueueService.can_execute_immediately(db, suite.environment_id)
@@ -238,9 +246,6 @@ async def execute_test_suite(
             suite.updated_at = beijing_now()
             db.commit()
             
-            from services.suite_dispatch import build_suite_message
-            task_message = build_suite_message(db, suite, execution_id, str(current_user.id))
-
             # 发送到Agent
             from api.v1.websocket import manager
             success = await manager.send_message(suite.environment_id, task_message)
@@ -1050,4 +1055,3 @@ async def delete_suite_execution(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"删除失败: {str(e)}"
         )
-

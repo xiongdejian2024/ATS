@@ -509,15 +509,15 @@ async def update_case_execution_status(
     current_user: User = Depends(get_current_user),
 ):
     """更新用例执行状态"""
-    status = status_data.get("status")
-    if not status:
+    execution_status = status_data.get("status")
+    if not execution_status:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="status 不能为空")
 
     success = TestPlanService.update_case_execution_status(
         db=db,
         plan_id=plan_id,
         case_id=case_id,
-        status=status
+        status=execution_status
     )
 
     if not success:

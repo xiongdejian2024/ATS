@@ -1,4 +1,5 @@
 """Software-only checks of the actual SAT and ECU SDK; no bus, SSH or DUT."""
+
 from sat_framework.utils.data_type import CaseStatus, ReportInfo
 from automotive_sdk.services.simulator import SimulatorService
 

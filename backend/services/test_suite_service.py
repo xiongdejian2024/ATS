@@ -8,6 +8,7 @@ from models.test_case import TestCase
 from models.test_plan import TestPlan
 from models.environment import Environment
 from models.user import User
+from models.task_queue import TaskQueue
 from core.logger import logger
 from datetime import datetime
 from utils.datetime_utils import beijing_now
@@ -16,6 +17,16 @@ import uuid
 
 class TestSuiteService:
     """测试套服务类"""
+
+    @staticmethod
+    def require_idle(db: Session, suite_id: str) -> None:
+        """执行结果依赖模板关联，排队和运行期间禁止改动模板。"""
+        active = db.query(TaskQueue.id).filter(
+            TaskQueue.suite_id == suite_id,
+            TaskQueue.status.in_(["pending", "running"]),
+        ).first()
+        if active:
+            raise ValueError("测试任务正在排队或执行，请结束后再编辑或删除")
 
     @staticmethod
     def get_test_suites(
@@ -73,6 +84,8 @@ class TestSuiteService:
         for case in cases:
             if not case.is_automated:
                 raise ValueError(f"用例 {case.name} 不是自动化用例")
+            if case.project_id != plan.project_id:
+                raise ValueError(f"用例 {case.name} 不属于测试计划的项目")
         
         # 创建测试套
         suite = TestSuite(
@@ -110,6 +123,8 @@ class TestSuiteService:
         suite = db.query(TestSuite).filter(TestSuite.id == suite_id).first()
         if not suite:
             return None
+
+        TestSuiteService.require_idle(db, suite_id)
         
         # 如果更新计划，验证计划是否存在
         new_plan = None
@@ -126,8 +141,10 @@ class TestSuiteService:
             # 注意：编辑保存时不检查环境在线状态，只有在执行时才检查
         
         # 如果更新用例，验证用例是否都是自动化用例，并且属于新计划的项目（如果计划改变了）
-        if "case_ids" in suite_data:
-            case_ids = suite_data["case_ids"]
+        if "case_ids" in suite_data or "plan_id" in suite_data:
+            case_ids = suite_data.get("case_ids", suite.case_ids)
+            if not case_ids:
+                raise ValueError("至少需要选择一个测试用例")
             if case_ids:
                 cases = db.query(TestCase).filter(TestCase.id.in_(case_ids)).all()
                 if len(cases) != len(case_ids):
@@ -185,6 +202,8 @@ class TestSuiteService:
         suite = db.query(TestSuite).filter(TestSuite.id == suite_id).first()
         if not suite:
             return False
+
+        TestSuiteService.require_idle(db, suite_id)
         
         db.delete(suite)
         db.commit()
@@ -267,4 +286,3 @@ class TestSuiteService:
         
         logger.info(f"创建测试套执行记录: {execution.id}, case_id={case_id}, result={result}")
         return execution
-

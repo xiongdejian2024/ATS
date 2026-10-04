@@ -1,4 +1,5 @@
 """Select ATS cases and atomically emit one result after setup/call/teardown."""
+
 import json
 import os
 from pathlib import Path
@@ -35,7 +36,9 @@ class ATSResults:
             codes = [code for code in candidates if code in self.selection]
             if codes:
                 if assigned.intersection(codes):
-                    raise pytest.UsageError("Selected ATS case maps to multiple tests; use unique node IDs")
+                    raise pytest.UsageError(
+                        "Selected ATS case maps to multiple tests; use unique node IDs"
+                    )
                 assigned.update(codes)
                 self.mapping[item.nodeid] = codes
                 selected.append(item)
@@ -54,16 +57,29 @@ class ATSResults:
             return
         failed = [p for p in phases.values() if p.failed]
         skipped = [p for p in phases.values() if p.skipped]
-        status = "error" if any(p.when != "call" for p in failed) else (
-            "failed" if failed else "skipped" if skipped else "passed")
+        status = (
+            "error"
+            if any(p.when != "call" for p in failed)
+            else ("failed" if failed else "skipped" if skipped else "passed")
+        )
         for code in codes:
             self.rows[code] = {
-                "test_name": report.nodeid, "case_code": code, "case_id": self.selection[code],
-                "status": status, "duration": sum(p.duration for p in phases.values()),
+                "test_name": report.nodeid,
+                "case_code": code,
+                "case_id": self.selection[code],
+                "status": status,
+                "duration": sum(p.duration for p in phases.values()),
                 "error": "\n".join(str(p.longrepr) for p in failed + skipped) or None,
                 "log": "\n".join(
-                    [f"{p.when}: {p.outcome} ({p.duration:.3f}s)" for p in phases.values()]
-                    + list(dict.fromkeys(text for p in phases.values() for _, text in p.sections))
+                    [
+                        f"{p.when}: {p.outcome} ({p.duration:.3f}s)"
+                        for p in phases.values()
+                    ]
+                    + list(
+                        dict.fromkeys(
+                            text for p in phases.values() for _, text in p.sections
+                        )
+                    )
                 ),
             }
         self.flush()
@@ -72,15 +88,20 @@ class ATSResults:
         for code, case_id in self.selection.items():
             if code not in self.rows:
                 self.rows[code] = {
-                    "test_name": code, "case_code": code, "case_id": case_id,
-                    "status": "error", "duration": 0,
+                    "test_name": code,
+                    "case_code": code,
+                    "case_id": case_id,
+                    "status": "error",
+                    "duration": 0,
                     "error": f"Selected case did not complete (pytest exit {int(exitstatus)})",
                 }
         self.flush()
 
     def flush(self):
         temporary = self.result_path.with_suffix(".tmp")
-        temporary.write_text(json.dumps(list(self.rows.values()), ensure_ascii=False), encoding="utf-8")
+        temporary.write_text(
+            json.dumps(list(self.rows.values()), ensure_ascii=False), encoding="utf-8"
+        )
         os.replace(temporary, self.result_path)
 
 
@@ -89,4 +110,6 @@ def pytest_configure(config):
     selection_path = os.environ.get("ATS_CASE_SELECTION")
     if selection_path:
         selection = json.loads(Path(selection_path).read_text(encoding="utf-8"))
-        config.pluginmanager.register(ATSResults(selection, Path(os.environ["ATS_RESULT_FILE"])))
+        config.pluginmanager.register(
+            ATSResults(selection, Path(os.environ["ATS_RESULT_FILE"]))
+        )
