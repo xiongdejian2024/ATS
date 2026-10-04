@@ -128,3 +128,12 @@ htmlcov/
 .venv
 .idea
 .ats_pids
+# 集成环境与运行产物
+.venv-integration/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+allure-results/
+test_results.json
+evidence/
