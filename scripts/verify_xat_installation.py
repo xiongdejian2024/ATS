@@ -37,6 +37,10 @@ from xat_ecu.api.config_center.ConfigMasterV2T_pb2 import ConfSyncData
 assert ConfSyncData.FromString(ConfSyncData(PbVer='软件验收').SerializeToString()).PbVer == '软件验收'
 assert hasattr(CommonBusComm, '__init__') and hasattr(CommonSdTest, '__init__')
 from framework.__main__ import main
+from framework.automotive.core.resources import AUTOMOTIVE_ROOT, LOCK_SCRIPT
+assert LOCK_SCRIPT.is_file()
+assert (AUTOMOTIVE_ROOT / 'scripts/record_top.sh').is_file()
+assert (AUTOMOTIVE_ROOT / 'scripts/record_vm_stat.sh').is_file()
 directory = Path(sys.argv[2])
 code = main(['--mode', 'offline', '--output-dir', str(directory)])
 rows = json.loads((directory / 'results.json').read_text())
