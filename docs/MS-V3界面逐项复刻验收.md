@@ -171,6 +171,14 @@
 - 正式服务重启后健康、分类及候选接口200；既有100用例、7计划、0活动任务、1在线节点，原计划40条直接关联保留。无结构迁移、正式业务写入或台架执行。
 - 本部分完成脑图基础展示和测试集配置。官方完整拖拽、快捷键、展开收起、批量删除、失败重试等全部配置、执行抽屉、API/场景完整列表、视图列设置及评审功能仍需逐项补齐，100%目标未完成。
 
+## 第十五部分变更日志
+
+- 2026-10-05：继续对照官方脑图编辑器 `useShortCut.ts`，实现全部展开/收起、选中节点展开/收起，以及 `/` 展开折叠、分类节点Tab添加测试集、真实测试集Enter添加同级、Backspace打开删除确认。限制与官方层级对应，根/数量节点不新建，数量节点不删除；编辑权限和未保存保护沿用真实业务操作。
+- 快捷键只在当前画布获得焦点后工作；输入框、组合键、输入法组合、长按重复及弹窗状态均不触发业务快捷操作。只读账号仍可折叠查看，不能通过快捷键新增或删除。
+- 折叠是独立展示变换，原完整树及数量保持；按折叠后的深度重新计算画布宽度，避免收起后分类被推到画布外。新增原树/统计保留回归，前端总27项通过，类型/构建通过；后端未修改，沿用本轮160项完整回归。
+- 实际浏览器按Tab创建功能测试集，按Enter进入同级创建弹窗并取消；Backspace进入删除确认并取消；名称输入内Backspace仅删文字且不打开删除。只读账号Tab/Backspace均无写入弹窗，斜线仍展开/收起。桌面折叠截图 `evidence/ms-v3-plan-minder-collapsed.png` 已检查；390px页面无横向溢出，折叠画布内部宽950。
+- 正式前端已加载更新；此前脑图提交134a946的GitHub CI完整通过。未运行台架，未创建节点任务。本部分不包含拖拽、批量删除、全部配置及其他列表/评审缺口，完整100%目标仍继续。
+
 ## 官方依据
 
 - [公共布局源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/layout/default-layout.vue)
@@ -196,3 +204,5 @@
 - [关联用例抽屉公共源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/components/business/ms-associate-case/index.vue)
 
 - [测试规划脑图官方源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/components/business/ms-minders/testPlanMinder/index.vue)
+
+- [脑图快捷键官方源码](https://github.com/metersphere/metersphere/blob/v3.6.9-lts/frontend/src/components/pure/ms-minder-editor/hooks/useShortCut.ts)

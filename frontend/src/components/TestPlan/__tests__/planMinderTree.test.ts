@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildPlanMinder } from "../planMinderTree";
+import { buildPlanMinder, presentPlanMinder } from "../planMinderTree";
 import type { PlanCaseEntry } from "@/api/planCaseWorkspace";
 import type { PlanNode } from "@/api/planTree";
 const entry = (collectionId?: string) => ({ collectionId }) as PlanCaseEntry;
@@ -52,5 +52,20 @@ describe("测试规划脑图实际关联范围", () => {
     expect(
       tree.children![0].children!.reduce((sum, node) => sum + node.count, 0),
     ).toBe(3);
+  });
+});
+
+describe("脑图折叠与数据保留", () => {
+  it("隐藏测试集不丢失统计，展开可恢复原关联，且不修改原树", () => {
+    const tree = buildPlanMinder(
+      "计划",
+      [point("parent"), point("child", "parent")],
+      { functional: [entry("child"), entry()], api: [], scenario: [] },
+    );
+    const folded = presentPlanMinder(tree, new Set(["category:functional"]));
+    expect(folded.children![0].children).toBeUndefined();
+    expect(folded.children![0].count).toBe(2);
+    expect(tree.children![0].children).toHaveLength(2);
+    expect(presentPlanMinder(tree, new Set())).toEqual(tree);
   });
 });

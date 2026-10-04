@@ -108,3 +108,20 @@ export function buildPlanMinder(
     children: categories,
   };
 }
+
+/** 折叠仅改变展示，不改变关联数量或原始节点，展开后可恢复完整树。 */
+export function presentPlanMinder(
+  node: PlanMinderNode,
+  collapsed: ReadonlySet<string>,
+): PlanMinderNode {
+  return {
+    ...node,
+    name:
+      collapsed.has(node.id) && node.children?.length
+        ? `${node.name} [+]`
+        : node.name,
+    children: collapsed.has(node.id)
+      ? undefined
+      : node.children?.map((child) => presentPlanMinder(child, collapsed)),
+  };
+}

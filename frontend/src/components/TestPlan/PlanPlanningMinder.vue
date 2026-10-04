@@ -14,6 +14,8 @@
         :options="nodeOptions"
         @change="selectById"
       /><a-space wrap
+        ><a-button @click="expandAll">展开全部</a-button
+        ><a-button @click="collapseAll">收起全部</a-button
         ><a-button @click="fit">重置视图</a-button
         ><a-button :loading="loading" @click="load">刷新</a-button
         ><a-button @click="openAdvanced">用例和场景配置</a-button></a-space
@@ -27,7 +29,13 @@
     />
     <a-spin v-else :spinning="loading"
       ><div class="minder-layout">
-        <div class="minder-viewport">
+        <div
+          ref="viewport"
+          class="minder-viewport"
+          tabindex="0"
+          aria-label="脑图画布，按斜线展开收起，Tab 添加分类下测试集，Enter 添加同级测试集，Backspace 删除"
+          @keydown="handleShortcut"
+        >
           <v-chart
             ref="chart"
             :option="option"
@@ -40,6 +48,15 @@
         <aside v-if="selected" class="node-configuration">
           <h3>{{ selected.name }}</h3>
           <p>关联用例 {{ selected.count }} 条</p>
+          <a-button
+            v-if="selected.children?.length"
+            size="small"
+            class="fold-button"
+            @click="toggleSelected"
+            >{{
+              collapsed.has(selected.id) ? "展开当前节点" : "收起当前节点"
+            }}</a-button
+          >
           <template v-if="selected.kind === 'root'"
             ><a-button v-if="canEdit" @click="emit('configurePlan')"
               >执行配置</a-button
@@ -47,7 +64,8 @@
           >
           <template v-else>
             <a-space wrap
-              ><a-button v-if="canEdit" @click="openCreate">添加测试集</a-button
+              ><a-button v-if="canEdit && canAdd" @click="openCreate"
+                >添加测试集</a-button
               ><a-button v-if="canEdit" @click="openAssociation"
                 >关联用例</a-button
               ><a-button :disabled="!selected.count" @click="viewCases"
@@ -174,6 +192,7 @@ import {
 } from "@/api/planCaseWorkspace";
 import {
   buildPlanMinder,
+  presentPlanMinder,
   planCategoryNames,
   type PlanCategory,
   type PlanMinderNode,
@@ -197,7 +216,9 @@ const nodes = ref<PlanNode[]>([]),
   failed = ref(false),
   saving = ref(false),
   selected = ref<PlanMinderNode>(),
-  chart = ref<InstanceType<typeof VChart>>();
+  chart = ref<InstanceType<typeof VChart>>(),
+  viewport = ref<HTMLElement>(),
+  collapsed = ref(new Set<string>());
 const tree = computed(() =>
   buildPlanMinder(props.plan.name, nodes.value, entries.value),
 );
@@ -259,11 +280,14 @@ const dirty = computed(() => {
       JSON.stringify(node.config.resourcePool || [])
   );
 });
+const presentedTree = computed(() =>
+  presentPlanMinder(tree.value, collapsed.value),
+);
 const chartWidth = computed(() => {
   function depth(node: PlanMinderNode): number {
     return 1 + Math.max(0, ...(node.children || []).map(depth));
   }
-  return Math.max(950, 320 + (depth(tree.value) - 1) * 210);
+  return Math.max(950, 400 + (depth(presentedTree.value) - 1) * 210);
 });
 function allowNavigation() {
   if (!dirty.value) return true;
@@ -281,7 +305,7 @@ const option = computed(() => ({
   series: [
     {
       type: "tree",
-      data: [tree.value],
+      data: [presentedTree.value],
       orient: "LR",
       roam: true,
       expandAndCollapse: false,
@@ -289,7 +313,7 @@ const option = computed(() => ({
       top: 40,
       bottom: 40,
       left: 180,
-      right: 140,
+      right: 220,
       symbolSize: 9,
       label: {
         position: "left",
@@ -381,8 +405,77 @@ function selectNode(event: unknown) {
   const node = flatNodes.value.find((item) => item.id === data.id);
   if (!node) return;
   selectById(node.id);
+  viewport.value?.focus({ preventScroll: true });
   if (node.kind === "count" && props.canEdit && !dirty.value)
     associateOpen.value = true;
+}
+
+const canAdd = computed(
+  () =>
+    selected.value?.kind === "category" ||
+    (selected.value?.kind === "collection" && !!selected.value.nodeId),
+);
+function toggleSelected() {
+  const node = selected.value;
+  if (!node?.children?.length) return;
+  const next = new Set(collapsed.value);
+  next.has(node.id) ? next.delete(node.id) : next.add(node.id);
+  collapsed.value = next;
+}
+function expandAll() {
+  collapsed.value = new Set();
+}
+function collapseAll() {
+  collapsed.value = new Set(
+    tree.value.children
+      ?.filter((node) => node.children?.length)
+      .map((node) => node.id),
+  );
+}
+function handleShortcut(event: KeyboardEvent) {
+  if (
+    event.isComposing ||
+    event.repeat ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.altKey ||
+    event.shiftKey
+  )
+    return;
+  const node = selected.value;
+  if (
+    !node ||
+    saving.value ||
+    createOpen.value ||
+    associateOpen.value ||
+    advancedOpen.value
+  )
+    return;
+  if (
+    (event.target as HTMLElement)?.closest(
+      "input, textarea, select, button, [contenteditable=true]",
+    )
+  )
+    return;
+  if (event.key === "/" && node.children?.length) {
+    event.preventDefault();
+    toggleSelected();
+  } else if (props.canEdit) {
+    if (
+      (event.key === "Tab" && node.kind === "category") ||
+      (event.key === "Enter" && node.kind === "collection" && node.nodeId)
+    ) {
+      event.preventDefault();
+      openCreate();
+    } else if (
+      event.key === "Backspace" &&
+      node.kind === "collection" &&
+      node.nodeId
+    ) {
+      event.preventDefault();
+      removePoint();
+    }
+  }
 }
 
 function fit() {
@@ -426,6 +519,7 @@ function openAdvanced() {
   advancedOpen.value = true;
 }
 function openCreate() {
+  if (!props.canEdit || !canAdd.value) return;
   if (dirty.value) {
     message.warning("请先保存或取消当前测试集的修改");
     return;
@@ -539,6 +633,7 @@ watch(
   () => props.plan.id,
   () => {
     sequence++;
+    collapsed.value = new Set();
     selected.value = undefined;
     createOpen.value = false;
     associateOpen.value = false;
@@ -589,6 +684,9 @@ watch(
 .node-configuration h3 {
   font-size: 15px;
   overflow-wrap: anywhere;
+}
+.fold-button {
+  margin-bottom: 16px;
 }
 .point-form {
   margin-top: 16px;
