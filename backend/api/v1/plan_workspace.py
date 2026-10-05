@@ -1,5 +1,6 @@
 """计划模块、关注和批量管理接口。"""
 from fastapi import APIRouter, Depends, HTTPException
+from services.plan_execution_config import ConfigSave, PoolSave
 from sqlalchemy.orm import Session
 from database import get_db
 from api.deps import get_current_user
@@ -183,6 +184,42 @@ def list_nodes(plan_id: str, db: Session = Depends(get_db), user=Depends(get_cur
     return ok([node_data(db, row) for row in nodes(db, plan_id)])
 
 
+@router.get("/plans/{plan_id}/execution-configurations")
+def execution_configurations(plan_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_execution_config import catalog
+    from services.plan_orchestration import get_policy
+    from services.plan_tree import nodes
+    plan = plan_access(db, user, plan_id)
+    return ok(catalog(db, plan, get_policy(db, plan.id), nodes(db, plan.id)))
+
+
+@router.put("/plans/{plan_id}/execution-configurations/{scope}")
+def save_execution_configuration(plan_id: str, scope: str, data: ConfigSave, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_execution_config import save
+    from api.v1.case_governance import transact
+    plan = editable_node_plan(db, user, plan_id)
+    transact(db, lambda: save(db, plan, scope, data))
+    return execution_configurations(plan_id, db, user)
+
+
+@router.post("/plans/{plan_id}/resource-pools")
+def create_execution_pool(plan_id: str, data: PoolSave, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_execution_config import save_pool
+    from api.v1.case_governance import transact
+    plan = editable_node_plan(db, user, plan_id)
+    transact(db, lambda: save_pool(db, plan, data))
+    return execution_configurations(plan_id, db, user)
+
+
+@router.put("/plans/{plan_id}/resource-pools/{pool_id}")
+def update_execution_pool(plan_id: str, pool_id: str, data: PoolSave, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_execution_config import save_pool
+    from api.v1.case_governance import transact
+    plan = editable_node_plan(db, user, plan_id)
+    transact(db, lambda: save_pool(db, plan, data, pool_id))
+    return execution_configurations(plan_id, db, user)
+
+
 @router.post("/plans/{plan_id}/nodes")
 def create_node(plan_id: str, data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
     from services.plan_tree import save_node, node_data
@@ -226,6 +263,8 @@ def delete_node(node_id: str, db: Session = Depends(get_db), user=Depends(get_cu
         db.query(PlanNode).filter_by(linked_functional_id=node.id).update({"linked_functional_id": None})
         from models.test_plan import PlanCaseRelation
         db.query(PlanCaseRelation).filter_by(collection_id=node.id).update({"collection_id": None})
+        from models.plan_execution_config import PlanExecutionConfig
+        db.query(PlanExecutionConfig).filter_by(plan_id=row.plan_id, node_id=node.id).delete(synchronize_session=False)
         db.delete(node)
         db.flush()
     def operation():

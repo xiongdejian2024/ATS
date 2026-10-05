@@ -81,85 +81,35 @@
               <a-form-item label="测试集名称" required
                 ><a-input v-model:value="pointForm.name" :maxlength="255"
               /></a-form-item>
-              <template v-if="selected.category !== 'functional'">
-                <a-form-item label="继承上级配置"
-                  ><a-switch
-                    v-model:checked="pointForm.inherit"
-                    :disabled="!canEdit"
-                    @change="changeInheritance"
-                /></a-form-item>
-                <a-alert
-                  v-if="selectedPoint.category !== selected.category"
-                  message="此节点是多个分类共用的父测试集，配置会影响其下级测试集。"
-                  type="info"
-                  show-icon
-                />
-                <a-form-item label="执行方式"
-                  ><a-select
-                    :value="
-                      pointForm.inherit
-                        ? selectedPoint.effectiveConfig.executionMode
-                        : pointForm.executionMode
-                    "
-                    :disabled="!canEdit || pointForm.inherit"
-                    @change="changeExecutionMode"
-                    allow-clear
-                    placeholder="继承计划/父测试集配置"
-                    :options="[
-                      { value: 'serial', label: '串行' },
-                      { value: 'parallel', label: '并行' },
-                    ]"
-                /></a-form-item>
-                <a-form-item label="环境"
-                  ><a-select
-                    ref="environmentSelect"
-                    :value="
-                      pointForm.inherit
-                        ? selectedPoint.effectiveConfig.environmentId
-                        : pointForm.environmentId
-                    "
-                    :disabled="!canEdit || pointForm.inherit"
-                    allow-clear
-                    placeholder="继承计划/父测试集环境"
-                    :options="
-                      environments.map((item) => ({
-                        value: item.id,
-                        label: item.name,
-                      }))
-                    "
-                    @change="changeEnvironment"
-                /></a-form-item>
-                <a-form-item label="资源池"
-                  ><a-select
-                    ref="resourceSelect"
-                    :value="
-                      pointForm.inherit
-                        ? selectedPoint.effectiveConfig.resourcePool
-                        : pointForm.resourcePool
-                    "
-                    :disabled="!canEdit || pointForm.inherit"
-                    mode="multiple"
-                    placeholder="继承父配置"
-                    :options="
-                      environments.map((item) => ({
-                        value: item.id,
-                        label: item.name,
-                      }))
-                    "
-                    @change="changeResourcePool"
-                /></a-form-item>
-              </template>
-              <a-space v-if="canEdit" wrap
-                ><a-button type="primary" :loading="saving" @click="savePoint"
-                  >保存</a-button
-                ><a-button :disabled="saving" @click="resetPoint"
-                  >取消修改</a-button
-                ><a-button danger :disabled="saving" @click="removePoint"
-                  >删除测试集</a-button
-                ></a-space
-              >
             </a-form>
           </template>
+          <a-form
+            v-if="selectedScope && executionCatalog && executionDraft"
+            layout="vertical"
+            class="point-form"
+          >
+            <ExecutionConfiguration
+              ref="executionEditor"
+              v-model:value="executionDraft"
+              :inherited="inheritedConfiguration"
+              :root="selectedScope.startsWith('root:')"
+              :catalog="executionCatalog"
+              :disabled="!canEdit"
+              @manage-pool="openPool"
+            />
+          </a-form>
+          <a-space v-if="canEdit && (selectedPoint || selectedScope)" wrap
+            ><a-button type="primary" :loading="saving" @click="savePoint"
+              >保存</a-button
+            ><a-button :disabled="saving" @click="resetPoint">取消修改</a-button
+            ><a-button
+              v-if="selectedPoint"
+              danger
+              :disabled="saving"
+              @click="removePoint"
+              >删除测试集</a-button
+            ></a-space
+          >
         </aside>
       </div></a-spin
     >
@@ -177,6 +127,42 @@
             v-model:value="newName"
             :maxlength="255" /></a-form-item></a-form
     ></a-modal>
+    <a-modal
+      v-model:open="poolOpen"
+      title="配置资源池"
+      :confirm-loading="saving"
+      @ok="savePool"
+    >
+      <a-form layout="vertical"
+        ><a-form-item label="资源池"
+          ><a-select
+            v-model:value="poolSelection"
+            :options="[
+              { value: 'new', label: '创建资源池' },
+              ...(executionCatalog?.pools || []).map((item) => ({
+                value: item.id,
+                label: item.name,
+              })),
+            ]"
+            @change="resetPool"
+        /></a-form-item>
+        <a-form-item label="名称" required
+          ><a-input v-model:value="poolDraft.name" :maxlength="255"
+        /></a-form-item>
+        <a-form-item label="执行节点" required
+          ><a-select
+            v-model:value="poolDraft.environmentIds"
+            mode="multiple"
+            :options="
+              (executionCatalog?.resources || []).map((item) => ({
+                value: item.id,
+                label: item.name,
+                disabled: !item.enabled,
+              }))
+            "
+        /></a-form-item>
+      </a-form>
+    </a-modal>
     <PlanCaseAssociateDrawer
       v-model:open="associateOpen"
       :plan-id="plan.id"
@@ -229,6 +215,12 @@ import {
 } from "./planMinderTree";
 import PlanCaseAssociateDrawer from "./PlanCaseAssociateDrawer.vue";
 import PlanTreeWorkspace from "./PlanTreeWorkspace.vue";
+import ExecutionConfiguration from "./ExecutionConfiguration.vue";
+import {
+  planExecutionApi,
+  type ExecutionConfig,
+  type ExecutionCatalog,
+} from "@/api/planExecutionConfig";
 use([TreeChart, TooltipComponent, CanvasRenderer]);
 const props = defineProps<{ plan: TestPlan; canEdit: boolean }>(),
   emit = defineEmits<{ changed: []; configurePlan: [] }>(),
@@ -255,6 +247,7 @@ const tree = computed(() =>
       environments.value.map((item) => [item.id, item.name]),
     ),
     defaultEnvironmentId: props.plan.environmentId,
+    executionCatalog: executionCatalog.value,
   }),
 );
 const flatNodes = computed(() => {
@@ -283,6 +276,8 @@ const selectedOption = computed(() => {
   const node = selected.value;
   if (!node || ["root", "category", "collection"].includes(node.kind))
     return node?.id;
+  if (node.configurationScope?.startsWith("root:"))
+    return `category:${node.category}`;
   return node.nodeId
     ? `${node.category}:${node.nodeId}`
     : `default:${node.category}`;
@@ -292,69 +287,101 @@ const selectedPoint = computed(() =>
     ? nodes.value.find((node) => node.id === selected.value?.nodeId)
     : undefined,
 );
-const pointForm = reactive({
-  name: "",
-  inherit: true,
-  executionMode: undefined as "serial" | "parallel" | undefined,
-  environmentId: undefined as string | undefined,
-  resourcePool: [] as string[],
-});
-function resetPoint() {
-  const node = selectedPoint.value;
-  pointForm.name = node?.name || "";
-  pointForm.inherit = !hasOwnConfiguration(node);
-  pointForm.executionMode = node?.config.executionMode || undefined;
-  pointForm.environmentId = node?.config.environmentId || undefined;
-  pointForm.resourcePool = [...(node?.config.resourcePool || [])];
-}
-function hasOwnConfiguration(node?: PlanNode) {
-  return !!(
-    node?.config.executionMode ||
-    node?.config.environmentId ||
-    node?.config.resourcePool?.length
+const executionCatalog = ref<ExecutionCatalog>(),
+  executionDraft = ref<ExecutionConfig>(),
+  executionEditor = ref<InstanceType<typeof ExecutionConfiguration>>(),
+  baseline = ref("");
+const pointForm = reactive({ name: "" });
+const selectedScope = computed(() => {
+  const node = selected.value;
+  if (
+    !node?.category ||
+    node.category === "functional" ||
+    node.kind === "root" ||
+    node.kind === "count"
+  )
+    return undefined;
+  return (
+    node.configurationScope ||
+    (node.kind === "category"
+      ? `root:${node.category}`
+      : node.nodeId
+        ? `node:${node.category}:${node.nodeId}`
+        : `default:${node.category}`)
   );
+});
+const inheritedConfiguration = computed(() => {
+  const scope = selectedScope.value,
+    category = selected.value?.category;
+  if (!scope || !category) return undefined;
+  const parent = selectedPoint.value?.parentId;
+  return executionCatalog.value?.configurations[
+    parent ? `node:${category}:${parent}` : `root:${category}`
+  ]?.effectiveConfig;
+});
+function draftState() {
+  return JSON.stringify({
+    name: pointForm.name,
+    config: selectedScope.value ? executionDraft.value : undefined,
+  });
 }
-function changeExecutionMode(value: unknown) {
-  pointForm.executionMode =
-    value === "serial" || value === "parallel" ? value : undefined;
+function resetPoint() {
+  pointForm.name = selectedPoint.value?.name || "";
+  const entry = selectedScope.value
+    ? executionCatalog.value?.configurations[selectedScope.value]
+    : undefined;
+  executionDraft.value = entry
+    ? { ...entry.effectiveConfig, extended: entry.config.extended }
+    : undefined;
+  baseline.value = draftState();
 }
-function changeEnvironment(value: unknown) {
-  pointForm.environmentId = typeof value === "string" ? value : undefined;
-  pointForm.resourcePool = [];
+const dirty = computed(() => draftState() !== baseline.value);
+const poolOpen = ref(false),
+  poolSelection = ref("new"),
+  poolDraft = reactive({ name: "", environmentIds: [] as string[] });
+function resetPool() {
+  const pool = executionCatalog.value?.pools.find(
+    (item) => item.id === poolSelection.value,
+  );
+  poolDraft.name = pool?.name || "";
+  poolDraft.environmentIds = [...(pool?.environmentIds || [])];
 }
-function changeResourcePool(value: unknown) {
-  pointForm.resourcePool = Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
-  pointForm.environmentId = undefined;
+function openPool() {
+  poolSelection.value =
+    executionDraft.value?.testResourcePoolId !== "DEFAULT"
+      ? executionDraft.value?.testResourcePoolId || "new"
+      : "new";
+  resetPool();
+  poolOpen.value = true;
 }
-function changeInheritance(inherit: boolean) {
-  if (inherit) {
-    pointForm.executionMode = undefined;
-    pointForm.environmentId = undefined;
-    pointForm.resourcePool = [];
-  } else {
-    const effective = selectedPoint.value?.effectiveConfig;
-    pointForm.executionMode = effective?.executionMode || "serial";
-    pointForm.environmentId = effective?.environmentId || undefined;
-    pointForm.resourcePool = [...(effective?.resourcePool || [])];
+async function savePool() {
+  if (!poolDraft.name.trim() || !poolDraft.environmentIds.length) {
+    message.warning("请填写资源池名称并选择执行节点");
+    return;
+  }
+  saving.value = true;
+  try {
+    const pool = executionCatalog.value?.pools.find(
+      (item) => item.id === poolSelection.value,
+    );
+    executionCatalog.value = await planExecutionApi.savePool(
+      props.plan.id,
+      {
+        name: poolDraft.name.trim(),
+        environmentIds: poolDraft.environmentIds,
+        expectedRevision: pool?.revision || 0,
+      },
+      pool?.id,
+    );
+    poolOpen.value = false;
+    message.success("资源池已保存");
+  } catch (error) {
+    console.error("保存资源池失败", error);
+    message.error("保存失败，请检查资源池或刷新版本");
+  } finally {
+    saving.value = false;
   }
 }
-const environmentSelect = ref<{ focus: () => void }>(),
-  resourceSelect = ref<{ focus: () => void }>();
-const dirty = computed(() => {
-  const node = selectedPoint.value;
-  if (!node) return false;
-  return (
-    pointForm.name !== node.name ||
-    pointForm.inherit === hasOwnConfiguration(node) ||
-    (!pointForm.inherit &&
-      (pointForm.executionMode !== (node.config.executionMode || undefined) ||
-        pointForm.environmentId !== (node.config.environmentId || undefined) ||
-        JSON.stringify(pointForm.resourcePool) !==
-          JSON.stringify(node.config.resourcePool || [])))
-  );
-});
 const presentedTree = computed(() =>
   presentPlanMinder(tree.value, collapsed.value),
 );
@@ -366,7 +393,7 @@ const chartWidth = computed(() => {
 });
 function allowNavigation() {
   if (!dirty.value) return true;
-  message.warning("请先保存或取消当前测试集的修改");
+  message.warning("请先保存或取消当前节点的修改");
   return false;
 }
 onBeforeRouteLeave(allowNavigation);
@@ -413,14 +440,15 @@ const option = computed(() => ({
 let sequence = 0;
 async function load() {
   if (dirty.value) {
-    message.warning("请先保存或取消当前测试集的修改");
+    message.warning("请先保存或取消当前节点的修改");
     return;
   }
   const request = ++sequence;
   loading.value = true;
   failed.value = false;
   try {
-    const [points, functional, api, scenario] = await Promise.all([
+    const [catalog, points, functional, api, scenario] = await Promise.all([
+      planExecutionApi.catalog(props.plan.id),
       planTreeApi.list(props.plan.id),
       ...(["functional", "api", "scenario"] as PlanCategory[]).map((category) =>
         planCaseWorkspaceApi.list(props.plan.id, {
@@ -434,6 +462,7 @@ async function load() {
       ),
     ]);
     if (request === sequence) {
+      executionCatalog.value = catalog;
       nodes.value = points;
       entries.value = {
         functional: functional.items,
@@ -475,7 +504,7 @@ async function loadEnvironments() {
 }
 function selectById(id: string) {
   if (dirty.value) {
-    message.warning("请先保存或取消当前测试集的修改");
+    message.warning("请先保存或取消当前节点的修改");
     return;
   }
   selected.value = flatNodes.value.find((node) => node.id === id);
@@ -494,10 +523,7 @@ function selectNode(event: unknown) {
     associateOpen.value = true;
   if (["environment", "resource"].includes(node.kind) && props.canEdit) {
     void nextTick(() =>
-      (node.kind === "environment"
-        ? environmentSelect.value
-        : resourceSelect.value
-      )?.focus(),
+      executionEditor.value?.focus(node.kind as "environment" | "resource"),
     );
   }
 }
@@ -598,14 +624,14 @@ const createOpen = ref(false),
 function openAssociation() {
   if (!props.canEdit) return;
   if (dirty.value) {
-    message.warning("请先保存或取消当前测试集的修改");
+    message.warning("请先保存或取消当前节点的修改");
     return;
   }
   associateOpen.value = true;
 }
 function openAdvanced() {
   if (dirty.value) {
-    message.warning("请先保存或取消当前测试集的修改");
+    message.warning("请先保存或取消当前节点的修改");
     return;
   }
   advancedOpen.value = true;
@@ -613,7 +639,7 @@ function openAdvanced() {
 function openCreate() {
   if (!props.canEdit || !canAdd.value) return;
   if (dirty.value) {
-    message.warning("请先保存或取消当前测试集的修改");
+    message.warning("请先保存或取消当前节点的修改");
     return;
   }
   newName.value = "默认测试集";
@@ -661,37 +687,43 @@ async function createPoint() {
   }
 }
 async function savePoint() {
-  const node = selectedPoint.value;
-  if (!props.canEdit || !node) return;
-  if (!pointForm.name.trim()) {
+  const node = selectedPoint.value,
+    scope = selectedScope.value;
+  if (!props.canEdit || (!node && !scope)) return;
+  if (node && !pointForm.name.trim()) {
     message.warning("请填写测试集名称");
     return;
   }
   saving.value = true;
   try {
-    const updated = await planTreeApi.update(node.id, {
-      name: pointForm.name.trim(),
-      config:
-        selected.value?.category === "functional"
-          ? node.config
-          : pointForm.inherit
-            ? {}
-            : {
-                ...node.config,
-                executionMode: pointForm.executionMode || null,
-                environmentId: pointForm.environmentId || null,
-                resourcePool: pointForm.resourcePool,
-              },
-    });
-    nodes.value = nodes.value.map((item) =>
-      item.id === node.id ? updated : item,
-    );
+    if (scope && executionDraft.value && executionCatalog.value) {
+      executionCatalog.value = await planExecutionApi.save(
+        props.plan.id,
+        scope,
+        {
+          config: executionDraft.value,
+          expectedRevision:
+            executionCatalog.value.configurations[scope]?.revision || 0,
+          ...(node
+            ? { name: pointForm.name.trim(), expectedName: node.name }
+            : {}),
+        },
+      );
+      if (node) node.name = pointForm.name.trim();
+    } else if (node) {
+      const updated = await planTreeApi.update(node.id, {
+        name: pointForm.name.trim(),
+      });
+      nodes.value = nodes.value.map((item) =>
+        item.id === node.id ? updated : item,
+      );
+    }
     resetPoint();
     await changed();
-    message.success("测试集配置已保存");
+    message.success("节点配置已保存");
   } catch (error) {
-    console.error("保存测试集脑图配置失败", error);
-    message.error("保存失败，请核对配置");
+    console.error("保存脑图执行配置失败", error);
+    message.error("保存失败，请核对配置或刷新版本；当前修改已保留");
   } finally {
     saving.value = false;
   }
@@ -732,6 +764,7 @@ watch(
     createOpen.value = false;
     associateOpen.value = false;
     advancedOpen.value = false;
+    resetPoint();
     void load();
     void loadEnvironments();
   },

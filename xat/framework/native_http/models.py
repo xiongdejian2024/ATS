@@ -110,3 +110,5 @@ class FrozenCase(NativeModel):
     category: Literal["api", "scenario"]
     requests: list[FrozenRequest] = Field(min_length=1, max_length=1000)
     stopOnFailure: StrictBool = True
+    retryTimes: StrictInt = Field(0, ge=0, le=10)
+    retryInterval: StrictInt = Field(0, ge=0, le=2147483647)

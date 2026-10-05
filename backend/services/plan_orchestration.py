@@ -112,6 +112,8 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
             if entry['suite']:
                 entry['suite'].native_cases = [entry['nativeCase']] if entry.get('nativeCase') else None
         policy = dict(policy, nodeGraph=True)
+        if any(entry['config'].get('msExecution') for entry in tree_entries):
+            policy = dict(policy, msConfiguration=True, stopOnFailure=False)
     ordering = {sid: i for i, sid in enumerate(policy["suiteOrder"])}
     if tree_entries is None:
         suites.sort(key=lambda s: ordering.get(s.id, len(ordering)))
@@ -200,6 +202,8 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
                                                category=entry["node"].category if entry else native[suite.case_ids[0]]['category'] if suite.execution_command == COMMAND else "api",
                                                linkedFunctionalId=entry["node"].linked_functional_id if entry else None,
                                                prerequisites=entry["prerequisites"] if entry else [],
+                                               stopPrerequisites=entry.get("stopPrerequisites", []) if entry else [],
+                                               executionConfig=deepcopy(entry["config"].get("msExecution")) if entry else None,
                                                resourcePool=entry["config"].get("resourcePool", []) if entry else []))
         db.add(item)
         if not defer and ((entry is not None and not entry["prerequisites"]) or (entry is None and (i == 0 or policy["executionMode"] == "parallel"))):
@@ -382,7 +386,13 @@ async def advance_plan_runs(db):
                         outcomes.setdefault(row.get("associationId", row["caseId"]), []).append(row["result"])
                     for item in items:
                         if item.status == "waiting" and all(dep in outcomes and all(value != "pending" for value in outcomes[dep]) for dep in item.suite_snapshot.get("prerequisites", [])):
-                            _enqueue(db, run, item)
+                            guards = item.suite_snapshot.get("stopPrerequisites", [])
+                            if any(value in ("failed", "error", "skipped", "cancelled") for dep in guards for value in outcomes.get(dep, [])):
+                                _cancel_waiting_item(db, item, "skipped", "所属分类或测试集的前序执行失败，按串行配置停止")
+                                # 本轮后面的分支立即可观察到跳过结果，避免等待额外调度轮次。
+                                outcomes[item.suite_snapshot.get("nodeId")] = ["skipped"]
+                            else:
+                                _enqueue(db, run, item)
                 elif run.config_snapshot["executionMode"] == "serial":
                     active = any(i.status in ("pending", "running") for i in items)
                     waiting = next((i for i in items if i.status == "waiting"), None)

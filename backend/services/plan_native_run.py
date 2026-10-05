@@ -66,6 +66,8 @@ def start(db, plan, user, data):
     environments = db.query(Environment).filter(Environment.id.in_(environment_ids)).order_by(Environment.id).populate_existing().with_for_update().all()
     # 只编译所选叶子及其祖先，未选中的手工用例和兄弟实例不成为前置。
     entries = compile_tree(db, plan, policy, current_read=True, scope_nodes=scoped, user=user)
+    if any(entry['config'].get('msExecution') for entry in entries):
+        policy = dict(policy, msConfiguration=True, stopOnFailure=False)
     suites = db.query(TestSuite).filter_by(plan_id=plan.id).populate_existing().with_for_update().all()
     suite_map = {suite.id: suite for suite in suites}
     extra_ids = {e['suite'].environment_id for e in entries if e['suite']}
@@ -103,6 +105,7 @@ def start(db, plan, user, data):
             sequence=index, status='waiting', suite_snapshot=dict(name=suite.name, caseIds=[node.case_id], executionCommand=suite.execution_command,
                 environmentId=suite.environment_id, nodeId=node.id, category=data.category, linkedFunctionalId=None,
                 prerequisites=entry['prerequisites'], resourcePool=entry['config'].get('resourcePool', []),
+                stopPrerequisites=entry.get('stopPrerequisites', []), executionConfig=deepcopy(entry['config'].get('msExecution')),
                 gitEnabled=suite.git_enabled, gitRepoUrl=suite.git_repo_url, gitBranch=suite.git_branch,
                 nativeCases=[entry['nativeCase']] if entry.get('nativeCase') else None))
         db.add(item)

@@ -753,3 +753,20 @@
 - 第54部分远程CI `37382383094` 已确认成功，证据 `logs/第54部分远程CI最终状态.json`。整体100%复刻目标继续：下一步补MS根/测试集完整执行配置及其真实语义，随后逐项补高级编辑器、报告、关联双模式及其他尚未对齐事项。
 
 本部分官方依据：[规划脑图执行配置](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-minders/testPlanMinder/index.vue)、[规划节点配置模型](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/models/testPlan/testPlan.ts)、[测试集资源池与环境](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/framework/domain/src/main/java/io/metersphere/plan/domain/TestPlanCollection.java)。
+
+
+## 第56部分：分类根与测试集完整执行配置、请求步骤失败重试（2026-10-06）
+
+- 对照官方固定 `v3.6.9-lts` / `d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51`：API/场景分类根及实体、默认测试集分别编辑完整执行配置。资源池和接口请求环境独立单选；串并行使用单选按钮；只有串行展示并应用失败停止；串并行均支持失败重试，次数1至10整数、间隔非负整数毫秒，步长100。间隔上限采用官方Java Integer的2147483647边界，没有另设任意业务上限。
+- 新增独立 `plan_execution_configs` 与 `plan_resource_pools` 表，不修改旧计划字段或旧 `PlanNode.config` 的含义。资源池使用真实池ID和启用执行节点成员，默认池采用计划/测试集原执行节点；请求环境使用项目原生接口环境ID，默认环境继续采用主用例请求配置。池成员冻结在批次，调度只从冻结成员选节点；请求目标和Agent资源互不替代。规划侧栏可创建或编辑本项目资源池，支持成员及名称版本冲突保护，没有新增依赖。
+- 测试集继承时完整动态读取父配置；父配置后来变化仍生效，侧栏执行控件全部禁用，关闭继承可保存整套独立配置。覆盖为默认环境也明确持久化。根节点没有继承开关，默认测试集可配置。节点名称与执行配置原子保存，旧名称或旧配置版本返回409并保留前端草稿；保存/取消、切节点及路由保护共用。脑图的请求环境、资源池标签及串并行标记分别来自当前生效配置，根与默认节点标签具有不同身份。
+- 新编译器分开处理分类根的测试集顺序和测试集内部用例顺序。根串行等待前测试集整体结束；根失败停止跳过该分类后续测试集；测试集停止只跳过本集后续用例。API失败不会按根策略停止场景分类；并行忽略隐藏的停止标志。冻结显式前置与停止条件，报告按最终结果推进。功能手工用例不作为另一自动化分类的隐含前置。没有保存新配置的旧计划继续沿旧编译路径；旧直接关联与套内额外成员保留。
+- 官方 `RetryInterceptor` 对协议请求步骤增加重试控制器。本部分原生HTTP按失败步骤真正重发，不重跑已成功场景步骤；失败、断言不符和网络异常可重试，最多首次加指定重试次数；等待期间可按执行ID取消。每步骤日志保留各次真实状态、断言和耗时，最终回传仍只有一个用例结果，沿既有outbox/ACK和终态标记协议，不重复计数。跨来源环境组、脚本步骤及循环中重试规则尚未实现，不能当作全部MS执行器能力；对未配置原生HTTP的XAT用例选择请求环境/步骤重试时明确拒绝执行，避免保存后静默忽略。
+- 本轮全量后端 **385项通过／180.79秒／18条既有框架和ORM提示**，证据 `logs/第56部分后端全量.log`；随后额外补充复制测试集配置重映射及删除清理专项，配置最终专项 **13项通过**，证据 `logs/第56部分配置最终验收.log`。验证严格重试字段、动态继承与覆盖、权限和版本、独立池/请求目标及入队后配置冻结、根/测试集失败停止边界、API/场景隔离、复制ID映射和节点删除。真实Agent回环专项 **8项通过**：成功场景步骤一次、失败步骤两次，实际等待100毫秒，排队后关闭重试仍按冻结配置执行；三次真实500耗尽后停止后续步骤；取消30秒重试等待不再重发。最终报告均只计一条用例。证据 `logs/第56部分真实请求验收.log`、`tests/test_native_http_agent_e2e.py`。没有连接真实台架或模型。
+- 前端 **105项／28文件通过**，类型检查及构建 **12.12秒** 通过，既有包体提示保留。新增脑图映射专项验证池名称来自池、环境来自请求目标、根/默认/实体配置作用域不同且节点身份唯一。证据 `logs/第56部分前端单元.log`、`logs/第56部分前端类型初检.log`、`logs/第56部分前端构建.log`。
+- 新增独立MySQL脚本 `scripts/verify_plan_execution_config_mysql.py`：真实项目锁等待后冻结最新池成员、重试次数和间隔；旧普通读快照不能覆盖当前配置；两个同版本配置并发保存分别200／409。原范围最新关联/优先级/策略/活动批次锁验收也通过，没有调度或HTTP发送；临时库及授权回收。证据 `logs/第56部分MySQL验收.log`、`logs/第56部分MySQL验收输出.log`。
+- 浏览器复用空间30和13313/18813隔离环境，新建独立项目、3主用例、1计划、API测试集和无连接离线软件节点。实际界面创建单节点池；保存根的请求环境、池、串行停止、重试3/200；继承控件禁用、关闭继承改名并保存重试2和默认环境；根改重试4后默认集同步继承，独立集仍为2；默认集再独立保存并行且关闭重试；未保存修改阻止切换。1440px默认测试集及390px根配置截图已查看；整页390、配置区域342，无页面横向溢出，完整重试控件和保存按钮可操作。截图 `/tmp/ats-ms56-default-desktop.png`、`/tmp/ats-ms56-root-mobile.png`。选项动画、侧栏滚动和窄屏首帧均按实际可见状态处理后复验。
+- 按本轮主键及外键后代精确回收，完整 **75表** 恢复基线，原31用例及历史保留，原计划/偏好/1440视口和登录恢复。正式API与Agent更新，worker保持原PID，原73表计数一致，新两表为空；100用例、7计划、28历史任务、0活动任务、在线节点1，健康及页面HTTP200。证据 `logs/第56部分浏览器验收.json`、`logs/第56部分浏览器恢复.json`、`logs/第56部分清理计数.json`、`logs/第56部分正式基线.json`、`logs/第56部分正式服务.log`。
+- 第55部分远程CI `37386588998` 已确认成功，证据 `logs/第55部分远程CI最终状态.json`。本轮完成上述配置和实际语义；整体目标继续进行。项目环境组及跨项目环境映射、MS全局资源池管理、完整分类测试集菜单/拖动、原生高级编辑器与单条报告、关联API定义/用例双模式、评审与报告等尚未完全对齐，不声明100%完成。
+
+本部分官方依据：[规划执行配置与继承禁用](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-minders/testPlanMinder/index.vue)、[测试集继承及运行配置](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/test-plan/src/main/java/io/metersphere/plan/service/TestPlanApiBatchRunBaseService.java)、[请求步骤重试控制器](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/api-test/src/main/java/io/metersphere/api/parser/jmeter/interceptor/RetryInterceptor.java)、[次数与毫秒间隔类型](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/framework/sdk/src/main/java/io/metersphere/sdk/dto/api/task/ApiRunRetryConfig.java)。

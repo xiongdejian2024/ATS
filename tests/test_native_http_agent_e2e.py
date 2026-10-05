@@ -3,6 +3,7 @@
 import asyncio
 import json
 import socket
+import time
 from uuid import uuid4
 import pytest
 import pytest_asyncio
@@ -22,9 +23,12 @@ async def native_lab(lab):
     entered = asyncio.Event()
     release = asyncio.Event()
     blocked = False
+    response_statuses = []
+    hit_times = []
 
     @target.post("/echo")
     async def echo(request: Request):
+        hit_times.append(time.monotonic())
         hits.append(
             {
                 "query": dict(request.query_params),
@@ -37,7 +41,7 @@ async def native_lab(lab):
             await release.wait()
         return JSONResponse(
             {"accepted": True, "rows": [{"value": 7}]},
-            status_code=201,
+            status_code=response_statuses.pop(0) if response_statuses else 201,
             headers={"X-Lab": "owned-loopback"},
         )
 
@@ -157,6 +161,9 @@ async def native_lab(lab):
         "entered": entered,
         "release": release,
         "block": block,
+        "response_statuses": response_statuses,
+        "hit_times": hit_times,
+        "request_environment": environment,
     }
     try:
         yield value
@@ -394,3 +401,77 @@ async def test_scoped_xat_actual_completion_ignores_unselected_suite_members(lab
     print(
         "范围完成校验验收通过：四成员XAT测试套只执行所选一条，真实WebSocket回传后仍正确完成。"
     )
+
+
+async def execution_config(value, category, **changes):
+    from services.plan_execution_config import ExecutionConfig
+    base = f'/api/v1/plan-orchestration/plans/{value["native_plan"]["id"]}'
+    response = await value["client"].post(base + "/resource-pools", json={"name": "自建回环验收池", "environmentIds": [value["environment"]["id"]]})
+    assert response.status_code == 200, response.text
+    pool = response.json()["data"]["pools"][-1]
+    config = ExecutionConfig(extended=False, testResourcePoolId=pool["id"], requestEnvironmentId=value["request_environment"]["id"], **changes).model_dump()
+    response = await value["client"].put(base + f"/execution-configurations/root:{category}", json={"config": config, "expectedRevision": 0})
+    assert response.status_code == 200, response.text
+    return base, config
+
+
+@pytest.mark.asyncio
+async def test_real_scene_retries_only_failed_step_and_reports_one_final_case(native_lab):
+    from database import SessionLocal
+    from models.plan_orchestration import PlanRun, PlanRunItem
+    from models.test_suite import TestSuiteExecution
+    from services.suite_results import result_id
+
+    value = native_lab
+    value["response_statuses"].extend([201, 500, 201])
+    base, config = await execution_config(value, "scenario", retryOnFailure=True, retryTimes=2, retryInterval=100)
+    run_id = await scope(value, "scenario")
+    # 排队后修改重试配置，Agent仍使用入队时冻结的步骤重试。
+    response = await value["client"].put(base + "/execution-configurations/root:scenario", json={"config": dict(config, retryOnFailure=False), "expectedRevision": 1})
+    assert response.status_code == 200
+    await dispatch(run_id)
+    await finished(run_id)
+    assert len(value["hits"]) == 3
+    assert value["hit_times"][2] - value["hit_times"][1] >= 0.09
+    with SessionLocal() as db:
+        run = db.get(PlanRun, run_id)
+        item = db.query(PlanRunItem).filter_by(run_id=run_id).one()
+        row = db.get(TestSuiteExecution, result_id(item.execution_id, value["scene"]["id"]))
+        steps = json.loads(row.log_output)["步骤"]
+        assert [len(step["attempts"]) for step in steps] == [1, 2]
+        assert [attempt["statusCode"] for attempt in steps[1]["attempts"]] == [500, 201]
+        assert run.status == "completed" and run.report["total"] == run.report["counts"]["passed"] == 1
+    print("真实步骤重试验收通过：成功步骤一次、失败步骤两次；等待实际100毫秒；冻结重试配置生效，最终报告仅一条通过。")
+
+
+@pytest.mark.asyncio
+async def test_real_retry_exhaustion_then_stops_scene(native_lab):
+    value = native_lab
+    value["response_statuses"].extend([500, 500, 500])
+    await execution_config(value, "scenario", retryOnFailure=True, retryTimes=2, retryInterval=0)
+    run_id = await scope(value, "scenario")
+    await dispatch(run_id)
+    await finished(run_id)
+    assert len(value["hits"]) == 3
+    from database import SessionLocal
+    from models.plan_orchestration import PlanRun
+    with SessionLocal() as db:
+        run = db.get(PlanRun, run_id)
+        assert run.status == "failed" and run.report["total"] == run.report["counts"]["failed"] == 1
+    print("重试耗尽验收通过：首次及两次重试均为真实500，后续场景步骤未发送，报告只有一条失败。")
+
+
+@pytest.mark.asyncio
+async def test_real_retry_delay_is_cancellable(native_lab):
+    value = native_lab
+    value["response_statuses"].append(500)
+    await execution_config(value, "api", retryOnFailure=True, retryTimes=2, retryInterval=30000)
+    run_id = await scope(value, "api")
+    await dispatch(run_id)
+    await asyncio.wait_for(value["entered"].wait(), 5)
+    await asyncio.sleep(0.05)
+    response = await value["client"].post(f"/api/v1/plan-orchestration/runs/{run_id}/cancel")
+    assert response.status_code == 200, response.text
+    await finished(run_id)
+    assert len(value["hits"]) == 1 and not value["agent"].native_http_runner.runs
+    print("重试等待取消验收通过：首个真实请求失败后取消30秒等待，没有继续重发请求。")

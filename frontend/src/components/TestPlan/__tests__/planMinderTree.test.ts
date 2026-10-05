@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import { buildPlanMinder, presentPlanMinder } from "../planMinderTree";
 import type { PlanCaseEntry } from "@/api/planCaseWorkspace";
 import type { PlanNode } from "@/api/planTree";
+import type {
+  ExecutionConfig,
+  ExecutionCatalog,
+} from "@/api/planExecutionConfig";
 const entry = (collectionId?: string) => ({ collectionId }) as PlanCaseEntry;
 const point = (id: string, parentId?: string) =>
   ({
@@ -71,6 +75,68 @@ describe("脑图折叠与数据保留", () => {
 });
 
 describe("脑图环境与资源池真实配置", () => {
+  it("分类根、默认测试集及实体测试集的请求环境与资源池不会混成执行节点", () => {
+    const config: ExecutionConfig = {
+      extended: false,
+      executionMode: "parallel",
+      testResourcePoolId: "pool",
+      requestEnvironmentId: "target",
+      stopOnFailure: false,
+      retryOnFailure: true,
+      retryTimes: 2,
+      retryInterval: 100,
+    };
+    const catalog: ExecutionCatalog = {
+      configurations: Object.fromEntries(
+        ["root:api", "default:api", "node:api:api"].map((scope) => [
+          scope,
+          { scope, revision: 1, config, effectiveConfig: config },
+        ]),
+      ),
+      pools: [
+        {
+          id: "pool",
+          name: "自建执行池",
+          environmentIds: ["agent"],
+          revision: 1,
+        },
+      ],
+      requestEnvironments: [{ id: "target", name: "请求目标环境" }],
+      resources: [{ id: "agent", name: "执行Agent", enabled: true }],
+    };
+    const api = {
+      ...point("api"),
+      category: "api",
+      effectiveConfig: { environmentId: "agent" },
+    } as PlanNode;
+    const tree = buildPlanMinder(
+      "计划",
+      [api],
+      { functional: [], api: [entry(), entry("api")], scenario: [] },
+      { executionCatalog: catalog, environmentNames: { agent: "执行Agent" } },
+    );
+    const category = tree.children![1];
+    expect(category.executionMode).toBe("parallel");
+    expect(category.children!.slice(0, 2).map((node) => node.name)).toEqual([
+      "环境：请求目标环境",
+      "资源池：自建执行池",
+    ]);
+    expect(category.children![2].executionMode).toBe("parallel");
+    expect(category.children![3].executionMode).toBe("parallel");
+    const ids: string[] = [];
+    function walk(node: typeof tree) {
+      ids.push(node.id);
+      node.children?.forEach(walk);
+    }
+    walk(tree);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(category.children![0].configurationScope).toBe("root:api");
+    expect(category.children![2].children![0].configurationScope).toBe(
+      "default:api",
+    );
+    expect(JSON.stringify(category)).not.toContain("执行Agent");
+    expect(category.count).toBe(2);
+  });
   it("API测试集显示生效环境和执行方式，功能测试集没有配置叶子", () => {
     const api = {
       ...point("api"),

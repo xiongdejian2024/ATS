@@ -77,6 +77,17 @@ def clone_extensions(db, source, target, user_id):
     for node in originals:
         node_map[node.id].parent_id = node_map[node.parent_id].id if node.parent_id in node_map else None
         node_map[node.id].linked_functional_id = node_map[node.linked_functional_id].id if node.linked_functional_id in node_map else None
+    from models.plan_execution_config import PlanExecutionConfig
+    for config in db.query(PlanExecutionConfig).filter_by(plan_id=source.id):
+        scope = config.scope
+        node_id = node_map[config.node_id].id if config.node_id in node_map else None
+        if config.node_id:
+            if not node_id:
+                continue
+            scope = f"node:{config.category}:{node_id}"
+        if source.project_id != target.project_id:
+            raise HTTPException(409, "包含项目资源池或请求环境配置的计划须在同项目内复制")
+        db.add(PlanExecutionConfig(plan_id=target.id, scope=scope, category=config.category, node_id=node_id, config=deepcopy(config.config), revision=1))
     from models.test_plan import PlanCaseRelation
     originals_by_case = {row.case_id: row for row in db.query(PlanCaseRelation).filter_by(plan_id=source.id)}
     for relation in db.query(PlanCaseRelation).filter_by(plan_id=target.id):

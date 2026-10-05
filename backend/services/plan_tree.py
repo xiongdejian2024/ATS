@@ -157,6 +157,32 @@ def save_node(db, plan, data, existing=None, *, source_project_id=None):
 def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None, user=None):
     """将树编译为关联实例及显式前置节点，保留分支串并行语义。"""
     all_nodes = nodes(db, plan.id, current_read=current_read) if scope_nodes is None else scope_nodes
+    from services.plan_execution_config import ConfigurationTree
+    configurations = ConfigurationTree(db, plan, policy, all_nodes, current_read=current_read)
+    if any(configurations.active(category) for category in ("api", "scenario")):
+        if scope_nodes is None and not uses_tree(db, plan.id):
+            from models.test_plan import PlanCaseRelation
+            from types import SimpleNamespace
+            from services.native_http_execution import configured, COMMAND
+            query = db.query(PlanCaseRelation).filter_by(plan_id=plan.id).order_by(PlanCaseRelation.execution_order, PlanCaseRelation.id)
+            relations = (query.populate_existing().with_for_update() if current_read else query).all()
+            suites = db.query(TestSuite).filter_by(plan_id=plan.id).all()
+            suites = [suite for suite in suites if suite.execution_command != COMMAND]
+            # 旧测试套可以包含尚未出现在直接关联表中的用例；显式分类配置不能丢掉它们。
+            associated = {relation.case_id for relation in relations}
+            for suite in suites:
+                for case_id in suite.case_ids or []:
+                    if case_id not in associated:
+                        relations.append(SimpleNamespace(id=case_id, case_id=case_id, collection_id=None, assigned_to=None))
+                        associated.add(case_id)
+            for relation in relations:
+                case = db.get(TestCase, relation.case_id)
+                compatible = [suite for suite in suites if relation.case_id in (suite.case_ids or [])]
+                if case and case.is_automated and not configured(db, case) and len(compatible) != 1:
+                    raise HTTPException(409, "分类执行配置要求用例关联唯一测试套或原生HTTP请求")
+                all_nodes.append(SimpleNamespace(id=relation.id, parent_id=relation.collection_id, node_type="case", category=case.type if case and case.type in {"api", "scenario"} else "functional", case_id=relation.case_id, suite_id=compatible[0].id if len(compatible) == 1 else None, name=case.name if case else "已删除用例", assigned_to=relation.assigned_to, linked_functional_id=None, config={}))
+        from services.plan_execution_compile import compile_configured_tree
+        return compile_configured_tree(db, plan, policy, all_nodes, configurations, user)
     node_map = {node.id: node for node in all_nodes}
     if scope_nodes is None and not uses_tree(db, plan.id):
         return None

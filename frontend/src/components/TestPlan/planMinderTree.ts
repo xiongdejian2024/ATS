@@ -1,6 +1,7 @@
 import type { PlanNode, NodeConfig } from "@/api/planTree";
 import type { PlanCaseEntry } from "@/api/planCaseWorkspace";
 import { nodeHierarchy } from "./planCategoryTree";
+import type { ExecutionCatalog } from "@/api/planExecutionConfig";
 export type PlanCategory = "functional" | "api" | "scenario";
 export interface PlanMinderNode {
   id: string;
@@ -14,6 +15,7 @@ export interface PlanMinderNode {
     | "resource";
   category?: PlanCategory;
   nodeId?: string;
+  configurationScope?: string;
   count: number;
   executionMode?: "serial" | "parallel";
   children?: PlanMinderNode[];
@@ -31,6 +33,7 @@ export function buildPlanMinder(
   options: {
     environmentNames?: Record<string, string>;
     defaultEnvironmentId?: string | null;
+    executionCatalog?: ExecutionCatalog;
   } = {},
 ): PlanMinderNode {
   function configurationNodes(
@@ -38,32 +41,48 @@ export function buildPlanMinder(
     nodeId: string | undefined,
     effective: NodeConfig,
     count: number,
+    scope = nodeId ? `node:${category}:${nodeId}` : `default:${category}`,
   ): PlanMinderNode[] {
     if (category === "functional") return [];
-    const environmentName = effective.environmentId
-      ? options.environmentNames?.[effective.environmentId] || "已指定环境"
-      : "默认环境";
+    const ms = options.executionCatalog?.configurations[scope]?.effectiveConfig;
+    const environmentName = ms
+      ? ms.requestEnvironmentId === "NONE"
+        ? "默认环境"
+        : options.executionCatalog?.requestEnvironments.find(
+            (item) => item.id === ms.requestEnvironmentId,
+          )?.name || "已指定请求环境"
+      : effective.environmentId
+        ? options.environmentNames?.[effective.environmentId] || "已指定环境"
+        : "默认环境";
     const pool = effective.resourcePool || [];
-    const poolName = pool.length
-      ? pool
-          .map((id) => options.environmentNames?.[id] || "已指定节点")
-          .join("、")
-      : "默认资源池";
+    const poolName = ms
+      ? ms.testResourcePoolId === "DEFAULT"
+        ? "默认资源池"
+        : options.executionCatalog?.pools.find(
+            (item) => item.id === ms.testResourcePoolId,
+          )?.name || "已指定资源池"
+      : pool.length
+        ? pool
+            .map((id) => options.environmentNames?.[id] || "已指定节点")
+            .join("、")
+        : "默认资源池";
     return [
       {
-        id: `environment:${category}:${nodeId || "default"}`,
+        id: `environment:${category}:${scope.startsWith("root:") ? "root" : nodeId || "default"}`,
         name: `环境：${environmentName}`,
         kind: "environment",
         category,
         nodeId,
+        configurationScope: scope,
         count,
       },
       {
-        id: `resource:${category}:${nodeId || "default"}`,
+        id: `resource:${category}:${scope.startsWith("root:") ? "root" : nodeId || "default"}`,
         name: `资源池：${poolName}`,
         kind: "resource",
         category,
         nodeId,
+        configurationScope: scope,
         count,
       },
     ];
@@ -102,7 +121,12 @@ export function buildPlanMinder(
           kind: "collection",
           category,
           count,
-          executionMode: point.effectiveConfig?.executionMode || undefined,
+          executionMode:
+            options.executionCatalog?.configurations[
+              `node:${category}:${point.id}`
+            ]?.effectiveConfig.executionMode ||
+            point.effectiveConfig?.executionMode ||
+            undefined,
           children: [
             {
               id: `count:${category}:${point.id}`,
@@ -133,6 +157,9 @@ export function buildPlanMinder(
           kind: "collection",
           category,
           count: unassigned,
+          executionMode:
+            options.executionCatalog?.configurations[`default:${category}`]
+              ?.effectiveConfig.executionMode,
           children: [
             ...configurationNodes(
               category,
@@ -157,7 +184,21 @@ export function buildPlanMinder(
         kind: "category" as const,
         category,
         count: items.length,
-        children: collections,
+        executionMode:
+          options.executionCatalog?.configurations[`root:${category}`]
+            ?.effectiveConfig.executionMode,
+        children: [
+          ...(options.executionCatalog
+            ? configurationNodes(
+                category,
+                undefined,
+                {},
+                items.length,
+                `root:${category}`,
+              )
+            : []),
+          ...collections,
+        ],
       };
     },
   );
