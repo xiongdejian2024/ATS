@@ -1,3 +1,7 @@
+import {
+  useCandidateModules,
+  type CandidateModulesContext,
+} from "./planCandidateModules";
 import { computed, ref, watch, type Ref } from "vue";
 import { cloneDeep } from "lodash-es";
 import {
@@ -17,6 +21,7 @@ export function usePlanCandidateSelection(
   category: Ref<CandidateSelection["category"]>,
   query: Ref<CandidateCondition>,
   pageIds: Ref<string[]>,
+  moduleContext?: CandidateModulesContext,
 ) {
   const selected = ref<string[]>([]),
     selectAll = ref(false),
@@ -26,28 +31,45 @@ export function usePlanCandidateSelection(
     working = ref(false),
     error = ref(""),
     summary = ref<CandidateSelectionPreview>();
+  const modules = moduleContext
+    ? useCandidateModules(moduleContext, summary)
+    : undefined;
+  const moduleMode = computed(() => !!moduleContext?.enabled.value);
   let sequence = 0;
-  const hasSelection = computed(
-    () => selectAll.value || selected.value.length > 0,
+  const hasSelection = computed(() =>
+    moduleMode.value
+      ? !!modules?.hasSelection.value
+      : selectAll.value || selected.value.length > 0,
   );
   const request = computed<CandidateSelection | undefined>(() =>
     !hasSelection.value
       ? undefined
       : {
           category: category.value,
-          ...(selectAll.value
+          ...(moduleMode.value && modules
             ? {
-                selectAll: true,
-                excludeIds: [...excluded.value],
-                condition: cloneDeep(condition.value),
+                moduleMaps: cloneDeep(modules.maps.value),
+                condition: {
+                  search: query.value.search,
+                  priority: query.value.priority,
+                  folder: "all",
+                },
               }
-            : { caseIds: [...selected.value] }),
+            : selectAll.value
+              ? {
+                  selectAll: true,
+                  excludeIds: [...excluded.value],
+                  condition: cloneDeep(condition.value),
+                }
+              : { caseIds: [...selected.value] }),
         },
   );
   const pageSelected = computed(() =>
-    selectAll.value
-      ? selectedPageIds(pageIds.value, excluded.value)
-      : selected.value,
+    moduleMode.value && modules
+      ? modules.pageSelected.value
+      : selectAll.value
+        ? selectedPageIds(pageIds.value, excluded.value)
+        : selected.value,
   );
   const ready = computed(
     () =>
@@ -59,6 +81,7 @@ export function usePlanCandidateSelection(
   );
   function clear() {
     ++sequence;
+    if (modules) modules.maps.value = {};
     selected.value = [];
     excluded.value = [];
     selectAll.value = false;
@@ -68,6 +91,10 @@ export function usePlanCandidateSelection(
   }
   function all() {
     if (working.value) return;
+    if (moduleMode.value && modules) {
+      modules.check(query.value.folder || "all", true);
+      return;
+    }
     condition.value = cloneDeep(query.value);
     selected.value = [];
     excluded.value = [];
@@ -75,6 +102,10 @@ export function usePlanCandidateSelection(
   }
   function current() {
     if (working.value) return;
+    if (moduleMode.value && modules) {
+      modules.current(query.value.folder || "all");
+      return;
+    }
     selected.value = selectAll.value
       ? [...pageIds.value]
       : [...new Set([...selected.value, ...pageIds.value])];
@@ -83,6 +114,10 @@ export function usePlanCandidateSelection(
   }
   function keysChanged(keys: string[]) {
     if (working.value) return;
+    if (moduleMode.value && modules) {
+      modules.keysChanged(keys);
+      return;
+    }
     if (selectAll.value)
       excluded.value = pageExclusions(excluded.value, pageIds.value, keys);
     else selected.value = [...keys];
@@ -123,12 +158,23 @@ export function usePlanCandidateSelection(
     flush: "sync",
   });
   watch(
-    () => JSON.stringify(query.value),
+    () =>
+      JSON.stringify(
+        moduleMode.value
+          ? {
+              search: query.value.search,
+              priority: query.value.priority,
+              filters: query.value.filters,
+              mine: query.value.mine,
+            }
+          : query.value,
+      ),
     () => {
-      if (selectAll.value) clear();
+      if (moduleMode.value || selectAll.value) clear();
     },
     { flush: "sync" },
   );
+  watch(moduleMode, clear, { flush: "sync" });
   watch(
     () => JSON.stringify(request.value),
     () => {
@@ -136,6 +182,16 @@ export function usePlanCandidateSelection(
     },
   );
   return {
+    modules,
+    moduleMode,
+    scopeAll: computed(() =>
+      moduleMode.value && modules
+        ? modules.checked(query.value.folder || "all")
+        : selectAll.value,
+    ),
+    checkModule: (key: string, checked: boolean) => {
+      if (!working.value && modules) modules.check(key, checked);
+    },
     selected,
     selectAll,
     excluded,

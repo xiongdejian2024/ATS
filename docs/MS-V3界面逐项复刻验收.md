@@ -608,3 +608,17 @@
 - **完整目标仍在进行**：本部分完成当前筛选范围的三分类表头全选与排除。官方左侧多模块勾选组合、跨项目候选/同步对应API等完整关联流程，API/场景主工作区与完整原生编辑/执行/报告，以及原矩阵的评审/计划首页/报告高级个人视图、模板、列宽、脑图、菜单、富文本/附件和报告分析等仍须继续对照；不把本部分验收作为百分之百完成。
 
 本部分官方依据：[三分类关联与模块选择](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-associate-case/index.vue)、[跨页模块选择](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-associate-case/useModuleSelection.ts)、[表头范围及排除](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-table/useTable.ts)。
+
+## 第四十八部分变更日志：关联窗口多模块组合与勾选联动
+
+- 继续对照固定 `v3.6.9-lts` 提交 `d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51`。左侧增加全部模块、父子模块及未分配模块的复选框；勾选父节点按完整目录展开，不受模块搜索隐藏影响。浏览模块和勾选范围独立，跨模块、跨页保留排除项及逐条选择，行选择与模块全选/半选相互回显。
+- 新增严格 `moduleMaps` 契约和独立模块解析服务，沿用现有 SQLAlchemy、Vue、lodash-es、Ant Design，无新依赖。模块ID表示精确归属；全模块入口可按具体模块覆盖，父子用例不会重复计数。服务端返回精确模块总量和已选量，已有旧式关联从可选范围排除；树实例继续允许重复关联，自动化范围沿用完整测试套验证。
+- 基础搜索及等级改变清除组合；目录浏览、模块搜索、刷新和分页保留组合。高级/个人视图沿用上一部分筛选范围模式，切换时清除旧组合。客户端不获取所有页ID、不提交可信计数。每批上限10000，超限明确拒绝；逐条选择的用例若被移动、回收或改变分类，整批拒绝。范围全选在项目锁内重新读取当前模块和用例；动态空范围409，外部或已删除模块404，写入失败原子回滚。
+- 新增后端7项模块专项，覆盖父子精确并集、两页排除、全部入口子模块覆盖、未分配、搜索字面量、API/场景、模块移动、外部实体与权限、严格参数、提交失败回滚、预览后新增及真实10001/10000边界。最终后端全量 **294项通过**（135.08秒，17项既有警告）。前端新增5项选择联动测试，完整 **86项/24文件通过**，严格类型检查和生产构建通过（12.06秒，既有包体提示）。首轮测试两处预期未计入既有样本及原异常类型，已修正，失败堆栈保留。证据 `logs/第48部分后端最终全量.log`、`logs/第48部分模块最终专项.log`、`logs/第48部分前端模块单元.log`、`logs/第48部分前端最终类型.log`、`logs/第48部分前端构建.log`。
+- 新增 `scripts/verify_plan_candidate_modules_mysql.py`：独立临时真实MySQL建立旧快照预览，另一事务修改并持有项目锁，确认真实锁等待后放行。七轮覆盖模块移动、回收、新增用例、父链改变、逐条归属改变、模块删除和全部入口取消子模块；锁内读取实际新范围并回滚。相同组合并发200/409单胜，精确24条关系，无重复、版本及节点任务均0。精简验收脚本样本后重新验证通过，临时库和临时授权均已回收。证据 `logs/第48部分MySQL验收.log`、`logs/第48部分MySQL最终输出.log`。
+- 浏览器复用空间30与隔离13313/18813。独立项目29功能/3API/3场景：功能父子组合24条，首页和第二页分别排除22/01号后22条；加入另一个模块及未分配后26条，跨模块浏览/模块搜索隐藏/表头当前页/刷新均保留其他范围，父子正确半选。范围预览断网禁止关联，重试恢复26条；关联断网保留范围，恢复后延迟保存时全部模块、取消、关闭和Escape锁定。API和场景分别验证全模块3、取消父子1、勾回3、排除00号后2，并实际保存。
+- 实际库精确复核 **31条关系=原1+功能26+API2+场景2**，无重复，排除functional01/22、api00、scenario00均未新增，无新节点任务。初次浏览器定位遇到下拉过渡、菜单终端文字匹配及跨上下文变量问题，已按现场DOM与传入JSON参数修正；完整错误堆栈在工具输出，事实验收记录见 `logs/第48部分浏览器验收.log`、`logs/第48部分复核输出.log`。1440px桌面和390px窄屏稳定截图已查看：整页宽390、底栏16—374，全部模块/父子半选/另一个模块与未分配勾选及取消/关联按钮完整。第一次缩放截图在抽屉过渡中，稳定后重新截图；原生截图也捕获了勾选过渡，不作为稳定视觉验收依据。稳定截图 `/tmp/ats-ms48-modules-desktop.png`、`/tmp/ats-ms48-modules-mobile.png`。
+- 正式API加载 `moduleMaps` 和严格模块选择契约，完整73表计数前后一致：100用例、7计划、28历史任务、0活动任务、在线Agent1；健康与主要页面HTTP200。仅更新API，不运行真实台架或模型，原Agent和worker继续运行，无新表。独立项目、35候选及其全部关联/原生配置/定义/环境/版本已按外键精确清理，73表恢复基线，原31用例与历史保留。证据 `logs/第48部分正式服务.log`、`logs/第48部分正式基线.json`、`logs/第48部分清理结果.log`。
+- **完整目标仍在进行**：本部分补齐当前项目关联窗口的多模块组合；跨项目候选、同步对应API、API定义/用例双模式，以及原矩阵其余评审、计划首页、原生用例主工作区、执行/报告、模板、列宽、脑图、富文本/附件和分析等继续逐项对照，不把局部验收作为百分之百完成。
+
+本部分官方依据：[关联窗口](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-associate-case/index.vue)、[模块树递归与半选](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-associate-case/useTreeSelection.ts)、[行选择和模块联动](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-associate-case/useModuleSelection.ts)、[模块请求结构](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-associate-case/types.ts)。

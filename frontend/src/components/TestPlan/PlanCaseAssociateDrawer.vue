@@ -30,6 +30,15 @@
           :maxlength="255"
         />
         <div class="folder-all">
+          <a-checkbox
+            aria-label="勾选全部关联模块"
+            :checked="selection.modules?.checked('all')"
+            :indeterminate="selection.modules?.halfChecked('all')"
+            :disabled="moduleSelectionDisabled"
+            @change="
+              (event: any) => selection.checkModule('all', event.target.checked)
+            "
+          />
           <a-button :disabled="locked" type="text" @click="selectFolder('all')"
             >全部用例 ({{ data?.counts.all || 0 }})</a-button
           ><a-button
@@ -45,7 +54,14 @@
           /></a-button>
         </div>
         <a-tree
-          :disabled="locked"
+          :disabled="moduleSelectionDisabled"
+          checkable
+          check-strictly
+          :checked-keys="selection.modules?.treeChecked.value"
+          @check="
+            (_keys: unknown, info: any) =>
+              selection.checkModule(String(info.node.key), info.checked)
+          "
           :tree-data="moduleTree"
           :selected-keys="[folder]"
           :expanded-keys="expanded"
@@ -60,12 +76,24 @@
             ><span class="module-count">{{ node.count }}</span></template
           ></a-tree
         >
-        <a-button
-          :disabled="locked"
-          type="text"
-          @click="selectFolder('unassigned')"
-          >未分配模块 ({{ data?.counts.unassigned || 0 }})</a-button
-        >
+        <div class="folder-unassigned">
+          <a-checkbox
+            aria-label="勾选未分配关联模块"
+            :checked="selection.modules?.checked('unassigned')"
+            :indeterminate="selection.modules?.halfChecked('unassigned')"
+            :disabled="moduleSelectionDisabled"
+            @change="
+              (event: any) =>
+                selection.checkModule('unassigned', event.target.checked)
+            "
+          />
+          <a-button
+            :disabled="locked"
+            type="text"
+            @click="selectFolder('unassigned')"
+            >未分配模块 ({{ data?.counts.unassigned || 0 }})</a-button
+          >
+        </div>
       </aside>
       <main>
         <div class="search-toolbar">
@@ -129,7 +157,7 @@
           >
         </a-alert>
         <a-table
-          v-else
+          v-if="!failed"
           :data-source="data?.items || []"
           :columns="columns"
           row-key="id"
@@ -337,6 +365,23 @@ const selection = usePlanCandidateSelection(
   activeCategory,
   appliedCondition,
   selectablePageIds,
+  {
+    enabled: computed(() => !advanced.value),
+    modules: computed(() => data.value?.modules || []),
+    rows: computed(() =>
+      (data.value?.items || []).filter(
+        (row) => data.value?.usesTree || !row.alreadyLinked,
+      ),
+    ),
+  },
+);
+const moduleSelectionDisabled = computed(
+  () =>
+    locked.value ||
+    loading.value ||
+    failed.value ||
+    selection.loading.value ||
+    !props.canEdit,
 );
 watch(
   locked,
@@ -420,10 +465,16 @@ const rowSelection = computed(() => ({
   columnWidth: 56,
   columnTitle: () =>
     h(ReviewSelectionHeader, {
-      count: selection.summary.value?.count || 0,
-      total: data.value?.total || 0,
-      all: selection.selectAll.value,
-      excludedCount: selection.excluded.value.length,
+      count: selection.moduleMode.value
+        ? selection.pageSelected.value.length
+        : selection.summary.value?.count || 0,
+      total: selection.moduleMode.value
+        ? selectablePageIds.value.length
+        : data.value?.total || 0,
+      all: selection.scopeAll.value,
+      excludedCount: selection.moduleMode.value
+        ? 0
+        : selection.excluded.value.length,
       disabled:
         locked.value ||
         loading.value ||
@@ -616,8 +667,12 @@ onBeforeRouteUpdate(allowNavigation);
 }
 .folder-all {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   margin-top: 8px;
+}
+.folder-unassigned {
+  display: flex;
+  align-items: center;
 }
 .module-count {
   float: right;

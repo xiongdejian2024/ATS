@@ -14,12 +14,34 @@ class CandidateCondition(ScopeRequest):
     mine: StrictBool = False
 
 
+class CandidateModuleSelection(ScopeRequest):
+    selectAll: StrictBool = False
+    selectIds: list[str] = Field(default_factory=list, max_length=10000)
+    excludeIds: list[str] = Field(default_factory=list, max_length=10000)
+
+    @field_validator('selectIds', 'excludeIds')
+    @classmethod
+    def unique_ids(cls, values):
+        if any(not value.strip() or value != value.strip() or len(value) > 36 for value in values):
+            raise ValueError('用例ID须为1到36字符且不含首尾空白')
+        if len(values) != len(set(values)):
+            raise ValueError('用例ID不能重复')
+        return values
+
+    @model_validator(mode='after')
+    def mode(self):
+        if self.selectAll and self.selectIds or not self.selectAll and self.excludeIds:
+            raise ValueError('模块全选与逐条选择不能混用')
+        return self
+
+
 class CandidateSelection(ScopeRequest):
     category: Category = 'functional'
     selectAll: StrictBool = False
     caseIds: list[str] = Field(default_factory=list, max_length=10000)
     excludeIds: list[str] = Field(default_factory=list, max_length=10000)
     condition: CandidateCondition = Field(default_factory=CandidateCondition)
+    moduleMaps: dict[str, CandidateModuleSelection] | None = None
 
     @field_validator('caseIds', 'excludeIds')
     @classmethod
@@ -32,7 +54,21 @@ class CandidateSelection(ScopeRequest):
 
     @model_validator(mode='after')
     def selection_mode(self):
-        if self.selectAll:
+        if self.moduleMaps is not None:
+            if not self.moduleMaps or len(self.moduleMaps) > 10000:
+                raise ValueError('请选择1到10000个模块范围')
+            if self.selectAll or self.caseIds or self.excludeIds:
+                raise ValueError('模块选择不能混用旧选择范围')
+            if self.condition.folder != 'all' or self.condition.filters is not None or self.condition.mine:
+                raise ValueError('模块组合仅支持全目录基础筛选')
+            if any(not key.strip() or key != key.strip() or len(key) > 36 for key in self.moduleMaps):
+                raise ValueError('模块ID须为1到36字符且不含首尾空白')
+            if 'all' in self.moduleMaps and not self.moduleMaps['all'].selectAll:
+                raise ValueError('全部模块入口只能全选')
+            ids = [value for entry in self.moduleMaps.values() for value in entry.selectIds + entry.excludeIds]
+            if len(ids) > 10000 or len(set(ids)) != len(ids):
+                raise ValueError('模块用例ID不能重复且总数不能超过10000')
+        elif self.selectAll:
             if self.caseIds:
                 raise ValueError('范围全选不能混用逐条用例ID')
             from fastapi import HTTPException

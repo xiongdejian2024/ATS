@@ -34,7 +34,11 @@ def resolve(db, plan, user, selection, *, writing=False):
     if writing and workspace and workspace.archived:
         raise HTTPException(409, '归档计划不可修改关联')
     excluded_count = 0
-    if selection.selectAll:
+    module_summary = {}
+    if selection.moduleMaps is not None:
+        from services.plan_candidate_modules import resolve_modules
+        cases, excluded_count, module_summary = resolve_modules(db, plan, selection, relations, uses_tree, current_read=writing)
+    elif selection.selectAll:
         condition = selection.condition
         if condition.filters is not None or condition.mine:
             from services.plan_candidate_filter import filter_cases
@@ -63,15 +67,16 @@ def resolve(db, plan, user, selection, *, writing=False):
         cases = [c for c in cases if c.id not in excluded]
     if len(cases) > LIMIT:
         raise HTTPException(422, '每批最多关联10000条用例，请缩小筛选范围')
-    if writing and selection.selectAll and not cases:
+    if writing and (selection.selectAll or selection.moduleMaps is not None) and not cases:
         raise HTTPException(409, '当前范围已无可关联用例，请刷新后重新选择')
     automated = [c for c in cases if c.is_automated]
     compatible = [s.id for s in suites if all(c.id in (s.case_ids or []) for c in automated)]
     summary = dict(count=len(cases), excludedCount=excluded_count, automatedCount=len(automated),
                    usesTree=uses_tree, compatibleSuiteIds=compatible,
                    canAssociate=project_allows(db, user, project, 'test_plan:update') and not bool(workspace and workspace.archived))
+    summary.update(module_summary)
     if writing:
-        logger.info('计划关联范围已在锁内解析：计划={}，分类={}，全选={}，数量={}，排除={}', plan.id, selection.category, selection.selectAll, len(cases), excluded_count)
+        logger.info('计划关联范围已在锁内解析：计划={}，分类={}，全选={}，模块组合={}，数量={}，排除={}', plan.id, selection.category, selection.selectAll, selection.moduleMaps is not None, len(cases), excluded_count)
     return cases, summary, suites, relations
 
 

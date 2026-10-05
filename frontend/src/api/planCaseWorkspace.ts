@@ -76,14 +76,22 @@ export interface CandidateCondition {
   };
   mine?: boolean;
 }
+export interface CandidateModuleSelection {
+  selectAll: boolean;
+  selectIds: string[];
+  excludeIds: string[];
+}
 export interface CandidateSelection {
   category: "functional" | "api" | "scenario";
   selectAll?: boolean;
   caseIds?: string[];
   excludeIds?: string[];
   condition?: CandidateCondition;
+  moduleMaps?: Record<string, CandidateModuleSelection>;
 }
 export interface CandidateSelectionPreview {
+  moduleCounts?: Record<string, { total: number; selected: number }>;
+  eligibleCount?: number;
   count: number;
   excludedCount: number;
   automatedCount: number;
