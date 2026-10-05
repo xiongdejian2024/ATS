@@ -106,10 +106,7 @@
           <span class="module-heading">{{ tableTitle }}</span>
           <a-space :size="4">
             <a-dropdown><a-button type="text" aria-label="用例更多操作" title="更多操作"><MoreOutlined /></a-button><template #overlay><a-menu><a-menu-item @click="handleExport({key:'excel'})">导出 Excel</a-menu-item><a-menu-item @click="handleExport({key:'xmind'})">导出 XMind</a-menu-item><a-menu-item @click="templateVisible=true">模板字段</a-menu-item></a-menu></template></a-dropdown>
-            <a-popover v-model:open="columnSettingVisible" trigger="click" placement="bottomRight" title="列设置">
-              <template #content><div style="width:200px"><a-checkbox-group v-model:value="visibleColumnKeys" :options="columnOptions" style="display:flex;flex-direction:column;gap:8px" /><a-divider style="margin:12px 0" /><a-space><a-button size="small" @click="resetColumnSettings">重置</a-button><a-button size="small" type="primary" @click="saveColumnSettings">保存</a-button></a-space></div></template>
-              <a-button type="text" aria-label="用例列设置" title="列设置"><SettingOutlined /></a-button>
-            </a-popover>
+            <a-button v-if="viewLayout === 'list'" type="text" aria-label="用例表格设置" title="表格设置" @click="columnSettingVisible=true"><SettingOutlined /></a-button>
           </a-space>
         </div>
 
@@ -126,7 +123,7 @@
               :row-selection="rowSelection"
               :pagination="false"
               row-key="id"
-              :scroll="{ x: 1500 }"
+              :scroll="{ x: tableWidth }"
               @change="handleTableChange"
               size="middle"
             >
@@ -278,6 +275,7 @@
             v-model:page-size="pagination.pageSize"
             :total="pagination.total"
             :show-size-changer="true"
+            :page-size-options="pageSizes.map(String)"
             :show-quick-jumper="true"
             :show-total="paginationTotal"
             @change="handlePaginationChange"
@@ -287,6 +285,7 @@
         </div>
       </a-layout-content>
     </a-layout>
+  <TableDisplaySettings :open="columnSettingVisible" :definitions="displayDefinitions" :columns="tableDisplay.columns" :page-size="pagination.pageSize" :include-descendants="tableDisplay.includeDescendants" :error="tableSettingsError" show-mode @close="saveTableColumns" @page-size-change="setTablePageSize" @descendants-change="setSubdirectory" />
 
     <!-- 详情抽屉 -->
     <a-drawer
@@ -348,6 +347,8 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch, createVNode } f
 import { useRoute, useRouter } from 'vue-router';
 import { message, Modal, Input } from 'ant-design-vue';
 import { LeftOutlined, RightOutlined, PlusOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
+import TableDisplaySettings from '@/components/Table/TableDisplaySettings.vue'
+import { readDisplay, normalizeDisplay, displayStorageKey, pageSizes, type DisplayColumn, type TableDisplay, type ColumnVisibility } from '@/components/Table/tableDisplay'
 import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
 import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
 import ImportCasesModal from '@/components/TestCase/ImportCasesModal.vue'
@@ -609,12 +610,12 @@ const pagination = reactive({
 })
 
 // 所有可用的表格列定义
-const allColumns = [
+const baseColumns = [
   {
     title: 'ID',
     dataIndex: 'id',
     key: 'id',
-    width: 120,
+    width: 150,
     sorter: true,
     ellipsis: true,
     defaultVisible: true
@@ -623,7 +624,7 @@ const allColumns = [
     title: '用例名称',
     dataIndex: 'name',
     key: 'name',
-    width: 250,
+    width: 180,
     sorter: true,
     ellipsis: true,
     defaultVisible: true
@@ -632,7 +633,7 @@ const allColumns = [
     title: '用例等级',
     dataIndex: 'priority',
     key: 'level',
-    width: 100,
+    width: 150,
     filters: [
       { text: 'P0', value: 'P0' },
       { text: 'P1', value: 'P1' },
@@ -645,7 +646,7 @@ const allColumns = [
     title: '评审结果',
     dataIndex: 'reviewResult',
     key: 'reviewResult',
-    width: 100,
+    width: 150,
     filters: [
       { text: '未评审', value: 'not_reviewed' },
       { text: '待评审', value: 'pending' },
@@ -659,7 +660,7 @@ const allColumns = [
     title: '执行结果',
     dataIndex: 'status',
     key: 'executionResult',
-    width: 100,
+    width: 150,
     filters: [
       { text: '未执行', value: 'not_executed' },
       { text: '成功', value: 'passed' },
@@ -673,7 +674,7 @@ const allColumns = [
     title: '所属模块',
     dataIndex: 'modulePath',
     key: 'modulePath',
-    width: 150,
+    width: 200,
     ellipsis: true,
     defaultVisible: true
   },
@@ -681,9 +682,9 @@ const allColumns = [
     title: '标签',
     dataIndex: 'tags',
     key: 'tags',
-    width: 120,
+    width: 300,
     ellipsis: true,
-    defaultVisible: false
+    defaultVisible: true
   },
   {
     title: '是否自动化',
@@ -695,15 +696,15 @@ const allColumns = [
       { text: '是', value: true },
       { text: '否', value: false }
     ],
-    defaultVisible: true
+    defaultVisible: false
   },
   {
     title: '创建人',
     dataIndex: 'createdByName',
     key: 'createdBy',
-    width: 100,
+    width: 200,
     ellipsis: true,
-    defaultVisible: false
+    defaultVisible: true
   },
   {
     title: '创建时间',
@@ -711,13 +712,13 @@ const allColumns = [
     key: 'createdAt',
     width: 200,
     sorter: true,
-    defaultVisible: false
+    defaultVisible: true
   },
   {
     title: '更新人',
     dataIndex: 'updatedByName',
     key: 'updatedBy',
-    width: 100,
+    width: 200,
     ellipsis: true,
     defaultVisible: true
   },
@@ -731,58 +732,67 @@ const allColumns = [
   }
 ]
 
+const defaultColumnOrder = ['id','name','level','reviewResult','executionResult','modulePath','tags','updatedBy','updatedAt','createdBy','createdAt','isAutomated']
+const allColumns = defaultColumnOrder.map(key=>baseColumns.find(column=>column.key===key)!)
+
 // 操作列（始终显示）
 const actionColumn = {
   title: '操作',
   key: 'actions',
-  width: 150,
+  width: 140,
   fixed: 'right' as const
 }
 
-// 可选列的 key 列表（用于复选框）
-const columnOptions = allColumns.map(col => ({
-  label: col.title,
-  value: col.key
-}))
-
-// 当前选中显示的列（从 localStorage 读取或使用默认值）
-const getInitialVisibleColumns = () => {
-  const saved = localStorage.getItem('testCaseVisibleColumns')
-  if (saved) {
-    try {
-      return JSON.parse(saved)
-    } catch (error) {
-      console.error('读取列配置失败',error)
-      return allColumns.filter(col => col.defaultVisible).map(col => col.key)
-    }
-  }
-  return allColumns.filter(col => col.defaultVisible).map(col => col.key)
-}
-
-const visibleColumnKeys = ref<string[]>(getInitialVisibleColumns())
-
-// 列设置弹窗可见性
-const columnSettingVisible = ref(false)
-
-// 动态计算显示的列
-const columns = computed(() => {
-  const visibleCols = allColumns.filter(col => visibleColumnKeys.value.includes(col.key))
-  return [...visibleCols, { ...actionColumn, fixed: isNarrowScreen.value ? undefined : actionColumn.fixed }]
+// 显示偏好与当前用户、项目隔离；列表字段只保存编号及可见状态。
+const displayDefinitions: DisplayColumn[] = allColumns.map(column=>({key:column.key,title:column.title,required:['id','name'].includes(column.key),defaultVisible:column.defaultVisible}))
+const tableStorageKey = computed(()=>displayStorageKey(userStore.user?.id || '',projectId.value,'test-cases'))
+const tableDisplay = ref<TableDisplay>(readDisplay(localStorage,tableStorageKey.value,displayDefinitions))
+pagination.pageSize = tableDisplay.value.pageSize
+const columnSettingVisible = ref(false), tableSettingsError = ref('')
+const columns = computed(()=>{
+  const definitions = new Map(allColumns.map(column=>[column.key,column]))
+  const shown = tableDisplay.value.columns.filter(column=>column.visible).map(column=>definitions.get(column.key)!)
+  return [...shown,{...actionColumn,fixed:isNarrowScreen.value ? undefined : actionColumn.fixed}]
 })
-
-// 保存列设置
-const saveColumnSettings = () => {
-  localStorage.setItem('testCaseVisibleColumns', JSON.stringify(visibleColumnKeys.value))
-  columnSettingVisible.value = false
-  message.success('列设置已保存')
+const tableWidth = computed(()=>columns.value.reduce((width,column)=>width+column.width,50))
+function persistTableDisplay(next:TableDisplay):boolean {
+  try {
+    const normalized=normalizeDisplay(next,displayDefinitions)
+    localStorage.setItem(tableStorageKey.value,JSON.stringify(normalized))
+    tableDisplay.value=normalized
+    tableSettingsError.value=''
+    console.info('测试用例表格显示配置已保存',{projectId:projectId.value,pageSize:normalized.pageSize,includeDescendants:normalized.includeDescendants})
+    return true
+  } catch(error) {
+    console.error('保存测试用例表格配置失败',error)
+    tableSettingsError.value='保存失败，请检查浏览器存储后重试'
+    message.error(tableSettingsError.value)
+    return false
+  }
 }
-
-// 重置列设置
-const resetColumnSettings = () => {
-  visibleColumnKeys.value = allColumns.filter(col => col.defaultVisible).map(col => col.key)
-  localStorage.removeItem('testCaseVisibleColumns')
-  message.success('已重置为默认列')
+function saveTableColumns(columns:ColumnVisibility[]) {
+  if(persistTableDisplay({...tableDisplay.value,columns}))columnSettingVisible.value=false
 }
+function setTablePageSize(pageSize:number) {
+  if(!pageSizes.includes(pageSize) || !persistTableDisplay({...tableDisplay.value,pageSize}))return
+  pagination.pageSize=pageSize
+  pagination.current=1
+  void loadTestCases()
+}
+function setSubdirectory(includeDescendants:boolean) {
+  if(!persistTableDisplay({...tableDisplay.value,includeDescendants}))return
+  pagination.current=1
+  void loadTestCases()
+}
+watch(tableStorageKey,()=>{
+  columnSettingVisible.value=false
+  tableSettingsError.value=''
+  tableDisplay.value=readDisplay(localStorage,tableStorageKey.value,displayDefinitions)
+  pagination.pageSize=tableDisplay.value.pageSize
+  pagination.current=1
+  testCases.value=[]
+  void loadTestCases()
+})
 
 // 生成用例显示ID
 const getCaseDisplayId = (record: TestCase, index: number) => {
@@ -981,9 +991,11 @@ const getModuleAndChildrenIds = (moduleId: string): string[] => {
   return result
 }
 
-// 加载测试用例列表
+// 加载测试用例列表，旧项目响应不能覆盖当前项目。
+let caseListSequence = 0
 const loadTestCases = async () => {
-  if (!projectId.value) return
+  const currentProject=projectId.value, request=++caseListSequence
+  if (!currentProject) return
 
     loading.value = true
   try {
@@ -997,7 +1009,7 @@ const loadTestCases = async () => {
     }
 
     if(selectedModuleKeys.value.includes('unplanned')) params.moduleId='null'
-    else if(!selectedModuleKeys.value.includes('all')){const ids=selectedModuleKeys.value.filter(k=>!k.startsWith('case_')).flatMap(getModuleAndChildrenIds);if(ids.length)params.moduleIds=[...new Set(ids)].join(',')}
+    else if(!selectedModuleKeys.value.includes('all')){const ids=selectedModuleKeys.value.filter(k=>!k.startsWith('case_')).flatMap(key=>tableDisplay.value.includeDescendants ? getModuleAndChildrenIds(key) : [key]);if(ids.length)params.moduleIds=[...new Set(ids)].join(',')}
 
     // 旧版筛选条件（兼容性）
     if (filters.level) {
@@ -1016,15 +1028,16 @@ const loadTestCases = async () => {
     params.sortOrder = sortOrder.value
 
     console.log('调用 getTestCases API，参数:', params)
-    const response = await testCaseApi.getTestCases(projectId.value, params)
+    const response = await testCaseApi.getTestCases(currentProject, params)
+    if(request!==caseListSequence || currentProject!==projectId.value)return
     console.log('API 返回结果:', { total: response.total, itemsCount: response.items?.length })
     testCases.value = response.items || []
     pagination.total = response.total || 0
   } catch (error) {
-    console.error('Failed to load test cases:', error)
-    message.error('加载测试用例失败')
+    console.error('加载测试用例失败', error)
+    if(request===caseListSequence && currentProject===projectId.value) message.error('加载测试用例失败')
   } finally {
-    loading.value = false
+    if(request===caseListSequence) loading.value = false
   }
 }
 
@@ -1143,6 +1156,7 @@ const handleTableChange = (_pag: any, _filters: any, sorter: any) => {
 
 // 处理分页变化
 const handlePaginationChange = (page: number, pageSize: number) => {
+  if(pageSize!==tableDisplay.value.pageSize && !persistTableDisplay({...tableDisplay.value,pageSize})){pagination.pageSize=tableDisplay.value.pageSize;return}
   pagination.current = page
   pagination.pageSize = pageSize
   loadTestCases()
@@ -1270,7 +1284,7 @@ const confirmExport=async(options:{format:string;layout:string;fields:string})=>
     const params:Record<string,unknown>={...options,search:searchValue.value,priority:filters.level,status:filters.executionResult,reviewStatus:filters.reviewResult,mine:viewMode.value==='my',followed:viewMode.value==='followed',sortBy:sortBy.value,sortOrder:sortOrder.value}
     if(selectedRowKeys.value.length)params.caseIds=selectedRowKeys.value.join(',')
     else if(selectedModuleKeys.value.includes('unplanned'))params.moduleId='null'
-    else if(!selectedModuleKeys.value.includes('all'))params.moduleIds=[...new Set(selectedModuleKeys.value.filter(k=>!k.startsWith('case_')).flatMap(getModuleAndChildrenIds))].join(',')
+    else if(!selectedModuleKeys.value.includes('all'))params.moduleIds=[...new Set(selectedModuleKeys.value.filter(k=>!k.startsWith('case_')).flatMap(key=>tableDisplay.value.includeDescendants ? getModuleAndChildrenIds(key) : [key]))].join(',')
     if(advancedFilters.value.length)params.filters={conditions:advancedFilters.value,logic:filterLogic.value}
     saveCaseBlob(await testCaseApi.exportCases(projectId.value,params),`测试用例_${new Date().toISOString().slice(0,10)}.${params.format}`)
     message.success('导出文件已生成');exportVisible.value=false

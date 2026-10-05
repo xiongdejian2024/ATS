@@ -14,6 +14,12 @@
       show-icon
       class="settings-error"
     />
+    <template v-if="showMode">
+      <div class="setting-title">模式设置</div>
+      <a-radio-group value="drawer" class="detail-mode" button-style="solid">
+        <a-radio-button value="drawer">抽屉</a-radio-button>
+      </a-radio-group>
+    </template>
     <div class="setting-title">每页显示数量</div>
     <a-radio-group
       :value="pageSize"
@@ -106,6 +112,7 @@ const props = defineProps<{
   pageSize: number;
   includeDescendants: boolean;
   error?: string;
+  showMode?: boolean;
 }>();
 const emit = defineEmits<{
   close: [columns: ColumnVisibility[]];
@@ -153,6 +160,9 @@ watch(
   width: 289px;
   max-width: 100%;
   margin-top: 8px;
+}
+.detail-mode {
+  margin: 8px 0 16px;
 }
 .page-size-options :deep(.ant-radio-button-wrapper) {
   flex: 1;
