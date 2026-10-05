@@ -93,6 +93,7 @@ def main():
         Sessions = sessionmaker(bind=engine)
         from fastapi import HTTPException
         from models.case_governance import (
+            CaseVersion,
             CaseReview,
             CaseReviewItem,
             CaseReviewDecision,
@@ -100,12 +101,14 @@ def main():
         )
         from models.review_workspace import ReviewWorkspace
         from schemas.case_governance import ReviewCreate, ReviewVote, ReviewHeader
+        from schemas.review_workspace import ReviewAssociate
         from services.case_governance import create_review, vote_review
         from services.review_workspace import (
             archive_review,
             workspace,
             list_reviews,
             update_header,
+            associate_cases,
         )
 
         with Sessions() as db:
@@ -125,6 +128,17 @@ def main():
                     project_id="race-project",
                     name="软件用例",
                     case_code="RACE",
+                    type="functional",
+                    steps=[],
+                    created_by=owner.id,
+                )
+            )
+            db.add(
+                TestCase(
+                    id="race-add-case",
+                    project_id="race-project",
+                    name="不能追加的用例",
+                    case_code="RACE-ADD",
                     type="functional",
                     steps=[],
                     created_by=owner.id,
@@ -176,6 +190,41 @@ def main():
             assert edited["startTime"] == "2026-10-05T09:45:01.654321+08:00"
             assert edited["items"][0]["id"] == item_id
             assert edited["items"][0]["decisions"][0]["decision"] == "approved"
+            empty = create_review(
+                db,
+                owner,
+                "race-project",
+                ReviewCreate(
+                    name="追加成功验证", reviewerIds=[owner.id], mode="single"
+                ),
+            )
+            first = associate_cases(
+                db,
+                owner,
+                "race-project",
+                empty.id,
+                ReviewAssociate(caseIds=["race-case"], reviewerIds=[owner.id]),
+            )
+            kept_id = first["items"][0]["id"]
+            vote_review(
+                db,
+                owner,
+                "race-project",
+                empty.id,
+                kept_id,
+                ReviewVote(decision="approved", comment="追加前有效结论"),
+            )
+            appended = associate_cases(
+                db,
+                owner,
+                "race-project",
+                empty.id,
+                ReviewAssociate(caseIds=["race-add-case"], reviewerIds=[owner.id]),
+            )
+            kept = next(item for item in appended["items"] if item["id"] == kept_id)
+            assert len(appended["items"]) == 2 and kept["status"] == "approved"
+            assert kept["decisions"][0]["comment"] == "追加前有效结论"
+            assert appended["status"] == "pending"
             db.commit()
         ready_a, ready_b, start_vote = (
             threading.Event(),
@@ -217,6 +266,36 @@ def main():
                     return rejected, stale
                 raise AssertionError("归档后改投未被拒绝")
 
+        ready_associate = threading.Event()
+
+        def associator():
+            with Sessions() as db:
+                owner = db.get(User, "race-owner")
+                review = db.get(CaseReview, identifier)
+                assert workspace(db, review).archived is False
+                ready_associate.set()
+                assert start_vote.wait(15)
+                try:
+                    associate_cases(
+                        db,
+                        owner,
+                        "race-project",
+                        identifier,
+                        ReviewAssociate(
+                            caseIds=["race-add-case"], reviewerIds=[owner.id]
+                        ),
+                    )
+                except HTTPException as error:
+                    log.exception(
+                        "并发验收捕获追加关联拒绝：状态=%s，原因=%s",
+                        error.status_code,
+                        error.detail,
+                    )
+                    rejected = error.status_code == 409 and "归档" in error.detail
+                    db.rollback()
+                    return rejected
+                raise AssertionError("归档后追加关联未被拒绝")
+
         def archiver():
             with Sessions() as db:
                 owner = db.get(User, "race-owner")
@@ -225,9 +304,11 @@ def main():
                 assert release.wait(15)
                 db.commit()
 
-        with ThreadPoolExecutor(max_workers=2) as workers:
+        with ThreadPoolExecutor(max_workers=3) as workers:
             voting = workers.submit(voter)
             assert ready_a.wait(15)
+            associating = workers.submit(associator)
+            assert ready_associate.wait(15)
             archiving = workers.submit(archiver)
             assert ready_b.wait(15)
             start_vote.set()
@@ -237,14 +318,15 @@ def main():
                     "SELECT COUNT(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON w.REQUESTING_ENGINE_LOCK_ID=l.ENGINE_LOCK_ID WHERE l.OBJECT_SCHEMA="
                     + quote(name)
                 )
-                if count and int(count) > 0:
+                if count and int(count) >= 2:
                     observed = True
                     break
                 time.sleep(0.1)
             release.set()
             archiving.result(15)
             rejected, stale = voting.result(15)
-        assert observed and rejected and stale
+            add_rejected = associating.result(15)
+        assert observed and rejected and stale and add_rejected
         with Sessions() as db:
             review = db.get(CaseReview, identifier)
             assert workspace(db, review).archived is True
@@ -260,6 +342,8 @@ def main():
             )
             assert len(review.name) == 255
             assert workspace(db, review).start_time.microsecond == 654321
+            assert db.query(CaseReviewItem).filter_by(review_id=identifier).count() == 1
+            assert db.query(CaseVersion).count() == 2
             assert db.query(TaskQueue).count() == 0
             owner = db.get(User, "race-owner")
             summary = list_reviews(
@@ -279,6 +363,8 @@ def main():
                 "真实MySQL锁等待": observed,
                 "旧快照仍显示未归档": stale,
                 "改投拒绝": rejected,
+                "归档后追加关联拒绝": add_rejected,
+                "空评审追加与保留有效票": True,
                 "原结论未改变": True,
                 "中文标签搜索": True,
                 "255字符名称与微秒周期": True,

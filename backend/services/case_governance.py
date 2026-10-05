@@ -390,6 +390,22 @@ def review_event(db, review, actor_id, action, detail, item_id=None):
     )
 
 
+def refresh_review_status(db, review):
+    states = [
+        i.status
+        for i in db.query(CaseReviewItem)
+        .filter_by(review_id=review.id)
+        .populate_existing()
+        .with_for_update()
+        .all()
+    ]
+    review.status = (
+        "rejected"
+        if "rejected" in states
+        else ("approved" if all(s == "approved" for s in states) else "pending")
+    )
+
+
 def vote_review(db, user, project_id, review_id, item_id, request):
     review = get_review(db, user, project_id, review_id, lock=True)
     from services.review_workspace import require_mutable
@@ -447,19 +463,7 @@ def vote_review(db, user, project_id, review_id, item_id, request):
         else:
             item.status = "approved" if len(decisions) == len(assigned) else "pending"
         db.flush()
-        states = [
-            i.status
-            for i in db.query(CaseReviewItem)
-            .filter_by(review_id=review.id)
-            .populate_existing()
-            .with_for_update()
-            .all()
-        ]
-        review.status = (
-            "rejected"
-            if "rejected" in states
-            else ("approved" if all(s == "approved" for s in states) else "pending")
-        )
+        refresh_review_status(db, review)
     review.updated_at = beijing_now()
     db.flush()
     logger.info(

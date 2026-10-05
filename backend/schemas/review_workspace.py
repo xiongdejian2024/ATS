@@ -33,3 +33,15 @@ class ReviewCandidateSelection(StrictRequest):
     folder: str = "all"
     priority: Literal["P0", "P1", "P2", "P3"] | None = None
     excludeIds: list[str] = Field(default_factory=list, max_length=10000)
+
+
+class ReviewAssociate(StrictRequest):
+    caseIds: list[str] = Field(min_length=1, max_length=10000)
+    reviewerIds: list[str] = Field(min_length=1, max_length=50)
+
+    @field_validator("caseIds", "reviewerIds")
+    @classmethod
+    def unique_nonempty_ids(cls, values):
+        if any(not value.strip() for value in values) or len(values) != len(set(values)):
+            raise ValueError("编号不能为空或重复")
+        return values

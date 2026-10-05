@@ -15,7 +15,9 @@
           :disabled="!projectId"
           @click="openEditor()"
           >新建评审</a-button
-        ><a-button @click="load">刷新</a-button></a-space
+        ><a-button :disabled="associateSaving" @click="load"
+          >刷新</a-button
+        ></a-space
       >
     </header>
     <a-alert v-if="!projectId" message="请选择项目" type="info" />
@@ -29,12 +31,27 @@
                   followed ? "取消关注" : "关注"
                 }}</a-button
                 ><a-button
-                  v-if="canManage && !active.archived"
-                  @click="openEditor(active)"
-                  >编辑</a-button
-                ><a-button v-if="canManage" @click="copyReview">复制</a-button
+                  v-if="
+                    canManage &&
+                    !active.archived &&
+                    !['cancelled', 'superseded'].includes(active.status)
+                  "
+                  :disabled="associateSaving"
+                  @click="associateOpen = true"
+                  >关联用例</a-button
                 ><a-button
                   v-if="canManage && !active.archived"
+                  :disabled="associateSaving"
+                  @click="openEditor(active)"
+                  >编辑</a-button
+                ><a-button
+                  v-if="canManage"
+                  :disabled="associateSaving"
+                  @click="copyReview"
+                  >复制</a-button
+                ><a-button
+                  v-if="canManage && !active.archived"
+                  :disabled="associateSaving"
                   @click="resubmit"
                   >重新提审</a-button
                 ><a-popconfirm
@@ -58,7 +75,7 @@
                   : "多人：每位评审人的末次有效结论均通过才通过"
               }}</span
               ><span
-                >计划周期：{{ active.startTime || "未设置" }} ～
+                >评审周期：{{ active.startTime || "未设置" }} ～
                 {{ active.endTime || "未设置" }}</span
               ></a-space
             >
@@ -148,6 +165,7 @@
                 ><a-button @click="nextItem">下一条</a-button
                 ><a-button
                   v-if="canManage && !active.archived"
+                  :disabled="associateSaving"
                   @click="
                     editCaseId = activeItem.caseId;
                     caseEditorVisible = true;
@@ -251,6 +269,16 @@
         />
       </div>
     </template>
+    <ReviewAssociateDrawer
+      v-if="active"
+      :open="associateOpen"
+      :project-id="projectId"
+      :excluded="active.items.map((item) => item.caseId)"
+      :default-reviewers="active.reviewerIds"
+      :members="members"
+      :save-selection="associateCases"
+      @update:open="associateOpen = $event"
+    />
     <a-modal
       v-model:open="batchVisible"
       title="批量评审"
@@ -288,7 +316,12 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import {
+  useRoute,
+  useRouter,
+  onBeforeRouteLeave,
+  onBeforeRouteUpdate,
+} from "vue-router";
 import { message } from "ant-design-vue";
 import {
   caseGovernanceApi as api,
@@ -300,6 +333,7 @@ import { useUserStore } from "@/stores/user";
 import type { TestCase } from "@/types";
 import { reviewWorkspaceApi } from "@/api/reviewWorkspace";
 import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
+import ReviewAssociateDrawer from "@/components/CaseReview/ReviewAssociateDrawer.vue";
 import TestCaseEdit from "@/components/TestCase/TestCaseEdit.vue";
 const route = useRoute(),
   router = useRouter(),
@@ -322,7 +356,9 @@ const batchVisible = ref(false),
   batchOpinion = ref(""),
   caseEditorVisible = ref(false),
   editCaseId = ref("");
-const canManage = ref(false);
+const canManage = ref(false),
+  associateOpen = ref(false),
+  associateSaving = ref(false);
 const active = computed(() =>
     reviews.value.find((r) => r.id === activeId.value),
   ),
@@ -382,6 +418,7 @@ function historyText(entry: Record<string, any>) {
   return `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · ${entry.action || ""}\n${details.decision ? `${statusName(details.decision)}：${details.comment || ""}` : JSON.stringify(details, null, 2)}`;
 }
 async function run(task: () => Promise<void>) {
+  if (associateSaving.value) return void message.info("正在关联用例，请稍候");
   busy.value = true;
   try {
     await task();
@@ -429,6 +466,45 @@ async function selectReview(id: string) {
   opinion.value = "";
   await router.replace({ query: { projectId: projectId.value, reviewId: id } });
 }
+async function associateCases(data: {
+  caseIds: string[];
+  reviewerIds: string[];
+}) {
+  const p = projectId.value,
+    id = activeId.value;
+  if (
+    !id ||
+    !canManage.value ||
+    active.value?.archived ||
+    associateSaving.value
+  )
+    throw new Error("当前评审不能追加关联");
+  associateSaving.value = true;
+  try {
+    const record = await reviewWorkspaceApi.associate(p, id, data);
+    if (p !== projectId.value || id !== activeId.value)
+      throw new Error("项目或评审已切换，请重新打开详情");
+    replace(record);
+    if (!activeItemId.value) activeItemId.value = record.items[0]?.id;
+    console.info("已向评审追加用例，已有结论与人员保留", {
+      projectId: p,
+      reviewId: id,
+      count: data.caseIds.length,
+    });
+    message.success("用例已关联");
+  } finally {
+    associateSaving.value = false;
+  }
+}
+function canLeaveAssociation() {
+  if (associateSaving.value) {
+    message.info("正在关联用例，请稍候");
+    return false;
+  }
+  return true;
+}
+onBeforeRouteLeave(canLeaveAssociation);
+onBeforeRouteUpdate(canLeaveAssociation);
 async function openEditor(review?: CaseReview) {
   if (!canManage.value) return;
   await router.push({
@@ -577,6 +653,7 @@ watch(
 watch(projectId, async (id) => {
   ++loadSequence;
   canManage.value = false;
+  associateOpen.value = false;
   activeId.value = undefined;
   reviews.value = [];
   selectedItems.value = [];

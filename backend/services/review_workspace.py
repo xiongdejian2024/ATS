@@ -179,7 +179,7 @@ def update_header(db, user, project_id, identifier, request):
         name=review.name,
         reviewerIds=review.reviewer_ids,
         description=review.description,
-        **metadata(db, review)
+        **metadata(db, review),
     )
     review.name, review.description, review.reviewer_ids = (
         request.name,
@@ -201,6 +201,65 @@ def update_header(db, user, project_id, identifier, request):
         "评审基本信息已更新，历史结论保留 project_id={} review_id={} actor_id={}",
         project_id,
         identifier,
+        user.id,
+    )
+    return governance.review_data(db, review)
+
+
+def associate_cases(db, user, project_id, identifier, request):
+    """追加关联只创建新条目，不重建已有分配、快照或评审结论。"""
+    governance.project_access(db, user, project_id, "update")
+    review = governance.get_review(db, user, project_id, identifier, lock=True)
+    require_mutable(db, review)
+    if review.status in {"cancelled", "superseded"}:
+        raise HTTPException(409, "评审已关闭，不能关联用例")
+    items = (
+        db.query(CaseReviewItem)
+        .filter_by(review_id=identifier)
+        .populate_existing()
+        .with_for_update()
+        .all()
+    )
+    if {item.case_id for item in items} & set(request.caseIds):
+        raise HTTPException(409, "包含已关联用例，请刷新后重新选择")
+    if len(items) + len(request.caseIds) > 10000:
+        raise HTTPException(422, "一个评审最多关联10000个用例")
+    eligible = {row["id"] for row in governance.reviewers(db, project_id)}
+    if not set(request.reviewerIds) <= eligible:
+        raise HTTPException(422, "评审人必须属于当前项目且有效")
+    cases = [
+        governance.case_for_project(db, project_id, cid, lock=True)
+        for cid in sorted(request.caseIds)
+    ]
+    if any(case.type in {"api", "scenario"} for case in cases):
+        raise HTTPException(422, "评审仅支持功能用例")
+    for case in cases:
+        version = governance.snapshot_case(db, case, str(user.id), "关联评审时保存版本")
+        db.add(
+            CaseReviewItem(
+                review_id=identifier,
+                case_id=case.id,
+                version_id=version.id,
+                status="pending",
+                reviewer_ids=list(request.reviewerIds),
+            )
+        )
+    db.flush()
+    governance.refresh_review_status(db, review)
+    review.updated_at = beijing_now()
+    governance.review_event(
+        db,
+        review,
+        user.id,
+        "关联用例",
+        {"caseIds": request.caseIds, "reviewerIds": request.reviewerIds},
+    )
+    db.flush()
+    logger.info(
+        "评审追加关联完成，已有结论保留 project_id={} review_id={} count={} actor_id={}",
+        project_id,
+        identifier,
+        len(cases),
         user.id,
     )
     return governance.review_data(db, review)
@@ -290,7 +349,7 @@ def list_reviews(
     reviewer_id=None,
     creator_id=None,
     sort="createdAt",
-    order="desc"
+    order="desc",
 ):
     project = governance.project_access(db, user, project_id)
     modules = module_rows(db, project_id)

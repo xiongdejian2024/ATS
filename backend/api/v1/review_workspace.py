@@ -6,7 +6,13 @@ from sqlalchemy.orm import Session
 from api.deps import get_current_user
 from database import get_db
 from api.v1.case_governance import result, transact
-from schemas.review_workspace import ModuleSave, ConfirmDelete, ReviewMove, ReviewCandidateSelection
+from schemas.review_workspace import (
+    ModuleSave,
+    ConfirmDelete,
+    ReviewMove,
+    ReviewCandidateSelection,
+    ReviewAssociate,
+)
 from services import review_workspace as service
 from schemas.case_governance import ReviewHeader
 
@@ -23,6 +29,19 @@ def update_header(
 ):
     return result(
         transact(db, lambda: service.update_header(db, user, project_id, review_id, body))
+    )
+
+
+@router.post("/{review_id}/associate")
+def associate_cases(
+    project_id: str,
+    review_id: str,
+    body: ReviewAssociate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return result(
+        transact(db, lambda: service.associate_cases(db, user, project_id, review_id, body))
     )
 
 

@@ -54,6 +54,15 @@ export interface ReviewCandidates {
 const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
+  associate: (
+    p: string,
+    id: string,
+    body: { caseIds: string[]; reviewerIds: string[] },
+  ) =>
+    apiClient.post<import("./caseGovernance").CaseReview>(
+      `${base(p)}/${id}/associate`,
+      body,
+    ),
   updateHeader: (p: string, id: string, body: Record<string, unknown>) =>
     apiClient.put<import("./caseGovernance").CaseReview>(
       `${base(p)}/${id}/header`,

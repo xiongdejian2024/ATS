@@ -5,25 +5,34 @@
     width="min(1200px,100vw)"
     destroy-on-close
     @close="close"
-    :mask-closable="!selecting"
-    :closable="!selecting"
+    :mask-closable="!locked"
+    :closable="!locked"
   >
-    <a-radio-group value="functional" class="category"
+    <a-radio-group :disabled="locked" value="functional" class="category"
       ><a-radio-button value="functional"
         >功能用例</a-radio-button
       ></a-radio-group
     >
+    <a-alert
+      v-if="saveError"
+      class="save-error"
+      type="error"
+      :message="saveError"
+      show-icon
+    />
     <div class="associate-layout">
       <aside>
         <a-input
+          :disabled="locked"
           v-model:value="moduleSearch"
           placeholder="搜索模块"
           allow-clear
         />
         <div class="folder-all">
-          <a-button type="text" @click="selectFolder('all')"
+          <a-button :disabled="locked" type="text" @click="selectFolder('all')"
             >全部用例 ({{ data?.counts.all || 0 }})</a-button
           ><a-button
+            :disabled="locked"
             aria-label="展开或收起关联模块"
             type="text"
             @click="
@@ -35,6 +44,7 @@
           /></a-button>
         </div>
         <a-tree
+          :disabled="locked"
           :tree-data="moduleTree"
           :selected-keys="[folder]"
           :expanded-keys="expanded"
@@ -49,19 +59,24 @@
             ><span class="module-count">{{ node.count }}</span></template
           ></a-tree
         >
-        <a-button type="text" @click="selectFolder('unassigned')"
+        <a-button
+          :disabled="locked"
+          type="text"
+          @click="selectFolder('unassigned')"
           >未分配模块 ({{ data?.counts.unassigned || 0 }})</a-button
         >
       </aside>
       <main>
         <div class="search-toolbar">
           <a-input-search
+            :disabled="locked"
             v-model:value="search"
             placeholder="通过 ID / 名称搜索"
             :maxlength="255"
             allow-clear
             @search="resetPage"
           /><a-select
+            :disabled="locked"
             v-model:value="priority"
             placeholder="等级"
             allow-clear
@@ -69,7 +84,9 @@
               ['P0', 'P1', 'P2', 'P3'].map((value) => ({ value, label: value }))
             "
             @change="resetPage"
-          /><a-button :loading="loading" @click="load">刷新</a-button>
+          /><a-button :disabled="locked" :loading="loading" @click="load"
+            >刷新</a-button
+          >
         </div>
         <a-alert
           v-if="failed"
@@ -82,12 +99,12 @@
           ><a-button
             type="link"
             :loading="selecting"
-            :disabled="loading || failed || !data?.total"
+            :disabled="locked || loading || failed || !data?.total"
             @click="selectAll"
             >全选筛选结果</a-button
           ><a-button
             type="link"
-            :disabled="!selected.size || selecting"
+            :disabled="!selected.size || locked"
             @click="selected.clear()"
             >清空选择</a-button
           >
@@ -104,9 +121,9 @@
           ><template #bodyCell="{ column, record }"
             ><template v-if="column.key === 'name'"
               >{{ record.name
-              }}<a-tag v-if="excluded.includes(record.id)"
-                >已选择</a-tag
-              ></template
+              }}<a-tag v-if="excluded.includes(record.id)">{{
+                saveSelection ? "已关联" : "已选择"
+              }}</a-tag></template
             ><a-tag v-else-if="column.key === 'priority'">{{
               record.priority
             }}</a-tag
@@ -124,6 +141,7 @@
         <a-form layout="inline"
           ><a-form-item label="评审人" required
             ><a-select
+              :disabled="locked"
               v-model:value="reviewers"
               mode="multiple"
               show-search
@@ -133,15 +151,12 @@
               :max-tag-count="2"
               style="width: 290px" /></a-form-item></a-form
         ><a-space
-          ><a-button :disabled="selecting" @click="close">取消</a-button
+          ><a-button :disabled="locked" @click="close">取消</a-button
           ><a-button
             type="primary"
+            :loading="saving"
             :disabled="
-              !selected.size ||
-              !reviewers.length ||
-              failed ||
-              loading ||
-              selecting
+              !selected.size || !reviewers.length || failed || loading || locked
             "
             @click="confirm"
             >关联 ({{ selected.size }})</a-button
@@ -166,6 +181,10 @@ const props = defineProps<{
   excluded: string[];
   defaultReviewers: string[];
   members: { id: string; name: string }[];
+  saveSelection?: (data: {
+    caseIds: string[];
+    reviewerIds: string[];
+  }) => Promise<void>;
 }>();
 const emit = defineEmits<{
   "update:open": [boolean];
@@ -175,6 +194,8 @@ const data = ref<ReviewCandidates>(),
   loading = ref(false),
   failed = ref(false),
   selecting = ref(false),
+  saving = ref(false),
+  saveError = ref(""),
   search = ref(""),
   priority = ref<string>(),
   folder = ref("all"),
@@ -184,6 +205,7 @@ const data = ref<ReviewCandidates>(),
   size = ref(20),
   selected = ref(new Set<string>()),
   reviewers = ref<string[]>([]);
+const locked = computed(() => selecting.value || saving.value);
 const moduleTree = computed(() =>
   caseFolderTree(data.value?.modules || [], moduleSearch.value),
 );
@@ -205,7 +227,7 @@ const rowSelection = computed(() => ({
   selectedRowKeys: [...selected.value],
   preserveSelectedRowKeys: true,
   getCheckboxProps: (row: { id: string }) => ({
-    disabled: props.excluded.includes(row.id) || selecting.value,
+    disabled: props.excluded.includes(row.id) || locked.value,
   }),
   onChange: (keys: (string | number)[]) => {
     if (keys.length + props.excluded.length > 10000)
@@ -277,20 +299,31 @@ async function selectAll() {
   }
 }
 function close() {
-  if (selecting.value) return;
+  if (locked.value) return;
   emit("update:open", false);
 }
-function confirm() {
-  if (!reviewers.value.length || !selected.value.size) return;
-  emit("confirm", {
+async function confirm() {
+  if (!reviewers.value.length || !selected.value.size || locked.value) return;
+  const data = {
     caseIds: [...selected.value],
     reviewerIds: [...reviewers.value],
-  });
-  emit("update:open", false);
-  console.info("关联选择已加入评审草稿", {
-    projectId: props.projectId,
-    count: selected.value.size,
-  });
+  };
+  saving.value = true;
+  saveError.value = "";
+  try {
+    if (props.saveSelection) await props.saveSelection(data);
+    else emit("confirm", data);
+    emit("update:open", false);
+    console.info(
+      props.saveSelection ? "评审关联已保存" : "关联选择已加入评审草稿",
+      { projectId: props.projectId, count: data.caseIds.length },
+    );
+  } catch (error) {
+    console.error("保存评审关联失败，保留当前选择", error);
+    saveError.value = "关联失败，请根据提示修正后重试，或刷新列表重新选择";
+  } finally {
+    saving.value = false;
+  }
 }
 watch(
   () => [props.open, props.projectId],
@@ -307,12 +340,16 @@ watch(
     page.value = 1;
     loading.value = false;
     failed.value = false;
+    saveError.value = "";
     void load();
   },
   { immediate: true },
 );
 </script>
 <style scoped>
+.save-error {
+  margin-bottom: 16px;
+}
 .category {
   margin-bottom: 20px;
 }
