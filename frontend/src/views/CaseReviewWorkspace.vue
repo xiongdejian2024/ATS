@@ -28,9 +28,15 @@
                 ><a-button @click="follow">{{
                   followed ? "取消关注" : "关注"
                 }}</a-button
-                ><a-button v-if="canManage && !active.archived" @click="openEditor(active)">编辑</a-button
+                ><a-button
+                  v-if="canManage && !active.archived"
+                  @click="openEditor(active)"
+                  >编辑</a-button
                 ><a-button v-if="canManage" @click="copyReview">复制</a-button
-                ><a-button v-if="canManage && !active.archived" @click="resubmit">重新提审</a-button
+                ><a-button
+                  v-if="canManage && !active.archived"
+                  @click="resubmit"
+                  >重新提审</a-button
                 ><a-popconfirm
                   v-if="
                     canManage && !active.archived && active.status === 'pending'
@@ -52,8 +58,8 @@
                   : "多人：每位评审人的末次有效结论均通过才通过"
               }}</span
               ><span
-                >计划周期：{{ active.startDate || "未设置" }} ～
-                {{ active.endDate || "未设置" }}</span
+                >计划周期：{{ active.startTime || "未设置" }} ～
+                {{ active.endTime || "未设置" }}</span
               ></a-space
             >
             <a-alert
@@ -246,74 +252,6 @@
       </div>
     </template>
     <a-modal
-      v-model:open="editorVisible"
-      :title="editingId ? '编辑评审' : '新建评审'"
-      width="min(900px, 96vw)"
-      :confirm-loading="busy"
-      @ok="saveReview"
-    >
-      <a-form layout="vertical"
-        ><a-form-item label="名称" required
-          ><a-input v-model:value="form.name" :maxlength="200" /></a-form-item
-        ><a-form-item label="说明"
-          ><a-textarea
-            v-model:value="form.description"
-            :rows="2" /></a-form-item
-        ><a-form-item label="评审模式"
-          ><a-radio-group v-model:value="form.mode"
-            ><a-radio value="single">单人：最后一次有效结论</a-radio
-            ><a-radio value="multiple"
-              >多人：全部评审人通过</a-radio
-            ></a-radio-group
-          ></a-form-item
-        ><a-row :gutter="12"
-          ><a-col :span="12"
-            ><a-form-item label="预计开始"
-              ><a-date-picker
-                v-model:value="form.startDate"
-                value-format="YYYY-MM-DD"
-                style="width: 100%" /></a-form-item></a-col
-          ><a-col :span="12"
-            ><a-form-item label="预计结束"
-              ><a-date-picker
-                v-model:value="form.endDate"
-                value-format="YYYY-MM-DD"
-                style="width: 100%" /></a-form-item></a-col></a-row
-        ><a-form-item label="默认评审人" required
-          ><a-select
-            v-model:value="form.reviewerIds"
-            mode="multiple"
-            :options="memberOptions" /></a-form-item
-        ><a-form-item label="关联用例" required
-          ><a-select
-            v-model:value="form.caseIds"
-            mode="multiple"
-            show-search
-            option-filter-prop="label"
-            :options="
-              cases.map((c) => ({
-                label: `${c.caseCode || ''} ${c.name}`,
-                value: c.id,
-              }))
-            "
-        /></a-form-item>
-        <a-collapse v-if="form.caseIds.length"
-          ><a-collapse-panel
-            key="members"
-            header="逐条指定评审人员（未配置的使用默认人员）"
-            ><a-form-item
-              v-for="id in form.caseIds"
-              :key="id"
-              :label="cases.find((c) => c.id === id)?.name || id"
-              ><a-select
-                v-model:value="form.itemReviewers[id]"
-                mode="multiple"
-                :options="memberOptions"
-                placeholder="默认评审人" /></a-form-item></a-collapse-panel
-        ></a-collapse>
-      </a-form>
-    </a-modal>
-    <a-modal
       v-model:open="batchVisible"
       title="批量评审"
       :confirm-loading="busy"
@@ -349,7 +287,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import {
@@ -357,7 +295,6 @@ import {
   type CaseReview,
   type ReviewItem,
 } from "@/api/caseGovernance";
-import { testCaseApi } from "@/api/testCase";
 import { useProjectStore } from "@/stores/project";
 import { useUserStore } from "@/stores/user";
 import type { TestCase } from "@/types";
@@ -371,8 +308,7 @@ const route = useRoute(),
 const projectId = ref(""),
   busy = ref(false),
   reviews = ref<CaseReview[]>([]),
-  members = ref<{ id: string; name: string }[]>([]),
-  cases = ref<TestCase[]>([]);
+  members = ref<{ id: string; name: string }[]>([]);
 const activeId = ref<string>(),
   activeItemId = ref<string>(),
   selectedItems = ref<string[]>([]),
@@ -381,35 +317,18 @@ const activeId = ref<string>(),
   opinion = ref(""),
   discussion = ref(""),
   followed = ref(false);
-const editorVisible = ref(false),
-  editingId = ref<string>(),
-  batchVisible = ref(false),
+const batchVisible = ref(false),
   batchDecision = ref("approved"),
   batchOpinion = ref(""),
   caseEditorVisible = ref(false),
   editCaseId = ref("");
 const canManage = ref(false);
-const form = reactive({
-  moduleId: null as string | null,
-  tags: [] as string[],
-  name: "",
-  description: "",
-  mode: "multiple",
-  reviewerIds: [] as string[],
-  caseIds: [] as string[],
-  itemReviewers: {} as Record<string, string[]>,
-  startDate: undefined as string | undefined,
-  endDate: undefined as string | undefined,
-});
 const active = computed(() =>
     reviews.value.find((r) => r.id === activeId.value),
   ),
   activeItem = computed(() =>
     active.value?.items.find((i) => i.id === activeItemId.value),
   );
-const memberOptions = computed(() =>
-  members.value.map((m) => ({ label: m.name, value: m.id })),
-);
 const mindCases = computed(
   () =>
     (active.value?.items.map((i) => ({
@@ -496,13 +415,11 @@ async function loadOptions() {
   const p = projectId.value;
   const result = await Promise.all([
     api.reviewers(p),
-    testCaseApi.getTestCases(p, { size: 10000 }).then((r) => r.items),
     reviewWorkspaceApi.list(p, { size: 1 }),
   ]);
   if (p === projectId.value) {
     members.value = result[0];
-    cases.value = result[1];
-    canManage.value = result[2].permissions.update;
+    canManage.value = result[1].permissions.update;
   }
 }
 async function selectReview(id: string) {
@@ -513,63 +430,13 @@ async function selectReview(id: string) {
   await router.replace({ query: { projectId: projectId.value, reviewId: id } });
 }
 async function openEditor(review?: CaseReview) {
-  await run(async () => {
-    const p = projectId.value;
-    await loadOptions();
-    if (p !== projectId.value) return;
-    if (!canManage.value) return void message.warning("没有评审编辑权限");
-    editingId.value = review?.id;
-    Object.assign(form, {
-      name: review?.name || "",
-      moduleId:
-        review?.moduleId ||
-        (typeof route.query.moduleId === "string" &&
-        route.query.moduleId !== "default"
-          ? route.query.moduleId
-          : null),
-      tags: [...(review?.tags || [])],
-      description: review?.description || "",
-      mode: review?.mode || "multiple",
-      reviewerIds: [...(review?.reviewerIds || [String(user.user?.id)])],
-      caseIds:
-        review?.items.map((i) => i.caseId) ||
-        (typeof route.query.caseIds === "string"
-          ? route.query.caseIds.split(",")
-          : []),
-      itemReviewers: Object.fromEntries(
-        (review?.items || []).map((i) => [
-          i.caseId,
-          [...(i.reviewerIds || [])],
-        ]),
-      ),
-      startDate: review?.startDate || undefined,
-      endDate: review?.endDate || undefined,
-    });
-    editorVisible.value = true;
-  });
-}
-async function saveReview() {
-  if (!form.name.trim() || !form.caseIds.length || !form.reviewerIds.length)
-    return message.warning("请填写名称、用例和评审人员");
-  await run(async () => {
-    const body = {
-      ...form,
-      name: form.name.trim(),
-      startDate: form.startDate || null,
-      endDate: form.endDate || null,
-      itemReviewers: Object.fromEntries(
-        Object.entries(form.itemReviewers).filter(
-          ([id, ids]) => form.caseIds.includes(id) && ids.length,
-        ),
-      ),
-    };
-    const result = editingId.value
-      ? await api.updateReview(projectId.value, editingId.value, body)
-      : await api.createReview(projectId.value, body);
-    editorVisible.value = false;
-    replace(result);
-    await selectReview(result.id);
-    message.success("评审已保存");
+  if (!canManage.value) return;
+  await router.push({
+    name: "CaseReviewEditor",
+    query: {
+      projectId: projectId.value,
+      ...(review ? { reviewId: review.id, returnTo: "detail" } : {}),
+    },
   });
 }
 function replace(review: CaseReview) {
@@ -660,12 +527,10 @@ async function cancel() {
     );
 }
 async function copyReview() {
-  if (active.value)
-    await run(async () => {
-      const result = await api.copyReview(projectId.value, active.value!.id);
-      replace(result);
-      await selectReview(result.id);
-      message.success("评审已复制，结论已重置");
+  if (active.value && canManage.value)
+    await router.push({
+      name: "CaseReviewEditor",
+      query: { projectId: projectId.value, copyFrom: active.value.id },
     });
 }
 async function resubmit() {
@@ -712,7 +577,6 @@ watch(
 watch(projectId, async (id) => {
   ++loadSequence;
   canManage.value = false;
-  editorVisible.value = false;
   activeId.value = undefined;
   reviews.value = [];
   selectedItems.value = [];
@@ -732,7 +596,8 @@ onMounted(async () => {
   await load();
   if (typeof route.query.reviewId === "string")
     await selectReview(route.query.reviewId);
-  if (route.query.create === "1") await openEditor();
+  if (route.query.create === "1")
+    await router.replace({ name: "CaseReviewEditor", query: route.query });
   if (route.query.edit === "1" && active.value) await openEditor(active.value);
 });
 </script>

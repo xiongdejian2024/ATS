@@ -46,18 +46,14 @@ class ReviewHeader(StrictRequest):
     @classmethod
     def normalized_tags(cls, values):
         values = [v.strip() for v in values]
-        if any(not v or len(v) > 100 for v in values) or len(set(values)) != len(
-            values
-        ):
+        if any(not v or len(v) > 100 for v in values) or len(set(values)) != len(values):
             raise ValueError("标签必须不重复且长度为1至100个字符")
         return values
 
     @field_validator("reviewerIds")
     @classmethod
     def unique_ids(cls, values):
-        if any(not value.strip() for value in values) or len(set(values)) != len(
-            values
-        ):
+        if any(not value.strip() for value in values) or len(set(values)) != len(values):
             raise ValueError("ID 不能为空或重复")
         return values
 
@@ -87,10 +83,7 @@ class ReviewCreate(ReviewHeader):
         if set(self.itemReviewers) - set(self.caseIds):
             raise ValueError("逐条评审人仅可指定本评审用例")
         if any(
-            not ids
-            or len(ids) > 50
-            or len(set(ids)) != len(ids)
-            or any(not i.strip() for i in ids)
+            not ids or len(ids) > 50 or len(set(ids)) != len(ids) or any(not i.strip() for i in ids)
             for ids in self.itemReviewers.values()
         ):
             raise ValueError("每条用例必须有不重复的评审人")
@@ -115,6 +108,10 @@ class ReviewResubmit(StrictRequest):
     itemReviewers: dict[str, list[str]] | None = None
     startDate: date | None = None
     endDate: date | None = None
+    startTime: datetime | None = None
+    endTime: datetime | None = None
+    moduleId: str | None = None
+    tags: list[str] | None = None
 
 
 class ReviewCommentCreate(StrictRequest):
@@ -163,9 +160,7 @@ class SavedViewCreate(SavedViewRename):
             or not all(isinstance(v, str) for v in values["moduleKeys"])
         ):
             raise ValueError("模块筛选必须是字符串数组")
-        if "filterConditions" in values and not isinstance(
-            values["filterConditions"], list
-        ):
+        if "filterConditions" in values and not isinstance(values["filterConditions"], list):
             raise ValueError("筛选条件必须是数组")
         return values
 

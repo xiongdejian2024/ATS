@@ -1,3 +1,5 @@
+import type { TestCase } from "@/types";
+import type { CaseFolder } from "./planCaseWorkspace";
 import { apiClient } from "@/utils/api";
 export interface ReviewModule {
   id: string;
@@ -24,6 +26,8 @@ export interface ReviewSummary {
   modulePath: string;
   tags: string[];
   description: string;
+  startTime: string | null;
+  endTime: string | null;
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
@@ -39,9 +43,29 @@ export interface ReviewList {
   allCount: number;
   permissions: { update: boolean; delete: boolean };
 }
+export interface ReviewCandidates {
+  items: (TestCase & { moduleName: string })[];
+  total: number;
+  page: number;
+  size: number;
+  modules: CaseFolder[];
+  counts: { all: number; unassigned: number };
+}
 const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
+  updateHeader: (p: string, id: string, body: Record<string, unknown>) =>
+    apiClient.put<import("./caseGovernance").CaseReview>(
+      `${base(p)}/${id}/header`,
+      body,
+    ),
+  candidates: (p: string, params: Record<string, unknown>) =>
+    apiClient.get<ReviewCandidates>(`${base(p)}/candidates`, { params }),
+  selectCandidates: (p: string, body: Record<string, unknown>) =>
+    apiClient.post<{ caseIds: string[]; total: number }>(
+      `${base(p)}/candidate-selection`,
+      body,
+    ),
   list: (p: string, params: Record<string, unknown>) =>
     apiClient.get<ReviewList>(base(p), { params }),
   saveModule: (

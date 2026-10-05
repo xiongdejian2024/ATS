@@ -573,6 +573,19 @@ def clone_review(db, user, project_id, review_id, body, resubmit=False):
         endDate=source.end_date,
     )
     overrides = body.model_dump(exclude_unset=True)
+    if any(
+        overrides.get(key, "非空") is None
+        for key in (
+            "caseIds",
+            "name",
+            "reviewerIds",
+            "mode",
+            "description",
+            "itemReviewers",
+            "tags",
+        )
+    ):
+        raise HTTPException(422, "复制或重新提审的基本信息和用例字段不能为null")
     data.update(overrides)
     if {"startDate", "endDate"} & overrides.keys():
         # 旧日期请求只有明确改变周期时才覆盖源记录的精确时间。
@@ -584,7 +597,14 @@ def clone_review(db, user, project_id, review_id, body, resubmit=False):
         for key, value in data["itemReviewers"].items()
         if key in data["caseIds"]
     }
-    row = create_review(db, user, project_id, ReviewCreate(**data))
+    from pydantic import ValidationError
+
+    try:
+        request = ReviewCreate(**data)
+    except ValidationError as error:
+        logger.exception("复制或重新提审参数校验失败 review_id={}", source.id)
+        raise HTTPException(422, "复制或重新提审参数无效：" + str(error)) from error
+    row = create_review(db, user, project_id, request)
     row.parent_review_id = source.id
     if resubmit:
         source.status = "superseded"

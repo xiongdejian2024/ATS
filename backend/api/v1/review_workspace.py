@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from api.deps import get_current_user
 from database import get_db
 from api.v1.case_governance import result, transact
-from schemas.review_workspace import ModuleSave, ConfirmDelete, ReviewMove
+from schemas.review_workspace import ModuleSave, ConfirmDelete, ReviewMove, ReviewCandidateSelection
 from services import review_workspace as service
 from schemas.case_governance import ReviewHeader
 
@@ -22,10 +22,64 @@ def update_header(
     user=Depends(get_current_user),
 ):
     return result(
-        transact(
-            db, lambda: service.update_header(db, user, project_id, review_id, body)
-        )
+        transact(db, lambda: service.update_header(db, user, project_id, review_id, body))
     )
+
+
+@router.get("/candidates")
+def candidates(
+    project_id: str,
+    search: str = Query("", max_length=255),
+    folder: str = "all",
+    priority: Literal["P0", "P1", "P2", "P3"] | None = None,
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.case_governance import project_access
+    from services.case_candidates import candidates as shared_candidates
+
+    project_access(db, user, project_id)
+    return result(
+        shared_candidates(db, project_id, "functional", search, folder, priority, page, size)
+    )
+
+
+@router.post("/candidate-selection")
+def select_candidates(
+    project_id: str,
+    body: ReviewCandidateSelection,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from fastapi import HTTPException
+    from services.case_governance import project_access
+    from services.case_candidates import candidate_query
+    from models import TestCase
+    from core.logger import logger
+
+    project_access(db, user, project_id, "update")
+    query, _, _, _ = candidate_query(
+        db, project_id, "functional", body.search, body.folder, body.priority
+    )
+    query = query.filter(TestCase.id.notin_(body.excludeIds))
+    total = query.count()
+    if total + len(set(body.excludeIds)) > 10000:
+        raise HTTPException(422, "一个评审最多关联10000个用例，请缩小筛选范围")
+    identifiers = [
+        row[0]
+        for row in query.with_entities(TestCase.id)
+        .order_by(TestCase.created_at.desc(), TestCase.id)
+        .all()
+    ]
+    logger.info(
+        "评审草稿全选筛选结果 project_id={} count={} actor_id={}",
+        project_id,
+        len(identifiers),
+        user.id,
+    )
+    return result(dict(caseIds=identifiers, total=len(identifiers)))
 
 
 @router.get("")
@@ -38,10 +92,7 @@ def reviews(
     includeDescendants: bool = True,
     search: str = Query("", max_length=200),
     lifecycle: (
-        Literal[
-            "prepared", "underway", "completed", "archived", "cancelled", "superseded"
-        ]
-        | None
+        Literal["prepared", "underway", "completed", "archived", "cancelled", "superseded"] | None
     ) = None,
     mode: Literal["single", "multiple"] | None = None,
     reviewerId: str | None = None,
@@ -90,9 +141,7 @@ def update_module(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    return result(
-        transact(db, lambda: service.save_module(db, user, project_id, body, module_id))
-    )
+    return result(transact(db, lambda: service.save_module(db, user, project_id, body, module_id)))
 
 
 @router.post("/modules/{module_id}/delete")
@@ -104,9 +153,7 @@ def delete_module(
     user=Depends(get_current_user),
 ):
     return result(
-        transact(
-            db, lambda: service.delete_module(db, user, project_id, module_id, body)
-        )
+        transact(db, lambda: service.delete_module(db, user, project_id, module_id, body))
     )
 
 
@@ -117,9 +164,7 @@ def move(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    return result(
-        transact(db, lambda: service.move_reviews(db, user, project_id, body))
-    )
+    return result(transact(db, lambda: service.move_reviews(db, user, project_id, body)))
 
 
 @router.post("/{review_id}/delete")
@@ -131,9 +176,7 @@ def delete(
     user=Depends(get_current_user),
 ):
     return result(
-        transact(
-            db, lambda: service.delete_review(db, user, project_id, review_id, body)
-        )
+        transact(db, lambda: service.delete_review(db, user, project_id, review_id, body))
     )
 
 
@@ -144,6 +187,4 @@ def archive(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    return result(
-        transact(db, lambda: service.archive_review(db, user, project_id, review_id))
-    )
+    return result(transact(db, lambda: service.archive_review(db, user, project_id, review_id)))

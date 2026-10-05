@@ -37,6 +37,8 @@ export interface CaseReview {
   createdBy: string;
   mode?: "single" | "multiple";
   description?: string;
+  startTime?: string | null;
+  endTime?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   followed?: boolean;
@@ -84,8 +86,8 @@ export const caseGovernanceApi = {
     apiClient.post<CaseReview>(`${base(p)}/reviews`, body),
   updateReview: (p: string, id: string, body: Record<string, unknown>) =>
     apiClient.put<CaseReview>(`${base(p)}/reviews/${id}`, body),
-  copyReview: (p: string, id: string) =>
-    apiClient.post<CaseReview>(`${base(p)}/reviews/${id}/copy`),
+  copyReview: (p: string, id: string, body?: Record<string, unknown>) =>
+    apiClient.post<CaseReview>(`${base(p)}/reviews/${id}/copy`, body),
   resubmit: (p: string, id: string, caseIds?: string[]) =>
     apiClient.post<CaseReview>(`${base(p)}/reviews/${id}/resubmit`, {
       caseIds,

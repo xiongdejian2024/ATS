@@ -22,6 +22,7 @@ const routes = [
       { path: 'test-cases/create', name: 'CaseCreate', component: () => import('@views/CaseEditorPage.vue'), meta: { title: '新建用例' } },
       { path: 'test-cases/:caseId/edit', name: 'CaseEdit', component: () => import('@views/CaseEditorPage.vue'), meta: { title: '编辑用例' } },
       { path: 'test-cases/:caseId/created', name: 'CaseCreated', component: () => import('@views/CaseCreated.vue'), meta: { title: '创建成功' } },
+      { path: 'case-reviews/create', name: 'CaseReviewEditor', component: () => import('@views/CaseReviewEditorPage.vue'), meta: { title: '评审创建编辑' } },
       { path: 'case-reviews/workspace', name: 'CaseReviewWorkspace', component: () => import('@views/CaseReviewWorkspace.vue'), meta: { title: '评审详情' } },
       { path: 'case-reviews', name: 'CaseReviews', component: () => import('@views/CaseReviews.vue'), meta: { title: '用例评审' } },
       { path: 'test-plans/:planId/functional-execution', name: 'PlanFunctionalExecution', component: () => import('@views/PlanFunctionalExecution.vue'), meta: { title: '功能用例执行' } },

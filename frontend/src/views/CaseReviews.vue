@@ -237,8 +237,8 @@
               }}</a-tag></template
             >
             <span v-else-if="column.key === 'period'">{{
-              record.startDate && record.endDate
-                ? `${record.startDate} ～ ${record.endDate}`
+              record.startTime && record.endTime
+                ? `${formatDate(record.startTime)} ～ ${formatDate(record.endTime)}`
                 : "-"
             }}</span>
             <span v-else-if="column.key === 'createdAt'">{{
@@ -633,7 +633,7 @@ function saveDescendants(value: boolean) {
 }
 function openWorkspace(id?: string, action?: string) {
   void router.push({
-    name: "CaseReviewWorkspace",
+    name: action ? "CaseReviewEditor" : "CaseReviewWorkspace",
     query: {
       projectId: projectId.value,
       ...(id ? { reviewId: id } : {}),

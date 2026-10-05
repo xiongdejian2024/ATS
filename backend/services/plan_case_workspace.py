@@ -188,35 +188,11 @@ def associate(db,plan,user,data):
 
 def candidates(db, plan, category, search, folder, priority, page, size):
     """数据库分页取可关联用例，目录计数不受当前页或目录范围影响。"""
-    from sqlalchemy import func, or_
-    from utils.serializer import serialize_model
-    query = db.query(TestCase).filter(TestCase.project_id == plan.project_id, TestCase.deleted_at.is_(None))
-    query = query.filter(TestCase.type.notin_(['api', 'scenario'])) if category == 'functional' else query.filter(TestCase.type == category)
-    if category != 'functional':
-        query = query.filter(TestCase.is_automated.is_(True))
-    keyword = search.strip().casefold()
-    if keyword:
-        query = query.filter(or_(func.lower(TestCase.name).contains(keyword, autoescape=True),
-                                 func.lower(TestCase.case_code).contains(keyword, autoescape=True)))
-    if priority:
-        query = query.filter(TestCase.priority == priority)
-    modules = db.query(Module).filter_by(project_id=plan.project_id).order_by(Module.sort_order, Module.created_at).all()
-    module_counts = dict(query.with_entities(TestCase.module_id, func.count(TestCase.id)).group_by(TestCase.module_id).all())
-    folders = [dict(id=row.id, name=row.name, parentId=row.parent_id,
-                    count=sum(module_counts.get(key, 0) for key in descendants(modules, row.id))) for row in modules]
-    counts = dict(all=sum(module_counts.values()), unassigned=sum(count for key, count in module_counts.items() if key not in {row.id for row in modules}))
-    if folder == 'unassigned':
-        query = query.filter(or_(TestCase.module_id.is_(None), TestCase.module_id.notin_([row.id for row in modules])))
-    elif folder != 'all':
-        if folder not in {row.id for row in modules}:
-            raise HTTPException(404, '关联选择目录不属于当前项目')
-        query = query.filter(TestCase.module_id.in_(descendants(modules, folder)))
-    total = query.count()
-    records = query.order_by(TestCase.created_at.desc(), TestCase.id).offset((page-1)*size).limit(size).all()
+    from services.case_candidates import candidates as shared_candidates
+    result = shared_candidates(db, plan.project_id, category, search, folder, priority, page, size)
     associated, points, _, uses = entries(db, plan, category)
     linked = {item['caseId'] for item in associated}
-    module_names = {row.id: row.name for row in modules}
-    items = [dict(serialize_model(row, camel_case=True), moduleName=module_names.get(row.module_id, '未分配模块'), alreadyLinked=row.id in linked) for row in records]
+    items = [dict(item, alreadyLinked=item['id'] in linked) for item in result['items']]
     suites = [dict(id=row.id, name=row.name, caseIds=row.case_ids or []) for row in db.query(TestSuite).filter_by(plan_id=plan.id)]
-    return dict(items=items, total=total, page=page, size=size, modules=folders, counts=counts, usesTree=uses,
+    return dict(**{key:value for key,value in result.items() if key != "items"}, items=items, usesTree=uses,
                 collections=[dict(id=row.id, name=row.name, parentId=row.parent_id, count=0) for row in points], suites=suites)
