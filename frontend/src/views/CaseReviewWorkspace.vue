@@ -28,9 +28,9 @@
                 ><a-button @click="follow">{{
                   followed ? "取消关注" : "关注"
                 }}</a-button
-                ><a-button @click="openEditor(active)">编辑</a-button
-                ><a-button @click="copyReview">复制</a-button
-                ><a-button @click="resubmit">重新提审</a-button
+                ><a-button v-if="canManage && !active.archived" @click="openEditor(active)">编辑</a-button
+                ><a-button v-if="canManage" @click="copyReview">复制</a-button
+                ><a-button v-if="canManage && !active.archived" @click="resubmit">重新提审</a-button
                 ><a-popconfirm
                   v-if="
                     canManage && !active.archived && active.status === 'pending'
