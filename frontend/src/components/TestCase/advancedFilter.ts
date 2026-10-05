@@ -7,7 +7,8 @@ export interface FilterCondition {
 export interface FilterField {
   key: string;
   label: string;
-  type: "text" | "select" | "number" | "date" | "tags" | "module";
+  type: "text" | "select" | "number" | "date" | "tags" | "module" | "member";
+  showTime?: boolean;
   operators?: string[];
   options?: { label: string; value: any }[];
 }
@@ -42,6 +43,7 @@ const common = {
     "not_equals",
   ],
   select: ["belongs_to", "not_belongs_to", "is_empty", "is_not_empty"],
+  member: ["belongs_to", "not_belongs_to", "is_empty", "is_not_empty"],
   module: ["belongs_to", "not_belongs_to"],
   number: ["gt", "lt", "equals", "is_empty", "is_not_empty"],
   date: ["between", "gt", "lt", "is_empty", "is_not_empty"],

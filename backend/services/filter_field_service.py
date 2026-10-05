@@ -145,6 +145,31 @@ class FilterFieldService:
                 },
             ]
         )
+        default_fields.extend(
+            [
+                {
+                    "field_key": "attachment",
+                    "field_label": "关联附件",
+                    "field_type": "text",
+                    "sort_order": 14,
+                    "is_default": True,
+                },
+                {
+                    "field_key": "createdBy",
+                    "field_label": "创建人",
+                    "field_type": "member",
+                    "sort_order": 15,
+                    "is_default": True,
+                },
+                {
+                    "field_key": "updatedBy",
+                    "field_label": "更新人",
+                    "field_type": "member",
+                    "sort_order": 16,
+                    "is_default": True,
+                },
+            ]
+        )
         # 创建默认字段对象（不保存到数据库，仅返回）
         fields = []
         for field_data in default_fields:
@@ -152,3 +177,16 @@ class FilterFieldService:
             fields.append(field)
 
         return fields
+
+    @staticmethod
+    def get_project_fields(project_id: str, db: Session) -> List[FilterField]:
+        """保留项目自定义及明确禁用项，补齐升级后新增的官方字段。"""
+        configured = db.query(FilterField).filter_by(project_id=project_id).all()
+        keys = {f.field_key for f in configured}
+        fields = [f for f in configured if f.is_enabled]
+        fields.extend(
+            f
+            for f in FilterFieldService.get_default_fields(project_id, db)
+            if f.field_key not in keys
+        )
+        return sorted(fields, key=lambda f: (f.sort_order or 0, f.field_key))

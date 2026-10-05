@@ -315,6 +315,9 @@
     <TestCaseFilter
       v-model:visible="filterDrawerVisible"
       :available-fields="filterFields"
+      :metadata-error="filterFieldError"
+      :metadata-loading="filterFieldLoading"
+      @retry-fields="loadFilterFields"
       :conditions="advancedFilters"
       :logic="filterLogic"
       :module-tree-data="moduleTreeData"
@@ -358,6 +361,8 @@ import { readDisplay, normalizeDisplay, displayStorageKey, pageSizes, type Displ
 import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
 import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
 import { caseSearchParams, isAdvancedCaseSearch } from '@/components/TestCase/caseSearchScope'
+import { filterFieldCatalog } from '@/components/TestCase/filterFieldCatalog'
+import { caseGovernanceApi } from '@/api/caseGovernance'
 import ImportCasesModal from '@/components/TestCase/ImportCasesModal.vue'
 import CaseGovernancePanel from '@/components/TestCase/CaseGovernancePanel.vue'
 import CaseMindMap from '@/components/TestCase/CaseMindMap.vue'
@@ -481,30 +486,68 @@ const filterLogic = ref<'and' | 'or'>('and')
 
 // 筛选字段定义（从数据库获取）
 const filterFields = ref<any[]>([])
+const filterFieldError = ref(''),
+  filterFieldLoading = ref(false)
 
 // 加载筛选字段配置
 let filterLoadSequence = 0
+let filterMetadataCache: {
+  project: string
+  fields?: any[]
+  templates: any[]
+  members: { id: string; name: string }[]
+} = { project: '', templates: [], members: [] }
 const loadFilterFields = async () => {
   const project = projectId.value
   if (!project) return
   const sequence = ++filterLoadSequence
+  filterFieldLoading.value = true
   try {
-    const [fields,templates] = await Promise.all([testCaseApi.getFilterFields(project),caseFeaturesApi.templates(project)])
+    const results = await Promise.allSettled([
+      testCaseApi.getFilterFields(project),
+      caseFeaturesApi.templates(project),
+      caseGovernanceApi.reviewers(project),
+    ])
     if (sequence !== filterLoadSequence || project !== projectId.value) return
-    // 转换后端数据格式为前端需要的格式
-    filterFields.value = fields.map((field: any) => ({
-      key: field.fieldKey,
-      label: field.fieldLabel,
-      type: field.fieldType,
-      operators: field.operators?.map((op:string)=>({greater_than:'gt',less_than:'lt',greater_equal:'gte',less_equal:'lte'}[op] || op)),
-      options: field.options
-    }))
-    const custom = new Map(templates.flatMap(t=>t.fields.map(f=>[f.key,f] as const)))
-    for(const f of custom.values()) filterFields.value.push({key:`customFields.${f.key}`,label:`自定义 · ${f.name}`,type:f.type==='textarea'?'text':f.type==='boolean'?'select':f.type==='multiselect'?'select':f.type,options:f.type==='boolean'?[{label:'是',value:true},{label:'否',value:false}]:f.options.map(value=>({label:value,value}))})
+    const labels = ['筛选字段', '自定义字段', '项目成员']
+    const failed: string[] = []
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        failed.push(labels[index])
+        console.error(`加载${labels[index]}失败`, result.reason)
+      }
+    })
+    if (filterMetadataCache.project !== project)
+      filterMetadataCache = { project, templates: [], members: [] }
+    if (results[0].status === 'fulfilled')
+      filterMetadataCache.fields = results[0].value
+    if (results[1].status === 'fulfilled')
+      filterMetadataCache.templates = results[1].value
+    if (results[2].status === 'fulfilled')
+      filterMetadataCache.members = results[2].value
+    const fields =
+      filterMetadataCache.fields ||
+      getDefaultFilterFields().map((f) => ({
+        fieldKey: f.key,
+        fieldLabel: f.label,
+        fieldType: f.type,
+        operators: 'operators' in f ? f.operators : undefined,
+        options: 'options' in f ? f.options : undefined,
+      }))
+    filterFields.value = filterFieldCatalog(
+      fields,
+      filterMetadataCache.templates,
+      filterMetadataCache.members,
+    )
+    filterFieldError.value = failed.length
+      ? `${failed.join('、')}加载失败，请重试；已加载字段及筛选草稿保留`
+      : ''
   } catch (error) {
-    console.error('加载筛选字段失败，使用默认字段', error)
-    // 如果加载失败，使用默认字段
-    if (sequence === filterLoadSequence && project === projectId.value) filterFields.value = getDefaultFilterFields()
+    console.error('整理筛选字段失败，保留错误和重试入口', error)
+    if (sequence === filterLoadSequence && project === projectId.value)
+      filterFieldError.value = '筛选字段加载失败，请重试'
+  } finally {
+    if (sequence === filterLoadSequence) filterFieldLoading.value = false
   }
 }
 
@@ -584,7 +627,13 @@ const getDefaultFilterFields = () => [
     key: 'precondition',
     label: '前置条件',
     type: 'text' as const
-  }
+  },
+  { key:'attachment',label:'关联附件',type:'text' as const },
+  { key:'createdBy',label:'创建人',type:'member' as const },
+  { key:'updatedBy',label:'更新人',type:'member' as const },
+  { key:'createdAt',label:'创建时间',type:'date' as const },
+  { key:'updatedAt',label:'更新时间',type:'date' as const }
+
 ]
 
 // 旧的筛选条件（保留兼容性）

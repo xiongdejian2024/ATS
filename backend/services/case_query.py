@@ -18,6 +18,7 @@ FIELDS = {
     "precondition": "precondition",
     "executorId": "executor_id",
     "createdBy": "created_by",
+    "updatedBy": "updated_by",
     "templateId": "template_id",
     "createdAt": "created_at",
     "updatedAt": "updated_at",
@@ -72,7 +73,7 @@ def parse_filters(raw):
             raise HTTPException(422, "筛选字段必须为字符串")
         if (
             field not in FIELDS
-            and field not in {"reviewResult", "review_status"}
+            and field not in {"reviewResult", "review_status", "attachment"}
             and not field.startswith("customFields.")
         ):
             raise HTTPException(422, "不支持的筛选字段")
@@ -160,7 +161,7 @@ def matches(actual, operator, expected):
         return actual != expected
     if operator in {"contains", "not_contains"}:
         if isinstance(actual, list):
-            result = all(
+            result = any(
                 v in actual
                 for v in (expected if isinstance(expected, list) else [expected])
             )
@@ -192,16 +193,38 @@ def matches(actual, operator, expected):
         raise HTTPException(422, "筛选字段与比较值类型不一致") from exc
 
 
-def apply_conditions(cases, conditions, logic, review_statuses):
+def matches_related(values, operator, expected):
+    if operator in {"is_empty", "is_not_empty"}:
+        return not values if operator == "is_empty" else bool(values)
+    positive = {
+        "not_contains": "contains",
+        "not_equals": "equals",
+        "not_in": "in",
+        "not_belongs_to": "belongs_to",
+    }.get(operator, operator)
+    found = any(matches(value, positive, expected) for value in values)
+    return not found if positive != operator else found
+
+
+def apply_conditions(cases, conditions, logic, review_statuses, context):
     def check(case, condition):
         field = condition["field"]
+        expected = condition.get("value")
+        if field == "attachment":
+            return matches_related(
+                context.attachments.get(case.id, []), condition["operator"], expected
+            )
+        if field == "requirementRef":
+            values = context.requirements.get(case.id, []) + (
+                [case.requirement_ref] if case.requirement_ref else []
+            )
+            return matches_related(values, condition["operator"], expected)
         if field in {"reviewResult", "review_status"}:
             value = review_statuses.get(case.id, "not_reviewed")
         elif field.startswith("customFields."):
-            value = (case.custom_fields or {}).get(field.split(".", 1)[1])
+            value, expected = context.custom_value(case, condition)
         else:
             value = getattr(case, FIELDS[field])
-        expected = condition.get("value")
         if field == "moduleId":
             if isinstance(expected, list):
                 expected = [
@@ -247,6 +270,10 @@ def query_cases(db, project_id, **options):
     } or options.get("sort_order", "desc") not in {"asc", "desc"}:
         raise HTTPException(422, "不支持的排序字段或方向")
     conditions, logic = parse_filters(options.get("filters"))
+    from services.case_filter_context import CaseFilterContext
+
+    context = CaseFilterContext(db, project_id, conditions, options.get("user_id"))
+    conditions = context.conditions
     query = db.query(TestCase).filter(
         TestCase.project_id == project_id, TestCase.deleted_at.is_(None)
     )
@@ -320,7 +347,7 @@ def query_cases(db, project_id, **options):
         cases = [
             case for case in cases if statuses.get(case.id) == options["review_status"]
         ]
-    cases = apply_conditions(cases, conditions, logic, statuses)
+    cases = apply_conditions(cases, conditions, logic, statuses, context)
     total = len(cases)
     return {
         "items": cases[(page - 1) * size : page * size],

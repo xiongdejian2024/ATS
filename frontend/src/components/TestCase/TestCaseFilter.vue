@@ -32,6 +32,22 @@
       closable
       class="filter-tip"
     />
+    <a-alert
+      v-if="metadataError"
+      :message="metadataError"
+      type="error"
+      show-icon
+    >
+      <template #action
+        ><a-button
+          aria-label="重试加载筛选字段"
+          size="small"
+          :loading="metadataLoading"
+          @click="emit('retry-fields')"
+          >重试</a-button
+        ></template
+      >
+    </a-alert>
     <a-select
       v-model:value="draftLogic"
       :disabled="saving"
@@ -97,23 +113,39 @@
         "
         v-model:value="condition.value"
         :disabled="disabledValue(condition)"
-        show-time
-        value-format="YYYY-MM-DDTHH:mm:ss.SSSZ"
+        :show-time="field(condition.field)?.showTime !== false"
+        :value-format="
+          field(condition.field)?.showTime === false
+            ? 'YYYY-MM-DD'
+            : 'YYYY-MM-DDTHH:mm:ss.SSSZ'
+        "
         :placeholder="['开始时间', '结束时间']"
       />
       <a-date-picker
         v-else-if="field(condition.field)?.type === 'date'"
         v-model:value="condition.value"
         :disabled="disabledValue(condition)"
-        show-time
-        value-format="YYYY-MM-DDTHH:mm:ss.SSSZ"
+        :show-time="field(condition.field)?.showTime !== false"
+        :value-format="
+          field(condition.field)?.showTime === false
+            ? 'YYYY-MM-DD'
+            : 'YYYY-MM-DDTHH:mm:ss.SSSZ'
+        "
         placeholder="请选择时间"
       />
       <a-select
         v-else-if="
-          ['select', 'tags'].includes(field(condition.field)?.type || '')
+          ['select', 'tags', 'member'].includes(
+            field(condition.field)?.type || '',
+          )
         "
-        v-model:value="condition.value"
+        :value="
+          field(condition.field)?.type === 'tags' ||
+          collectionValue(condition.operator)
+            ? selectionValues(condition.value)
+            : condition.value
+        "
+        @change="condition.value = $event"
         :disabled="disabledValue(condition)"
         :aria-label="`条件${index + 1}值`"
         :mode="
@@ -124,6 +156,8 @@
               : undefined
         "
         :options="field(condition.field)?.options || []"
+        show-search
+        option-filter-prop="label"
         placeholder="请选择"
         allow-clear
       />
@@ -243,6 +277,8 @@ const props = withDefaults(
     viewNames?: string[];
     newView?: boolean;
     systemView?: string;
+    metadataError?: string;
+    metadataLoading?: boolean;
     cannotAdd?: boolean;
     saveView?: (
       name: string,
@@ -258,6 +294,8 @@ const props = withDefaults(
     viewNames: () => [],
     newView: false,
     systemView: "all",
+    metadataError: "",
+    metadataLoading: false,
     cannotAdd: false,
   },
 );
@@ -265,6 +303,7 @@ const emit = defineEmits<{
   "update:visible": [value: boolean];
   apply: [conditions: FilterCondition[], logic: FilterLogic];
   saving: [value: boolean];
+  "retry-fields": [];
 }>();
 const draft = ref<FilterCondition[]>([]),
   draftLogic = ref<FilterLogic>("and"),
@@ -277,13 +316,26 @@ const draft = ref<FilterCondition[]>([]),
 let original: FilterCondition[] = [],
   originalLogic: FilterLogic = "and",
   originalName = "";
-const systemViewName = computed(() => ({ all: "全部数据", my: "我创建的", followed: "我关注的" }[props.systemView] || "全部数据"));
+const systemViewName = computed(
+  () =>
+    ({ all: "全部数据", my: "我创建的", followed: "我关注的" })[
+      props.systemView
+    ] || "全部数据",
+);
 const field = (key: string) => props.availableFields.find((f) => f.key === key);
 const disabledValue = (c: FilterCondition) =>
   saving.value || !c.field || noValue(c.operator);
 function fieldOptions(index: number) {
   return props.availableFields
-    .filter((f) => !(props.systemView === "my" && !props.view && !props.newView && f.key === "createdBy"))
+    .filter(
+      (f) =>
+        !(
+          props.systemView === "my" &&
+          !props.view &&
+          !props.newView &&
+          f.key === "createdBy"
+        ),
+    )
     .filter((f) =>
       draft.value.every((c, i) => i === index || c.field !== f.key),
     )
@@ -385,13 +437,18 @@ function close() {
   if (!saving.value) emit("update:visible", false);
 }
 watch(
-  () => [props.visible, props.view?.id, props.systemView, props.newView] as const,
+  () =>
+    [props.visible, props.view?.id, props.systemView, props.newView] as const,
   ([visible]) => {
     if (visible && !saving.value) {
       const saved = props.newView ? undefined : props.view?.filters;
       original = props.newView
         ? [{ field: "", operator: "", value: undefined }]
-        : initialConditions(props.availableFields, saved?.filterConditions ?? (props.systemView === "all" ? undefined : []));
+        : initialConditions(
+            props.availableFields,
+            saved?.filterConditions ??
+              (props.systemView === "all" ? undefined : []),
+          );
       originalLogic = saved?.filterLogic === "or" ? "or" : "and";
       originalName = props.newView
         ? nextUnnamedView(props.viewNames)

@@ -125,20 +125,11 @@ async def get_filter_fields(
     """获取测试用例筛选字段配置"""
     try:
         require_project_access(db, current_user, project_id, "test_case:read")
-        from models.filter_field import FilterField
         from services.filter_field_service import FilterFieldService
         from utils.serializer import serialize_list
-        
-        # 查询项目的筛选字段配置
-        filter_fields = db.query(FilterField).filter(
-            FilterField.project_id == project_id,
-            FilterField.is_enabled == True
-        ).order_by(FilterField.sort_order, FilterField.field_key).all()
-        
-        # 如果没有配置，返回默认字段（不保存到数据库）
-        if not filter_fields:
-            filter_fields = FilterFieldService.get_default_fields(project_id, db)
-        
+
+        filter_fields = FilterFieldService.get_project_fields(project_id, db)
+
         # 序列化为camelCase
         serialized_fields = serialize_list(filter_fields, camel_case=True)
         
