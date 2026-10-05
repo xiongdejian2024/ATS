@@ -381,7 +381,7 @@
 
 ## 第三十六部分变更日志
 
-- 2026-10-05：对照固定官方CaseReviewCaseService的reReviewedCase与系统历史规则，将项目“用例内容变更时自动重新提审”从新建后续单改为同单重新提审。仅名称、步骤、文本描述及整体预期结果实际变化触发；前置条件、等级、标签、执行人等非核心字段及无变化保存均不触发。开关关闭后不触发，重新开启不追溯重置旧评审；开关文案明确触发范围，网络错误回退并显示重试提示，保存期间禁重复切换，异项目返回不覆盖当前设置。
+- 2026-10-05：对照固定官方CaseReviewFunctionalCaseService的reReviewedCase与系统历史规则，将项目“用例内容变更时自动重新提审”从新建后续单改为同单重新提审。仅名称、步骤、文本描述及整体预期结果实际变化触发；前置条件、等级、标签、执行人等非核心字段及无变化保存均不触发。开关关闭后不触发，重新开启不追溯重置旧评审；开关文案明确触发范围，网络错误回退并显示重试提示，保存期间禁重复切换，异项目返回不覆盖当前设置。
 - 自动动作覆盖该用例在所有可修改评审中的关联，包括停留在更早版本的条目，保留评审单及关联ID、指定人员和讨论；锁定本次新版本、标记重新提审、清空原有效票，并共用手动提审的历史作废记录。已归档及取消/被替代的评审跳过，其他用例保持原结论。编辑者不需要被指定为评审人，但主用例写入仍要求项目编辑权限。
 - 历史显示“系统 · 自动重新提审”，审计仍保留实际编辑者ID、核心变化字段、原版本及作废有效票。多人调整名单时自动动作按系统发起人计算，不将实际编辑者当成重新提审评审人；旧票不能复活。版本恢复和增量导入复用同一版本保存钩子；主用例、版本及所有关联评审在同一事务内提交，任一关联写入失败全部回滚并记录异常堆栈。
 - 项目设置、主用例编辑/回收、恢复/批量与增量导入先取得项目锁，再刷新当前主用例和版本，避免读到旧事务快照而漏触发或生成重复版本。真实MySQL独立临时库中，预读关闭开关和v1的编辑者确实等待项目锁，释放后读取开启状态及前一编辑者保存的v2，生成连续v3并只重置可修改关联；归档评审保持v1和旧通过。原四个归档写入等待者也全部拒绝，临时库及授权已回收，原业务库未写入。
@@ -450,3 +450,5 @@
 - [评审关联用例列表官方源码](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/case-management/caseReview/components/detail/caseTable.vue)
 - [评审条目人员更新官方源码](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/case-management/src/main/java/io/metersphere/functional/service/CaseReviewCaseService.java)
 - [评审取消关联与生命周期官方源码](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/case-management/src/main/java/io/metersphere/functional/provider/CaseReviewCaseProvider.java)
+
+- [核心内容修改后自动提审官方源码](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/case-management/src/main/java/io/metersphere/functional/service/CaseReviewFunctionalCaseService.java)
