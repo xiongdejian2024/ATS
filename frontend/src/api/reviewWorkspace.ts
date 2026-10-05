@@ -1,3 +1,4 @@
+import type { CaseReview, ReviewItem } from "./caseGovernance";
 import type { TestCase } from "@/types";
 import type { CaseFolder } from "./planCaseWorkspace";
 import { apiClient } from "@/utils/api";
@@ -51,9 +52,35 @@ export interface ReviewCandidates {
   modules: CaseFolder[];
   counts: { all: number; unassigned: number };
 }
+export interface ReviewCaseEntry extends ReviewItem {
+  name: string;
+  caseCode: string;
+  priority: string;
+  moduleId: string | null;
+  moduleName: string;
+  createdBy: string | null;
+  creator: string;
+  reviewState: string;
+  recycled: boolean;
+  canVote: boolean;
+}
+export interface ReviewCaseListing {
+  items: ReviewCaseEntry[];
+  total: number;
+  page: number;
+  size: number;
+  modules: CaseFolder[];
+  counts: { all: number; unassigned: number };
+}
 const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
+  detail: (p: string, id: string) =>
+    apiClient.get<CaseReview>(`${base(p)}/${id}/detail`),
+  items: (p: string, id: string, params: Record<string, unknown>) =>
+    apiClient.get<ReviewCaseListing>(`${base(p)}/${id}/items`, { params }),
+  item: (p: string, id: string, item: string) =>
+    apiClient.get<ReviewCaseEntry>(`${base(p)}/${id}/items/${item}`),
   associate: (
     p: string,
     id: string,

@@ -134,7 +134,7 @@ async function submit() {
 }
 .reason-label {
   margin: 12px 0 8px;
-  color: var(--ats-text-secondary);
+  color: var(--ms-text-secondary);
 }
 .reason-error {
   margin: 8px 0;

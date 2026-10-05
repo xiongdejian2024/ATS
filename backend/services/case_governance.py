@@ -290,48 +290,55 @@ def get_review(db, user, project_id, review_id, lock=False):
     return review
 
 
-def review_data(db, review):
-    from services.review_workspace import metadata
-    from services.review_progress import metrics
-
-    items = []
-    for item in (
-        db.query(CaseReviewItem)
-        .filter_by(review_id=review.id)
-        .order_by(CaseReviewItem.created_at, CaseReviewItem.id)
-        .all()
-    ):
-        version = db.get(CaseVersion, item.version_id)
-        case = db.get(TestCase, item.case_id)
-        outdated = (
+def serialize_review_item(item, version, case, decisions, reviewer_ids):
+    return dict(
+        id=item.id,
+        caseId=item.case_id,
+        status=item.status,
+        reviewerIds=item.reviewer_ids or reviewer_ids,
+        version=version.version,
+        snapshot=version.snapshot,
+        outdated=(
             case is None
             or case.deleted_at is not None
             or any(
                 getattr(case, field) != version.snapshot.get(field)
                 for field in SNAPSHOT_FIELDS
             )
-        )
-        decisions = [
+        ),
+        decisions=[
             dict(
                 reviewerId=d.reviewer_id,
                 decision=d.decision,
                 comment=d.comment,
                 updatedAt=d.updated_at.isoformat(),
             )
-            for d in db.query(CaseReviewDecision).filter_by(item_id=item.id).all()
-        ]
-        items.append(
-            dict(
-                id=item.id,
-                caseId=item.case_id,
-                status=item.status,
-                reviewerIds=item.reviewer_ids or review.reviewer_ids,
-                version=version.version,
-                snapshot=version.snapshot,
-                outdated=outdated,
-                decisions=decisions,
+            for d in decisions
+        ],
+    )
+
+
+def review_data(db, review, *, include_items=True):
+    from services.review_workspace import metadata
+    from services.review_progress import metrics
+
+    items = []
+    if include_items:
+        for item in (
+            db.query(CaseReviewItem)
+            .filter_by(review_id=review.id)
+            .order_by(CaseReviewItem.created_at, CaseReviewItem.id)
+            .all()
+        ):
+            items.append(
+                serialize_review_item(
+                    item,
+                    db.get(CaseVersion, item.version_id),
+                    db.get(TestCase, item.case_id),
+                    db.query(CaseReviewDecision).filter_by(item_id=item.id).all(),
+                    review.reviewer_ids,
+                )
             )
-        )
     comments = [
         dict(
             id=c.id,
@@ -360,14 +367,26 @@ def review_data(db, review):
         .all()
     ]
     info = metadata(db, review)
+    started = any(e["action"] == "评审结论" for e in events)
+    if include_items:
+        progress = metrics(
+            items, archived=info["archived"], status=review.status, started=started
+        )
+        associated = [item["caseId"] for item in items]
+    else:
+        from services.review_case_workspace import summary_metrics
+
+        progress = summary_metrics(db, review, info["archived"], started)
+        associated = [
+            row[0]
+            for row in db.query(CaseReviewItem.case_id)
+            .filter_by(review_id=review.id)
+            .all()
+        ]
     return dict(
         **info,
-        **metrics(
-            items,
-            archived=info["archived"],
-            status=review.status,
-            started=any(e["action"] == "评审结论" for e in events),
-        ),
+        **progress,
+        associatedCaseIds=associated,
         id=review.id,
         name=review.name,
         policy=review.policy,

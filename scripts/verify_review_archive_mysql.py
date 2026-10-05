@@ -232,6 +232,116 @@ def main():
             assert kept["decisions"][0]["comment"] == "追加前有效结论"
             assert appended["status"] == "pending"
             db.commit()
+        # 相同独立临时库核验生产 MySQL 的 JSON 人员筛选与真实分页。
+        from services.review_case_workspace import listing
+        from services.case_governance import review_data
+        from models import Module
+
+        with Sessions() as db:
+            owner = db.get(User, "race-owner")
+            parent = Module(
+                id="page-parent", project_id="race-project", name="分页父模块"
+            )
+            child = Module(
+                id="page-child",
+                project_id="race-project",
+                name="分页子模块",
+                parent_id=parent.id,
+            )
+            db.add_all([parent, child])
+            db.flush()
+            case_ids = []
+            for position in range(23):
+                row = TestCase(
+                    id=f"page-case-{position}",
+                    project_id="race-project",
+                    name=f"分页用例{position:02d}",
+                    case_code=f"PAGE-{position:03d}",
+                    type="functional",
+                    priority="P3",
+                    steps=[],
+                    created_by=owner.id,
+                    tags=["中文分页标签"] if position == 1 else [],
+                    module_id=(
+                        parent.id
+                        if position == 0
+                        else child.id if position == 1 else None
+                    ),
+                )
+                db.add(row)
+                case_ids.append(row.id)
+            db.flush()
+            paged = create_review(
+                db,
+                owner,
+                "race-project",
+                ReviewCreate(
+                    name="数据库分页软件验收",
+                    caseIds=case_ids,
+                    reviewerIds=[owner.id],
+                    mode="single",
+                ),
+            )
+            db.commit()
+            first = listing(
+                db,
+                owner,
+                "race-project",
+                paged.id,
+                sort="caseCode",
+                order="asc",
+                only_mine=True,
+            )
+            second = listing(
+                db,
+                owner,
+                "race-project",
+                paged.id,
+                page=2,
+                sort="caseCode",
+                order="asc",
+                reviewer_id=owner.id,
+            )
+            assert (
+                first["total"] == 23
+                and len(first["items"]) == 20
+                and len(second["items"]) == 3
+            )
+            assert not (
+                {row["id"] for row in first["items"]}
+                & {row["id"] for row in second["items"]}
+            )
+            assert (
+                listing(db, owner, "race-project", paged.id, folder=parent.id)["total"]
+                == 2
+            )
+            assert (
+                listing(
+                    db,
+                    owner,
+                    "race-project",
+                    paged.id,
+                    folder=parent.id,
+                    include_descendants=False,
+                )["total"]
+                == 1
+            )
+            assert (
+                listing(db, owner, "race-project", paged.id, search="中文分页标签")[
+                    "total"
+                ]
+                == 1
+            )
+            assert first["counts"] == {"all": 23, "unassigned": 21}
+            compact = review_data(db, paged, include_items=False)
+            assert (
+                compact["items"] == []
+                and compact["caseCount"] == 23
+                and compact["unReviewCount"] == 23
+            )
+            log.info(
+                "MySQL关联列表核验通过：20+3分页、JSON评审人、中文标签、父子模块及无快照详情"
+            )
         ready_a, ready_b, start_vote = (
             threading.Event(),
             threading.Event(),
@@ -349,7 +459,7 @@ def main():
             assert len(review.name) == 255
             assert workspace(db, review).start_time.microsecond == 654321
             assert db.query(CaseReviewItem).filter_by(review_id=identifier).count() == 1
-            assert db.query(CaseVersion).count() == 2
+            assert db.query(CaseVersion).count() == 25
             assert db.query(TaskQueue).count() == 0
             owner = db.get(User, "race-owner")
             summary = list_reviews(
@@ -376,6 +486,7 @@ def main():
                 "中文标签搜索": True,
                 "255字符名称与微秒周期": True,
                 "基本信息编辑保留有效票": True,
+                "关联列表20加3分页及模块筛选": True,
                 "节点任务": 0,
             }
         )

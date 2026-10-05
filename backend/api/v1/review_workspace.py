@@ -1,4 +1,4 @@
-"""MeterSphere 风格的评审首页接口；调用原有版本评审服务。"""
+"""评审首页及关联用例工作区接口，复用既有版本和评审票。"""
 
 from typing import Literal
 from fastapi import APIRouter, Depends, Query
@@ -19,6 +19,82 @@ from schemas.case_governance import ReviewHeader
 router = APIRouter(prefix="/review-workspace", tags=["评审首页"])
 
 
+@router.get("/{review_id}/detail")
+def detail(
+    project_id: str,
+    review_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.case_governance import get_review, review_data
+
+    return result(
+        review_data(
+            db, get_review(db, user, project_id, review_id), include_items=False
+        )
+    )
+
+
+@router.get("/{review_id}/items")
+def linked_items(
+    project_id: str,
+    review_id: str,
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    search: str = Query("", max_length=255),
+    folder: str = "all",
+    includeDescendants: bool = True,
+    priority: Literal["P0", "P1", "P2", "P3"] | None = None,
+    state: (
+        Literal["approved", "rejected", "under_review", "un_review", "re_review"] | None
+    ) = None,
+    reviewerId: str | None = None,
+    creatorId: str | None = None,
+    onlyMine: bool = False,
+    sort: Literal["caseCode", "name", "createdAt"] = "createdAt",
+    order: Literal["asc", "desc"] = "desc",
+    view: Literal["list", "mind"] = "list",
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.review_case_workspace import listing
+
+    return result(
+        listing(
+            db,
+            user,
+            project_id,
+            review_id,
+            page=page,
+            size=size,
+            search=search,
+            folder=folder,
+            include_descendants=includeDescendants,
+            priority=priority,
+            state=state,
+            reviewer_id=reviewerId,
+            creator_id=creatorId,
+            only_mine=onlyMine,
+            sort=sort,
+            order=order,
+            view=view,
+        )
+    )
+
+
+@router.get("/{review_id}/items/{item_id}")
+def linked_item(
+    project_id: str,
+    review_id: str,
+    item_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.review_case_workspace import get_item
+
+    return result(get_item(db, user, project_id, review_id, item_id))
+
+
 @router.put("/{review_id}/header")
 def update_header(
     project_id: str,
@@ -28,7 +104,9 @@ def update_header(
     user=Depends(get_current_user),
 ):
     return result(
-        transact(db, lambda: service.update_header(db, user, project_id, review_id, body))
+        transact(
+            db, lambda: service.update_header(db, user, project_id, review_id, body)
+        )
     )
 
 
@@ -41,7 +119,9 @@ def associate_cases(
     user=Depends(get_current_user),
 ):
     return result(
-        transact(db, lambda: service.associate_cases(db, user, project_id, review_id, body))
+        transact(
+            db, lambda: service.associate_cases(db, user, project_id, review_id, body)
+        )
     )
 
 
@@ -61,7 +141,9 @@ def candidates(
 
     project_access(db, user, project_id)
     return result(
-        shared_candidates(db, project_id, "functional", search, folder, priority, page, size)
+        shared_candidates(
+            db, project_id, "functional", search, folder, priority, page, size
+        )
     )
 
 
@@ -111,7 +193,10 @@ def reviews(
     includeDescendants: bool = True,
     search: str = Query("", max_length=200),
     lifecycle: (
-        Literal["prepared", "underway", "completed", "archived", "cancelled", "superseded"] | None
+        Literal[
+            "prepared", "underway", "completed", "archived", "cancelled", "superseded"
+        ]
+        | None
     ) = None,
     mode: Literal["single", "multiple"] | None = None,
     reviewerId: str | None = None,
@@ -160,7 +245,9 @@ def update_module(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    return result(transact(db, lambda: service.save_module(db, user, project_id, body, module_id)))
+    return result(
+        transact(db, lambda: service.save_module(db, user, project_id, body, module_id))
+    )
 
 
 @router.post("/modules/{module_id}/delete")
@@ -172,7 +259,9 @@ def delete_module(
     user=Depends(get_current_user),
 ):
     return result(
-        transact(db, lambda: service.delete_module(db, user, project_id, module_id, body))
+        transact(
+            db, lambda: service.delete_module(db, user, project_id, module_id, body)
+        )
     )
 
 
@@ -183,7 +272,9 @@ def move(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    return result(transact(db, lambda: service.move_reviews(db, user, project_id, body)))
+    return result(
+        transact(db, lambda: service.move_reviews(db, user, project_id, body))
+    )
 
 
 @router.post("/{review_id}/delete")
@@ -195,7 +286,9 @@ def delete(
     user=Depends(get_current_user),
 ):
     return result(
-        transact(db, lambda: service.delete_review(db, user, project_id, review_id, body))
+        transact(
+            db, lambda: service.delete_review(db, user, project_id, review_id, body)
+        )
     )
 
 
@@ -206,4 +299,6 @@ def archive(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    return result(transact(db, lambda: service.archive_review(db, user, project_id, review_id)))
+    return result(
+        transact(db, lambda: service.archive_review(db, user, project_id, review_id))
+    )

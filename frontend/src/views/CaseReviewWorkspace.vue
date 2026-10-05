@@ -68,127 +68,107 @@
               </a-dropdown>
             </template>
           </ReviewDetailHeader>
-          <a-space wrap style="margin: 16px 0"
-            ><a-radio-group v-model:value="layout"
-              ><a-radio-button value="list">列表</a-radio-button
-              ><a-radio-button value="mind">脑图</a-radio-button></a-radio-group
-            ><a-checkbox v-model:checked="autoNext">评审后自动下一条</a-checkbox
-            ><a-button
-              :disabled="
-                !selectedItems.length || resultSaving || associateSaving
-              "
-              @click="batchVisible = true"
-              >批量评审（{{ selectedItems.length }}）</a-button
-            ></a-space
+          <ReviewCaseTable
+            ref="caseTable"
+            :key="`${projectId}:${active.id}`"
+            :project-id="projectId"
+            :review-id="active.id"
+            :members="members"
+            :revision="tableRevision"
+            :disabled="resultSaving || associateSaving || busy"
+            v-model:selected="selectedItems"
+            @select="selectItem"
           >
-          <CaseMindMap
-            v-if="layout === 'mind'"
-            :cases="mindCases"
-            readonly
-            @select="selectCase"
-          />
-          <a-table
-            v-else
-            :columns="itemColumns"
-            :data-source="active.items"
-            row-key="id"
-            :pagination="{ pageSize: 20 }"
-            :row-selection="{
-              selectedRowKeys: selectedItems,
-              getCheckboxProps: (item: ReviewItem) => ({
-                disabled: !canVote(item),
-              }),
-              onChange: (keys: any) => (selectedItems = keys),
-            }"
-            :scroll="{ x: 650 }"
-          >
-            <template #bodyCell="{ column, record }"
-              ><a
-                v-if="column.key === 'name'"
-                @click="activeItemId = record.id"
-                >{{ record.snapshot.name }}</a
-              ><span v-else-if="column.key === 'reviewers'">{{
-                (record.reviewerIds || active.reviewerIds)
-                  .map(memberName)
-                  .join("、")
-              }}</span
-              ><a-tag
-                v-else-if="column.key === 'status'"
-                :color="statusColor(record.status)"
-                >{{ statusName(record.status)
-                }}{{ record.outdated ? " · 内容已变化" : "" }}</a-tag
-              ><a-button
-                v-else-if="column.key === 'actions'"
-                @click="activeItemId = record.id"
-                >评审</a-button
+            <template #actions>
+              <a-checkbox v-model:checked="autoNext"
+                >评审后自动下一条</a-checkbox
+              >
+              <a-button
+                :disabled="
+                  !selectedItems.length ||
+                  resultSaving ||
+                  associateSaving ||
+                  busy
+                "
+                @click="batchVisible = true"
+                >批量评审（{{ selectedItems.length }}）</a-button
+              >
+            </template>
+          </ReviewCaseTable>
+          <a-alert v-if="itemError" :message="itemError" type="error" show-icon>
+            <template #action
+              ><a-button size="small" @click="selectItem(activeItemId!)"
+                >重试</a-button
               ></template
             >
-          </a-table>
-          <a-card
-            v-if="activeItem"
-            class="item-card"
-            :title="`${activeItem.snapshot.name} · v${activeItem.version}`"
-          >
-            <template #extra
-              ><a-space
-                ><a-button @click="previousItem">上一条</a-button
-                ><a-button @click="nextItem">下一条</a-button
-                ><a-button
-                  v-if="canManage && !active.archived"
-                  :disabled="associateSaving || resultSaving"
-                  @click="
-                    editCaseId = activeItem.caseId;
-                    caseEditorVisible = true;
-                  "
-                  >编辑用例</a-button
-                ></a-space
-              ></template
+          </a-alert>
+          <a-spin :spinning="itemLoading">
+            <a-card
+              v-if="activeItem"
+              class="item-card"
+              :title="`${activeItem.snapshot.name} · v${activeItem.version}`"
             >
-            <a-alert
-              v-if="activeItem.outdated"
-              message="当前用例与本次评审快照不同；请确认后重新提审以审阅最新内容。"
-              type="warning"
-              show-icon
-            />
-            <p class="text">
-              <strong>前置条件：</strong
-              >{{ activeItem.snapshot.precondition || "无" }}
-            </p>
-            <a-table
-              :columns="stepColumns"
-              :data-source="activeItem.snapshot.steps || []"
-              :pagination="false"
-              size="small"
-              ><template #bodyCell="{ column, record }"
-                ><span class="text">{{
-                  record[column.dataIndex]
-                }}</span></template
-              ></a-table
-            >
-            <a-list :data-source="activeItem.decisions"
-              ><template #renderItem="{ item }"
-                ><a-list-item
-                  >{{ memberName(item.reviewerId) }} ·
-                  {{ statusName(item.decision) }} · {{ item.updatedAt }}
-                  <CaseRichText
-                    v-if="item.comment"
-                    :model-value="item.comment"
-                    readonly
-                    class="decision-reason"
-                  /> </a-list-item></template
-            ></a-list>
-            <template v-if="canVote(activeItem)">
-              <ReviewResultForm
-                :key="`${active.id}:${activeItem.id}`"
-                :disabled="associateSaving"
-                :submit-result="vote"
-              /> </template
-            ><a-alert
-              v-else
-              message="当前账号未被指定为本条用例的评审人，或评审已取消。"
-              type="info"
-            />
-          </a-card>
+              <template #extra
+                ><a-space
+                  ><a-button @click="previousItem">上一条</a-button
+                  ><a-button @click="nextItem">下一条</a-button
+                  ><a-button
+                    v-if="canManage && !active.archived"
+                    :disabled="associateSaving || resultSaving"
+                    @click="
+                      editCaseId = activeItem.caseId;
+                      caseEditorVisible = true;
+                    "
+                    >编辑用例</a-button
+                  ></a-space
+                ></template
+              >
+              <a-alert
+                v-if="activeItem.outdated"
+                message="当前用例与本次评审快照不同；请确认后重新提审以审阅最新内容。"
+                type="warning"
+                show-icon
+              />
+              <p class="text">
+                <strong>前置条件：</strong
+                >{{ activeItem.snapshot.precondition || "无" }}
+              </p>
+              <a-table
+                :columns="stepColumns"
+                :data-source="activeItem.snapshot.steps || []"
+                :pagination="false"
+                size="small"
+                ><template #bodyCell="{ column, record }"
+                  ><span class="text">{{
+                    record[column.dataIndex]
+                  }}</span></template
+                ></a-table
+              >
+              <a-list :data-source="activeItem.decisions"
+                ><template #renderItem="{ item }"
+                  ><a-list-item
+                    >{{ memberName(item.reviewerId) }} ·
+                    {{ statusName(item.decision) }} · {{ item.updatedAt }}
+                    <CaseRichText
+                      v-if="item.comment"
+                      :model-value="item.comment"
+                      readonly
+                      class="decision-reason"
+                    /> </a-list-item></template
+              ></a-list>
+              <template v-if="canVote(activeItem)">
+                <ReviewResultForm
+                  :key="`${active.id}:${activeItem.id}`"
+                  :disabled="associateSaving"
+                  :submit-result="vote"
+                /> </template
+              ><a-alert
+                v-else
+                message="当前账号未被指定为本条用例的评审人，或评审已取消。"
+                type="info"
+              />
+            </a-card>
+          </a-spin>
           <a-tabs
             ><a-tab-pane key="discussion" tab="评审讨论"
               ><a-list :data-source="active.comments"
@@ -239,7 +219,7 @@
       v-if="active"
       :open="associateOpen"
       :project-id="projectId"
-      :excluded="active.items.map((item) => item.caseId)"
+      :excluded="active.associatedCaseIds || []"
       :default-reviewers="active.reviewerIds"
       :members="members"
       :save-selection="associateCases"
@@ -323,9 +303,8 @@ import {
 } from "@/api/caseGovernance";
 import { useProjectStore } from "@/stores/project";
 import { useUserStore } from "@/stores/user";
-import type { TestCase } from "@/types";
 import { reviewWorkspaceApi } from "@/api/reviewWorkspace";
-import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
+import ReviewCaseTable from "@/components/CaseReview/ReviewCaseTable.vue";
 import ReviewAssociateDrawer from "@/components/CaseReview/ReviewAssociateDrawer.vue";
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
 import ReviewResultForm, {
@@ -343,7 +322,6 @@ const projectId = ref(""),
 const activeId = ref<string>(),
   activeItemId = ref<string>(),
   selectedItems = ref<string[]>([]),
-  layout = ref("list"),
   autoNext = ref(true),
   discussion = ref(""),
   followed = ref(false);
@@ -358,32 +336,38 @@ const canManage = ref(false),
   associateSaving = ref(false),
   resultSaving = ref(false);
 const active = computed(() =>
-    reviews.value.find((r) => r.id === activeId.value),
-  ),
-  activeItem = computed(() =>
-    active.value?.items.find((i) => i.id === activeItemId.value),
-  );
-const mindCases = computed(
-  () =>
-    (active.value?.items.map((i) => ({
-      ...i.snapshot,
-      id: i.caseId,
-      caseCode: i.snapshot.case_code,
-      moduleId: i.snapshot.module_id,
-      status:
-        i.status === "approved"
-          ? "passed"
-          : i.status === "rejected"
-            ? "failed"
-            : "not_executed",
-    })) as Partial<TestCase>[]) || [],
+  reviews.value.find((r) => r.id === activeId.value),
 );
-const itemColumns = [
-  { title: "用例", key: "name" },
-  { title: "评审人", key: "reviewers" },
-  { title: "状态", key: "status" },
-  { title: "操作", key: "actions", width: 90 },
-];
+const activeItem = ref<ReviewItem>(),
+  itemLoading = ref(false),
+  itemError = ref("");
+const caseTable = ref<InstanceType<typeof ReviewCaseTable>>(),
+  tableRevision = ref(0);
+let itemSequence = 0;
+async function selectItem(id: string) {
+  const p = projectId.value,
+    review = activeId.value,
+    sequence = ++itemSequence;
+  if (!review) return;
+  activeItemId.value = id;
+  activeItem.value = undefined;
+  itemLoading.value = true;
+  itemError.value = "";
+  try {
+    const record = await reviewWorkspaceApi.item(p, review, id);
+    if (
+      sequence === itemSequence &&
+      p === projectId.value &&
+      review === activeId.value
+    )
+      activeItem.value = record;
+  } catch (error) {
+    console.error("读取评审用例失败", error);
+    if (sequence === itemSequence) itemError.value = "读取用例失败，请重试";
+  } finally {
+    if (sequence === itemSequence) itemLoading.value = false;
+  }
+}
 const stepColumns = [
   { title: "序号", dataIndex: "step", width: 65 },
   { title: "操作", dataIndex: "action" },
@@ -398,8 +382,6 @@ const statusName = (s: string) =>
     cancelled: "已取消",
     superseded: "已重新提审",
   })[s] || s;
-const statusColor = (s: string) =>
-  ({ approved: "green", rejected: "red", cancelled: "default" })[s] || "blue";
 const memberName = (id: string) =>
   members.value.find((m) => m.id === id)?.name || id;
 const canVote = (item: ReviewItem) =>
@@ -433,12 +415,12 @@ async function load() {
   if (!p || !id) return;
   busy.value = true;
   try {
-    const review = await api.review(p, id);
+    const review = await reviewWorkspaceApi.detail(p, id);
     if (sequence !== loadSequence || p !== projectId.value) return;
     reviews.value = [review];
     activeId.value = review.id;
-    if (!review.items.some((i) => i.id === activeItemId.value))
-      activeItemId.value = review.items[0]?.id;
+    ++tableRevision.value;
+    if (activeItemId.value) await selectItem(activeItemId.value);
   } catch (error) {
     console.error("加载评审详情失败", error);
   } finally {
@@ -459,7 +441,8 @@ async function loadOptions() {
 }
 async function selectReview(id: string) {
   activeId.value = id;
-  activeItemId.value = active.value?.items[0]?.id;
+  activeItemId.value = undefined;
+  activeItem.value = undefined;
   selectedItems.value = [];
   await router.replace({ query: { projectId: projectId.value, reviewId: id } });
 }
@@ -483,7 +466,7 @@ async function associateCases(data: {
     if (p !== projectId.value || id !== activeId.value)
       throw new Error("项目或评审已切换，请重新打开详情");
     replace(record);
-    if (!activeItemId.value) activeItemId.value = record.items[0]?.id;
+
     console.info("已向评审追加用例，已有结论与人员保留", {
       projectId: p,
       reviewId: id,
@@ -517,23 +500,22 @@ async function openEditor(review?: CaseReview) {
     },
   });
 }
-function replace(review: CaseReview) {
+function replace(review: CaseReview, refresh = true) {
+  const item = review.items.find((row) => row.id === activeItemId.value);
+  if (item) activeItem.value = item;
+  const compact = { ...review, items: [] };
   const index = reviews.value.findIndex((r) => r.id === review.id);
-  if (index < 0) reviews.value.unshift(review);
-  else reviews.value[index] = review;
+  if (index < 0) reviews.value.unshift(compact);
+  else reviews.value[index] = compact;
+  if (refresh) ++tableRevision.value;
 }
-function nextItem() {
-  const items = active.value?.items || [];
-  const index = items.findIndex((i) => i.id === activeItemId.value);
-  activeItemId.value = items[(index + 1) % items.length]?.id;
+async function nextItem() {
+  if (activeItemId.value)
+    await caseTable.value?.navigate(activeItemId.value, 1);
 }
-function previousItem() {
-  const items = active.value?.items || [];
-  const index = items.findIndex((i) => i.id === activeItemId.value);
-  activeItemId.value = items[(index - 1 + items.length) % items.length]?.id;
-}
-function selectCase(c: Partial<TestCase>) {
-  activeItemId.value = active.value?.items.find((i) => i.caseId === c.id)?.id;
+async function previousItem() {
+  if (activeItemId.value)
+    await caseTable.value?.navigate(activeItemId.value, -1);
 }
 async function saveResult(
   decision: ReviewDecision,
@@ -559,11 +541,13 @@ async function saveResult(
       : await api.vote(p, review.id, item!.id, decision, reason);
     if (p !== projectId.value || review.id !== activeId.value)
       throw new Error("项目或评审已切换，请重新加载详情");
-    replace(record);
+    replace(record, false);
+    await caseTable.value?.refresh();
     if (batch) {
       batchVisible.value = false;
       selectedItems.value = [];
-    } else if (autoNext.value && item!.id === activeItemId.value) nextItem();
+    } else if (autoNext.value && item!.id === activeItemId.value)
+      await nextItem();
     console.info("评审结论已保存", {
       projectId: p,
       reviewId: review.id,
@@ -652,9 +636,7 @@ async function resubmit() {
         projectId.value,
         active.value!.id,
         selectedItems.value.length
-          ? active
-              .value!.items.filter((i) => selectedItems.value.includes(i.id))
-              .map((i) => i.caseId)
+          ? caseTable.value?.selectedCaseIds()
           : undefined,
       );
       replace(result);
@@ -688,6 +670,10 @@ watch(
 );
 watch(projectId, async (id) => {
   ++loadSequence;
+  ++itemSequence;
+  activeItem.value = undefined;
+  activeItemId.value = undefined;
+  itemError.value = "";
   canManage.value = false;
   canDelete.value = false;
   deleteVisible.value = false;

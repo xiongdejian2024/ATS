@@ -1,0 +1,619 @@
+<template>
+  <section class="review-cases">
+    <aside class="case-modules">
+      <div class="tree-heading">
+        <strong>用例模块</strong
+        ><a-button
+          type="text"
+          size="small"
+          @click="expanded = expanded.length ? [] : modules.map((m) => m.id)"
+          >{{ expanded.length ? "收起" : "展开" }}</a-button
+        >
+      </div>
+      <a-input-search
+        v-model:value="moduleSearch"
+        placeholder="请输入模块名称"
+        allow-clear
+      />
+      <a-tree
+        :tree-data="tree"
+        v-model:expandedKeys="expanded"
+        :selected-keys="[folder]"
+        block-node
+        @select="selectFolder"
+      >
+        <template #title="node"
+          ><span class="module-name">{{ node.title }}</span
+          ><span class="module-count">{{ node.count }}</span></template
+        >
+      </a-tree>
+    </aside>
+    <main class="case-list">
+      <div class="case-toolbar">
+        <a-space wrap
+          ><a-radio-group v-model:value="mode"
+            ><a-radio-button value="list">列表</a-radio-button
+            ><a-radio-button value="mind">脑图</a-radio-button></a-radio-group
+          ><slot name="actions"
+        /></a-space>
+        <a-space
+          ><a-input-search
+            v-model:value="search"
+            placeholder="通过 ID/名称/标签搜索"
+            allow-clear
+            @search="applySearch"
+            @change="searchCleared" /><a-button
+            aria-label="表格设置"
+            @click="settings = true"
+            ><SettingOutlined /></a-button
+          ><a-button
+            aria-label="刷新用例列表"
+            :disabled="loading"
+            @click="load()"
+            ><ReloadOutlined /></a-button
+        ></a-space>
+      </div>
+      <div class="case-filters">
+        <a-select
+          v-model:value="priority"
+          placeholder="用例等级"
+          allow-clear
+          :options="priorities"
+        />
+        <a-select
+          v-model:value="state"
+          placeholder="评审结果"
+          allow-clear
+          :options="states"
+        />
+        <a-select
+          v-model:value="reviewerId"
+          placeholder="评审人"
+          allow-clear
+          show-search
+          option-filter-prop="label"
+          :options="people"
+        />
+        <a-select
+          v-model:value="creatorId"
+          placeholder="创建人"
+          allow-clear
+          show-search
+          option-filter-prop="label"
+          :options="people"
+        />
+        <a-checkbox v-model:checked="onlyMine">仅看我的评审</a-checkbox>
+        <a-button type="text" @click="clearFilters">重置</a-button>
+      </div>
+      <div v-if="selected.length" class="selection-bar">
+        已选择 {{ selected.length }} 条
+        <a-button type="link" @click="clearSelection">清空选择</a-button>
+      </div>
+      <a-alert v-if="error" :message="error" type="error" show-icon
+        ><template #action
+          ><a-button size="small" @click="load()">重试</a-button></template
+        ></a-alert
+      >
+      <a-spin :spinning="loading">
+        <CaseMindMap
+          v-if="mode === 'mind'"
+          :cases="mindCases"
+          readonly
+          @select="selectMind"
+        />
+        <a-table
+          v-else
+          class="review-case-table"
+          :columns="columns"
+          :data-source="rows"
+          row-key="id"
+          :pagination="false"
+          :row-selection="selection"
+          :scroll="{ x: 950, y: 'max(240px, calc(100vh - 510px))' }"
+          @change="sortChanged"
+        >
+          <template #bodyCell="{ column, record }">
+            <a v-if="column.key === 'name'" @click="openItem(record.id)">{{
+              record.name
+            }}</a>
+            <span v-else-if="column.key === 'reviewers'">{{
+              (record.reviewerIds || []).map(memberName).join("、") || "-"
+            }}</span>
+            <a-tag
+              v-else-if="column.key === 'result'"
+              :color="
+                record.reviewState === 'approved'
+                  ? 'green'
+                  : record.reviewState === 'rejected'
+                    ? 'red'
+                    : 'blue'
+              "
+              >{{ stateName(record.reviewState) }}</a-tag
+            >
+            <a-button
+              v-else-if="column.key === 'operation'"
+              type="link"
+              :disabled="disabled || loading"
+              @click="openItem(record.id)"
+              >{{ record.canVote ? "评审" : "查看" }}</a-button
+            >
+          </template>
+        </a-table>
+      </a-spin>
+      <div v-if="mode === 'list'" class="case-pagination">
+        <a-pagination
+          :current="page"
+          :page-size="display.pageSize"
+          :total="total"
+          :show-size-changer="false"
+          :show-total="(n: number) => `共 ${n} 条`"
+          @change="changePage"
+        />
+      </div>
+      <p v-else-if="total > rows.length" class="mind-limit">
+        当前脑图显示前 {{ rows.length }} 条，共 {{ total }} 条；请进一步筛选。
+      </p>
+    </main>
+    <TableDisplaySettings
+      :open="settings"
+      :definitions="definitions"
+      :columns="display.columns"
+      :page-size="display.pageSize"
+      :include-descendants="display.includeDescendants"
+      @close="closeSettings"
+      @page-size-change="setPageSize"
+      @descendants-change="setDescendants"
+    />
+  </section>
+</template>
+<script setup lang="ts">
+import { ref, computed, watch, onBeforeUnmount } from "vue";
+import { message } from "ant-design-vue";
+import { useWindowSize } from "@vueuse/core";
+import { SettingOutlined, ReloadOutlined } from "@ant-design/icons-vue";
+import {
+  reviewWorkspaceApi,
+  type ReviewCaseEntry,
+} from "@/api/reviewWorkspace";
+import type { CaseFolder } from "@/api/planCaseWorkspace";
+import type { TestCase } from "@/types";
+import { useUserStore } from "@/stores/user";
+import { caseFolderTree } from "@/components/TestPlan/planCaseFolders";
+import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
+import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
+import {
+  displayStorageKey,
+  readDisplay,
+  type ColumnVisibility,
+} from "@/components/Table/tableDisplay";
+const props = defineProps<{
+  projectId: string;
+  reviewId: string;
+  members: { id: string; name: string }[];
+  revision: number;
+  selected: string[];
+  disabled: boolean;
+}>();
+const emit = defineEmits<{
+  select: [id: string];
+  "update:selected": [keys: string[]];
+}>();
+const user = useUserStore();
+const { width: viewportWidth } = useWindowSize();
+const definitions = [
+  { key: "caseCode", title: "ID", required: true },
+  { key: "name", title: "用例名称", required: true },
+  { key: "priority", title: "用例等级" },
+  { key: "reviewers", title: "评审人" },
+  { key: "result", title: "评审结果" },
+  { key: "creator", title: "创建人" },
+  { key: "operation", title: "操作" },
+];
+const storageKey = computed(() =>
+  displayStorageKey(
+    String(user.user?.id || ""),
+    props.projectId,
+    "review-cases",
+  ),
+);
+const display = ref(readDisplay(localStorage, storageKey.value, definitions));
+const rows = ref<ReviewCaseEntry[]>([]),
+  modules = ref<CaseFolder[]>([]),
+  total = ref(0),
+  counts = ref({ all: 0, unassigned: 0 });
+const page = ref(1),
+  folder = ref("all"),
+  moduleSearch = ref(""),
+  expanded = ref<string[]>([]),
+  search = ref(""),
+  appliedSearch = ref("");
+const priority = ref<string>(),
+  state = ref<string>(),
+  reviewerId = ref<string>(),
+  creatorId = ref<string>(),
+  onlyMine = ref(false);
+const mode = ref("list"),
+  sort = ref("caseCode"),
+  order = ref("asc"),
+  loading = ref(false),
+  error = ref(""),
+  settings = ref(false);
+const selectedRows = new Map<string, ReviewCaseEntry>();
+const priorities = ["P0", "P1", "P2", "P3"].map((value) => ({
+  value,
+  label: value,
+}));
+const states = [
+  { value: "approved", label: "通过" },
+  { value: "rejected", label: "不通过" },
+  { value: "under_review", label: "评审中" },
+  { value: "un_review", label: "未评审" },
+  { value: "re_review", label: "重新提审" },
+];
+const stateName = (value: string) =>
+  states.find((s) => s.value === value)?.label || value;
+const people = computed(() =>
+  props.members.map((m) => ({ value: m.id, label: m.name })),
+);
+const memberName = (id: string) =>
+  props.members.find((m) => m.id === id)?.name || id;
+const tree = computed(() => [
+  { key: "all", title: "全部用例", count: counts.value.all },
+  { key: "unassigned", title: "未分配模块", count: counts.value.unassigned },
+  ...caseFolderTree(modules.value, moduleSearch.value),
+]);
+const columns = computed(() =>
+  display.value.columns
+    .filter((c) => c.visible)
+    .map((c) => {
+      const definition = definitions.find((d) => d.key === c.key)!;
+      return {
+        key: c.key,
+        title: definition.title,
+        dataIndex: c.key,
+        ellipsis: c.key !== "operation",
+        width: (
+          {
+            caseCode: 100,
+            name: 150,
+            priority: 100,
+            reviewers: 150,
+            result: 110,
+            creator: 150,
+            operation: 140,
+          } as Record<string, number>
+        )[c.key],
+        sorter: ["name", "caseCode"].includes(c.key),
+        sortOrder:
+          c.key === sort.value
+            ? ((order.value === "asc" ? "ascend" : "descend") as
+                | "ascend"
+                | "descend")
+            : undefined,
+        fixed:
+          c.key === "operation" && viewportWidth.value >= 900
+            ? ("right" as const)
+            : undefined,
+      };
+    }),
+);
+const mindCases = computed(
+  () =>
+    rows.value.map((row) => ({
+      ...row.snapshot,
+      id: row.caseId,
+      name: row.name,
+      caseCode: row.caseCode,
+      moduleId: row.moduleId,
+      status:
+        row.reviewState === "approved"
+          ? "passed"
+          : row.reviewState === "rejected"
+            ? "failed"
+            : "not_executed",
+    })) as Partial<TestCase>[],
+);
+const selection = computed(() => ({
+  selectedRowKeys: props.selected,
+  preserveSelectedRowKeys: true,
+  getCheckboxProps: (row: ReviewCaseEntry) => ({
+    disabled: props.disabled || loading.value || !row.canVote,
+  }),
+  onChange: (keys: (string | number)[]) => {
+    if (keys.length > 200)
+      return void message.info("每批最多评审 200 条，请分批选择");
+    for (const row of rows.value)
+      if (keys.includes(row.id)) selectedRows.set(row.id, row);
+    for (const key of selectedRows.keys())
+      if (!keys.includes(key)) selectedRows.delete(key);
+    emit("update:selected", keys.map(String));
+  },
+}));
+let sequence = 0;
+async function load() {
+  const request = ++sequence,
+    p = props.projectId,
+    id = props.reviewId;
+  loading.value = true;
+  error.value = "";
+  try {
+    const result = await reviewWorkspaceApi.items(p, id, {
+      page: page.value,
+      size: display.value.pageSize,
+      folder: folder.value,
+      includeDescendants: display.value.includeDescendants,
+      search: appliedSearch.value,
+      priority: priority.value,
+      state: state.value,
+      reviewerId: reviewerId.value,
+      creatorId: creatorId.value,
+      onlyMine: onlyMine.value,
+      sort: sort.value,
+      order: order.value,
+      view: mode.value,
+    });
+    if (request !== sequence || p !== props.projectId || id !== props.reviewId)
+      return;
+    if (
+      mode.value === "list" &&
+      page.value > 1 &&
+      (page.value - 1) * display.value.pageSize >= result.total
+    ) {
+      page.value = Math.max(
+        1,
+        Math.ceil(result.total / display.value.pageSize),
+      );
+      await load();
+      return;
+    }
+    rows.value = result.items;
+    modules.value = result.modules;
+    counts.value = result.counts;
+    total.value = result.total;
+    for (const row of rows.value)
+      if (props.selected.includes(row.id)) selectedRows.set(row.id, row);
+  } catch (err) {
+    console.error("加载评审关联用例失败", err);
+    if (request === sequence) {
+      rows.value = [];
+      error.value = "加载用例失败，请重试";
+    }
+  } finally {
+    if (request === sequence) loading.value = false;
+  }
+}
+function selectFolder(keys: (string | number)[]) {
+  if (keys.length) folder.value = String(keys[0]);
+}
+function applySearch() {
+  appliedSearch.value = search.value.trim();
+}
+function searchCleared() {
+  if (!search.value) appliedSearch.value = "";
+}
+function clearFilters() {
+  search.value = "";
+  appliedSearch.value = "";
+  priority.value = state.value = reviewerId.value = creatorId.value = undefined;
+  onlyMine.value = false;
+}
+function clearSelection() {
+  selectedRows.clear();
+  emit("update:selected", []);
+}
+function sortChanged(_p: unknown, _f: unknown, sorter: any) {
+  sort.value = sorter.order ? sorter.columnKey : "caseCode";
+  order.value = sorter.order === "descend" ? "desc" : "asc";
+}
+function changePage(value: number) {
+  page.value = value;
+  void load();
+}
+function persist() {
+  try {
+    localStorage.setItem(storageKey.value, JSON.stringify(display.value));
+  } catch (err) {
+    console.error("保存评审表格配置失败", err);
+    message.error("显示设置保存失败");
+  }
+}
+function closeSettings(columns: ColumnVisibility[]) {
+  display.value.columns = columns;
+  persist();
+  settings.value = false;
+}
+function setPageSize(value: number) {
+  display.value.pageSize = value;
+  persist();
+}
+function setDescendants(value: boolean) {
+  display.value.includeDescendants = value;
+  persist();
+}
+function openItem(id: string) {
+  if (!loading.value && !props.disabled) emit("select", id);
+}
+function selectMind(row: Partial<TestCase>) {
+  const item = rows.value.find((i) => i.caseId === row.id);
+  if (item) openItem(item.id);
+}
+async function navigate(id: string, direction: number) {
+  if (loading.value || error.value)
+    return void message.info("请等待列表加载完成后再切换");
+  let index = rows.value.findIndex((r) => r.id === id);
+  if (index < 0)
+    return void message.info("当前用例不在筛选结果中，请从列表选择");
+  let target = rows.value[index + direction];
+  if (!target && mode.value === "list") {
+    const next = page.value + direction;
+    if (next >= 1 && (next - 1) * display.value.pageSize < total.value) {
+      page.value = next;
+      await load();
+      if (error.value) return;
+      target =
+        direction > 0 ? rows.value[0] : rows.value[rows.value.length - 1];
+    }
+  }
+  if (target) emit("select", target.id);
+  else message.info(direction > 0 ? "已是最后一条" : "已是第一条");
+}
+watch(
+  [
+    folder,
+    appliedSearch,
+    priority,
+    state,
+    reviewerId,
+    creatorId,
+    onlyMine,
+    mode,
+    sort,
+    order,
+    () => display.value.pageSize,
+    () => display.value.includeDescendants,
+  ],
+  () => {
+    page.value = 1;
+    clearSelection();
+    void load();
+  },
+);
+watch(
+  () => props.revision,
+  () => void load(),
+);
+watch(
+  () => props.selected,
+  (keys) => {
+    for (const key of selectedRows.keys())
+      if (!keys.includes(key)) selectedRows.delete(key);
+  },
+);
+watch(
+  () => props.reviewId,
+  () => {
+    page.value = 1;
+    clearSelection();
+    void load();
+  },
+  { immediate: true },
+);
+watch(moduleSearch, (keyword) => {
+  if (keyword) expanded.value = modules.value.map((m) => m.id);
+});
+onBeforeUnmount(() => {
+  ++sequence;
+});
+defineExpose({
+  navigate,
+  refresh: load,
+  selectedCaseIds: () => {
+    const identifiers = props.selected.map(
+      (id) => selectedRows.get(id)?.caseId,
+    );
+    if (identifiers.some((id) => !id))
+      throw new Error("选择记录已失效，请重新选择用例后重试");
+    return identifiers as string[];
+  },
+});
+</script>
+<style scoped>
+.review-cases {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  margin-top: 16px;
+  border-top: 1px solid var(--ms-border);
+}
+.case-modules {
+  padding: 16px 16px 16px 0;
+  border-right: 1px solid var(--ms-border);
+  min-width: 0;
+}
+.tree-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.case-modules :deep(.ant-tree) {
+  margin-top: 12px;
+  max-height: calc(100vh - 408px);
+  min-height: 180px;
+  overflow: auto;
+}
+.case-modules :deep(.ant-tree-title) {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+.module-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.module-count {
+  color: var(--ms-text-muted);
+}
+.case-list {
+  min-width: 0;
+  padding: 16px 0 16px 16px;
+}
+.case-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.case-toolbar :deep(.ant-input-search) {
+  width: 230px;
+}
+.case-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.case-filters :deep(.ant-select) {
+  width: 125px;
+}
+.selection-bar {
+  background: var(--ms-primary-soft);
+  padding: 4px 12px;
+  margin-bottom: 8px;
+}
+.case-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.mind-limit {
+  color: var(--ms-text-secondary);
+}
+@media (max-width: 900px) {
+  .review-cases {
+    grid-template-columns: 1fr;
+  }
+  .case-modules {
+    border-right: 0;
+    border-bottom: 1px solid var(--ms-border);
+    padding-right: 0;
+  }
+  .case-modules :deep(.ant-tree) {
+    max-height: 180px;
+    min-height: 0;
+  }
+  .case-list {
+    padding-left: 0;
+  }
+  .case-pagination {
+    overflow: auto;
+  }
+  .case-toolbar :deep(.ant-space) {
+    flex-wrap: wrap;
+  }
+  .case-toolbar :deep(.ant-input-search) {
+    width: 200px;
+  }
+}
+</style>

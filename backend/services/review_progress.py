@@ -23,6 +23,29 @@ def metrics(items, *, archived=False, status="pending", started=False):
         and any(d["decision"] == "approved" for d in item.get("decisions", []))
         for item in items
     )
+    return count_metrics(
+        total,
+        passed,
+        rejected,
+        rereview,
+        reviewing,
+        archived=archived,
+        status=status,
+        started=started,
+    )
+
+
+def count_metrics(
+    total,
+    passed,
+    rejected,
+    rereview,
+    reviewing,
+    *,
+    archived=False,
+    status="pending",
+    started=False,
+):
     reviewed = passed + rejected
     if archived:
         lifecycle = "archived"

@@ -211,8 +211,8 @@ watch(
   gap: 2px;
 }
 .rich-toolbar .active {
-  color: var(--ats-primary);
-  background: var(--ats-primary-light);
+  color: var(--primary-color);
+  background: var(--ms-primary-soft);
 }
 .case-rich-text :deep(.tiptap) {
   min-height: 100px;

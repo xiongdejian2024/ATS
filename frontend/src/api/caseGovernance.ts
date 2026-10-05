@@ -53,6 +53,7 @@ export interface CaseReview {
   endDate?: string | null;
   followed?: boolean;
   history?: Record<string, any>[];
+  associatedCaseIds?: string[];
   items: ReviewItem[];
   comments: {
     id: string;
