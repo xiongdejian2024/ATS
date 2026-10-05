@@ -14,8 +14,9 @@ from utils.serializer import serialize_model
 from core.logger import logger
 
 
-def nodes(db, plan_id):
-    return db.query(PlanNode).filter_by(plan_id=plan_id).order_by(PlanNode.position, PlanNode.created_at, PlanNode.id).all()
+def nodes(db, plan_id, *, current_read=False):
+    query = db.query(PlanNode).filter_by(plan_id=plan_id).order_by(PlanNode.position, PlanNode.created_at, PlanNode.id)
+    return (query.populate_existing().with_for_update() if current_read else query).all()
 
 
 def effective_config(db, node):
@@ -62,7 +63,8 @@ def remember_tree(db, plan_id):
     db.add(workspace)
 
 
-def save_node(db, plan, data, existing=None):
+def save_node(db, plan, data, existing=None, *, source_project_id=None):
+    original_case = existing.case_id if existing else None
     row = existing or PlanNode(plan_id=plan.id)
     name = str(data.get("name", row.name or "")).strip()
     if not name or len(name) > 255:
@@ -89,7 +91,7 @@ def save_node(db, plan, data, existing=None):
         row.case_id = row.suite_id = None
     if row.node_type == "case":
         case = db.get(TestCase, row.case_id) if row.case_id else None
-        if not case or case.deleted_at or case.project_id != plan.project_id:
+        if not case or case.deleted_at or case.project_id != plan.project_id and case.project_id != source_project_id and row.case_id != original_case:
             raise HTTPException(400, "用例不存在、已回收或不属于当前项目")
         if row.category != "functional" and not case.is_automated:
             raise HTTPException(400, "API/场景用例需要可执行的自动化用例")
@@ -150,9 +152,9 @@ def save_node(db, plan, data, existing=None):
     return row
 
 
-def compile_tree(db, plan, policy):
+def compile_tree(db, plan, policy, *, current_read=False):
     """将树编译为关联实例及显式前置节点，保留分支串并行语义。"""
-    all_nodes = nodes(db, plan.id)
+    all_nodes = nodes(db, plan.id, current_read=current_read)
     if not uses_tree(db, plan.id):
         return None
     children = {}

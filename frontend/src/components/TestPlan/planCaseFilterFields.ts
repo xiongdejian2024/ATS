@@ -10,6 +10,7 @@ export function planCaseFilterFields(
   collections: CaseFolder[],
   templates: CaseTemplate[],
   members: { id: string; name: string }[],
+  projects?: { id: string; name: string }[],
 ): FilterField[] {
   const fields = [
     ["id", "ID", "text"],
@@ -28,7 +29,10 @@ export function planCaseFilterFields(
       "projectId",
       "所属项目",
       "select",
-      [{ label: project.name, value: project.id }],
+      (projects?.length ? projects : [project]).map((p) => ({
+        label: p.name,
+        value: p.id,
+      })),
     ],
     [
       "priority",

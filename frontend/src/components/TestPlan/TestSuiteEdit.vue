@@ -152,6 +152,11 @@
 
       <a-divider>测试用例选择</a-divider>
 
+      <a-form-item label="用例来源项目">
+        <a-select v-model:value="caseProjectId" aria-label="测试套用例来源项目" show-search option-filter-prop="label"
+          :disabled="saving || sourceLoading" :loading="sourceLoading"
+          :options="caseProjects.map(p => ({value:p.id,label:p.name}))" />
+      </a-form-item>
       <a-form-item label="选择用例" name="caseIds">
         <div style="margin-bottom: 8px;">
           <a-space>
@@ -201,8 +206,9 @@
     <!-- 用例选择器 -->
     <TestCaseSelector
       v-model:visible="showCaseSelector"
-      :project-id="currentProjectId"
-      :selected-case-ids="formData.caseIds"
+      :key="caseProjectId || currentProjectId"
+      :project-id="caseProjectId || currentProjectId"
+      :selected-case-ids="selectedCases.filter(c => c.projectId === (caseProjectId || currentProjectId)).map(c => c.id)"
       :filter-automated="true"
       @confirm="handleCasesSelected"
     />
@@ -217,6 +223,7 @@ import { ReloadOutlined } from '@ant-design/icons-vue'
 import { testSuiteApi, type TestSuite, type TestSuiteCreate } from '@/api/testSuite'
 import { environmentApi } from '@/api/environment'
 import { testPlanApi } from '@/api/testPlan'
+import { planCaseWorkspaceApi } from '@/api/planCaseWorkspace'
 import { testCaseApi } from '@/api/testCase'
 import { useProjectStore } from '@/stores/project'
 import type { Environment, TestCase, TestPlan } from '@/types'
@@ -273,6 +280,10 @@ const formData = reactive<TestSuiteCreate & { caseIds: string[]; planId?: string
 
 const environments = ref<Environment[]>([])
 const selectedCases = ref<TestCase[]>([])
+const caseProjectId = ref<string>()
+const caseProjects = ref<{ id:string; name:string }[]>([])
+const sourceLoading = ref(false)
+let sourceSequence = 0
 
 // 保存编辑模式下的原始计划ID和用例ID，用于判断计划是否改变
 const originalPlanId = ref<string>('')
@@ -342,7 +353,7 @@ const handleGitConfigToggle = async (checked: boolean) => {
     try {
       await formRef.value.clearValidate(['gitRepoUrl', 'gitBranch', 'gitToken'])
     } catch (error) {
-      // 忽略清除验证时的错误
+      console.error("清除测试套 Git 配置校验失败", error)
     }
   }
 }
@@ -527,16 +538,8 @@ const loadCasesInfo = async () => {
   }
   
   try {
-    // 获取项目下的所有用例，然后过滤出选中的
-    const response = await testCaseApi.getTestCases(currentProjectId.value, {
-      page: 1,
-      size: 9999
-    })
-    
-    const allCases = response.items || []
-    // 只显示自动化用例
-    const automatedCases = allCases.filter(c => c.isAutomated)
-    selectedCases.value = automatedCases.filter(c => formData.caseIds.includes(c.id))
+    const cases = await Promise.all(formData.caseIds.map(id => testCaseApi.getTestCase("", id)))
+    selectedCases.value = cases
   } catch (error) {
     console.error('Failed to load cases info:', error)
     // 如果加载失败，至少显示ID
@@ -551,10 +554,11 @@ const loadCasesInfo = async () => {
 const handleCasesSelected = (_caseIds: string[], cases: TestCase[]) => {
   // 确保只添加自动化用例
   const automatedCases = cases.filter(c => c.isAutomated)
-  const automatedCaseIds = automatedCases.map(c => c.id)
   
-  formData.caseIds = automatedCaseIds
-  selectedCases.value = automatedCases
+  const source = caseProjectId.value || currentProjectId.value
+  const preserved = selectedCases.value.filter(c => c.projectId !== source)
+  selectedCases.value = [...preserved, ...automatedCases]
+  formData.caseIds = selectedCases.value.map(c => c.id)
   showCaseSelector.value = false
   
   if (automatedCases.length < cases.length) {
@@ -666,10 +670,29 @@ const handleCancel = () => {
   emit('cancel')
 }
 
-watch(() => props.visible, (val) => {
+watch(() => formData.planId, async (plan) => {
+  const sequence = ++sourceSequence
+  caseProjects.value = []
+  caseProjectId.value = undefined
+  if (!plan) return
+  sourceLoading.value = true
+  try {
+    const projects = await planCaseWorkspaceApi.candidateProjects(plan)
+    if (sequence !== sourceSequence) return
+    caseProjects.value = projects
+    caseProjectId.value = projects.find(p => p.id === currentProjectId.value)?.id || projects[0]?.id
+  } catch (error) {
+    console.error('加载测试套来源项目失败', error)
+    if (sequence === sourceSequence) message.error('加载用例来源项目失败')
+  } finally {
+    if (sequence === sourceSequence) sourceLoading.value = false
+  }
+})
+watch(() => props.visible, async (val) => {
   if (val) {
     loadEnvironments()
-    loadPlans()
+    await loadPlans()
+    if (!props.visible) return
     if (props.suiteId) {
       loadSuite()
     } else {

@@ -17,6 +17,7 @@ from schemas.plan_case_view import PlanCaseViewCreate, PlanCaseViewUpdate
 from schemas.plan_candidate_view import CandidateViewCreate, CandidateViewUpdate
 from schemas.plan_candidate_selection import Association, CandidateSelection
 from services import plan_case_view as views_service
+from services.plan_candidate_project import source_scope, projects
 router=APIRouter()
 Category=Literal['functional','api','scenario']
 class Selection(BaseModel):
@@ -36,13 +37,19 @@ def candidate_selection(plan_id: str, data: CandidateSelection, db: Session = De
     require_project_access(db, user, plan.project_id, 'test_case:read')
     return ok(preview(db, plan, user, data))
 
+@router.get('/plans/{plan_id}/case-workspace/candidates/projects')
+def candidate_projects(plan_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return ok(projects(db, user, plan_access(db, user, plan_id)))
+
+
 @router.get('/plans/{plan_id}/case-workspace/candidates')
 def candidates(plan_id:str,category:Category='functional',search:str=Query('',max_length=255),
                folder:str='all',priority:str|None=None,page:int=Query(1,ge=1),size:int=Query(20,ge=1,le=100),
-               filters:str|None=Query(None,max_length=30000),mine:bool=False,db:Session=Depends(get_db),user=Depends(get_current_user)):
+               filters:str|None=Query(None,max_length=30000),mine:bool=False,projectId:str|None=Query(None,min_length=1,max_length=36),db:Session=Depends(get_db),user=Depends(get_current_user)):
     plan=plan_access(db,user,plan_id)
     require_project_access(db,user,plan.project_id,'test_case:read')
-    return ok(service.candidates(db,plan,category,search,folder,priority,page,size,filters=filters,mine=mine,user_id=str(user.id)))
+    source, _ = source_scope(db, user, plan, projectId)
+    return ok(service.candidates(db,plan,category,search,folder,priority,page,size,filters=filters,mine=mine,user_id=str(user.id), source=source))
 
 @router.get('/plans/{plan_id}/case-workspace')
 def listing(plan_id:str,category:Category='functional',tree_type:Literal['COLLECTION','MODULE']='COLLECTION',folder:str|None=None,
@@ -66,23 +73,26 @@ def view_access(db, user, plan_id):
 
 
 @router.get('/plans/{plan_id}/case-workspace/candidates/views')
-def candidate_views(plan_id: str, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+def candidate_views(plan_id: str, category: Category = 'functional', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
+    plan, _ = source_scope(db, user, plan, projectId)
     rows = views_service.scope(db, user, plan, category + '-drawer').order_by(views_service.PlanCaseSavedView.created_at.desc()).all()
     return ok([views_service.data(row) for row in rows])
 
 
 @router.post('/plans/{plan_id}/case-workspace/candidates/views')
-def create_candidate_view(plan_id: str, body: CandidateViewCreate, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+def create_candidate_view(plan_id: str, body: CandidateViewCreate, category: Category = 'functional', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
+    plan, _ = source_scope(db, user, plan, projectId)
     from services.plan_candidate_filter import parse_candidate_filters
     parse_candidate_filters(dict(conditions=body.filters.get('filterConditions', []), logic=body.filters.get('filterLogic', 'and')), category)
     return ok(transact(db, lambda: views_service.save(db, user, plan, category + '-drawer', body)))
 
 
 @router.put('/plans/{plan_id}/case-workspace/candidates/views/{view_id}')
-def update_candidate_view(plan_id: str, view_id: str, body: CandidateViewUpdate, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_candidate_view(plan_id: str, view_id: str, body: CandidateViewUpdate, category: Category = 'functional', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
+    plan, _ = source_scope(db, user, plan, projectId)
     from services.plan_candidate_filter import parse_candidate_filters
     if body.filters is not None:
         parse_candidate_filters(dict(conditions=body.filters.get('filterConditions', []), logic=body.filters.get('filterLogic', 'and')), category)
@@ -90,8 +100,9 @@ def update_candidate_view(plan_id: str, view_id: str, body: CandidateViewUpdate,
 
 
 @router.delete('/plans/{plan_id}/case-workspace/candidates/views/{view_id}')
-def delete_candidate_view(plan_id: str, view_id: str, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+def delete_candidate_view(plan_id: str, view_id: str, category: Category = 'functional', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
+    plan, _ = source_scope(db, user, plan, projectId)
     transact(db, lambda: views_service.remove(db, user, plan, category + '-drawer', view_id))
     return ok()
 

@@ -297,7 +297,7 @@ async def test_existing_project_module_plan_and_dashboard(lab):
 
 @pytest.mark.asyncio
 async def test_suite_validation_and_active_template_protection(lab):
-    """拒绝跨项目、空模板和执行期间改模板，保持原结果关联。"""
+    """允许已授权跨项目来源，拒绝空模板和执行期间改模板，保持原结果关联。"""
     client, post = lab["client"], lab["post"]
     other = await post("/projects", {"name": "其他项目"})
     foreign = await post(
@@ -322,7 +322,10 @@ async def test_suite_validation_and_active_template_protection(lab):
             "case_ids": [foreign["id"]],
         },
     )
-    assert response.status_code == 400, response.text
+    assert response.status_code == 200, response.text
+    created = response.json()["data"]
+    assert created["caseIds"] == [foreign["id"]] and created["planId"] == plan_id
+    assert (await client.delete(f"/api/v1/test-plans/suites/{created['id']}" )).status_code == 200
     assert (await client.put(base, json={"case_ids": []})).status_code == 400
     from database import SessionLocal
     from models.task_queue import TaskQueue

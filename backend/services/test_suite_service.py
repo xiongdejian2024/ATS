@@ -89,8 +89,8 @@ class TestSuiteService:
         for case in cases:
             if not case.is_automated:
                 raise ValueError(f"用例 {case.name} 不是自动化用例")
-            if case.project_id != plan.project_id:
-                raise ValueError(f"用例 {case.name} 不属于测试计划的项目")
+        from services.plan_candidate_project import require_case_sources
+        require_case_sources(db, current_user_id, [c for c in cases if c.project_id != plan.project_id], current_read=True)
         
         # 创建测试套
         suite = TestSuite(
@@ -170,8 +170,8 @@ class TestSuiteService:
                     if not case.is_automated:
                         raise ValueError(f"用例 {case.name} 不是自动化用例")
                     # 如果确定了目标项目ID，验证用例是否属于该项目
-                    if target_project_id and case.project_id != target_project_id:
-                        raise ValueError(f"用例 {case.name} 不属于测试计划的项目")
+                from services.plan_candidate_project import require_case_sources
+                require_case_sources(db, current_user_id, [c for c in cases if c.project_id != target_project_id], current_read=True)
         
         # 更新字段
         # 注意：允许显式设置None值来清除字段（如Git配置）

@@ -169,3 +169,48 @@ describe("计划关联筛选范围选择", () => {
     expect(s.hasSelection.value).toBe(false);
   });
 });
+
+it("来源项目切换立即清除范围与排除，旧预览不得覆盖新项目", async () => {
+  const project = ref<string | undefined>("source-one");
+  const scope = effectScope();
+  scopes.push(scope);
+  const s = scope.run(() =>
+    usePlanCandidateSelection(
+      ref("plan"),
+      ref("functional"),
+      ref({}),
+      ref(["one"]),
+      undefined,
+      project,
+    ),
+  )!;
+  let finish!: (value: CandidateSelectionPreview) => void;
+  vi.mocked(planCaseWorkspaceApi.previewCandidates).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  s.all();
+  await flush();
+  expect(s.request.value?.projectId).toBe("source-one");
+  s.keysChanged([]);
+  await flush();
+  project.value = "source-two";
+  expect(s.request.value).toBeUndefined();
+  expect(s.excluded.value).toEqual([]);
+  finish(response(999));
+  await flush();
+  expect(s.summary.value).toBeUndefined();
+  vi.mocked(planCaseWorkspaceApi.previewCandidates).mockResolvedValue(
+    response(1),
+  );
+  s.current();
+  await flush();
+  expect(s.request.value).toEqual({
+    projectId: "source-two",
+    category: "functional",
+    caseIds: ["one"],
+  });
+  expect(s.summary.value?.count).toBe(1);
+});

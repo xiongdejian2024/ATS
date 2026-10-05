@@ -309,7 +309,8 @@ async function searchCases(search = "") {
       size: 100,
       search,
     });
-    cases.value = result.items;
+    const existing = nodes.value.map(n => n.case).filter((c): c is TestCase => !!c)
+    cases.value = [...result.items, ...existing.filter(c => !result.items.some(row => row.id === c.id))];
   } catch (error) {
     console.error("搜索计划关联用例失败", error);
   }

@@ -40,7 +40,7 @@
       <TestCaseDetail
         v-if="selected"
         :case-id="selected"
-        :project-id="plan.projectId"
+        :project-id="legacy.find(c => c.id === selected)?.projectId || plan.projectId"
         read-only
       />
     </a-drawer>

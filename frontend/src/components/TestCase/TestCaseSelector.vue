@@ -91,7 +91,7 @@
                 :columns="columns"
                 :data-source="filteredCases"
                 :loading="loading"
-                :pagination="pagination"
+                :pagination="{ ...pagination, total: filteredCases.length }"
                 :row-selection="rowSelection"
                 row-key="id"
                 :scroll="{ y: 350 }"
@@ -381,7 +381,7 @@ const loadTestCases = async () => {
       size: 9999 // 获取所有用例
     })
 
-    allCases.value = response.items || []
+    allCases.value = (response.items || []).filter(c => !props.filterAutomated || c.isAutomated)
     pagination.total = allCases.value.length
 
     // 设置已选中的用例（包括已存在的）

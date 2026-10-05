@@ -22,6 +22,7 @@ export function usePlanCandidateSelection(
   query: Ref<CandidateCondition>,
   pageIds: Ref<string[]>,
   moduleContext?: CandidateModulesContext,
+  project?: Ref<string | undefined>,
 ) {
   const selected = ref<string[]>([]),
     selectAll = ref(false),
@@ -46,6 +47,7 @@ export function usePlanCandidateSelection(
       ? undefined
       : {
           category: category.value,
+          ...(project?.value ? { projectId: project.value } : {}),
           ...(moduleMode.value && modules
             ? {
                 moduleMaps: cloneDeep(modules.maps.value),
@@ -154,9 +156,13 @@ export function usePlanCandidateSelection(
       if (current === sequence) loading.value = false;
     }
   }
-  watch(() => JSON.stringify([plan.value, category.value]), clear, {
-    flush: "sync",
-  });
+  watch(
+    () => JSON.stringify([plan.value, category.value, project?.value]),
+    clear,
+    {
+      flush: "sync",
+    },
+  );
   watch(
     () =>
       JSON.stringify(

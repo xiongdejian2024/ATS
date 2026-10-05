@@ -39,14 +39,16 @@ def entries(db, plan, category):
         for relation in db.query(PlanCaseRelation).filter_by(plan_id=plan.id).order_by(PlanCaseRelation.execution_order):
             associations.append(("legacy", relation, relation.case_id, relation.collection_id, False))
     ids = {item[2] for item in associations}
-    cases = {case.id:case for case in db.query(TestCase).filter(TestCase.id.in_(ids), TestCase.project_id == plan.project_id)}
-    modules = db.query(Module).filter_by(project_id=plan.project_id).order_by(Module.sort_order, Module.created_at).all()
+    cases = {case.id:case for case in db.query(TestCase).filter(TestCase.id.in_(ids))}
+    source_ids = {case.project_id for case in cases.values()} or {plan.project_id}
+    projects = {p.id:p for p in db.query(Project).filter(Project.id.in_(source_ids))}
+    modules = db.query(Module).filter(Module.project_id.in_(source_ids)).order_by(Module.sort_order, Module.created_at).all()
     module_names = {row.id:row.name for row in modules}
     user_ids = {uid for case in cases.values() for uid in (case.created_by,case.executor_id) if uid}
     user_ids.update(row.assigned_to for _,row,_,_,_ in associations if row.assigned_to)
     users = {row.id:row.username for row in db.query(User).filter(User.id.in_(user_ids))}
     bugs = {}
-    for link, issue in db.query(CaseIssueLink,CaseIssue).join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id).filter(CaseIssueLink.case_id.in_(ids), CaseIssue.project_id == plan.project_id, CaseIssue.kind == 'defect'):
+    for link, issue in db.query(CaseIssueLink,CaseIssue).join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id).filter(CaseIssueLink.case_id.in_(ids), CaseIssue.project_id.in_(source_ids), CaseIssue.kind == 'defect'):
         bugs.setdefault(link.case_id, set()).add(issue.id)
     run = db.query(PlanRun).filter_by(plan_id=plan.id).order_by(PlanRun.created_at.desc()).first()
     results = (run.report if run.status not in ACTIVE and run.report else build_report(db,run))['cases'] if run else []
@@ -63,7 +65,7 @@ def entries(db, plan, category):
         items.append(dict(id=f'{source}:{association.id}:{case_id}', source=source, associationId=association.id, caseId=case.id,
             name=case.name, caseCode=case.case_code, priority=case.priority, tags=case.tags or [],
             collectionId=collection_id, collectionName=points[collection_id].name if collection_id in points else '默认测试集',
-            projectName=project.name if project else '', moduleId=case.module_id, moduleName=module_names.get(case.module_id,'未分配模块'),
+            projectId=case.project_id, projectName=projects[case.project_id].name if case.project_id in projects else '', moduleId=case.module_id, moduleName=module_names.get(case.module_id,'未分配模块'),
             createdAt=case.created_at, updatedAt=case.updated_at, createdByName=users.get(case.created_by,'未知用户'),
             assignedTo=executor, executorName=users.get(executor,'未分配'), isAutomated=case.is_automated, recycled=bool(case.deleted_at),
             result=result['result'] if result else (RESULTS.get(association.execution_status,'pending') if source == 'legacy' else 'pending'),
@@ -91,7 +93,7 @@ def listing(db, plan, category, params):
                 (not search or search in (item['name']+' '+item['caseCode']).casefold())
                 and (not params.get('result') or item['result'] in results)]
     if params.get('mine'):
-        own_ids = {row.id for row in db.query(TestCase.id).filter_by(project_id=plan.project_id, created_by=params.get('user_id'))}
+        own_ids = {row.id for row in db.query(TestCase.id).filter(TestCase.id.in_([item['caseId'] for item in items]), TestCase.created_by == params.get('user_id'))}
         filtered = [item for item in filtered if item['caseId'] in own_ids]
     def tree_rows(rows, field):
         payload = []
@@ -100,19 +102,36 @@ def listing(db, plan, category, params):
             payload.append(dict(id=row.id,name=row.name,parentId=row.parent_id,count=sum(item[field] in ids for item in filtered)))
         return payload
     collections=tree_rows(points,'collectionId'); module_tree=tree_rows(modules,'moduleId')
+    source_ids = {item['projectId'] for item in items}
+    grouped_modules = bool(source_ids - {plan.project_id})
+    project_rows = {p.id:p for p in db.query(Project).filter(Project.id.in_(source_ids))}
+    if grouped_modules:
+        module_projects = {row.id:row.project_id for row in modules}
+        for row in module_tree:
+            row['projectId'] = module_projects[row['id']]
+            row['parentId'] = row['parentId'] or row['projectId']
+        for identifier in sorted(source_ids):
+            module_tree.append(dict(id=identifier, name=project_rows[identifier].name, parentId=None,
+                projectId=identifier, nodeType='PROJECT', count=sum(item['projectId'] == identifier for item in filtered)))
+            module_tree.append(dict(id=identifier + '_default', name='未分配模块', parentId=identifier,
+                projectId=identifier, nodeType='DEFAULT', count=sum(item['projectId'] == identifier and (not item['moduleId'] or item['moduleId'] not in {m.id for m in modules}) for item in filtered)))
     counts=dict(all=len(filtered),default=sum(not item['collectionId'] for item in filtered),unassigned=sum(not item['moduleId'] or item['moduleId'] not in {row.id for row in modules} for item in filtered))
     folder=params.get('folder')
     if params.get('filters') is None and folder and folder != 'all':
         field, rows = ('collectionId',points) if params['tree_type']=='COLLECTION' else ('moduleId',modules)
         if folder == 'default': filtered=[item for item in filtered if not item['collectionId']]
         elif folder == 'unassigned': filtered=[item for item in filtered if not item['moduleId'] or item['moduleId'] not in {row.id for row in modules}]
+        elif params['tree_type'] == 'MODULE' and grouped_modules and folder in source_ids:
+            filtered=[item for item in filtered if item['projectId'] == folder]
+        elif params['tree_type'] == 'MODULE' and grouped_modules and folder.endswith('_default') and folder[:-8] in source_ids:
+            filtered=[item for item in filtered if item['projectId'] == folder[:-8] and (not item['moduleId'] or item['moduleId'] not in {row.id for row in modules})]
         else:
             if folder not in {row.id for row in rows}: raise HTTPException(404,'当前计划或项目中不存在此目录')
             scope=descendants(rows,folder) if params['include_descendants'] else {folder}
             filtered=[item for item in filtered if item[field] in scope]
     filtered.sort(key=lambda item:(str(item.get(params['sort']) or ''),item['id']),reverse=params['direction']=='desc')
     page,size=params['page'],params['size'];total=len(filtered)
-    return dict(items=filtered if params.get("view")=="mind" else filtered[(page-1)*size:page*size],total=total,page=page,size=size,collections=collections,modules=module_tree,counts=counts,usesTree=uses)
+    return dict(items=filtered if params.get("view")=="mind" else filtered[(page-1)*size:page*size],total=total,page=page,size=size,collections=collections,modules=module_tree,counts=counts,usesTree=uses,projects=[dict(id=p.id, name=p.name) for p in project_rows.values()])
 
 
 def collection(db, plan, identifier):
@@ -180,7 +199,7 @@ def associate(db,plan,user,data):
     order=max((r.execution_order or 0 for r in relations), default=-1)+1
     added=0
     for case in cases:
-        if uses: save_node(db,plan,dict(name=case.name,nodeType='case',category=data.category,caseId=case.id,parentId=data.collectionId,suiteId=suite.id if case.is_automated and suite else None))
+        if uses: save_node(db,plan,dict(name=case.name,nodeType='case',category=data.category,caseId=case.id,parentId=data.collectionId,suiteId=suite.id if case.is_automated and suite else None), source_project_id=case.project_id)
         elif case.id not in existing:
             db.add(PlanCaseRelation(plan_id=plan.id,case_id=case.id,collection_id=data.collectionId,execution_order=order+added))
         else: continue
@@ -189,25 +208,26 @@ def associate(db,plan,user,data):
     return dict(added=added)
 
 
-def candidates(db, plan, category, search, folder, priority, page, size, *, filters=None, mine=False, user_id=None):
+def candidates(db, plan, category, search, folder, priority, page, size, *, filters=None, mine=False, user_id=None, source=None):
     """数据库分页取可关联用例，目录计数不受当前页或目录范围影响。"""
     from services.case_candidates import candidates as shared_candidates
+    source = source or plan
     if filters is not None or mine:
         from services.plan_candidate_filter import advanced_candidates
-        result = advanced_candidates(db, plan, category, filters, mine, user_id, page, size)
+        result = advanced_candidates(db, source, category, filters, mine, user_id, page, size)
     else:
-        result = shared_candidates(db, plan.project_id, category, search, folder, priority, page, size)
+        result = shared_candidates(db, source.project_id, category, search, folder, priority, page, size)
     associated, points, _, uses = entries(db, plan, category)
     linked = {item['caseId'] for item in associated}
     items = [dict(item, alreadyLinked=item['id'] in linked) for item in result['items']]
     suites = [dict(id=row.id, name=row.name, caseIds=row.case_ids or []) for row in db.query(TestSuite).filter_by(plan_id=plan.id)]
     if category != 'functional' and filters is None and not mine:
         from services.native_candidate_context import NativeCandidateContext
-        native = NativeCandidateContext(db, plan.project_id)
+        native = NativeCandidateContext(db, source.project_id)
         cases = {row.id: row for row in db.query(TestCase).filter(TestCase.id.in_([item['id'] for item in items]))}
         items = [dict(item, **native.values(cases[item['id']])) for item in items]
-    project = db.get(Project, plan.project_id)
-    plans = [dict(id=p.id, name=p.name) for p in db.query(TestPlan).filter_by(project_id=plan.project_id)]
+    project = db.get(Project, source.project_id)
+    plans = [dict(id=p.id, name=p.name) for p in db.query(TestPlan).filter_by(project_id=source.project_id)]
     return dict(**{key:value for key,value in result.items() if key != "items"}, items=items, usesTree=uses,
-                projectId=plan.project_id, projectName=project.name, plans=plans,
+                projectId=source.project_id, projectName=project.name, plans=plans,
                 collections=[dict(id=row.id, name=row.name, parentId=row.parent_id, count=0) for row in points], suites=suites)

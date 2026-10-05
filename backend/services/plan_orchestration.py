@@ -74,16 +74,18 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
             if existing.plan_id != plan_id or existing.executor_id != str(user_id):
                 raise ValueError("幂等键已被其他计划执行使用")
             return existing
-    plan = db.query(TestPlan).filter_by(id=plan_id).with_for_update().first()
+    from services.plan_candidate_project import lock_run_sources
+    locked_sources = lock_run_sources(db, plan_id)
+    plan = db.query(TestPlan).filter_by(id=plan_id).populate_existing().with_for_update().first()
     if not plan:
         raise ValueError("测试计划不存在")
     if db.query(PlanRun).filter(PlanRun.plan_id == plan_id, PlanRun.status.in_(ACTIVE)).first():
         raise ValueError("当前计划已有执行中的批次，请完成或取消后再次执行")
     from models.plan_workspace import PlanWorkspace
-    workspace = db.get(PlanWorkspace, plan_id)
+    workspace = db.query(PlanWorkspace).filter_by(plan_id=plan_id).populate_existing().with_for_update().one_or_none()
     if workspace and workspace.archived:
         raise ValueError("归档计划不能执行，请先取消归档")
-    suites = db.query(TestSuite).filter_by(plan_id=plan_id).order_by(TestSuite.created_at, TestSuite.id).all()
+    suites = db.query(TestSuite).filter_by(plan_id=plan_id).order_by(TestSuite.created_at, TestSuite.id).populate_existing().with_for_update().all()
     if suite_ids is not None:
         requested = list(suite_ids)
         known = {s.id for s in suites}
@@ -94,28 +96,30 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
         suites = [suite for suite in suites if suite.case_ids]
     policy = get_policy(db, plan_id)
     from services.plan_tree import compile_tree
-    tree_entries = compile_tree(db, plan, policy) if suite_ids is None else None
+    tree_entries = compile_tree(db, plan, policy, current_read=True) if suite_ids is None else None
     if tree_entries is not None:
         suites = [e["suite"] for e in tree_entries if e["suite"]]
         policy = dict(policy, nodeGraph=True)
     ordering = {sid: i for i, sid in enumerate(policy["suiteOrder"])}
     if tree_entries is None:
         suites.sort(key=lambda s: ordering.get(s.id, len(ordering)))
-    relations = db.query(PlanCaseRelation).filter_by(plan_id=plan_id).order_by(PlanCaseRelation.execution_order).all()
+    relations = db.query(PlanCaseRelation).filter_by(plan_id=plan_id).order_by(PlanCaseRelation.execution_order).populate_existing().with_for_update().all()
     selected_ids = [e["node"].case_id for e in tree_entries if e["node"].case_id] if tree_entries is not None else [r.case_id for r in relations]
     case_ids = list(dict.fromkeys(selected_ids + [cid for s in suites for cid in s.case_ids]))
-    cases = {c.id: c for c in db.query(TestCase).filter(TestCase.id.in_(case_ids), TestCase.deleted_at.is_(None)).all()}
+    cases = {c.id: c for c in db.query(TestCase).filter(TestCase.id.in_(case_ids), TestCase.deleted_at.is_(None)).populate_existing().with_for_update().all()}
     if len(cases) != len(case_ids):
         raise ValueError("计划包含已删除或不存在的用例，请先更新关联")
     if not cases:
         raise ValueError("请先为计划关联用例或添加测试套")
-    if any(c.project_id != plan.project_id for c in cases.values()):
-        raise ValueError("计划包含不属于当前项目的用例")
+    if not {c.project_id for c in cases.values()} <= locked_sources or plan.project_id not in locked_sources:
+        raise ValueError('计划来源范围已变化，请刷新后重新执行')
+    from services.plan_candidate_project import require_case_sources
     covered = {cid for s in suites for cid in s.case_ids}
     if suite_ids is None and any(c.is_automated and c.id not in covered for c in cases.values()):
         raise ValueError("存在未配置测试套的自动化用例，请先配置执行命令和节点")
     if suite_ids is not None:
         case_ids = [cid for cid in case_ids if cid in covered or not cases[cid].is_automated]
+    require_case_sources(db, user_id, [cases[cid] for cid in case_ids if cases[cid].project_id != plan.project_id], current_read=True)
     for suite in suites:
         if not db.get(Environment, suite.environment_id):
             raise ValueError("执行环境不存在")
@@ -125,7 +129,7 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
     for cid in case_ids:
         case = cases[cid]
         version = snapshot_case(db, case, str(user_id), "计划执行冻结用例版本")
-        snapshots.append(dict(id=cid, name=case.name, caseCode=case.case_code, isAutomated=case.is_automated,
+        snapshots.append(dict(id=cid, name=case.name, caseCode=case.case_code, isAutomated=case.is_automated, projectId=case.project_id,
                               versionId=version.id, version=version.version, snapshot=deepcopy(version.snapshot)))
     if tree_entries is not None:
         snapshot_map = {c["id"]: c for c in snapshots}
@@ -204,7 +208,7 @@ def build_report(db, run):
                 "skipped" if item.status == "skipped" else
                 "cancelled" if item.status == "cancelled" else
                 "error" if item.status in ("completed", "failed") else "pending")
-            rows.append(dict(caseId=cid, caseName=cases.get(cid, {}).get("name", cid),
+            rows.append(dict(caseId=cid, projectId=cases.get(cid, {}).get("projectId"), caseName=cases.get(cid, {}).get("name", cid),
                              suiteName=item.suite_snapshot["name"], executionId=item.execution_id,
                              result=state, notes=result.error_message if result else item.error_message,
                              duration=result.duration if result else None, snapshot=cases.get(cid, {}).get("snapshot", {}),
@@ -220,7 +224,7 @@ def build_report(db, run):
             if linked:
                 state = "pending" if any(r["result"] == "pending" for r in linked) else "failed" if any(r["result"] in ("failed", "error") for r in linked) else "passed" if all(r["result"] == "passed" for r in linked) else "skipped"
                 result = dict(result, result=state, notes="结果由关联的自动化执行更新")
-            rows.append(dict(caseId=case["id"], caseName=case["name"], suiteName="手工测试",
+            rows.append(dict(caseId=case["id"], projectId=case.get("projectId"), caseName=case["name"], suiteName="手工测试",
                              executionId=None, result=result.get("result", "cancelled" if run.status == "cancelled" else "pending"),
                              notes=result.get("notes"), duration=None, snapshot=case.get("snapshot", {}), executorId=result.get("executorId"),
                              associationId=key, category=case.get("category", "functional"), assignedTo=case.get("assignedTo"),

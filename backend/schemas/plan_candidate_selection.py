@@ -36,6 +36,7 @@ class CandidateModuleSelection(ScopeRequest):
 
 
 class CandidateSelection(ScopeRequest):
+    projectId: str | None = Field(None, min_length=1, max_length=36)
     category: Category = 'functional'
     selectAll: StrictBool = False
     caseIds: list[str] = Field(default_factory=list, max_length=10000)

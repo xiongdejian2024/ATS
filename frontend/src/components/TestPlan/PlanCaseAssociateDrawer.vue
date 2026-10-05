@@ -9,6 +9,20 @@
     :mask-closable="!locked"
     @close="close"
   >
+    <div class="source-project">
+      <span>来源项目</span>
+      <a-select
+        v-model:value="sourceProjectId"
+        aria-label="关联来源项目"
+        show-search
+        option-filter-prop="label"
+        :disabled="locked || projectsLoading"
+        :loading="projectsLoading"
+        :options="sourceProjects.map((p) => ({ value: p.id, label: p.name }))"
+        @change="switchProject"
+      />
+      <span class="source-hint">切换项目将清空已选用例和筛选条件</span>
+    </div>
     <a-radio-group
       v-if="!category"
       v-model:value="activeCategory"
@@ -117,7 +131,7 @@
             @change="resetPage"
           /><PlanCaseFilters
             v-if="project"
-            :key="`${planId}:${activeCategory}`"
+            :key="`${planId}:${activeCategory}:${sourceProjectId}`"
             mode="association"
             :plan-id="planId"
             :project-id="project.id"
@@ -348,6 +362,9 @@ const activeCategory = ref<"functional" | "api" | "scenario">(
   expanded = ref<string[]>([]),
   collectionId = ref<string>(),
   suiteId = ref<string>();
+const sourceProjectId = ref<string>(),
+  sourceProjects = ref<{ id: string; name: string }[]>([]),
+  projectsLoading = ref(false);
 const nativeCaseId = ref(""),
   nativeSaving = ref(false);
 const locked = computed(
@@ -374,6 +391,7 @@ const selection = usePlanCandidateSelection(
       ),
     ),
   },
+  sourceProjectId,
 );
 const moduleSelectionDisabled = computed(
   () =>
@@ -510,6 +528,7 @@ async function load() {
   const request = ++sequence;
   loading.value = true;
   failed.value = false;
+  const sourceId = sourceProjectId.value;
   const condition: CandidateCondition = cloneDeep({
     search: search.value,
     folder: folder.value,
@@ -518,8 +537,18 @@ async function load() {
     mine: viewId.value === "system:my",
   });
   try {
+    if (!sourceProjects.value.length) {
+      projectsLoading.value = true;
+      const projects = await planCaseWorkspaceApi.candidateProjects(
+        props.planId,
+      );
+      if (request !== sequence) return;
+      sourceProjects.value = projects;
+      projectsLoading.value = false;
+    }
     const result = await planCaseWorkspaceApi.candidates(props.planId, {
       category: activeCategory.value,
+      projectId: sourceId,
       ...condition,
       page: page.value,
       size: size.value,
@@ -529,6 +558,7 @@ async function load() {
           : JSON.stringify(condition.filters),
     });
     if (request === sequence) {
+      sourceProjectId.value = result.projectId;
       data.value = result;
       appliedCondition.value = condition;
       project.value = { id: result.projectId, name: result.projectName };
@@ -543,7 +573,10 @@ async function load() {
       failed.value = true;
     }
   } finally {
-    if (request === sequence) loading.value = false;
+    if (request === sequence) {
+      loading.value = false;
+      projectsLoading.value = false;
+    }
   }
 }
 function resetPage() {
@@ -559,6 +592,22 @@ function tableChange(p: { current: number; pageSize: number }) {
   page.value = p.current;
   size.value = p.pageSize;
   void load();
+}
+function switchProject() {
+  ++sequence;
+  nativeCaseId.value = "";
+  data.value = undefined;
+  project.value = undefined;
+  planOptions.value = [];
+  filterModules.value = [];
+  expanded.value = [];
+  moduleSearch.value = "";
+  appliedCondition.value = {};
+  resetCategory();
+  console.info("计划关联来源项目已切换", {
+    planId: props.planId,
+    projectId: sourceProjectId.value,
+  });
 }
 function resetCategory() {
   nativeCaseId.value = "";
@@ -613,6 +662,8 @@ watch(
   () => [props.open, props.planId, props.category],
   () => {
     sequence++;
+    sourceProjectId.value = undefined;
+    sourceProjects.value = [];
     nativeCaseId.value = "";
     data.value = undefined;
     project.value = undefined;
@@ -646,6 +697,21 @@ onBeforeRouteLeave(allowNavigation);
 onBeforeRouteUpdate(allowNavigation);
 </script>
 <style scoped>
+.source-project {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.source-project :deep(.ant-select) {
+  width: 240px;
+  max-width: 100%;
+}
+.source-hint {
+  color: var(--ms-text-secondary);
+  font-size: 12px;
+}
 .category-switch {
   margin-bottom: 16px;
 }

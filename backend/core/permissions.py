@@ -52,7 +52,7 @@ SYSTEM_PERMISSIONS = {
 }
 
 
-def has_global_permission(db: Session, user_id: UUID, resource: str, action: str) -> bool:
+def has_global_permission(db: Session, user_id: UUID, resource: str, action: str, *, current_read=False) -> bool:
     """检查全局权限"""
     permission_code = f"{resource}:{action}"
     
@@ -68,7 +68,7 @@ def has_global_permission(db: Session, user_id: UUID, resource: str, action: str
         Permission.code == permission_code
     )
     
-    return query.first() is not None
+    return (query.populate_existing().with_for_update() if current_read else query).first() is not None
 
 
 def has_project_permission(
@@ -76,7 +76,8 @@ def has_project_permission(
     user_id: UUID, 
     project_id: UUID, 
     resource: str, 
-    action: str
+    action: str,
+    *, current_read=False
 ) -> bool:
     """检查项目权限"""
     permission_code = f"{resource}:{action}"
@@ -90,7 +91,7 @@ def has_project_permission(
         Permission.code == permission_code
     )
     
-    return query.first() is not None
+    return (query.populate_existing().with_for_update() if current_read else query).first() is not None
 
 
 def check_permission(resource: str, action: str):

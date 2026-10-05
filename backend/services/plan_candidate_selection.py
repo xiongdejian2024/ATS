@@ -4,7 +4,7 @@ from models import TestCase, TestPlan, TestSuite, PlanCaseRelation
 from models.plan_workspace import PlanNode, PlanWorkspace
 from core.project_access import require_project_access, project_allows
 from core.logger import logger
-from services.review_workspace import lock_project
+from services.plan_candidate_project import source_scope
 
 LIMIT = 10000
 
@@ -26,31 +26,33 @@ def state(db, plan, *, current_read=False):
 
 
 def resolve(db, plan, user, selection, *, writing=False):
-    if writing:
-        lock_project(db, plan.project_id)
+    target_id = plan.project_id
+    source, _ = source_scope(db, user, plan, selection.projectId, writing=writing)
     plan, workspace, uses_tree, suites, relations = state(db, plan, current_read=writing)
-    require_project_access(db, user, plan.project_id, 'test_case:read')
-    project = require_project_access(db, user, plan.project_id, 'test_plan:update' if writing else 'test_plan:read')
+    if plan.project_id != target_id:
+        raise HTTPException(409, '计划所属项目已改变，请刷新后重新选择')
+    require_project_access(db, user, plan.project_id, 'test_case:read', current_read=writing)
+    project = require_project_access(db, user, plan.project_id, 'test_plan:update' if writing else 'test_plan:read', current_read=writing)
     if writing and workspace and workspace.archived:
         raise HTTPException(409, '归档计划不可修改关联')
     excluded_count = 0
     module_summary = {}
     if selection.moduleMaps is not None:
         from services.plan_candidate_modules import resolve_modules
-        cases, excluded_count, module_summary = resolve_modules(db, plan, selection, relations, uses_tree, current_read=writing)
+        cases, excluded_count, module_summary = resolve_modules(db, source, selection, relations, uses_tree, current_read=writing)
     elif selection.selectAll:
         condition = selection.condition
         if condition.filters is not None or condition.mine:
             from services.plan_candidate_filter import filter_cases
-            cases, _, _ = filter_cases(db, plan, selection.category, condition.filters, str(user.id), condition.mine, current_read=writing)
+            cases, _, _ = filter_cases(db, source, selection.category, condition.filters, str(user.id), condition.mine, current_read=writing)
         else:
             from services.case_candidates import candidate_query
-            query, _, _, _ = candidate_query(db, plan.project_id, selection.category, condition.search, condition.folder, condition.priority, current_read=writing)
+            query, _, _, _ = candidate_query(db, source.project_id, selection.category, condition.search, condition.folder, condition.priority, current_read=writing)
             if not uses_tree:
                 query = query.filter(TestCase.id.notin_([r.case_id for r in relations]))
             cases = query.order_by(TestCase.created_at.desc(), TestCase.id).limit(LIMIT + len(selection.excludeIds) + 1).all()
     else:
-        query = db.query(TestCase).filter(TestCase.id.in_(selection.caseIds), TestCase.project_id == plan.project_id, TestCase.deleted_at.is_(None)).order_by(TestCase.created_at.desc(), TestCase.id)
+        query = db.query(TestCase).filter(TestCase.id.in_(selection.caseIds), TestCase.project_id == source.project_id, TestCase.deleted_at.is_(None)).order_by(TestCase.created_at.desc(), TestCase.id)
         cases = (query.populate_existing().with_for_update() if writing else query).all()
         if len(cases) != len(selection.caseIds):
             raise HTTPException(404, '用例不存在、已回收或不属于当前项目')

@@ -14,9 +14,11 @@ def build_suite_message(db, suite, execution_id, executor_id, case_snapshots=Non
 
     plan = db.get(TestPlan, suite.plan_id)
     if not plan or any(
-        case.project_id != plan.project_id or not case.is_automated for case in cases
+        not case.is_automated for case in cases
     ):
-        raise ValueError("所选用例必须为测试计划所属项目的自动化用例")
+        raise ValueError("所选用例必须为可执行的自动化用例")
+    from services.plan_candidate_project import require_case_sources
+    require_case_sources(db, executor_id, [c for c in cases if c.project_id != plan.project_id], current_read=True)
     snapshots = {c["id"]: c for c in case_snapshots or []}
     git_enabled = suite.git_enabled == "true"
     return {

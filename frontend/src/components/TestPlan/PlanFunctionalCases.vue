@@ -74,6 +74,7 @@
             allow-clear
             :maxlength="255"
             @search="resetPage" /><PlanCaseFilters
+            :projects="data?.projects"
             :plan-id="plan.id"
             :project-id="plan.projectId"
             :project-name="

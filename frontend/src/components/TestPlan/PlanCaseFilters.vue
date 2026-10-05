@@ -158,6 +158,7 @@ const props = withDefaults(
     projectName: string;
     collections: CaseFolder[];
     modules: CaseFolder[];
+    projects?: { id: string; name: string }[];
     conditions?: FilterCondition[];
     logic: FilterLogic;
     viewId?: string;
@@ -207,6 +208,7 @@ const fields = computed(() =>
         props.collections,
         templates.value,
         members.value,
+        props.projects,
       ),
 );
 const moduleTree = computed(() => {
@@ -214,11 +216,17 @@ const moduleTree = computed(() => {
     nodes.map((n) => ({
       ...n,
       nodeType: "module",
+      selectable: n.nodeType !== "PROJECT",
       children: mark(n.children || []),
     }));
   return [
     { key: "__unassigned__", title: "未分配模块", nodeType: "module" },
-    ...mark(caseFolderTree(props.modules, "")),
+    ...mark(
+      caseFolderTree(
+        props.modules.filter((m) => m.nodeType !== "DEFAULT"),
+        "",
+      ),
+    ),
   ];
 });
 let viewSequence = 0,
@@ -228,7 +236,12 @@ async function loadViews() {
     sequence = ++viewSequence;
   viewLoading.value = true;
   try {
-    const rows = await api.views(plan, props.category, props.mode);
+    const rows = await api.views(
+      plan,
+      props.category,
+      props.mode,
+      props.projectId,
+    );
     if (sequence !== viewSequence || plan !== props.planId) return;
     views.value = rows;
     viewError.value = "";
@@ -317,7 +330,7 @@ async function saveView(
   mode: ViewSaveMode,
 ) {
   const plan = props.planId,
-    context = `${props.category}:${props.mode}`,
+    context = `${props.projectId}:${props.category}:${props.mode}`,
     selected = props.viewId;
   const filters = { filterConditions: conditions, filterLogic: logic };
   const row =
@@ -329,11 +342,19 @@ async function saveView(
           filters,
           props.category,
           props.mode,
+          props.projectId,
         )
-      : await api.saveView(plan, name, filters, props.category, props.mode);
+      : await api.saveView(
+          plan,
+          name,
+          filters,
+          props.category,
+          props.mode,
+          props.projectId,
+        );
   if (
     plan !== props.planId ||
-    context !== `${props.category}:${props.mode}` ||
+    context !== `${props.projectId}:${props.category}:${props.mode}` ||
     selected !== props.viewId
   )
     throw new Error("计划或视图已切换，请重新打开筛选");
@@ -356,7 +377,8 @@ async function saveName() {
   const name = renameName.value.trim(),
     plan = props.planId,
     category = props.category,
-    mode = props.mode;
+    mode = props.mode,
+    project = props.projectId;
   if (
     !name ||
     viewNames.value.some(
@@ -378,11 +400,13 @@ async function saveName() {
       undefined,
       category,
       mode,
+      project,
     );
     if (
       plan !== props.planId ||
       category !== props.category ||
-      mode !== props.mode
+      mode !== props.mode ||
+      project !== props.projectId
     )
       return;
     views.value = views.value.map((v) => (v.id === row.id ? row : v));
@@ -398,7 +422,8 @@ async function saveName() {
 function remove(view: PlanCaseSavedView) {
   const plan = props.planId,
     category = props.category,
-    mode = props.mode;
+    mode = props.mode,
+    project = props.projectId;
   const confirmation = Modal.confirm({
     title: `删除视图“${view.name}”？`,
     content: "删除后不可恢复。",
@@ -410,14 +435,16 @@ function remove(view: PlanCaseSavedView) {
         if (
           plan !== props.planId ||
           category !== props.category ||
-          mode !== props.mode
+          mode !== props.mode ||
+          project !== props.projectId
         )
           throw new Error("计划或分类已切换");
-        await api.deleteView(plan, view.id, category, mode);
+        await api.deleteView(plan, view.id, category, mode, project);
         if (
           plan !== props.planId ||
           category !== props.category ||
-          mode !== props.mode
+          mode !== props.mode ||
+          project !== props.projectId
         )
           return;
         views.value = views.value.filter((v) => v.id !== view.id);
