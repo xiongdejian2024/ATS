@@ -45,7 +45,7 @@ def main():
 
     try:
         import pymysql
-        from sqlalchemy import create_engine
+        from sqlalchemy import create_engine, text
         from sqlalchemy.engine import URL
         from sqlalchemy.orm import sessionmaker
         from database import Base
@@ -89,6 +89,12 @@ def main():
             ),
             isolation_level="REPEATABLE READ",
         )
+        with engine.connect() as check:
+            rates = check.execute(
+                text("SELECT ROUND(1.0 / 3, 2) * 100, ROUND(1.0 / 8, 2) * 100")
+            ).one()
+            assert tuple(rates) == (33, 13)
+            log.info("MySQL官方比例舍入核验通过：1/3=%s%%，1/8=%s%%", *rates)
         Base.metadata.create_all(engine)
         Sessions = sessionmaker(bind=engine)
         from fastapi import HTTPException
@@ -361,6 +367,7 @@ def main():
         print(
             {
                 "真实MySQL锁等待": observed,
+                "官方比例舍入33与13": True,
                 "旧快照仍显示未归档": stale,
                 "改投拒绝": rejected,
                 "归档后追加关联拒绝": add_rejected,

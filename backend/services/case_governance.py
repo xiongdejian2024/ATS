@@ -292,6 +292,7 @@ def get_review(db, user, project_id, review_id, lock=False):
 
 def review_data(db, review):
     from services.review_workspace import metadata
+    from services.review_progress import metrics
 
     items = []
     for item in (
@@ -344,8 +345,29 @@ def review_data(db, review):
         .order_by(CaseReviewComment.created_at, CaseReviewComment.id)
         .all()
     ]
+    events = [
+        dict(
+            id=e.id,
+            itemId=e.item_id,
+            actorId=e.actor_id,
+            action=e.action,
+            detail=e.detail,
+            createdAt=e.created_at.isoformat(),
+        )
+        for e in db.query(CaseReviewEvent)
+        .filter_by(review_id=review.id)
+        .order_by(CaseReviewEvent.created_at, CaseReviewEvent.id)
+        .all()
+    ]
+    info = metadata(db, review)
     return dict(
-        **metadata(db, review),
+        **info,
+        **metrics(
+            items,
+            archived=info["archived"],
+            status=review.status,
+            started=any(e["action"] == "评审结论" for e in events),
+        ),
         id=review.id,
         name=review.name,
         policy=review.policy,
@@ -360,20 +382,7 @@ def review_data(db, review):
         createdAt=review.created_at.isoformat(),
         items=items,
         comments=comments,
-        history=[
-            dict(
-                id=e.id,
-                itemId=e.item_id,
-                actorId=e.actor_id,
-                action=e.action,
-                detail=e.detail,
-                createdAt=e.created_at.isoformat(),
-            )
-            for e in db.query(CaseReviewEvent)
-            .filter_by(review_id=review.id)
-            .order_by(CaseReviewEvent.created_at, CaseReviewEvent.id)
-            .all()
-        ],
+        history=events,
     )
 
 

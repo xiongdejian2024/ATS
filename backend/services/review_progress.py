@@ -1,0 +1,46 @@
+"""评审生命周期及进度；有效结论和整单完成状态分开计算。"""
+
+from decimal import Decimal, ROUND_HALF_UP
+
+
+def pass_rate(passed, total):
+    if not total:
+        return 0
+    # 官方先按比例保留两位小数，再转为百分数；1/3显示33%，1/8显示13%。
+    ratio = (Decimal(passed) / Decimal(total)).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    return int(ratio * 100)
+
+
+def metrics(items, *, archived=False, status="pending", started=False):
+    total = len(items)
+    passed = sum(item["status"] == "approved" for item in items)
+    rejected = sum(item["status"] == "rejected" for item in items)
+    rereview = sum(item["status"] == "re_review" for item in items)
+    reviewing = sum(
+        item["status"] == "pending"
+        and any(d["decision"] == "approved" for d in item.get("decisions", []))
+        for item in items
+    )
+    reviewed = passed + rejected
+    if archived:
+        lifecycle = "archived"
+    elif status in {"cancelled", "superseded"}:
+        lifecycle = status
+    elif total and reviewed == total:
+        lifecycle = "completed"
+    else:
+        lifecycle = "underway" if started else "prepared"
+    return dict(
+        lifecycle=lifecycle,
+        caseCount=total,
+        passCount=passed,
+        unPassCount=rejected,
+        reReviewedCount=rereview,
+        underReviewedCount=reviewing,
+        unReviewCount=total - reviewed - rereview - reviewing,
+        reviewedCount=reviewed,
+        progress=round(reviewed / total * 100, 2) if total else 0,
+        passRate=pass_rate(passed, total),
+    )

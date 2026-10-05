@@ -1,105 +1,73 @@
 <template>
   <section class="review-page">
-    <header class="review-header">
-      <div>
-        <h2>评审详情</h2>
-        <p>按锁定版本审阅，记录建议和每次结论变更。</p>
-      </div>
-      <a-space wrap
-        ><a-button
-          @click="router.push({ name: 'CaseReviews', query: { projectId } })"
-          >返回评审列表</a-button
-        ><a-button
-          v-if="canManage"
-          type="primary"
-          :disabled="!projectId"
-          @click="openEditor()"
-          >新建评审</a-button
-        ><a-button :disabled="associateSaving || resultSaving" @click="load"
-          >刷新</a-button
-        ></a-space
-      >
-    </header>
     <a-alert v-if="!projectId" message="请选择项目" type="info" />
     <template v-else>
       <div class="review-layout">
         <main v-if="active" class="review-workspace">
-          <a-card :title="active.name">
-            <template #extra
-              ><a-space wrap
-                ><a-button @click="follow">{{
-                  followed ? "取消关注" : "关注"
-                }}</a-button
-                ><a-button
-                  v-if="
-                    canManage &&
-                    !active.archived &&
-                    !['cancelled', 'superseded'].includes(active.status)
-                  "
-                  :disabled="associateSaving || resultSaving"
-                  @click="associateOpen = true"
-                  >关联用例</a-button
-                ><a-button
-                  v-if="canManage && !active.archived"
-                  :disabled="associateSaving || resultSaving"
-                  @click="openEditor(active)"
-                  >编辑</a-button
-                ><a-button
-                  v-if="canManage"
-                  :disabled="associateSaving || resultSaving"
-                  @click="copyReview"
-                  >复制</a-button
-                ><a-button
-                  v-if="canManage && !active.archived"
-                  :disabled="associateSaving || resultSaving"
-                  @click="resubmit"
-                  >重新提审</a-button
-                ><a-popconfirm
-                  v-if="
-                    canManage && !active.archived && active.status === 'pending'
-                  "
-                  title="取消整张评审单？"
-                  @confirm="cancel"
-                  ><a-button danger>取消评审</a-button></a-popconfirm
-                ></a-space
-              ></template
-            >
-            <p>{{ active.description || "未填写描述" }}</p>
-            <a-space wrap
-              ><a-tag :color="statusColor(active.status)">{{
-                statusName(active.status)
-              }}</a-tag
-              ><span>{{
-                active.mode === "single"
-                  ? "单人：最后一次有效结论"
-                  : "多人：每位评审人的末次有效结论均通过才通过"
-              }}</span
-              ><span
-                >评审周期：{{ active.startTime || "未设置" }} ～
-                {{ active.endTime || "未设置" }}</span
-              ></a-space
-            >
-            <a-alert
-              style="margin-top: 12px"
-              type="info"
-              show-icon
-              message="建议不计入通过或不通过结论。允许改投，历史记录保留。计划日期过期后仍可继续评审。"
-            />
-            <div class="stats">
-              <span
-                >总数 <b>{{ active.items.length }}</b></span
-              ><span
-                >通过 <b>{{ count("approved") }}</b></span
-              ><span
-                >不通过 <b>{{ count("rejected") }}</b></span
-              ><span
-                >待评审 <b>{{ count("pending") }}</b></span
-              ><span
-                >内容已变化
-                <b>{{ active.items.filter((i) => i.outdated).length }}</b></span
+          <ReviewDetailHeader
+            :review="active"
+            :disabled="associateSaving || resultSaving || busy"
+            @back="router.push({ name: 'CaseReviews', query: { projectId } })"
+          >
+            <template #actions>
+              <a-button
+                v-if="
+                  canManage &&
+                  !active.archived &&
+                  !['cancelled', 'superseded'].includes(active.status)
+                "
+                :disabled="associateSaving || resultSaving || busy"
+                @click="associateOpen = true"
+                >关联用例</a-button
               >
-            </div>
-          </a-card>
+              <a-button
+                v-if="canManage && !active.archived"
+                :disabled="associateSaving || resultSaving || busy"
+                @click="openEditor(active)"
+                >编辑</a-button
+              >
+              <a-button
+                v-if="canManage"
+                :disabled="associateSaving || resultSaving || busy"
+                @click="copyReview"
+                >复制</a-button
+              >
+              <a-button
+                :disabled="associateSaving || resultSaving || busy"
+                @click="follow"
+                >{{ followed ? "取消关注" : "关注" }}</a-button
+              >
+              <a-dropdown :trigger="['click']">
+                <a-button :disabled="associateSaving || resultSaving || busy"
+                  >更多 <DownOutlined
+                /></a-button>
+                <template #overlay
+                  ><a-menu @click="moreAction">
+                    <a-menu-item key="refresh">刷新</a-menu-item>
+                    <a-menu-item
+                      v-if="canManage && !active.archived"
+                      key="resubmit"
+                      >重新提审</a-menu-item
+                    >
+                    <a-menu-item
+                      v-if="
+                        canManage &&
+                        !active.archived &&
+                        active.status === 'pending'
+                      "
+                      key="cancel"
+                      danger
+                      >取消评审</a-menu-item
+                    >
+                    <a-menu-divider v-if="canDelete" />
+                    <a-menu-item v-if="canDelete" key="delete" danger
+                      >删除</a-menu-item
+                    >
+                  </a-menu></template
+                >
+              </a-dropdown>
+            </template>
+          </ReviewDetailHeader>
           <a-space wrap style="margin: 16px 0"
             ><a-radio-group v-model:value="layout"
               ><a-radio-button value="list">列表</a-radio-button
@@ -298,6 +266,28 @@
         :submit-result="batchVote"
       />
     </a-modal>
+    <a-modal
+      v-model:open="deleteVisible"
+      title="删除评审"
+      :closable="!busy"
+      :mask-closable="!busy"
+      :keyboard="!busy"
+      :cancel-button-props="{ disabled: busy }"
+      :confirm-loading="busy"
+      :ok-button-props="{ danger: true, disabled: deleteName !== active?.name }"
+      @ok="deleteReview"
+    >
+      <a-alert
+        type="warning"
+        message="删除评审会同时删除其关联及评审记录，请输入完整评审名称确认。"
+      />
+      <p>{{ active?.name }}</p>
+      <a-input
+        v-model:value="deleteName"
+        placeholder="请输入评审名称"
+        :disabled="busy"
+      />
+    </a-modal>
     <a-drawer
       v-model:open="caseEditorVisible"
       title="编辑用例"
@@ -323,7 +313,9 @@ import {
   onBeforeRouteLeave,
   onBeforeRouteUpdate,
 } from "vue-router";
-import { message } from "ant-design-vue";
+import { message, Modal } from "ant-design-vue";
+import { DownOutlined } from "@ant-design/icons-vue";
+import ReviewDetailHeader from "@/components/CaseReview/ReviewDetailHeader.vue";
 import {
   caseGovernanceApi as api,
   type CaseReview,
@@ -358,7 +350,10 @@ const activeId = ref<string>(),
 const batchVisible = ref(false),
   caseEditorVisible = ref(false),
   editCaseId = ref("");
+const deleteVisible = ref(false),
+  deleteName = ref("");
 const canManage = ref(false),
+  canDelete = ref(false),
   associateOpen = ref(false),
   associateSaving = ref(false),
   resultSaving = ref(false);
@@ -407,8 +402,6 @@ const statusColor = (s: string) =>
   ({ approved: "green", rejected: "red", cancelled: "default" })[s] || "blue";
 const memberName = (id: string) =>
   members.value.find((m) => m.id === id)?.name || id;
-const count = (s: string) =>
-  active.value?.items.filter((i) => i.status === s).length || 0;
 const canVote = (item: ReviewItem) =>
   !!active.value &&
   !active.value.archived &&
@@ -461,6 +454,7 @@ async function loadOptions() {
   if (p === projectId.value) {
     members.value = result[0];
     canManage.value = result[1].permissions.update;
+    canDelete.value = result[1].permissions.delete;
   }
 }
 async function selectReview(id: string) {
@@ -501,7 +495,11 @@ async function associateCases(data: {
   }
 }
 function canLeaveAssociation() {
-  if (associateSaving.value || resultSaving.value) {
+  if (
+    associateSaving.value ||
+    resultSaving.value ||
+    (deleteVisible.value && busy.value)
+  ) {
     message.info("正在保存评审，请稍候");
     return false;
   }
@@ -607,6 +605,33 @@ async function follow() {
       followed.value = !followed.value;
     });
 }
+async function moreAction({ key }: { key: string | number }) {
+  if (key === "refresh") await load();
+  if (key === "resubmit") await resubmit();
+  if (key === "cancel")
+    Modal.confirm({
+      title: "取消整张评审单？",
+      okText: "确认",
+      cancelText: "取消",
+      onOk: cancel,
+    });
+  if (key === "delete" && canDelete.value) {
+    deleteName.value = "";
+    deleteVisible.value = true;
+  }
+}
+async function deleteReview() {
+  const review = active.value,
+    p = projectId.value;
+  if (!review || !canDelete.value || deleteName.value !== review.name) return;
+  await run(async () => {
+    await reviewWorkspaceApi.delete(p, review.id, deleteName.value);
+    console.info("评审已删除", { projectId: p, reviewId: review.id });
+    deleteVisible.value = false;
+    message.success("评审已删除");
+    await router.replace({ name: "CaseReviews", query: { projectId: p } });
+  });
+}
 async function cancel() {
   if (active.value)
     await run(async () =>
@@ -664,6 +689,9 @@ watch(
 watch(projectId, async (id) => {
   ++loadSequence;
   canManage.value = false;
+  canDelete.value = false;
+  deleteVisible.value = false;
+  deleteName.value = "";
   associateOpen.value = false;
   activeId.value = undefined;
   reviews.value = [];
@@ -695,22 +723,6 @@ onMounted(async () => {
   max-width: 1800px;
   margin: auto;
 }
-.review-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.review-header h2 {
-  margin: 0;
-}
-.review-header p {
-  color: #667085;
-  margin: 8px 0;
-}
-.filters {
-  margin: 20px 0;
-}
 .review-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -726,12 +738,7 @@ onMounted(async () => {
 .item-card :deep(.ant-list-item) {
   flex-wrap: wrap;
 }
-.stats {
-  display: flex;
-  gap: 24px;
-  padding-top: 16px;
-  flex-wrap: wrap;
-}
+
 .stats b {
   font-size: 20px;
   padding-left: 6px;

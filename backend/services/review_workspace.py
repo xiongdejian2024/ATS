@@ -316,7 +316,9 @@ def summary_query(db, project_id):
         (started, "underway"),
         else_="prepared",
     ).label("lifecycle")
-    rate = (passed * 100.0 / func.nullif(total, 0)).label("pass_rate")
+    rate = (func.round(passed * 1.0 / func.nullif(total, 0), 2) * 100).label(
+        "pass_rate"
+    )
     query = (
         db.query(
             CaseReview,

@@ -25,6 +25,16 @@ export interface ReviewItem {
   }[];
 }
 export interface CaseReview {
+  lifecycle: string;
+  caseCount: number;
+  passCount: number;
+  unPassCount: number;
+  reReviewedCount: number;
+  underReviewedCount: number;
+  unReviewCount: number;
+  reviewedCount: number;
+  progress: number;
+  passRate: number;
   id: string;
   name: string;
   number?: number | null;
