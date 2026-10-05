@@ -64,7 +64,7 @@ export interface TestCase {
   moduleId?: string | null
   caseCode: string
   name: string
-  type: 'functional' | 'interface' | 'ui' | 'performance' | 'security'
+  type: 'functional' | 'interface' | 'ui' | 'performance' | 'security' | 'api' | 'scenario'
   priority: 'P0' | 'P1' | 'P2' | 'P3' | 'high' | 'medium' | 'low'
   precondition?: string
   caseEditType?: 'STEP' | 'TEXT'

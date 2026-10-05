@@ -54,3 +54,5 @@ __all__ = [
 from . import plan_case_media
 from . import review_workspace
 from . import plan_case_view
+
+from . import native_case

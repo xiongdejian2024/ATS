@@ -13,6 +13,7 @@
       :key="editorKey"
       :project-id="projectId"
       :case-id="caseId"
+      :copy-source-id="typeof route.query.copyFrom === 'string' ? route.query.copyFrom : undefined"
       :default-module-id="defaultModuleId"
       :initial-draft="draft"
       allow-continue

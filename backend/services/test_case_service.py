@@ -162,6 +162,18 @@ class TestCaseService:
         try:
             db.add(test_case)
             db.flush()
+            if case_data.copy_source_id:
+                from core.project_access import require_project_access
+                from models import User
+                require_project_access(db, db.get(User, current_user_id), test_case.project_id, "test_case:read")
+                from services.case_governance import case_for_project
+                from services.native_case import config_snapshot, restore_config
+                source = case_for_project(db, test_case.project_id, case_data.copy_source_id, lock=True)
+                if source.type in {'api', 'scenario'}:
+                    if test_case.type != source.type:
+                        from fastapi import HTTPException
+                        raise HTTPException(422, '复制原生用例时请保留用例类型')
+                    restore_config(db, test_case, config_snapshot(db, source, current_read=True), current_user_id)
             snapshot_case(db, test_case, current_user_id, "创建用例")
             from services.case_features import change
 
@@ -224,8 +236,12 @@ class TestCaseService:
                 case_data.model_fields_set,
                 existing=test_case,
             )
+            previous_type = test_case.type
             for field, value in update_data.items():
                 setattr(test_case, field, value)
+            if previous_type != test_case.type:
+                from services.native_case import restore_config
+                restore_config(db, test_case, None, current_user_id)
             test_case.updated_by = current_user_id
             test_case.updated_at = beijing_now()
             snapshot_case(db, test_case, current_user_id, "编辑用例")

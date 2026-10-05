@@ -213,3 +213,25 @@ def test_version_restore_uses_same_automatic_hook(governance):
         g["db"].get(CaseReviewItem, review["items"][0]["id"]).version_id
         == response.json()["data"]["id"]
     )
+
+
+def test_native_parameter_type_change_resets_same_review(governance):
+    from api.v1.native_case import router
+    g = governance
+    g['client'].app.include_router(router, prefix='/api/v1')
+    case=g['cases'][0]
+    TestCaseService.update_test_case(g['db'],case.id,CaseUpdate(type='api',is_automated=True),g['users'][0].id)
+    base=f"/api/v1/projects/{g['project'].id}/native-cases"
+    response=g['client'].post(base+'/definitions',json=dict(name='真实参数定义',protocol='HTTP',path='/软件验证',parameters={'enabled':False}))
+    assert response.status_code==200,response.text
+    definition=response.json()['data']['definitions'][0]
+    payload=dict(state='PROCESSING',apiDefinitionId=definition['id'],expectedDefinitionRevision=1,parameters={'enabled':False})
+    assert g['client'].put(base+'/cases/'+case.id,json=payload).status_code==200
+    review=request_review(g);vote(g,review,1);vote(g,review,2);enable(g)
+    response=g['client'].put(base+'/cases/'+case.id,json={**payload,'expectedRevision':1,'parameters':{'enabled':0}})
+    assert response.status_code==200,response.text
+    data=detail(g,review)
+    assert data['reReviewedCount']==1
+    event=next(e for e in data['history'] if e['action']=='重新提审')
+    assert event['detail']['changedFields']==['native_config'] and event['detail']['automatic']
+    assert g['db'].query(CaseReview).count()==1

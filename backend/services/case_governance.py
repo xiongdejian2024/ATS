@@ -89,8 +89,12 @@ def snapshot_case(db, case, actor_id, reason, force=False):
             .one()
         )
     snapshot = {field: deepcopy(getattr(case, field)) for field in SNAPSHOT_FIELDS}
+    if case.type in {'api', 'scenario'}:
+        from services.native_case import config_snapshot
+        snapshot['native_config'] = config_snapshot(db, case, current_read=True)
     previous = latest_version(db, case.id)
-    if previous and previous.snapshot == snapshot and not force:
+    from services.native_case import fingerprint
+    if previous and fingerprint(previous.snapshot) == fingerprint(snapshot) and not force:
         return previous
     version = CaseVersion(
         project_id=case.project_id,
@@ -114,8 +118,8 @@ def snapshot_case(db, case, actor_id, reason, force=False):
             "reason": reason,
             "fields": [
                 field
-                for field in SNAPSHOT_FIELDS
-                if not previous or previous.snapshot.get(field) != snapshot.get(field)
+                for field in snapshot
+                if not previous or fingerprint(previous.snapshot.get(field)) != fingerprint(snapshot.get(field))
             ],
         },
     )
@@ -181,6 +185,8 @@ def restore_version(db, user, project_id, case_id, version_id, request):
         existing=case,
     )
     case.custom_fields = prepared["custom_fields"]
+    from services.native_case import restore_config
+    restore_config(db, case, target.snapshot.get("native_config"), str(user.id))
     case.updated_by = str(user.id)
     case.updated_at = beijing_now()
     version = snapshot_case(
@@ -290,6 +296,7 @@ def get_review(db, user, project_id, review_id, lock=False):
 
 
 def serialize_review_item(item, version, case, decisions, reviewer_ids):
+    from services.native_case import content_changed
     return dict(
         id=item.id,
         caseId=item.case_id,
@@ -300,6 +307,7 @@ def serialize_review_item(item, version, case, decisions, reviewer_ids):
         outdated=(
             case is None
             or case.deleted_at is not None
+            or content_changed(case, version.snapshot)
             or any(
                 getattr(case, field) != version.snapshot.get(field)
                 for field in SNAPSHOT_FIELDS
@@ -768,6 +776,10 @@ def batch_copy(db, user, project_id, request):
         copied = TestCaseService.create_test_case(
             db, TestCaseCreate(**data), str(user.id), commit=False
         )
+        if case.type in {'api', 'scenario'}:
+            from services.native_case import config_snapshot, restore_config
+            restore_config(db, copied, config_snapshot(db, case, current_read=True), str(user.id))
+            snapshot_case(db, copied, str(user.id), '复制原生配置')
         copies.append(copied.id)
     logger.info("批量用例复制已暂存 project_id={} count={}", project_id, len(copies))
     return copies
@@ -797,7 +809,8 @@ def current_review_statuses(db, cases, *, current_read=False):
         if item.case_id in matched:
             continue
         case = mapping[item.case_id]
-        if any(
+        from services.native_case import content_changed
+        if content_changed(case, version.snapshot, current_read=current_read) or any(
             getattr(case, field) != version.snapshot.get(field)
             for field in SNAPSHOT_FIELDS
         ):

@@ -129,10 +129,33 @@
         >
           <template #bodyCell="{ column, record }"
             ><template v-if="column.key === 'name'"
-              >{{ record.name
-              }}<a-tag v-if="record.alreadyLinked" color="green"
+              ><a
+                v-if="activeCategory !== 'functional'"
+                @click="nativeCaseId = record.id"
+                >{{ record.name }}</a
+              ><template v-else>{{ record.name }}</template
+              ><a-tag v-if="record.alreadyLinked" color="green"
                 >已关联</a-tag
               ></template
+            ><template v-else-if="column.key === 'nativeState'">{{
+              nativeStateOptions(activeCategory).find(
+                (o) => o.value === record.nativeState,
+              )?.label || "—"
+            }}</template
+            ><template v-else-if="column.key === 'lastReportStatus'">{{
+              nativeReportOptions.find(
+                (o) => o.value === record.lastReportStatus,
+              )?.label ||
+              record.lastReportStatus ||
+              "未执行"
+            }}</template
+            ><template v-else-if="column.key === 'apiChange'">{{
+              record.apiChange === null
+                ? "—"
+                : record.apiChange
+                  ? "有变更"
+                  : "无变更"
+            }}</template
             ><a-tag v-else-if="column.key === 'priority'">{{
               record.priority
             }}</a-tag
@@ -186,6 +209,20 @@
         />
       </main>
     </div>
+    <NativeCaseConfigDrawer
+      v-if="project"
+      :open="!!nativeCaseId"
+      :project-id="project.id"
+      :case-id="nativeCaseId"
+      :category="activeCategory"
+      @update:open="
+        (value) => {
+          if (!value) nativeCaseId = '';
+        }
+      "
+      @saving="(value) => (nativeSaving = value)"
+      @saved="load"
+    />
     <template #footer
       ><div class="associate-footer">
         <span>已选择 {{ selected.size }} 个用例</span
@@ -208,6 +245,8 @@
   </a-drawer>
 </template>
 <script setup lang="ts">
+import NativeCaseConfigDrawer from "@/components/TestCase/NativeCaseConfigDrawer.vue";
+import { nativeStateOptions, nativeReportOptions } from "@/api/nativeCase";
 import { computed, ref, watch } from "vue";
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
 import PlanCaseFilters from "./PlanCaseFilters.vue";
@@ -256,7 +295,11 @@ const activeCategory = ref<"functional" | "api" | "scenario">(
   selected = ref(new Map<string, TestCase>()),
   collectionId = ref<string>(),
   suiteId = ref<string>();
-const locked = computed(() => saving.value || filterSaving.value);
+const nativeCaseId = ref(""),
+  nativeSaving = ref(false);
+const locked = computed(
+  () => saving.value || filterSaving.value || nativeSaving.value,
+);
 const advanced = computed(() => filterScope.value !== undefined);
 function applyAdvanced(
   conditions: FilterCondition[] | undefined,
@@ -281,13 +324,34 @@ const pagination = computed(() => ({
   showSizeChanger: true,
   showTotal: (total: number) => `共 ${total} 条`,
 }));
-const columns = [
+const baseColumns = [
   { title: "ID", dataIndex: "caseCode", width: 130 },
   { title: "名称", key: "name", width: 240 },
   { title: "等级", key: "priority", width: 70 },
   { title: "标签", key: "tags", width: 150 },
   { title: "所属模块", dataIndex: "moduleName", width: 190 },
 ];
+const columns = computed(() =>
+  activeCategory.value === "functional"
+    ? baseColumns
+    : [
+        ...baseColumns.filter((c) => c.key !== "tags"),
+        {
+          title: activeCategory.value === "api" ? "用例状态" : "场景状态",
+          key: "nativeState",
+          width: 100,
+        },
+        { title: "最近执行结果", key: "lastReportStatus", width: 110 },
+        { title: "环境", dataIndex: "environmentLabel", width: 150 },
+        ...(activeCategory.value === "api"
+          ? [
+              { title: "协议", dataIndex: "protocol", width: 100 },
+              { title: "请求路径", dataIndex: "path", width: 200 },
+              { title: "接口参数变更", key: "apiChange", width: 120 },
+            ]
+          : [{ title: "步骤数", dataIndex: "stepTotal", width: 80 }]),
+      ],
+);
 const automatedSelected = computed(() =>
     Array.from(selected.value.values()).filter((item) => item.isAutomated),
   ),
@@ -388,6 +452,7 @@ function tableChange(p: { current: number; pageSize: number }) {
   void load();
 }
 function resetCategory() {
+  nativeCaseId.value = "";
   filterScope.value = undefined;
   viewId.value = undefined;
   selected.value.clear();
@@ -434,6 +499,7 @@ watch(
   () => [props.open, props.planId, props.category],
   () => {
     sequence++;
+    nativeCaseId.value = "";
     data.value = undefined;
     project.value = undefined;
     planOptions.value = [];

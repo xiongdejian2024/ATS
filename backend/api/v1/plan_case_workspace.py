@@ -72,12 +72,17 @@ def candidate_views(plan_id: str, category: Category = 'functional', db: Session
 @router.post('/plans/{plan_id}/case-workspace/candidates/views')
 def create_candidate_view(plan_id: str, body: CandidateViewCreate, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
+    from services.plan_candidate_filter import parse_candidate_filters
+    parse_candidate_filters(dict(conditions=body.filters.get('filterConditions', []), logic=body.filters.get('filterLogic', 'and')), category)
     return ok(transact(db, lambda: views_service.save(db, user, plan, category + '-drawer', body)))
 
 
 @router.put('/plans/{plan_id}/case-workspace/candidates/views/{view_id}')
 def update_candidate_view(plan_id: str, view_id: str, body: CandidateViewUpdate, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
+    from services.plan_candidate_filter import parse_candidate_filters
+    if body.filters is not None:
+        parse_candidate_filters(dict(conditions=body.filters.get('filterConditions', []), logic=body.filters.get('filterLogic', 'and')), category)
     return ok(transact(db, lambda: views_service.save(db, user, plan, category + '-drawer', body, view_id)))
 
 

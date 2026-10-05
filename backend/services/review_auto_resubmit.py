@@ -7,13 +7,14 @@ from models.review_workspace import ReviewWorkspace
 from services.review_item_management import reset_items
 from core.logger import logger
 
-TRIGGER_FIELDS = ("name", "steps", "text_description", "expected_result")
+TRIGGER_FIELDS = ("name", "steps", "text_description", "expected_result", "native_config")
 
 
 def handle_case_change(db, case, actor_id, version, before, after):
     """由保存版本的写事务调用；调用方持有项目和用例锁。"""
+    from services.native_case import fingerprint
     changed = [
-        field for field in TRIGGER_FIELDS if before.get(field) != after.get(field)
+        field for field in TRIGGER_FIELDS if fingerprint(before.get(field)) != fingerprint(after.get(field))
     ]
     if not changed:
         return 0

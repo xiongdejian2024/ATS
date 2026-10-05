@@ -130,7 +130,7 @@
             <a-form-item label="执行人"><a-select v-model:value="formData.executorId" allow-clear show-search option-filter-prop="label" placeholder="请选择执行人" :options="members" /></a-form-item>
             <CaseCustomFields v-model="customFields" :fields="activeTemplate?.fields || []" />
             <a-form-item label="标签"><a-select v-model:value="formData.tags" mode="tags" placeholder="请输入标签" :token-separators="[',']"><a-select-option v-for="tag in commonTags" :key="tag" :value="tag">{{tag}}</a-select-option></a-select></a-form-item>
-            <a-form-item label="用例类型" name="type"><a-select v-model:value="formData.type" :options="[{label:'功能测试',value:'functional'},{label:'接口测试',value:'interface'},{label:'UI测试',value:'ui'},{label:'性能测试',value:'performance'},{label:'安全测试',value:'security'}]" /></a-form-item>
+            <a-form-item label="用例类型" name="type"><a-select v-model:value="formData.type" @change="nativeTypeChanged" :options="[{label:'功能测试',value:'functional'},{label:'接口测试',value:'interface'},{label:'API用例',value:'api'},{label:'API场景',value:'scenario'},{label:'UI测试',value:'ui'},{label:'性能测试',value:'performance'},{label:'安全测试',value:'security'}]" /></a-form-item>
             <a-form-item label="是否自动化"><a-switch v-model:checked="formData.isAutomated" checked-children="是" un-checked-children="否" /></a-form-item>
             <a-form-item label="需求关联"><a-input v-model:value="formData.requirementRef" placeholder="请输入需求编号或描述" /></a-form-item>
           </aside>
@@ -240,6 +240,7 @@ import { caseGovernanceApi } from '@/api/caseGovernance'
 
 interface Props {
   caseId?: string
+  copySourceId?: string
   projectId: string
   defaultModuleId?: string  // 默认模块ID（右键创建用例时使用）
   allowContinue?: boolean
@@ -303,6 +304,8 @@ function applyTemplate(){
   if(template){const defaults=template.defaults; for(const key of ['type','priority','precondition','steps','tags','description'] as const){if(defaults[key]!==undefined)(formData as any)[key]=JSON.parse(JSON.stringify(defaults[key]))}formData.caseEditType=defaults.case_edit_type??defaults.caseEditType??'STEP';formData.textDescription=defaults.text_description??defaults.textDescription??'';formData.expectedResult=defaults.expected_result??defaults.expectedResult??'';formData.isAutomated=defaults.is_automated??defaults.isAutomated??false;updateStepNumber()}
 }
 async function loadTemplates(){try{templates.value=await caseFeaturesApi.templates(props.projectId);if(!props.caseId){templateId.value=templates.value.find(t=>t.isDefault)?.id;applyTemplate()}}catch(error){console.error('加载编辑模板失败',error)}}
+
+function nativeTypeChanged(value: string) { if (['api', 'scenario'].includes(value)) formData.isAutomated = true }
 
 // 通用标签
 const commonTags = ['登录', '注册', '搜索', '支付', '订单', '用户管理', '权限', 'API']
@@ -554,7 +557,7 @@ const handleSave = async (continueCreation = false) => {
       console.log('创建测试用例 - projectId:', props.projectId)
       console.info('提交测试用例创建请求', { projectId: props.projectId })
       try {
-      result = await testCaseApi.createTestCase(props.projectId, submitData)
+      result = await testCaseApi.createTestCase(props.projectId, { ...submitData, copy_source_id: props.copySourceId })
       savedCaseId.value = result.id
       } catch (error: any) {
         console.error('创建测试用例失败:', error)

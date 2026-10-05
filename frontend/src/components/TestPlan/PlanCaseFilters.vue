@@ -136,6 +136,7 @@ import {
   type CaseFolder,
   type PlanCaseSavedView,
 } from "@/api/planCaseWorkspace";
+import { nativeCaseApi, type NativeCatalog } from "@/api/nativeCase";
 import { caseFeaturesApi, type CaseTemplate } from "@/api/caseFeatures";
 import { caseGovernanceApi } from "@/api/caseGovernance";
 import TestCaseFilter from "@/components/TestCase/TestCaseFilter.vue";
@@ -182,6 +183,7 @@ const visible = ref(false),
   metadataError = ref(""),
   templates = ref<CaseTemplate[]>([]),
   members = ref<{ id: string; name: string }[]>([]);
+const nativeCatalog = ref<NativeCatalog>();
 const activeView = computed(() =>
   views.value.find((v) => v.id === props.viewId),
 );
@@ -198,6 +200,7 @@ const fields = computed(() =>
         templates.value,
         members.value,
         props.category,
+        nativeCatalog.value,
       )
     : planCaseFilterFields(
         { id: props.projectId, name: props.projectName },
@@ -244,6 +247,9 @@ async function loadMetadata() {
   const results = await Promise.allSettled([
     caseFeaturesApi.templates(project),
     caseGovernanceApi.reviewers(project),
+    props.mode === "association" && props.category !== "functional"
+      ? nativeCaseApi.catalog(project)
+      : Promise.resolve(undefined),
   ]);
   if (sequence !== metadataSequence || project !== props.projectId) return;
   const errors: string[] = [];
@@ -257,6 +263,11 @@ async function loadMetadata() {
     errors.push("项目成员");
     console.error("加载计划筛选成员失败", results[1].reason);
   }
+  if (results[2].status === "fulfilled") nativeCatalog.value = results[2].value;
+  else {
+    errors.push("接口环境和协议");
+    console.error("加载原生高级字段失败", results[2].reason);
+  }
   metadataError.value = errors.length
     ? `${errors.join("、")}加载失败，请重试；已加载字段和草稿保留`
     : "";
@@ -267,6 +278,7 @@ function retryMetadata() {
   void loadViews();
 }
 function open(create: boolean) {
+  void loadMetadata();
   savedViewId = undefined;
   newView.value = create;
   visible.value = true;
@@ -433,6 +445,7 @@ watch(
     views.value = [];
     templates.value = [];
     members.value = [];
+    nativeCatalog.value = undefined;
     viewError.value = "";
     metadataError.value = "";
     void loadViews();

@@ -76,6 +76,27 @@
                   item.updatedAt || "-"
                 }}</a-descriptions-item>
               </a-descriptions>
+              <template v-if="['api', 'scenario'].includes(item.type)"
+                ><NativeCaseConfig
+                  :key="nativeConfigurationSequence"
+                  :project-id="projectId"
+                  :case-id="item.id"
+                  :category="item.type"
+                  readonly /><a-button
+                  v-if="!readOnly"
+                  @click="nativeConfigOpen = true"
+                  >编辑用例配置</a-button
+                ><NativeCaseConfigDrawer
+                  :open="nativeConfigOpen"
+                  :project-id="projectId"
+                  :case-id="item.id"
+                  :category="item.type"
+                  @update:open="(value) => (nativeConfigOpen = value)"
+                  @saved="
+                    nativeConfigurationSequence++;
+                    load();
+                  "
+              /></template>
               <a-form v-if="template" layout="vertical" class="custom-fields"
                 ><CaseCustomFields
                   :fields="template.fields"
@@ -217,6 +238,8 @@
   </section>
 </template>
 <script setup lang="ts">
+import NativeCaseConfig from "./NativeCaseConfig.vue";
+import NativeCaseConfigDrawer from "./NativeCaseConfigDrawer.vue";
 import { ref, watch, computed } from "vue";
 import { message } from "ant-design-vue";
 import {
@@ -253,6 +276,8 @@ const emit = defineEmits<{
   execute: [];
   navigate: [caseId: string];
 }>();
+const nativeConfigOpen = ref(false),
+  nativeConfigurationSequence = ref(0);
 const template = ref<CaseTemplate>();
 const usage = ref<{
   plans: { id: string; name: string }[];
@@ -313,8 +338,11 @@ function loadTabSettings() {
 function saveTabSettings() {
   try {
     localStorage.setItem(settingsKey(), JSON.stringify(tabSettings.value));
-    if (!visibleTabs.value.some((tab) => tab.key === activeTab.value))
+    if (!visibleTabs.value.some((tab) => tab.key === activeTab.value)) {
+      nativeConfigOpen.value = false;
+      nativeConfigurationSequence.value++;
       activeTab.value = "detail";
+    }
   } catch (error) {
     console.error("保存用例详情显示设置失败", error);
     message.error("保存显示设置失败");
@@ -339,6 +367,8 @@ async function toggleFollow() {
 loadTabSettings();
 const typeNames: Record<string, string> = {
   functional: "功能测试",
+  api: "API用例",
+  scenario: "API场景",
   interface: "接口测试",
   ui: "UI测试",
   performance: "性能测试",
@@ -422,6 +452,8 @@ async function share() {
 watch(
   () => [props.projectId, props.caseId],
   () => {
+    nativeConfigOpen.value = false;
+    nativeConfigurationSequence.value++;
     activeTab.value = "detail";
     load();
   },

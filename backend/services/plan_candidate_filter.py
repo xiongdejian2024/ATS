@@ -3,13 +3,29 @@
 from collections import defaultdict
 from models import TestCase, TestPlan, TestSuite, PlanCaseRelation
 from models.plan_workspace import PlanNode, PlanWorkspace
-from services.case_query import parse_filters, matches_case, matches_related
+from services.case_query import parse_filters, matches_case, matches_related, matches
+from services.native_candidate_context import NativeCandidateContext, NATIVE_FIELDS
+from fastapi import HTTPException
 from services.case_filter_context import CaseFilterContext
 from services.case_governance import current_review_statuses
 
 
-def parse_candidate_filters(raw):
-    return parse_filters(raw, extra_fields={'planIds'})
+def parse_candidate_filters(raw, category=None):
+    conditions, logic = parse_filters(raw, extra_fields={'planIds'} | NATIVE_FIELDS)
+    unsupported = NATIVE_FIELDS if category == 'functional' else ({'stepTotal'} if category == 'api' else ({'protocol', 'path', 'apiChange'} if category == 'scenario' else set()))
+    if any(c['field'] in unsupported for c in conditions):
+        raise HTTPException(422, '筛选字段不属于当前用例分类')
+    for condition in conditions:
+        field, operator, value = condition['field'], condition['operator'], condition.get('value')
+        if field == 'apiChange' and (operator != 'equals' or type(value) is not bool):
+            raise HTTPException(422, '接口参数变更只支持等于布尔值')
+        if field == 'stepTotal':
+            if operator not in {'equals', 'not_equals', 'gt', 'gte', 'lt', 'lte', 'between', 'is_empty', 'is_not_empty'}:
+                raise HTTPException(422, '步骤数不支持此运算')
+            values = value if operator == 'between' else [value]
+            if operator not in {'is_empty', 'is_not_empty'} and any(type(v) is not int or v < 0 for v in values):
+                raise HTTPException(422, '步骤数必须为非负整数')
+    return conditions, logic
 
 
 def plan_membership(db, project_id):
@@ -34,7 +50,7 @@ def plan_membership(db, project_id):
 
 
 def filter_cases(db, plan, category, raw, user_id, mine):
-    conditions, logic = parse_candidate_filters(raw)
+    conditions, logic = parse_candidate_filters(raw, category)
     context = CaseFilterContext(db, plan.project_id, conditions, user_id)
     query = db.query(TestCase).filter(TestCase.project_id == plan.project_id, TestCase.deleted_at.is_(None))
     query = query.filter(TestCase.type.notin_(['api', 'scenario'])) if category == 'functional' else query.filter(TestCase.type == category, TestCase.is_automated.is_(True))
@@ -43,12 +59,15 @@ def filter_cases(db, plan, category, raw, user_id, mine):
     cases = query.order_by(TestCase.created_at.desc(), TestCase.id).all()
     statuses = current_review_statuses(db, cases)
     membership = plan_membership(db, plan.project_id)[0] if any(c['field'] == 'planIds' for c in conditions) else {}
+    native = NativeCandidateContext(db, plan.project_id) if category != 'functional' else None
     def check(case, condition):
+        if condition['field'] in NATIVE_FIELDS:
+            return matches(native.values(case).get(condition['field']), condition['operator'], condition.get('value'))
         if condition['field'] == 'planIds':
             return matches_related(list(membership.get(case.id, [])), condition['operator'], condition.get('value'))
         return matches_case(case, condition, statuses, context)
     combine = all if logic == 'and' else any
-    return [case for case in cases if not context.conditions or combine(check(case, c) for c in context.conditions)], statuses
+    return [case for case in cases if not context.conditions or combine(check(case, c) for c in context.conditions)], statuses, native
 
 
 def advanced_candidates(db, plan, category, filters, mine, user_id, page, size):
@@ -56,7 +75,7 @@ def advanced_candidates(db, plan, category, filters, mine, user_id, page, size):
     from services.case_candidates import descendants
     from utils.serializer import serialize_model
 
-    cases, statuses = filter_cases(db, plan, category, filters, user_id, mine)
+    cases, statuses, native = filter_cases(db, plan, category, filters, user_id, mine)
     modules = db.query(Module).filter_by(project_id=plan.project_id).order_by(Module.sort_order, Module.created_at).all()
     counts = defaultdict(int)
     for case in cases:
@@ -65,6 +84,6 @@ def advanced_candidates(db, plan, category, filters, mine, user_id, page, size):
                     count=sum(counts[key] for key in descendants(modules, m.id))) for m in modules]
     names = {m.id: m.name for m in modules}
     items = [dict(serialize_model(case, camel_case=True), moduleName=names.get(case.module_id, '未分配模块'),
-                  reviewResult=statuses.get(case.id, 'not_reviewed')) for case in cases[(page-1)*size:page*size]]
+                  reviewResult=statuses.get(case.id, 'not_reviewed'), **(native.values(case) if native else {})) for case in cases[(page-1)*size:page*size]]
     return dict(items=items, total=len(cases), page=page, size=size, modules=folders,
                 counts=dict(all=len(cases), unassigned=sum(count for module, count in counts.items() if module not in names)))

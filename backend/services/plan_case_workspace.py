@@ -208,6 +208,11 @@ def candidates(db, plan, category, search, folder, priority, page, size, *, filt
     linked = {item['caseId'] for item in associated}
     items = [dict(item, alreadyLinked=item['id'] in linked) for item in result['items']]
     suites = [dict(id=row.id, name=row.name, caseIds=row.case_ids or []) for row in db.query(TestSuite).filter_by(plan_id=plan.id)]
+    if category != 'functional' and filters is None and not mine:
+        from services.native_candidate_context import NativeCandidateContext
+        native = NativeCandidateContext(db, plan.project_id)
+        cases = {row.id: row for row in db.query(TestCase).filter(TestCase.id.in_([item['id'] for item in items]))}
+        items = [dict(item, **native.values(cases[item['id']])) for item in items]
     project = db.get(Project, plan.project_id)
     plans = [dict(id=p.id, name=p.name) for p in db.query(TestPlan).filter_by(project_id=plan.project_id)]
     return dict(**{key:value for key,value in result.items() if key != "items"}, items=items, usesTree=uses,

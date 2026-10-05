@@ -44,6 +44,7 @@ class TestCaseBase(BaseModel):
 
 class TestCaseCreate(TestCaseBase):
     """创建测试用例请求"""
+    copy_source_id: Optional[str] = None
     project_id: Union[UUID, str]  # 支持UUID或字符串
     module_id: Optional[Union[UUID, str]] = None
     executor_id: Optional[Union[UUID, str]] = None
