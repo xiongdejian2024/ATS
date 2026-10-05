@@ -344,8 +344,16 @@ def main():
             )
         # 人员调整按最新名单重算，历史票保留，取消后重新关联不复用旧票。
         from models import ProjectMember
-        from schemas.review_workspace import ReviewItemReviewers, ReviewItemSelection
-        from services.review_item_management import change_reviewers, disassociate
+        from schemas.review_workspace import (
+            ReviewItemReviewers,
+            ReviewItemSelection,
+            ReviewItemReReview,
+        )
+        from services.review_item_management import (
+            change_reviewers,
+            disassociate,
+            re_review,
+        )
 
         with Sessions() as db:
             owner = db.get(User, "race-owner")
@@ -446,6 +454,54 @@ def main():
                 new["items"][0]["id"] != managed_id
                 and not new["items"][0]["decisions"]
                 and new["lifecycle"] == "prepared"
+            )
+            assert db.query(CaseVersion).count() == 25
+            fresh_id = new["items"][0]["id"]
+            vote_review(
+                db,
+                owner,
+                "race-project",
+                multi.id,
+                fresh_id,
+                ReviewVote(decision="approved"),
+            )
+            reset = re_review(
+                db,
+                owner,
+                "race-project",
+                multi.id,
+                ReviewItemReReview(itemIds=[fresh_id], comment="<p>数据库重新提审</p>"),
+            )
+            assert reset["id"] == multi.id and reset["reReviewedCount"] == 1
+            assert reset["reviewedCount"] == 0 and reset["lifecycle"] == "underway"
+            assert (
+                listing(db, owner, "race-project", multi.id, state="re_review")["total"]
+                == 1
+            )
+            assert (
+                list_reviews(
+                    db,
+                    owner,
+                    "race-project",
+                    lifecycle="underway",
+                    search="人员修改数据库验收",
+                )["total"]
+                == 1
+            )
+            assert db.query(CaseReviewDecision).filter_by(item_id=fresh_id).count() == 0
+            assert any(
+                e["abandoned"] for e in reset["history"] if e["itemId"] == fresh_id
+            )
+            vote_review(
+                db,
+                owner,
+                "race-project",
+                multi.id,
+                fresh_id,
+                ReviewVote(decision="approved"),
+            )
+            assert (
+                review_data(db, multi, include_items=False)["lifecycle"] == "completed"
             )
             assert db.query(CaseVersion).count() == 25
             db.commit()
@@ -560,13 +616,43 @@ def main():
                 assert release.wait(15)
                 db.commit()
 
-        with ThreadPoolExecutor(max_workers=4) as workers:
+        ready_rereview = threading.Event()
+
+        def rereviewer():
+            with Sessions() as db:
+                owner = db.get(User, "race-owner")
+                review = db.get(CaseReview, identifier)
+                assert workspace(db, review).archived is False
+                ready_rereview.set()
+                assert start_vote.wait(15)
+                try:
+                    re_review(
+                        db,
+                        owner,
+                        "race-project",
+                        identifier,
+                        ReviewItemReReview(itemIds=[item_id]),
+                    )
+                except HTTPException as error:
+                    log.exception(
+                        "并发验收捕获同单重新提审拒绝：状态=%s，原因=%s",
+                        error.status_code,
+                        error.detail,
+                    )
+                    rejected = error.status_code == 409 and "归档" in error.detail
+                    db.rollback()
+                    return rejected
+                raise AssertionError("归档后同单重新提审未被拒绝")
+
+        with ThreadPoolExecutor(max_workers=5) as workers:
             voting = workers.submit(voter)
             assert ready_a.wait(15)
             associating = workers.submit(associator)
             assert ready_associate.wait(15)
             managing = workers.submit(manager)
             assert ready_management.wait(15)
+            rereviewing = workers.submit(rereviewer)
+            assert ready_rereview.wait(15)
             archiving = workers.submit(archiver)
             assert ready_b.wait(15)
             start_vote.set()
@@ -576,7 +662,7 @@ def main():
                     "SELECT COUNT(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON w.REQUESTING_ENGINE_LOCK_ID=l.ENGINE_LOCK_ID WHERE l.OBJECT_SCHEMA="
                     + quote(name)
                 )
-                if count and int(count) >= 3:
+                if count and int(count) >= 4:
                     observed = True
                     break
                 time.sleep(0.1)
@@ -585,7 +671,15 @@ def main():
             rejected, stale = voting.result(15)
             add_rejected = associating.result(15)
             management_rejected = managing.result(15)
-        assert observed and rejected and stale and add_rejected and management_rejected
+            rereview_rejected = rereviewing.result(15)
+        assert (
+            observed
+            and rejected
+            and stale
+            and add_rejected
+            and management_rejected
+            and rereview_rejected
+        )
         with Sessions() as db:
             review = db.get(CaseReview, identifier)
             assert workspace(db, review).archived is True
@@ -598,6 +692,12 @@ def main():
                 .filter_by(review_id=identifier, action="评审结论")
                 .count()
                 == 1
+            )
+            assert (
+                db.query(CaseReviewEvent)
+                .filter_by(review_id=identifier, action="重新提审")
+                .count()
+                == 0
             )
             assert len(review.name) == 255
             assert workspace(db, review).start_time.microsecond == 654321
@@ -631,7 +731,9 @@ def main():
                 "基本信息编辑保留有效票": True,
                 "关联列表20加3分页及模块筛选": True,
                 "人员修改与重新关联状态核验": True,
-                "归档后三个实际等待者写入拒绝": management_rejected,
+                "同单重新提审与有效票作废": True,
+                "归档后四个实际等待者写入拒绝": management_rejected
+                and rereview_rejected,
                 "节点任务": 0,
             }
         )

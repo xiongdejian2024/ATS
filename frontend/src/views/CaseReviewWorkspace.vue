@@ -60,7 +60,7 @@
                     <a-menu-item
                       v-if="canManage && !active.archived"
                       key="resubmit"
-                      >重新提审</a-menu-item
+                      >新建后续评审</a-menu-item
                     >
                     <a-menu-item
                       v-if="
@@ -225,8 +225,12 @@
                       ? `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · ${statusName(entry.detail?.decision || "")}`
                       : historyText(entry)
                   }}</pre>
+                  <a-tag v-if="entry.abandoned">已作废</a-tag>
                   <CaseRichText
-                    v-if="entry.action === '评审结论' && entry.detail?.comment"
+                    v-if="
+                      ['评审结论', '重新提审'].includes(entry.action || '') &&
+                      entry.detail?.comment
+                    "
                     :model-value="entry.detail.comment"
                     readonly
                   /> </a-timeline-item></a-timeline></a-tab-pane
@@ -406,6 +410,7 @@ const statusName = (s: string) =>
     suggestion: "建议",
     cancelled: "已取消",
     superseded: "已重新提审",
+    re_review: "重新提审",
   })[s] || s;
 const memberName = (id: string) =>
   members.value.find((m) => m.id === id)?.name || id;
@@ -418,6 +423,8 @@ const canVote = (item: ReviewItem) =>
   );
 function historyText(entry: Record<string, any>) {
   const details = entry.detail || {};
+  if (entry.action === "重新提审")
+    return `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · 重新提审 · 已作废 ${details.invalidatedDecisions?.length || 0} 条原有效结论`;
   return `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · ${entry.action || ""}\n${details.decision ? `${statusName(details.decision)}：${details.comment || ""}` : JSON.stringify(details, null, 2)}`;
 }
 async function run(task: () => Promise<void>) {
@@ -675,7 +682,7 @@ async function resubmit() {
       );
       replace(result);
       await selectReview(result.id);
-      message.success("已按当前用例内容重新提审");
+      message.success("已按当前内容创建后续评审");
     });
 }
 let followSequence = 0;

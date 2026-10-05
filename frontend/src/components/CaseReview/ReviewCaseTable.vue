@@ -102,6 +102,13 @@
           @click="openUnlink([...selected])"
           >取消关联</a-button
         >
+        <a-button
+          v-if="canManage"
+          type="link"
+          :disabled="disabled || loading || !canReReviewSelection"
+          @click="openReReview"
+          >重新提审</a-button
+        >
       </div>
       <a-alert v-if="error" :message="error" type="error" show-icon
         ><template #action
@@ -258,6 +265,38 @@
       <p>取消后，再次关联，评审结果为：未评审</p>
       <p>已选择 {{ pendingIds.length }} 条用例</p>
     </a-modal>
+    <a-modal
+      destroy-on-close
+      :open="reReviewOpen"
+      :title="`重新提审（已选择 ${pendingIds.length} 条用例）`"
+      :width="680"
+      :closable="!managementSaving"
+      :mask-closable="false"
+      :keyboard="!managementSaving"
+      :confirm-loading="managementSaving"
+      :cancel-button-props="{ disabled: managementSaving }"
+      :ok-button-props="{ disabled: reReviewReason.length > 10000 }"
+      ok-text="重新提审"
+      cancel-text="取消"
+      @cancel="reReviewOpen = false"
+      @ok="saveReReview"
+    >
+      <p>评审理由</p>
+      <CaseRichText
+        v-model="reReviewReason"
+        :disabled="managementSaving"
+        label="重新提审理由"
+      />
+      <p v-if="reReviewReason.length > 10000" class="reason-error">
+        评审理由不能超过10000字符
+      </p>
+      <a-alert
+        v-if="managementError"
+        :message="managementError"
+        type="error"
+        show-icon
+      />
+    </a-modal>
     <TableDisplaySettings
       :open="settings"
       :definitions="definitions"
@@ -271,7 +310,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount } from "vue";
+import { ref, computed, watch, onBeforeUnmount, reactive } from "vue";
 import { message } from "ant-design-vue";
 import { useWindowSize } from "@vueuse/core";
 import {
@@ -288,6 +327,7 @@ import type { TestCase } from "@/types";
 import { useUserStore } from "@/stores/user";
 import { caseFolderTree } from "@/components/TestPlan/planCaseFolders";
 import ReviewersCell from "./ReviewersCell.vue";
+import CaseRichText from "@/components/TestCase/CaseRichText.vue";
 import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
 import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
 import {
@@ -350,7 +390,7 @@ const mode = ref("list"),
   loading = ref(false),
   error = ref(""),
   settings = ref(false);
-const selectedRows = new Map<string, ReviewCaseEntry>();
+const selectedRows = reactive(new Map<string, ReviewCaseEntry>());
 const peopleOpen = ref(false),
   unlinkOpen = ref(false),
   managementSaving = ref(false),
@@ -358,6 +398,36 @@ const peopleOpen = ref(false),
   draftPeople = ref<string[]>([]),
   appendPeople = ref(false),
   pendingIds = ref<string[]>([]);
+const reReviewOpen = ref(false),
+  reReviewReason = ref("");
+const canReReviewSelection = computed(
+  () =>
+    props.selected.length > 0 &&
+    props.selected.every((id) => selectedRows.get(id)?.canReReview),
+);
+function openReReview() {
+  if (!canReReviewSelection.value) return;
+  pendingIds.value = [...props.selected];
+  reReviewReason.value = "";
+  managementError.value = "";
+  reReviewOpen.value = true;
+}
+async function saveReReview() {
+  if (managementSaving.value || reReviewReason.value.length > 10000) return;
+  try {
+    await performManagement(() =>
+      reviewWorkspaceApi.reReview(props.projectId, props.reviewId, {
+        itemIds: [...pendingIds.value],
+        comment: reReviewReason.value.trim(),
+      }),
+    );
+    reReviewOpen.value = false;
+    reReviewReason.value = "";
+    message.success("重新提审成功");
+  } catch (err) {
+    console.error("重新提审未完成，保留理由和选择", err);
+  }
+}
 function openPeople() {
   pendingIds.value = [...props.selected];
   draftPeople.value = [];
@@ -715,6 +785,9 @@ defineExpose({
 });
 </script>
 <style scoped>
+.reason-error {
+  color: #f53f3f;
+}
 .review-cases {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);

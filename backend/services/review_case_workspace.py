@@ -183,7 +183,17 @@ def query_scope(db, review, folder="all", include_descendants=True, **filters):
 
 
 def item_data(
-    db, user, review, item, version, current, decisions, module_names, people, archived
+    db,
+    user,
+    review,
+    item,
+    version,
+    current,
+    decisions,
+    module_names,
+    people,
+    archived,
+    re_review_permissions=(False, False),
 ):
     data = governance.serialize_review_item(
         item, version, current, decisions, review.reviewer_ids
@@ -216,6 +226,12 @@ def item_data(
         canVote=not archived
         and review.status not in {"cancelled", "superseded"}
         and str(user.id) in data["reviewerIds"],
+        canReReview=not archived
+        and review.status not in {"cancelled", "superseded"}
+        and current is not None
+        and current.deleted_at is None
+        and re_review_permissions[0]
+        and (re_review_permissions[1] or str(user.id) in data["reviewerIds"]),
     )
     return data
 
@@ -270,6 +286,9 @@ def listing(
     }
     module_names = {m.id: m.name for m in modules}
     archived = metadata(db, review)["archived"]
+    from services.review_item_management import re_review_permissions
+
+    permissions = re_review_permissions(db, user, project_id)
     items = [
         item_data(
             db,
@@ -282,6 +301,7 @@ def listing(
             module_names,
             people,
             archived,
+            permissions,
         )
         for item, version, current in rows
     ]
@@ -291,6 +311,8 @@ def listing(
 
 
 def get_item(db, user, project_id, review_id, item_id):
+    from services.review_item_management import re_review_permissions
+
     review = governance.get_review(db, user, project_id, review_id)
     item = db.query(CaseReviewItem).filter_by(review_id=review.id, id=item_id).first()
     if not item:
@@ -321,4 +343,5 @@ def get_item(db, user, project_id, review_id, item_id):
         modules,
         people,
         metadata(db, review)["archived"],
+        re_review_permissions(db, user, project_id),
     )

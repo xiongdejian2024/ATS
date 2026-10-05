@@ -374,6 +374,14 @@ def review_data(db, review, *, include_items=True):
         .order_by(CaseReviewEvent.created_at, CaseReviewEvent.id)
         .all()
     ]
+    abandoned = {
+        identifier
+        for event in events
+        if event["action"] == "重新提审"
+        for identifier in (event["detail"] or {}).get("invalidatedEventIds", [])
+    }
+    for event in events:
+        event["abandoned"] = event["id"] in abandoned
     info = metadata(db, review)
     started = any(e["action"] == "评审结论" for e in events)
     if include_items:

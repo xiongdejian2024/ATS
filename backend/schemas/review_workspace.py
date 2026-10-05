@@ -68,3 +68,7 @@ class ReviewItemReviewers(ReviewItemSelection):
     @classmethod
     def valid_reviewers(cls, values):
         return ReviewAssociate.unique_nonempty_ids(values)
+
+
+class ReviewItemReReview(ReviewItemSelection):
+    comment: str = Field(default="", max_length=10000)

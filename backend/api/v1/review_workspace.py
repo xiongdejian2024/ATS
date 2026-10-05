@@ -14,6 +14,7 @@ from schemas.review_workspace import (
     ReviewAssociate,
     ReviewItemSelection,
     ReviewItemReviewers,
+    ReviewItemReReview,
 )
 from services import review_workspace as service
 from schemas.case_governance import ReviewHeader
@@ -124,6 +125,21 @@ def disassociate_items(
 
     return result(
         transact(db, lambda: disassociate(db, user, project_id, review_id, body))
+    )
+
+
+@router.post("/{review_id}/re-review")
+def re_review_items(
+    project_id: str,
+    review_id: str,
+    body: ReviewItemReReview,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.review_item_management import re_review
+
+    return result(
+        transact(db, lambda: re_review(db, user, project_id, review_id, body))
     )
 
 

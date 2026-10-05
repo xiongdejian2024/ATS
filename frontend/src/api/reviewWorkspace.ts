@@ -63,6 +63,7 @@ export interface ReviewCaseEntry extends ReviewItem {
   reviewState: string;
   recycled: boolean;
   canVote: boolean;
+  canReReview: boolean;
 }
 export interface ReviewCaseListing {
   items: ReviewCaseEntry[];
@@ -75,6 +76,11 @@ export interface ReviewCaseListing {
 const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
+  reReview: (
+    p: string,
+    id: string,
+    body: { itemIds: string[]; comment: string },
+  ) => apiClient.post<CaseReview>(`${base(p)}/${id}/re-review`, body),
   changeItemReviewers: (
     p: string,
     id: string,
