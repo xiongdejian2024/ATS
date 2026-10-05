@@ -92,6 +92,7 @@ async function openLogs(id: string) { try { const data = await testPlanApi.getPl
 async function resolveRun(id: string) { try { await planOrchestrationApi.resolve(id); message.success('已按核对结果终止批次'); await loadRuns() } catch (error) { console.error('确认执行状态失败', error); message.error('确认失败') } }
 async function cancel(id: string) { try { await planOrchestrationApi.cancel(id); message.success('已请求取消'); await loadRuns() } catch (error) { console.error('取消计划批次失败', error); message.error('取消失败') } }
 function onPage(p: any) { pagination.value.current = p.current; pagination.value.pageSize = p.pageSize; loadRuns() }
+watch(tab, key => { if (key === 'executeHistory') void loadRuns() })
 onMounted(load)
 watch(() => props.plan.id, () => { pagination.value.current = 1; load() })
 defineExpose({ refresh: loadRuns,openSettings:()=>{if(props.canEdit)policyOpen.value=true} })

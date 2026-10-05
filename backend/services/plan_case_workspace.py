@@ -55,6 +55,7 @@ def entries(db, plan, category, *, current_read=False):
     bugs = {}
     for link, issue in read(db.query(CaseIssueLink,CaseIssue).join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id).filter(CaseIssueLink.case_id.in_(ids), CaseIssue.project_id.in_(source_ids), CaseIssue.kind == 'defect')):
         bugs.setdefault(link.case_id, set()).add(issue.id)
+    legacy_instances = {cid: row.id for source, row, cid, _, _ in associations if source == 'legacy'}
     runs = read(db.query(PlanRun).filter_by(plan_id=plan.id).order_by(PlanRun.created_at.desc(), PlanRun.id.desc()))
     run = runs[0] if runs else None
     results = (run.report if run.status not in ACTIVE and run.report else build_report(db,run,current_read=current_read))['cases'] if run else []
@@ -71,7 +72,10 @@ def entries(db, plan, category, *, current_read=False):
             report_environments[historical.id] = {item['executionId']: item.get('environmentId') for item in report.get('items', []) if item.get('executionId')}
             execution_states = {item['executionId']: item.get('status') for item in report.get('items', []) if item.get('executionId')}
             for item in report.get('cases', []):
-                key = (item.get('associationId') or item['caseId'], item['caseId'])
+                association_id = item.get('associationId') or item['caseId']
+                if association_id == item['caseId']:
+                    association_id = legacy_instances.get(item['caseId'], association_id)
+                key = (association_id, item['caseId'])
                 if key not in by_association and item.get('result') is not None:
                     by_association[key] = dict(item, result='running') if item['result'] == 'pending' and execution_states.get(item.get('executionId')) in {'running', 'cancelling'} else item
                     association_runs[key] = historical
@@ -91,7 +95,9 @@ def entries(db, plan, category, *, current_read=False):
         if not case: continue
         actual_category = case.type if case.type in ('api','scenario') else 'functional'
         if source == 'legacy' and actual_category != category: continue
-        result_key = (association.id if source == 'node' else case_id,case_id)
+        result_key = (association.id, case_id)
+        if source == 'legacy' and result_key not in by_association:
+            result_key = (case_id, case_id)
         result = by_association.get(result_key)
         result_run = association_runs.get(result_key)
         executor = association.assigned_to
@@ -112,7 +118,9 @@ def entries(db, plan, category, *, current_read=False):
             values = native[item['projectId']].values(cases[item['caseId']])
             item.update({key: value for key, value in values.items() if key not in {'lastReportStatus', 'apiChange'}})
             item['nativeResult'] = NATIVE_RESULTS.get(item['result'], item['result'])
-            result_key = (item['associationId'] if item['source'] == 'node' else item['caseId'], item['caseId'])
+            result_key = (item['associationId'], item['caseId'])
+            if item['source'] == 'legacy' and result_key not in association_runs:
+                result_key = (item['caseId'], item['caseId'])
             actual_run = association_runs.get(result_key)
             item['nativeExecutorId'] = actual_run.executor_id if actual_run else None
             item['nativeExecutorName'] = users.get(item['nativeExecutorId'], '-')

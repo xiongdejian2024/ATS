@@ -18,7 +18,7 @@ from schemas.plan_candidate_view import CandidateViewCreate, CandidateViewUpdate
 from schemas.plan_candidate_selection import Association, CandidateSelection
 from services import plan_case_view as views_service
 from services.plan_candidate_project import source_scope, projects
-from schemas.plan_native_selection import NativeWorkspaceSelection, NativeWorkspaceBatch
+from schemas.plan_native_selection import NativeWorkspaceSelection, NativeWorkspaceBatch, NativeWorkspaceRun
 router=APIRouter()
 Category=Literal['functional','api','scenario']
 class Selection(BaseModel):
@@ -159,6 +159,27 @@ def native_batch_range(plan_id: str, data: NativeWorkspaceBatch, db: Session = D
     from services.plan_native_selection import apply
     plan = plan_access(db,user,plan_id,'update')
     return ok(transact(db,lambda:apply(db,plan,user,data)))
+
+@router.post('/plans/{plan_id}/case-workspace/run-range')
+def native_run_range(plan_id: str, data: NativeWorkspaceRun, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_native_run import start
+    from services.plan_orchestration import run_data
+    from core.logger import logger
+    from fastapi import HTTPException
+    plan = plan_access(db, user, plan_id, 'execute')
+    try:
+        run = start(db, plan, user, data)
+        db.commit()
+        return ok(run_data(db, run))
+    except ValueError as exception:
+        db.rollback()
+        logger.exception('原生计划范围执行校验失败：计划={}', plan_id)
+        raise HTTPException(409, str(exception)) from exception
+    except Exception:
+        db.rollback()
+        logger.exception('原生计划范围执行失败，整批已回滚：计划={}', plan_id)
+        raise
+
 
 @router.post('/plans/{plan_id}/case-workspace/associate')
 def associate(plan_id:str,data:Association,db:Session=Depends(get_db),user=Depends(get_current_user)):

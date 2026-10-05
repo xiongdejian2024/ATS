@@ -9,7 +9,7 @@ from services.plan_candidate_selection import state, LIMIT
 from services.plan_candidate_project import lock_run_sources
 
 
-def resolve(db, plan, user, selection, *, writing=False):
+def resolve(db, plan, user, selection, *, writing=False, action="update"):
     target_id = plan.project_id
     if writing:
         try:
@@ -30,9 +30,9 @@ def resolve(db, plan, user, selection, *, writing=False):
         if any(case.project_id not in locked_sources for case in cases):
             raise HTTPException(409, '关联来源项目已改变，请刷新后重新选择')
         if settings and settings.archived:
-            raise HTTPException(409, '归档计划不可修改关联')
+            raise HTTPException(409, '归档计划不可执行' if action == 'execute' else '归档计划不可修改关联')
     require_project_access(db, user, plan.project_id, 'test_case:read', current_read=writing)
-    project = require_project_access(db, user, plan.project_id, 'test_plan:update' if writing else 'test_plan:read', current_read=writing)
+    project = require_project_access(db, user, plan.project_id, 'test_plan:' + action if writing else 'test_plan:read', current_read=writing)
     condition = selection.condition.model_dump() if selection.selectAll else {}
     data = workspace.listing(db, plan, selection.category, dict(condition, view='mind', sort='caseCode', direction='asc', page=1, size=20, user_id=str(user.id)), current_read=writing)
     eligible = {row['id']: row for row in data['items'] if not row['grouped']}
@@ -48,7 +48,8 @@ def resolve(db, plan, user, selection, *, writing=False):
     if len(selected) > LIMIT:
         raise HTTPException(422, f'每批最多处理{LIMIT}个关联实例，请缩小范围；不会截断选择')
     summary = dict(count=len(selected), eligibleCount=len(eligible), excludedCount=excluded_count,
-                   canModify=bool(selected and project_allows(db, user, project, 'test_plan:update')))
+                   canModify=bool(selected and project_allows(db, user, project, 'test_plan:update')),
+                   canExecute=bool(selected and project_allows(db, user, project, 'test_plan:execute')))
     logger.debug('已核对原生计划实例范围：计划={}，分类={}，全选={}，实际选择={}，实际排除={}，写入={}', plan.id, selection.category, selection.selectAll, len(selected), excluded_count, writing)
     return plan, user, selected, summary
 
@@ -58,7 +59,7 @@ def preview(db, plan, user, selection):
     from models.plan_workspace import PlanWorkspace
     settings = db.get(PlanWorkspace, plan.id)
     if settings and settings.archived:
-        summary['canModify'] = False
+        summary['canModify'] = summary['canExecute'] = False
     return summary
 
 

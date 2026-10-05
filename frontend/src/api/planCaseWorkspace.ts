@@ -148,6 +148,7 @@ export interface NativeWorkspacePreview {
   eligibleCount: number;
   excludedCount: number;
   canModify: boolean;
+  canExecute?: boolean;
 }
 const base = (id: string) => `/plan-orchestration/plans/${id}/case-workspace`;
 export type PlanFilterMode = "workspace" | "association";
@@ -229,6 +230,14 @@ export const planCaseWorkspaceApi = {
   ) => apiClient.post(base(id) + "/batch", data),
   previewNativeSelection: (id: string, data: NativeWorkspaceSelection) =>
     apiClient.post<NativeWorkspacePreview>(base(id) + "/selection", data),
+  runNativeRange: (
+    id: string,
+    data: NativeWorkspaceSelection & { requestId: string },
+  ) =>
+    apiClient.post<import("./planOrchestration").PlanRun>(
+      base(id) + "/run-range",
+      data,
+    ),
   nativeBatch: (
     id: string,
     data: NativeWorkspaceSelection & {

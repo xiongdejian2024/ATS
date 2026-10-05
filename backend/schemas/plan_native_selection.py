@@ -56,3 +56,16 @@ class NativeWorkspaceSelection(ScopeRequest):
 class NativeWorkspaceBatch(NativeWorkspaceSelection):
     action: Literal['move', 'unlink']
     collectionId: str | None = Field(None, min_length=1, max_length=36)
+
+
+class NativeWorkspaceRun(NativeWorkspaceSelection):
+    # 浏览器重试使用同一个请求ID，批次创建和队列落库为一个事务。
+    requestId: str = Field(min_length=36, max_length=36)
+
+    @field_validator('requestId')
+    @classmethod
+    def request_identity(cls, value):
+        from uuid import UUID
+        if str(UUID(value)) != value:
+            raise ValueError('执行请求ID须为规范UUID')
+        return value

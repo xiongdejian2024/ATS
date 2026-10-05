@@ -19,7 +19,7 @@ def nodes(db, plan_id, *, current_read=False):
     return (query.populate_existing().with_for_update() if current_read else query).all()
 
 
-def effective_config(db, node):
+def effective_config(db, node, *, node_map=None, plan=None):
     ancestors, seen = [], set()
     current = node
     while current:
@@ -27,8 +27,8 @@ def effective_config(db, node):
             raise ValueError("测试点层级形成循环")
         seen.add(current.id)
         ancestors.append(current)
-        current = db.get(PlanNode, current.parent_id) if current.parent_id else None
-    plan = db.get(TestPlan, node.plan_id)
+        current = (node_map.get(current.parent_id) if node_map is not None else db.get(PlanNode, current.parent_id)) if current.parent_id else None
+    plan = plan or db.get(TestPlan, node.plan_id)
     config = {"environmentId": plan.environment_id} if plan.environment_id else {}
     for ancestor in reversed(ancestors):
         for key, value in (ancestor.config or {}).items():
@@ -152,10 +152,11 @@ def save_node(db, plan, data, existing=None, *, source_project_id=None):
     return row
 
 
-def compile_tree(db, plan, policy, *, current_read=False):
+def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None):
     """将树编译为关联实例及显式前置节点，保留分支串并行语义。"""
-    all_nodes = nodes(db, plan.id, current_read=current_read)
-    if not uses_tree(db, plan.id):
+    all_nodes = nodes(db, plan.id, current_read=current_read) if scope_nodes is None else scope_nodes
+    node_map = {node.id: node for node in all_nodes}
+    if scope_nodes is None and not uses_tree(db, plan.id):
         return None
     children = {}
     for node in all_nodes:
@@ -165,7 +166,7 @@ def compile_tree(db, plan, policy, *, current_read=False):
         previous = list(prerequisites)
         leaves = []
         for node in children.get(parent_id, []):
-            config = effective_config(db, node)
+            config = effective_config(db, node, node_map=node_map, plan=plan)
             deps = previous if mode == "serial" else list(prerequisites)
             if node.node_type == "point":
                 branch = walk(node.id, deps, config.get("executionMode", mode))
@@ -184,7 +185,8 @@ def compile_tree(db, plan, policy, *, current_read=False):
                     if config.get("environmentId"):
                         suite.environment_id = config["environmentId"]
                     elif pool:
-                        available = db.query(Environment).filter(Environment.id.in_(pool), Environment.status.is_(True)).all()
+                        query = db.query(Environment).filter(Environment.id.in_(pool), Environment.status.is_(True))
+                        available = (query.populate_existing().with_for_update() if current_read else query).all()
                         if not available:
                             raise ValueError("资源池没有启用的执行环境")
                         available.sort(key=lambda env: (not env.is_online, db.query(TaskQueue).filter(TaskQueue.environment_id == env.id, TaskQueue.status.in_(("pending", "running"))).count(), pool.index(env.id)))

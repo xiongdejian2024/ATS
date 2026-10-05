@@ -3,10 +3,11 @@
 from models.test_case import TestCase
 
 
-def build_suite_message(db, suite, execution_id, executor_id, case_snapshots=None):
+def build_suite_message(db, suite, execution_id, executor_id, case_snapshots=None, *, current_read=False):
     if not suite.case_ids:
         raise ValueError("至少需要选择一个测试用例")
-    cases = db.query(TestCase).filter(TestCase.id.in_(suite.case_ids), TestCase.deleted_at.is_(None)).all()
+    query = db.query(TestCase).filter(TestCase.id.in_(suite.case_ids), TestCase.deleted_at.is_(None))
+    cases = (query.populate_existing().with_for_update() if current_read else query).all()
     by_id = {case.id: case for case in cases}
     if len(by_id) != len(suite.case_ids):
         raise ValueError("部分所选测试用例已不存在或存在重复选择")

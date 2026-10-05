@@ -21,8 +21,9 @@ ACTIVE = ("queued", "running", "cancelling", "needs_confirmation", "group_waitin
 TERMINAL = ("completed", "failed", "cancelled", "skipped")
 
 
-def get_policy(db, plan_id):
-    row = db.get(PlanSettings, plan_id)
+def get_policy(db, plan_id, *, current_read=False):
+    row = (db.query(PlanSettings).filter_by(plan_id=plan_id).populate_existing().with_for_update().one_or_none()
+           if current_read else db.get(PlanSettings, plan_id))
     return dict(groupId=row.group_id if row else None,
                 executionMode=row.execution_mode if row else "serial",
                 stopOnFailure=row.stop_on_failure if row else False,
@@ -384,6 +385,11 @@ async def advance_plan_runs(db):
                         view = SimpleNamespace(**{column.name: getattr(suite, column.name) for column in TestSuite.__table__.columns})
                         view.case_ids = item.suite_snapshot["caseIds"]
                         view.execution_command = item.suite_snapshot["executionCommand"]
+                        # 范围批次冻结仓库和分支；凭据不写入历史快照。
+                        if "gitEnabled" in item.suite_snapshot:
+                            view.git_enabled = item.suite_snapshot["gitEnabled"]
+                            view.git_repo_url = item.suite_snapshot.get("gitRepoUrl")
+                            view.git_branch = item.suite_snapshot.get("gitBranch")
                         message = build_suite_message(db, view, item.execution_id, run.executor_id, run.case_snapshot)
                     except Exception:
                         logger.exception("计划派发前校验失败：批次={}，执行={}", run.id, item.execution_id)

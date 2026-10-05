@@ -155,3 +155,26 @@ it("旧范围异步响应及卸载后的响应不能回填，保存期间不允�
   await flush();
   expect(s.summary.value).toBeUndefined();
 });
+
+it("执行权限与编辑权限独立，归档及保存中禁用执行", async () => {
+  const { s } = setup();
+  vi.mocked(planCaseWorkspaceApi.previewNativeSelection).mockResolvedValue({
+    ...result(),
+    canModify: false,
+    canExecute: true,
+  });
+  s.current();
+  await flush();
+  expect(s.ready.value).toBe(false);
+  expect(s.executeReady.value).toBe(true);
+  s.working.value = true;
+  expect(s.executeReady.value).toBe(false);
+  s.working.value = false;
+  vi.mocked(planCaseWorkspaceApi.previewNativeSelection).mockResolvedValue({
+    ...result(),
+    canModify: false,
+    canExecute: false,
+  });
+  await s.preview();
+  expect(s.executeReady.value).toBe(false);
+});

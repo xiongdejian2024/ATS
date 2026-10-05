@@ -180,9 +180,16 @@
             @click="defectCase = record"
             >{{ record.bugCount }}</a
           >
-          <template
-            v-else-if="column.key === 'actions' && canEdit && !record.grouped"
+          <template v-else-if="column.key === 'actions' && !record.grouped"
+            ><a-button
+              v-if="canExecute"
+              type="link"
+              size="small"
+              :disabled="mutating || loading"
+              @click="executeRange(record)"
+              >执行</a-button
             ><a-popconfirm
+              v-if="canEdit"
               :title="`确认取消关联 ${record.name}？`"
               description="主用例及历史报告将保留。"
               :disabled="mutating"
@@ -207,6 +214,12 @@
           ></template
         >
       </a-alert>
+      <a-alert
+        v-if="executionError"
+        :message="executionError"
+        type="error"
+        show-icon
+      />
       <div v-if="selection.hasSelection.value" class="native-batch">
         <span
           >{{
@@ -225,7 +238,14 @@
           >清空选择</a-button
         >
         <a-button
-          v-if="treeType === 'COLLECTION'"
+          v-if="canExecute"
+          :disabled="!executeReady"
+          :loading="mutating"
+          @click="executeRange()"
+          >执行</a-button
+        >
+        <a-button
+          v-if="canEdit && treeType === 'COLLECTION'"
           :disabled="!batchReady"
           @click="
             moveTarget = undefined;
@@ -235,6 +255,7 @@
           >移动</a-button
         >
         <a-button
+          v-if="canEdit"
           danger
           :disabled="!batchReady"
           @click="
@@ -576,6 +597,14 @@ const selection = usePlanNativeSelection(
       .map((row) => row.id),
   ),
 );
+const canExecute = computed(() => !!data.value?.canExecute);
+const executeReady = computed(
+  () =>
+    selection.executeReady.value &&
+    !loading.value &&
+    !loadError.value &&
+    !mutating.value,
+);
 const batchReady = computed(
   () =>
     selection.ready.value &&
@@ -584,7 +613,7 @@ const batchReady = computed(
     !mutating.value,
 );
 const rowSelection = computed(() =>
-  props.canEdit
+  props.canEdit || canExecute.value
     ? {
         selectedRowKeys: selection.pageSelected.value,
         preserveSelectedRowKeys: true,
@@ -764,6 +793,56 @@ const associateOpen = ref(false),
 const detail = ref<PlanCaseEntry>(),
   defectCase = ref<PlanCaseEntry>(),
   reportId = ref("");
+const executionError = ref("");
+let executionRequest: { identity: string; requestId: string } | undefined;
+async function executeRange(row?: PlanCaseEntry) {
+  if (
+    mutating.value ||
+    loading.value ||
+    !canExecute.value ||
+    (!row && !executeReady.value)
+  )
+    return;
+  const body = row
+    ? { category: props.category, selectIds: [row.id] }
+    : selection.request.value;
+  if (!body) return;
+  const identity = JSON.stringify([props.plan.id, body]);
+  if (executionRequest?.identity !== identity)
+    executionRequest = { identity, requestId: crypto.randomUUID() };
+  mutating.value = selection.working.value = true;
+  executionError.value = "";
+  try {
+    const run = await planCaseWorkspaceApi.runNativeRange(props.plan.id, {
+      ...body,
+      requestId: executionRequest.requestId,
+    });
+    console.info("原生计划所选实例已创建执行任务", {
+      计划: props.plan.id,
+      批次: run.id,
+      分类: props.category,
+      实际数量: run.report.total,
+    });
+    message.success({
+      content: h("span", [
+        "执行任务已创建，",
+        h("a", { onClick: () => (reportId.value = run.id) }, "查看任务"),
+      ]),
+      duration: 5,
+    });
+    executionRequest = undefined;
+    selection.clear();
+    await changed();
+  } catch (exception: any) {
+    console.error("原生计划范围执行失败，保留选择及重试请求ID", exception);
+    executionError.value =
+      typeof exception.response?.data?.detail === "string"
+        ? exception.response.data.detail
+        : "创建执行任务失败，请重试；选择范围已保留";
+  } finally {
+    mutating.value = selection.working.value = false;
+  }
+}
 async function changed() {
   page.value = 1;
   await load();
@@ -883,6 +962,8 @@ watch(
   contextKey,
   () => {
     sequence++;
+    executionRequest = undefined;
+    executionError.value = "";
     selection.clear();
     moveOpen.value = unlinkOpen.value = false;
     data.value = undefined;

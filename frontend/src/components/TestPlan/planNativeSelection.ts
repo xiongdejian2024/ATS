@@ -57,6 +57,14 @@ export function usePlanNativeSelection(
       !error.value &&
       !working.value,
   );
+  const executeReady = computed(
+    () =>
+      !!summary.value?.count &&
+      !!summary.value.canExecute &&
+      !loading.value &&
+      !error.value &&
+      !working.value,
+  );
   function clear() {
     ++sequence;
     selected.value = [];
@@ -156,6 +164,7 @@ export function usePlanNativeSelection(
     request,
     pageSelected,
     ready,
+    executeReady,
     clear,
     all,
     current,

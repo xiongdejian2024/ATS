@@ -716,3 +716,23 @@
 - 完整复刻目标仍进行。下一部分继续原生API/场景按所选范围独立执行与执行配置；完整分类测试集菜单/编辑/拖动、原生编辑器/单条报告、关联API定义/用例双模式，以及其他评审/计划首页/报告高级视图、模板、富文本/附件、脑图和分析等仍需逐项补齐，不声明100%完成。
 
 本部分官方依据：[共享表格跨页选择器](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-table/useTable.ts)、[API完整筛选与范围批量参数](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiCase/components/caseTable.vue)、[场景范围批量参数](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiScenario/components/scenarioTable.vue)。
+
+## 第54部分：原生列表单条与范围实例执行（2026-10-06）
+
+- 使用 agent-reach 的 GitHub/gh 后端核对固定官方 `v3.6.9-lts / d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51`：API/场景单行执行仅提交该关联实例；批量执行使用完整筛选范围、全选和排除参数，按所选测试集串并行配置进入任务中心。本部分把这两个入口接入已有 ATS/XAT/Agent 队列，保留真实冻结批次与报告，不以手工回填或主用例最近结果充当自动化执行。
+- 新增严格请求 `/case-workspace/run-range` 与独立 `plan_native_run.py`。复用原范围解析、项目固定顺序锁、权限、版本冻结、测试点配置继承、队列和报告，不增加包、表或字段。每个所选关联实例一个独立执行项和执行ID；同一主用例重复关联不合并，测试套发送范围只包含该实例的用例。未选功能用例、其他分类和测试套兄弟成员不进入批次，也不成为串行前置。
+- 范围批次继承当前计划/祖先测试点的串并行、环境和资源池以及失败停止/通过阈值。编译前剪除未选叶子，串行只等待所选前序；冻结命令、范围、仓库开关/地址/分支及实例身份，凭据不写入历史。资源池继续沿用现有ATS节点池调度。直接关联须有唯一兼容测试套，多个模板时须在测试规划指定具体实例模板；树实例使用其已指定模板。
+- 范围执行要求支持既有用例过滤协议的 XAT/ats-sat 命令，未知通用命令拒绝，避免夹带模板中的其他用例。原生HTTP/场景编辑内容直接转为MS式执行器、MS完整根/测试集资源配置界面仍待实现；本部分仅完成基于现有ATS执行链路的原生列表入口与范围冻结，不声明原生执行器或全部配置已100%复刻。
+- 执行在锁内重读用户、归档、项目权限、关联、源用例、最新筛选结果、测试套、策略和环境；缺模板/歧义/回收/停用节点/活动任务或批次整批拒绝。校验全部完成后才冻结版本和创建批次，队列与批次同事务，失败全回滚。请求ID为规范UUID，同一请求ID及相同用户/计划/范围返回同一批次，变更范围拒绝，不重复入队；幂等核对使用当前读。
+- 原生范围预览新增独立 `canExecute`；有执行权限但无编辑权限的成员仍可选择/执行，移动和取消关联继续要求编辑权限。单行与批量按钮、实际数量成功提示及“查看任务”连接至真实批次报告；错误保留选择和重试ID，创建任务期间锁定选择/操作与路由切换。进入执行历史自动刷新。直接关联报告统一新实例ID与旧按用例ID的历史，后续整计划批次能正确覆盖此前范围结果，旧冻结报告保留。
+- 新增14项后端执行专项，覆盖仅选单条但模板含其他分类、重复主用例独立执行ID/结果、跨页排除、串行前序裁剪与环境继承、幂等重试/范围冲突/活动批次、缺模板/模板歧义/未知命令/停用环境/回收/活动任务/归档、只有执行权限的成员、入队异常全回滚、后续整计划覆盖范围结果。隔离SQLite及消息替身验证实际冻结过滤消息、结果与正常调度，不连接真实台架。最终完整 **346项通过、157.38秒、18条既有提示**；证据 `logs/第54部分最终全量.log`。
+- 新增前端执行/编辑权限分离与归档/保存中禁用专项，最终 **101项／27文件** 通过；严格类型检查及最终生产构建 **12.21秒** 通过，既有包体提示保留。证据 `logs/第54部分前端类型.log`、`logs/第54部分最终前端单元.log`、`logs/第54部分最终前端构建.log`。
+- 新增 `scripts/verify_plan_native_run_mysql.py`：独立临时MySQL库，先建立旧范围预览/可重复读快照，另一事务持有真实项目锁并改变优先级、新增主用例和关联、改变串并行策略/节点或新增活动批次。确认真实锁等待后提交，分别按当前1/3/2实例冻结或拒绝；用例校验与策略查询也使用当前读，能看到旧快照之后新增的实际主用例。并发同请求ID **200/200、同一批次、两个串行实例仅首任务1**；不同请求并发 **200/409** 单胜。全部临时库/授权回收；无调度器或台架。证据 `logs/第54部分MySQL最终输出.log`、`logs/第54部分MySQL验收.log`。
+- 浏览器复用空间30及13313/18813隔离环境，生命周期关闭、专用离线节点无连接。创建独立项目49主用例、API24/场景24/功能1与另一计划两个同主用例关联。API全范围跨两页排除2→22；阻断执行请求后22选择保留，解除阻断并延迟提交时范围操作禁用、分类切换被阻止。重试实际落库22个冻结API实例、串行首任务1，排除2、场景和功能均未夹带；报告显示22未执行。浏览器正常取消后仅在全部执行项已终止、0可派发任务/0连接/禁止消息的条件下推进取消收尾，没有运行用例。
+- 场景全选24后，在第二页点击单行执行，实际只落库该行1个实例/1个待处理任务，而非24条；重复树实例2排除1后只落库所选另一实例1个任务。进入执行历史无需手工刷新即显示新排队批次。证据 `logs/第54部分浏览器验收.jsonl`、`logs/第54部分范围任务核验.json`、`logs/第54部分场景核验输出.log`、`logs/第54部分清理.log`。浏览器仅验证真实入队及范围，结果闭环由消息替身测试验证，不声称真实台架或原生HTTP执行验收。
+- 1440px API失败重试及390px场景范围截图已实际查看；窄屏整页宽390、24条选择信息与执行按钮换行显示，操作列通过横向滚动访问。截图 `/tmp/ats-ms54-api-execute-desktop.png`、`/tmp/ats-ms54-scene-execute-mobile.png`。Ant按钮文字插空格、窄屏横向隐藏操作列、旧热更新ref及执行历史未自动刷新等观察问题均按实际DOM修正，异常/堆栈保留；MySQL活动样本初次缺完整策略已修正后重验。
+- 本轮主键与外键后代精确回收49主用例、23版本/变更记录、3批次、3队列和关联，完整73表恢复原基线，原31用例与历史保留；表格偏好逐键恢复原JSON并返回原页面，保持登录及其他存储。证据 `logs/第54部分清理计数.json`、`logs/第54部分清理输出.log`、`logs/第54部分浏览器恢复.json`。
+- 正式API已加载 `/run-range` 契约和最新范围批次实现，生产前端已构建；仅更新API，原Agent与worker继续运行。正式完整73表计数一致：100用例、7计划、28历史任务、0活动任务、在线节点1；健康/5173页面HTTP200，实际WebSocket心跳已恢复，没有提交真实任务或连接模型。证据 `logs/第54部分正式服务输出.log`、`logs/第54部分正式服务.log`、`logs/第54部分正式基线.json`。
+- 第53部分远程CI运行 `37379637963` 精确SHA `699e8d3c13afc476cac90efe3563405135c8be8f` 已全部成功，证据 `logs/第53部分远程CI最终状态.json`。整体目标继续进行：MS完整根/测试集执行资源配置、原生HTTP/场景执行器、分类测试集完整菜单/编辑/拖动、原生编辑器/单条报告、关联API定义/用例双模式，以及其他评审/计划首页/报告高级视图、模板、富文本/附件、脑图和分析仍逐项补齐，不声明100%完成。
+
+本部分官方依据：[API单条与范围执行入口](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiCase/components/caseTable.vue)、[场景单条与范围执行入口](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiScenario/components/scenarioTable.vue)、[API实例执行接口](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/test-plan/src/main/java/io/metersphere/plan/controller/TestPlanApiCaseController.java)、[选定实例、测试集配置与队列](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/test-plan/src/main/java/io/metersphere/plan/service/TestPlanApiCaseBatchRunService.java)。
