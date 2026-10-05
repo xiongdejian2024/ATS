@@ -4,6 +4,14 @@ from test_case_governance import governance, request_review
 from test_review_workspace import listing, endpoint
 from schemas.test_case import TestCaseCreate as CaseCreate
 from services.test_case_service import TestCaseService
+from services.review_progress import metrics
+
+
+def test_progress_halfway_rounding_matches_official_two_decimal_display():
+    # 1/32为3.125%，官方toFixed(2)显示3.13%，不能沿用Python银行家舍入3.12%。
+    rows = [{"status": "approved"}] + [{"status": "pending"}] * 31
+    data = metrics(rows, started=True)
+    assert data["progress"] == 3.13 and data["passRate"] == 3
 
 
 def get_detail(g, identifier):

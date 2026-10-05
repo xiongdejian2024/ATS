@@ -25,11 +25,11 @@
         <span
           >已评审用例
           <b>{{
-            prepared ? "—" : `${review.reviewedCount}/${review.caseCount}`
+            prepared ? "-" : `${review.reviewedCount}/${review.caseCount}`
           }}</b></span
         >
         <span
-          >通过率 <b>{{ prepared ? "—" : `${review.passRate}%` }}</b></span
+          >通过率 <b>{{ prepared ? "-" : `${review.passRate}%` }}</b></span
         >
       </div>
       <a-popover :trigger="['hover', 'focus', 'click']" placement="bottomLeft">
@@ -91,7 +91,9 @@ const stateColor = computed(
       superseded: "default",
     })[props.review.lifecycle] || "default",
 );
-const progressText = computed(() => `${props.review.progress.toFixed(2)}%`);
+const progressText = computed(() =>
+  props.review.caseCount ? `${props.review.progress.toFixed(2)}%` : "0%",
+);
 const counts = computed(() => [
   {
     key: "pass",

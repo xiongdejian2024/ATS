@@ -41,6 +41,14 @@ def metrics(items, *, archived=False, status="pending", started=False):
         underReviewedCount=reviewing,
         unReviewCount=total - reviewed - rereview - reviewing,
         reviewedCount=reviewed,
-        progress=round(reviewed / total * 100, 2) if total else 0,
+        progress=(
+            float(
+                (Decimal(reviewed) * 100 / Decimal(total)).quantize(
+                    Decimal("0.01"), rounding=ROUND_HALF_UP
+                )
+            )
+            if total
+            else 0
+        ),
         passRate=pass_rate(passed, total),
     )
