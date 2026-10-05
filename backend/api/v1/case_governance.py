@@ -357,7 +357,9 @@ def comment(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    review = service.get_review(db, user, project_id, review_id)
+    review = service.get_review(db, user, project_id, review_id, lock=True)
+    from services.review_workspace import require_mutable
+    require_mutable(db, review)
     if (
         body.itemId
         and not db.query(CaseReviewItem)
@@ -391,6 +393,8 @@ def cancel(
 ):
     review = service.get_review(db, user, project_id, review_id, lock=True)
     service.project_access(db, user, project_id, "update")
+    from services.review_workspace import require_mutable
+    require_mutable(db, review)
     if review.status != "pending":
         raise HTTPException(409, "评审已结束")
 
@@ -521,3 +525,7 @@ def delete_view(
         raise HTTPException(404, "个人视图不存在")
     transact(db, lambda: db.delete(row))
     return result()
+
+# 在既有项目权限路径下注册独立评审首页，保留旧版本和评审接口。
+from api.v1.review_workspace import router as review_workspace_router
+router.include_router(review_workspace_router)

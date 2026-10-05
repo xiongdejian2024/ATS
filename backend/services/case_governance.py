@@ -128,8 +128,11 @@ def snapshot_case(db, case, actor_id, reason, force=False):
             db.info["auto_resubmitting"] = True
             try:
                 from schemas.case_governance import ReviewResubmit
+                from services.review_workspace import metadata
 
                 for review in reviews:
+                    if metadata(db, review)["archived"]:
+                        continue
                     clone_review(
                         db,
                         db.get(User, str(actor_id)),
@@ -214,6 +217,9 @@ def reviewers(db, project_id):
 
 def create_review(db, user, project_id, request):
     project_access(db, user, project_id, "update")
+    from services import review_workspace as workspace_service
+    workspace_service.lock_project(db, project_id)
+    workspace_service.module_for_project(db, project_id, request.moduleId, lock=True)
     eligible = {r["id"] for r in reviewers(db, project_id)}
     requested = set(request.reviewerIds) | {
         v for values in request.itemReviewers.values() for v in values
@@ -246,6 +252,7 @@ def create_review(db, user, project_id, request):
     )
     db.add(review)
     db.flush()
+    workspace_service.set_metadata(db, review, request.moduleId, request.tags)
     for case in cases:
         version = snapshot_case(db, case, str(user.id), "提交评审时保存版本")
         db.add(
@@ -270,14 +277,18 @@ def create_review(db, user, project_id, request):
 
 def get_review(db, user, project_id, review_id, lock=False):
     project_access(db, user, project_id)
+    if lock:
+        from services.review_workspace import lock_project
+        lock_project(db, project_id)
     query = db.query(CaseReview).filter_by(project_id=project_id, id=review_id)
-    review = (query.with_for_update() if lock else query).first()
+    review = (query.populate_existing().with_for_update() if lock else query).first()
     if not review:
         raise HTTPException(404, "评审不存在")
     return review
 
 
 def review_data(db, review):
+    from services.review_workspace import metadata
     items = []
     for item in (
         db.query(CaseReviewItem)
@@ -330,6 +341,7 @@ def review_data(db, review):
         .all()
     ]
     return dict(
+        **metadata(db, review),
         id=review.id,
         name=review.name,
         policy=review.policy,
@@ -376,9 +388,11 @@ def review_event(db, review, actor_id, action, detail, item_id=None):
 
 def vote_review(db, user, project_id, review_id, item_id, request):
     review = get_review(db, user, project_id, review_id, lock=True)
+    from services.review_workspace import require_mutable
+    require_mutable(db, review)
     if review.status in {"cancelled", "superseded"}:
         raise HTTPException(409, "该评审已取消或已重新提审")
-    item = db.query(CaseReviewItem).filter_by(review_id=review.id, id=item_id).first()
+    item = db.query(CaseReviewItem).filter_by(review_id=review.id, id=item_id).populate_existing().with_for_update().first()
     if not item:
         raise HTTPException(404, "评审用例不存在")
     assigned = item.reviewer_ids or review.reviewer_ids
@@ -389,7 +403,7 @@ def vote_review(db, user, project_id, review_id, item_id, request):
         decision = (
             db.query(CaseReviewDecision)
             .filter_by(item_id=item.id, reviewer_id=str(user.id))
-            .first()
+            .populate_existing().with_for_update().first()
         )
         if not decision:
             decision = CaseReviewDecision(item_id=item.id, reviewer_id=str(user.id))
@@ -409,7 +423,7 @@ def vote_review(db, user, project_id, review_id, item_id, request):
             .order_by(
                 CaseReviewDecision.updated_at.desc(), CaseReviewDecision.id.desc()
             )
-            .all()
+            .populate_existing().with_for_update().all()
         )
         if review.mode == "single":
             item.status = decisions[0].decision
@@ -420,7 +434,7 @@ def vote_review(db, user, project_id, review_id, item_id, request):
         db.flush()
         states = [
             i.status
-            for i in db.query(CaseReviewItem).filter_by(review_id=review.id).all()
+            for i in db.query(CaseReviewItem).filter_by(review_id=review.id).populate_existing().with_for_update().all()
         ]
         review.status = (
             "rejected"
@@ -442,10 +456,16 @@ def vote_review(db, user, project_id, review_id, item_id, request):
 def revise_review(db, user, project_id, review_id, request):
     project_access(db, user, project_id, "update")
     review = get_review(db, user, project_id, review_id, lock=True)
+    from services.review_workspace import require_mutable, metadata, set_metadata
+    require_mutable(db, review)
+    old_metadata = metadata(db, review)
+    set_metadata(db, review,
+                 request.moduleId if "moduleId" in request.model_fields_set else old_metadata["moduleId"],
+                 request.tags if "tags" in request.model_fields_set else old_metadata["tags"])
     if review.status in {"cancelled", "superseded"}:
         raise HTTPException(409, "该评审已关闭，请复制或重新提审")
     item_ids = [
-        i.id for i in db.query(CaseReviewItem).filter_by(review_id=review.id).all()
+        i.id for i in db.query(CaseReviewItem).filter_by(review_id=review.id).populate_existing().with_for_update().all()
     ]
     if (
         db.query(CaseReviewDecision)
@@ -496,9 +516,13 @@ def clone_review(db, user, project_id, review_id, body, resubmit=False):
     from schemas.case_governance import ReviewCreate
 
     source = get_review(db, user, project_id, review_id, lock=True)
+    from services.review_workspace import require_mutable, metadata
+    if resubmit:
+        require_mutable(db, source)
     project_access(db, user, project_id, "update")
     items = db.query(CaseReviewItem).filter_by(review_id=review_id).all()
     data = dict(
+        **{key: value for key, value in metadata(db, source).items() if key in {"moduleId", "tags"}},
         name=source.name[:190] + ("（重新提审）" if resubmit else "（副本）"),
         caseIds=[i.case_id for i in items],
         reviewerIds=source.reviewer_ids,

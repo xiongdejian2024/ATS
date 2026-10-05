@@ -25,6 +25,16 @@ class ReviewCreate(StrictRequest):
     itemReviewers: dict[str, list[str]] = Field(default_factory=dict)
     startDate: date | None = None
     endDate: date | None = None
+    moduleId: str | None = None
+    tags: list[str] = Field(default_factory=list, max_length=50)
+
+    @field_validator("tags")
+    @classmethod
+    def normalized_tags(cls, values):
+        values = [v.strip() for v in values]
+        if any(not v or len(v) > 100 for v in values) or len(set(values)) != len(values):
+            raise ValueError("标签必须不重复且长度为1至100个字符")
+        return values
 
     @model_validator(mode="after")
     def period_and_assignments(self):
