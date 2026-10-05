@@ -11,6 +11,7 @@
     @update:result="(value) => emit('update:result', value)"
     @update:description="(value) => emit('update:description', value)"
     @update:uploading="(value) => emit('update:uploading', value)"
+    @image-uploaded="(plan, image) => emit('imageUploaded', plan, image)"
     @activate="activate"
     @expand="expand"
   />
@@ -45,6 +46,7 @@
       :disabled="disabled"
       :uploading="uploading"
       @update:uploading="(value) => emit('update:uploading', value)"
+      @image-uploaded="(plan, image) => emit('imageUploaded', plan, image)"
     />
   </a-modal>
 </template>
@@ -65,6 +67,11 @@ const emit = defineEmits<{
   "update:description": [value: string];
   "update:uploading": [value: boolean];
   "update:dialogDirty": [value: boolean];
+  imageUploaded: [
+    planId: string,
+    media: import("@/api/planCaseMedia").PlanCaseMedia,
+  ];
+  discardImages: [];
 }>();
 const active = ref(!!props.description),
   expanded = ref(false),
@@ -108,6 +115,7 @@ function cancel(event: MouseEvent | KeyboardEvent) {
   emit("update:description", maskClose ? dialogDescription.value : "");
   expanded.value = false;
   active.value = maskClose && !!dialogDescription.value;
+  if (!maskClose) emit("discardImages");
 }
 async function submit() {
   if (props.disabled || props.uploading) return;

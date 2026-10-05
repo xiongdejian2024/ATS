@@ -6,9 +6,16 @@ export interface PlanCaseMedia {
   mimeType: string;
   src: string;
 }
+export interface MediaCleanup {
+  removed: string[];
+  retained: string[];
+  missing: string[];
+}
 const base = (planId: string) =>
   `/plan-orchestration/plans/${planId}/execution-media`;
 export const planCaseMediaApi = {
+  cleanup: (planId: string, ids: string[]) =>
+    apiClient.post<MediaCleanup>(`${base(planId)}/cleanup`, { ids }),
   upload: (planId: string, file: File) => {
     const data = new FormData();
     data.append("file", file);

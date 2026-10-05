@@ -1,5 +1,6 @@
 """计划分类列表与关联管理接口。"""
 from typing import Literal
+from uuid import UUID
 from fastapi import APIRouter, Depends, Query, UploadFile, File
 from fastapi.responses import Response
 from urllib.parse import quote
@@ -87,6 +88,19 @@ def upload_execution_image(plan_id: str, file: UploadFile = File(...), db: Sessi
     plan=plan_access(db,user,plan_id,'execute')
     require_project_access(db,user,plan.project_id,'test_case:read')
     return ok(transact(db,lambda:upload(db,user,plan,file)))
+
+
+class CleanupImages(BaseModel):
+    ids: list[UUID] = Field(min_length=1, max_length=500)
+
+
+@router.post('/plans/{plan_id}/execution-media/cleanup')
+def cleanup_execution_images(plan_id: str, data: CleanupImages, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_media import cleanup_owned
+    # 只收尾本人的未引用文件；归档或执行权限改变后也可释放自己的草稿。
+    plan = plan_access(db,user,plan_id)
+    require_project_access(db,user,plan.project_id,'test_case:read')
+    return ok(transact(db,lambda:cleanup_owned(db,user,plan,[str(identifier) for identifier in data.ids])))
 
 
 def execution_image(db,user,plan_id,media_id):

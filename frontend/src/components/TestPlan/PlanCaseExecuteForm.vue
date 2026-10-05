@@ -63,6 +63,10 @@ const emit = defineEmits<{
   "update:uploading": [value: boolean];
   activate: [];
   expand: [];
+  imageUploaded: [
+    planId: string,
+    media: import("@/api/planCaseMedia").PlanCaseMedia,
+  ];
 }>();
 const richText = ref<InstanceType<typeof CaseRichText>>();
 function isDescription(event: MouseEvent) {
@@ -83,7 +87,10 @@ function descriptionDoubleClick(event: MouseEvent) {
 defineExpose({ focus: () => richText.value?.focus() });
 import { planCaseMediaApi } from "@/api/planCaseMedia";
 async function uploadImage(file: File) {
-  return planCaseMediaApi.upload(props.planId!, file);
+  const planId = props.planId!;
+  const image = await planCaseMediaApi.upload(planId, file);
+  emit("imageUploaded", planId, image);
+  return image;
 }
 function imageUploading(value: boolean) {
   emit("update:uploading", value);

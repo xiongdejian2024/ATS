@@ -259,6 +259,7 @@
       :disabled="executeSaving"
       :plan-id="plan.id"
       v-model:uploading="executeMediaUploading"
+      @image-uploaded="(plan, image) => mediaDraft.track(plan, image.id)"
   /></a-modal>
   <a-modal
     v-model:open="batchOpen"
@@ -295,7 +296,7 @@
   /></a-drawer>
 </template>
 <script setup lang="ts">
-import { ref, computed, reactive, watch } from "vue";
+import { ref, computed, reactive, watch, onBeforeUnmount } from "vue";
 import {
   onBeforeRouteLeave,
   onBeforeRouteUpdate,
@@ -320,6 +321,8 @@ import { planTreeApi } from "@/api/planTree";
 import { caseFolderTree } from "./planCaseFolders";
 import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
 import PlanDefects from "./PlanDefects.vue";
+import { ExecutionMediaDraft } from "./executionMediaDraft";
+import { planCaseMediaApi } from "@/api/planCaseMedia";
 import PlanCaseExecuteForm from "./PlanCaseExecuteForm.vue";
 import {
   functionalResults,
@@ -568,11 +571,19 @@ const executing = ref(new Set<string>()),
   executeResult = ref("passed"),
   executeDescription = ref(""),
   executeTargets = ref<PlanCaseEntry[]>([]);
-function allowNavigation() {
+const mediaDraft = new ExecutionMediaDraft(planCaseMediaApi.cleanup);
+watch(executeBatchOpen, (open) => {
+  if (!open) void mediaDraft.cleanup();
+});
+onBeforeUnmount(() => {
+  void mediaDraft.cleanup();
+});
+async function allowNavigation() {
   if (executeMediaUploading.value || executeSaving.value) {
     message.info("图片上传或结果提交中，请稍候");
     return false;
   }
+  await mediaDraft.cleanup();
   return true;
 }
 onBeforeRouteLeave(allowNavigation);
@@ -711,6 +722,7 @@ watch(
     data.value = undefined;
     selected.value = [];
     executeBatchOpen.value = false;
+    void mediaDraft.cleanup();
     executeTargets.value = [];
     void load();
     void loadExecutors();

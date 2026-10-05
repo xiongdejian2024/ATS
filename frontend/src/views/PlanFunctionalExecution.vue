@@ -268,6 +268,10 @@
                   v-model:uploading="mediaUploading"
                   v-model:dialog-dirty="dialogDirty"
                   :on-submit="submit"
+                  @image-uploaded="
+                    (plan, image) => mediaDraft.track(plan, image.id)
+                  "
+                  @discard-images="mediaDraft.cleanup()"
                   ><a-switch
                     v-model:checked="autoNext"
                     :disabled="saving || mediaUploading"
@@ -282,7 +286,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch, onBeforeUnmount } from "vue";
 import dayjs from "dayjs";
 import { useEventListener } from "@vueuse/core";
 import {
@@ -303,6 +307,8 @@ import { useProjectStore } from "@/stores/project";
 import type { TestPlan } from "@/types";
 import CaseAttachments from "@/components/TestCase/CaseAttachments.vue";
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
+import { ExecutionMediaDraft } from "@/components/TestPlan/executionMediaDraft";
+import { planCaseMediaApi } from "@/api/planCaseMedia";
 import PlanCaseExecutionSubmit from "@/components/TestPlan/PlanCaseExecutionSubmit.vue";
 import PlanDefects from "@/components/TestPlan/PlanDefects.vue";
 import {
@@ -346,6 +352,10 @@ const search = ref(initialListing.search),
   page = ref(initialListing.page),
   historyPage = ref(1),
   tab = ref("details");
+const mediaDraft = new ExecutionMediaDraft(planCaseMediaApi.cleanup);
+onBeforeUnmount(() => {
+  void mediaDraft.cleanup();
+});
 const result = ref("passed"),
   description = ref(""),
   autoNext = ref(false);
@@ -385,17 +395,21 @@ function resultColor(value: string) {
     >
   )[value];
 }
-function confirmLeave(): Promise<boolean> {
+async function confirmLeave(): Promise<boolean> {
   if (saving.value || mediaUploading.value) return Promise.resolve(false);
-  if (!dirty.value) return Promise.resolve(true);
+  if (!dirty.value) {
+    await mediaDraft.cleanup();
+    return true;
+  }
   return new Promise((resolve) =>
     Modal.confirm({
       title: "执行结果尚未提交",
       content: "离开会丢弃当前执行描述和步骤结果。",
       okText: "丢弃并离开",
       cancelText: "继续编辑",
-      onOk() {
+      async onOk() {
         baseline.value = "";
+        await mediaDraft.cleanup();
         resolve(true);
       },
       onCancel() {
@@ -592,6 +606,7 @@ async function submit(): Promise<boolean> {
       requestId: retryId,
       ...data,
     });
+    await mediaDraft.cleanup();
     baseline.value = "";
     historyPage.value = 1;
     await Promise.all([loadList(), loadDetail()]);

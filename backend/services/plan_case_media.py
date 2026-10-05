@@ -23,10 +23,10 @@ FORMATS = {
 }
 
 
-def linked(db, identifier):
-    return (
-        db.query(PlanCaseMediaLink).filter_by(media_id=identifier).first() is not None
-    )
+def linked(db, identifier, lock=False):
+    query = db.query(PlanCaseMediaLink).filter_by(media_id=identifier)
+    # MySQL重复读下，等待图片锁后须用当前读，不能沿用等待前的旧快照。
+    return (query.with_for_update() if lock else query).first() is not None
 
 
 def media_data(row):
@@ -79,9 +79,7 @@ def upload(db, user, plan, file):
     )
     db.add(row)
     db.flush()
-    logger.info(
-        "执行描述图片已上传：计划={}，图片={}，字节={}", plan.id, row.id, len(raw)
-    )
+    logger.info("执行描述图片已上传：计划={}，图片={}，字节={}", plan.id, row.id, len(raw))
     return media_data(row)
 
 
@@ -90,7 +88,7 @@ def find(db, user, plan, identifier, lock=False):
     row = (query.with_for_update() if lock else query).first()
     if not row:
         raise HTTPException(404, "此计划中不存在该图片")
-    if str(row.uploaded_by) != str(user.id) and not linked(db, row.id):
+    if str(row.uploaded_by) != str(user.id) and not linked(db, row.id, lock=lock):
         raise HTTPException(403, "未提交图片仅上传人可访问")
     return row
 
@@ -101,10 +99,44 @@ def remove(db, user, plan, identifier):
         raise HTTPException(409, "归档计划不能删除未提交图片")
     if str(row.uploaded_by) != str(user.id):
         raise HTTPException(403, "只能删除本人未提交的图片")
-    if linked(db, row.id):
+    if linked(db, row.id, lock=True):
         raise HTTPException(409, "图片已被执行历史引用，不能删除")
     db.delete(row)
     logger.info("未提交执行描述图片已删除：计划={}，图片={}", plan.id, identifier)
+
+
+def cleanup_owned(db, user, plan, identifiers):
+    """取消或成功提交后的草稿收尾；已引用图片保留，重试已删除编号无副作用。"""
+    ids = sorted(set(identifiers))
+    rows = (
+        db.query(PlanCaseMedia)
+        .filter(PlanCaseMedia.id.in_(ids))
+        .order_by(PlanCaseMedia.id)
+        .with_for_update()
+        .all()
+    )
+    # 先完成全部校验，混入其他计划或他人图片时整批不写入。
+    if any(row.plan_id != plan.id for row in rows):
+        raise HTTPException(404, "图片不存在于当前计划")
+    if any(str(row.uploaded_by) != str(user.id) for row in rows):
+        raise HTTPException(403, "只能清理本人上传的图片草稿")
+    removed, retained = [], []
+    for row in rows:
+        if linked(db, row.id, lock=True):
+            retained.append(row.id)
+        else:
+            removed.append(row.id)
+            db.delete(row)
+    missing = sorted(set(ids) - {row.id for row in rows})
+    logger.info(
+        "执行图片草稿收尾：计划={}，用户={}，删除={}，历史保留={}，已不存在={}",
+        plan.id,
+        user.id,
+        len(removed),
+        len(retained),
+        len(missing),
+    )
+    return dict(removed=removed, retained=retained, missing=missing)
 
 
 class MediaParser(HTMLParser):
