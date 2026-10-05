@@ -16,6 +16,43 @@ from models.task_queue import TaskQueue
 MEDIA = "/orchestration/plans/plan/execution-media"
 
 
+@pytest.mark.asyncio
+async def test_valid_formats_and_truncated_frames_require_full_decode(workspace_http):
+    db, app, identity = workspace_http
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        for format, expected in [
+            ("JPEG", "image/jpeg"),
+            ("GIF", "image/gif"),
+            ("WEBP", "image/webp"),
+        ]:
+            stream = BytesIO()
+            options = (
+                dict(
+                    save_all=True, append_images=[Image.new("RGB", (100, 100), "blue")]
+                )
+                if format == "GIF"
+                else {}
+            )
+            Image.new("RGB", (100, 100), "green").save(stream, format=format, **options)
+            content = stream.getvalue()
+            response = await client.post(
+                MEDIA, files={"file": ("截图.png", content, "image/png")}
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["data"]["mimeType"] == expected
+            if format in ("JPEG", "GIF"):
+                assert (
+                    await client.post(
+                        MEDIA, files={"file": ("截断图片", content[:-50], expected)}
+                    )
+                ).status_code == 422
+        assert db.query(PlanCaseMedia).count() == 3
+        assert db.query(PlanCaseExecution).count() == 0
+        assert db.query(TaskQueue).count() == 0
+
+
 def png():
     stream = BytesIO()
     Image.new("RGB", (32, 24), "green").save(stream, format="PNG")

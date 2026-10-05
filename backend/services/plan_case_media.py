@@ -1,9 +1,10 @@
 """执行描述图片的上传、鉴权、历史引用和草稿清理。"""
 
 import re
+import warnings
 from html.parser import HTMLParser
 from io import BytesIO
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageSequence, UnidentifiedImageError
 from fastapi import HTTPException
 from models.plan_case_media import PlanCaseMedia, PlanCaseMediaLink
 from services.plan_case_execution import can_execute
@@ -48,16 +49,23 @@ def upload(db, user, plan, file):
     if not raw or len(raw) > settings.MAX_FILE_SIZE:
         raise HTTPException(422, "图片内容为空或超过当前文件大小限制")
     try:
-        with Image.open(BytesIO(raw)) as image:
-            mime = FORMATS.get(image.format)
-            if not mime:
-                raise HTTPException(422, "支持PNG、JPEG、GIF和WebP图片")
-            image.verify()
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(BytesIO(raw)) as image:
+                mime = FORMATS.get(image.format)
+                if not mime:
+                    raise HTTPException(422, "支持PNG、JPEG、GIF和WebP图片")
+                image.verify()
+            # JPEG 的 verify 不会解码像素，动画也需逐帧验证，避免保存无法显示的截图。
+            with Image.open(BytesIO(raw)) as decoded:
+                for frame in ImageSequence.Iterator(decoded):
+                    frame.load()
     except (
         UnidentifiedImageError,
         OSError,
         SyntaxError,
         Image.DecompressionBombError,
+        Image.DecompressionBombWarning,
     ) as exc:
         logger.exception("执行描述图片解码失败：计划={}", plan.id)
         raise HTTPException(422, "文件不是完整的有效图片") from exc
