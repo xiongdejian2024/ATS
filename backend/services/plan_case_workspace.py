@@ -1,6 +1,6 @@
 """计划关联列表及原子批量管理，兼容直接关联和独立树实例。"""
 from fastapi import HTTPException
-from models import TestCase, TestSuite, Module, User, PlanCaseRelation, Project
+from models import TestCase, TestSuite, Module, User, PlanCaseRelation, Project, TestPlan
 from models.plan_workspace import PlanNode, PlanWorkspace
 from models.plan_orchestration import PlanRun
 from models.case_features import CaseIssue, CaseIssueLink
@@ -196,13 +196,20 @@ def associate(db,plan,user,data):
     return dict(added=added)
 
 
-def candidates(db, plan, category, search, folder, priority, page, size):
+def candidates(db, plan, category, search, folder, priority, page, size, *, filters=None, mine=False, user_id=None):
     """数据库分页取可关联用例，目录计数不受当前页或目录范围影响。"""
     from services.case_candidates import candidates as shared_candidates
-    result = shared_candidates(db, plan.project_id, category, search, folder, priority, page, size)
+    if filters is not None or mine:
+        from services.plan_candidate_filter import advanced_candidates
+        result = advanced_candidates(db, plan, category, filters, mine, user_id, page, size)
+    else:
+        result = shared_candidates(db, plan.project_id, category, search, folder, priority, page, size)
     associated, points, _, uses = entries(db, plan, category)
     linked = {item['caseId'] for item in associated}
     items = [dict(item, alreadyLinked=item['id'] in linked) for item in result['items']]
     suites = [dict(id=row.id, name=row.name, caseIds=row.case_ids or []) for row in db.query(TestSuite).filter_by(plan_id=plan.id)]
+    project = db.get(Project, plan.project_id)
+    plans = [dict(id=p.id, name=p.name) for p in db.query(TestPlan).filter_by(project_id=plan.project_id)]
     return dict(**{key:value for key,value in result.items() if key != "items"}, items=items, usesTree=uses,
+                projectId=plan.project_id, projectName=project.name, plans=plans,
                 collections=[dict(id=row.id, name=row.name, parentId=row.parent_id, count=0) for row in points], suites=suites)

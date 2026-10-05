@@ -53,6 +53,9 @@ export interface PlanCaseListing {
   canExecute: boolean;
 }
 export interface PlanAssociateListing {
+  projectId: string;
+  projectName: string;
+  plans: { id: string; name: string }[];
   items: (TestCase & { moduleName: string; alreadyLinked: boolean })[];
   total: number;
   page: number;
@@ -64,6 +67,9 @@ export interface PlanAssociateListing {
   suites: { id: string; name: string; caseIds: string[] }[];
 }
 const base = (id: string) => `/plan-orchestration/plans/${id}/case-workspace`;
+export type PlanFilterMode = "workspace" | "association";
+const viewBase = (id: string, mode: PlanFilterMode) =>
+  base(id) + (mode === "association" ? "/candidates/views" : "/views");
 export interface PlanCaseSavedView {
   id: string;
   name: string;
@@ -75,22 +81,49 @@ export interface PlanCaseSavedView {
 export const planCaseWorkspaceApi = {
   list: (id: string, params: Record<string, unknown>) =>
     apiClient.get<PlanCaseListing>(base(id), { params }),
-  views: (id: string) =>
-    apiClient.get<PlanCaseSavedView[]>(base(id) + "/views"),
-  saveView: (id: string, name: string, filters: PlanCaseSavedView["filters"]) =>
-    apiClient.post<PlanCaseSavedView>(base(id) + "/views", { name, filters }),
+  views: (
+    id: string,
+    category = "functional",
+    mode: PlanFilterMode = "workspace",
+  ) =>
+    apiClient.get<PlanCaseSavedView[]>(viewBase(id, mode), {
+      params: { category },
+    }),
+  saveView: (
+    id: string,
+    name: string,
+    filters: PlanCaseSavedView["filters"],
+    category = "functional",
+    mode: PlanFilterMode = "workspace",
+  ) =>
+    apiClient.post<PlanCaseSavedView>(
+      viewBase(id, mode),
+      { name, filters },
+      { params: { category } },
+    ),
   updateView: (
     id: string,
     view: string,
     name: string,
     filters?: PlanCaseSavedView["filters"],
+    category = "functional",
+    mode: PlanFilterMode = "workspace",
   ) =>
-    apiClient.put<PlanCaseSavedView>(base(id) + "/views/" + view, {
-      name,
-      ...(filters === undefined ? {} : { filters }),
-    }),
-  deleteView: (id: string, view: string) =>
-    apiClient.delete(base(id) + "/views/" + view),
+    apiClient.put<PlanCaseSavedView>(
+      viewBase(id, mode) + "/" + view,
+      {
+        name,
+        ...(filters === undefined ? {} : { filters }),
+      },
+      { params: { category } },
+    ),
+  deleteView: (
+    id: string,
+    view: string,
+    category = "functional",
+    mode: PlanFilterMode = "workspace",
+  ) =>
+    apiClient.delete(viewBase(id, mode) + "/" + view, { params: { category } }),
   batch: (
     id: string,
     data: {

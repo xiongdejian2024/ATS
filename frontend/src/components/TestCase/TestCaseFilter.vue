@@ -425,12 +425,14 @@ async function save(mode: ViewSaveMode) {
     if (mode === "copy") {
       copyMode.value = false;
       copyName.value = "";
-    } else {
-      original = cloneDeep(draft.value);
-      originalLogic = draftLogic.value;
-      originalName = name;
-      editingName.value = false;
     }
+    // 另存会在父组件切换当前视图；保存中的侦听器不会重置草稿。
+    // 同步新身份的名称和重置基线，允许随后立即更新同一视图。
+    original = cloneDeep(draft.value);
+    originalLogic = draftLogic.value;
+    originalName = name;
+    draftName.value = name;
+    editingName.value = false;
     if (mode === "create") {
       emit("apply", effectiveConditions(draft.value), draftLogic.value);
       emit("update:visible", false);

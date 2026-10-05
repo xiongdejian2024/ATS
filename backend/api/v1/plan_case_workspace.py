@@ -14,6 +14,7 @@ from core.project_access import require_project_access
 from services import plan_case_workspace as service
 from schemas.plan_case_execution import ExecuteInput
 from schemas.plan_case_view import PlanCaseViewCreate, PlanCaseViewUpdate
+from schemas.plan_candidate_view import CandidateViewCreate, CandidateViewUpdate
 from services import plan_case_view as views_service
 router=APIRouter()
 Category=Literal['functional','api','scenario']
@@ -35,10 +36,10 @@ class Association(BaseModel):
 @router.get('/plans/{plan_id}/case-workspace/candidates')
 def candidates(plan_id:str,category:Category='functional',search:str=Query('',max_length=255),
                folder:str='all',priority:str|None=None,page:int=Query(1,ge=1),size:int=Query(20,ge=1,le=100),
-               db:Session=Depends(get_db),user=Depends(get_current_user)):
+               filters:str|None=Query(None,max_length=30000),mine:bool=False,db:Session=Depends(get_db),user=Depends(get_current_user)):
     plan=plan_access(db,user,plan_id)
     require_project_access(db,user,plan.project_id,'test_case:read')
-    return ok(service.candidates(db,plan,category,search,folder,priority,page,size))
+    return ok(service.candidates(db,plan,category,search,folder,priority,page,size,filters=filters,mine=mine,user_id=str(user.id)))
 
 @router.get('/plans/{plan_id}/case-workspace')
 def listing(plan_id:str,category:Category='functional',tree_type:Literal['COLLECTION','MODULE']='COLLECTION',folder:str|None=None,
@@ -59,6 +60,32 @@ def view_access(db, user, plan_id):
     plan = plan_access(db, user, plan_id)
     require_project_access(db, user, plan.project_id, 'test_case:read')
     return plan
+
+
+@router.get('/plans/{plan_id}/case-workspace/candidates/views')
+def candidate_views(plan_id: str, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+    plan = view_access(db, user, plan_id)
+    rows = views_service.scope(db, user, plan, category + '-drawer').order_by(views_service.PlanCaseSavedView.created_at.desc()).all()
+    return ok([views_service.data(row) for row in rows])
+
+
+@router.post('/plans/{plan_id}/case-workspace/candidates/views')
+def create_candidate_view(plan_id: str, body: CandidateViewCreate, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+    plan = view_access(db, user, plan_id)
+    return ok(transact(db, lambda: views_service.save(db, user, plan, category + '-drawer', body)))
+
+
+@router.put('/plans/{plan_id}/case-workspace/candidates/views/{view_id}')
+def update_candidate_view(plan_id: str, view_id: str, body: CandidateViewUpdate, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+    plan = view_access(db, user, plan_id)
+    return ok(transact(db, lambda: views_service.save(db, user, plan, category + '-drawer', body, view_id)))
+
+
+@router.delete('/plans/{plan_id}/case-workspace/candidates/views/{view_id}')
+def delete_candidate_view(plan_id: str, view_id: str, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+    plan = view_access(db, user, plan_id)
+    transact(db, lambda: views_service.remove(db, user, plan, category + '-drawer', view_id))
+    return ok()
 
 
 @router.get('/plans/{plan_id}/case-workspace/views')

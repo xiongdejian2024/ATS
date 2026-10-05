@@ -12,6 +12,7 @@ export interface FilterField {
   min?: number;
   precision?: number;
   operators?: string[];
+  operatorsOnly?: boolean;
   options?: { label: string; value: any }[];
 }
 export type FilterLogic = "and" | "or";
@@ -58,7 +59,9 @@ export const collectionValue = (operator: string) =>
 export function operatorsFor(field?: FilterField, current?: string) {
   return [
     ...new Set([
-      ...(common[field?.type || "text"] || common.text),
+      ...(field?.operatorsOnly
+        ? []
+        : common[field?.type || "text"] || common.text),
       ...(field?.operators || []),
       ...(current ? [current] : []),
     ]),

@@ -4,13 +4,15 @@
     title="关联用例"
     width="min(1200px,100vw)"
     destroy-on-close
-    :closable="!saving"
-    :mask-closable="!saving"
+    :closable="!locked"
+    :keyboard="!locked"
+    :mask-closable="!locked"
     @close="close"
   >
     <a-radio-group
       v-if="!category"
       v-model:value="activeCategory"
+      :disabled="locked"
       class="category-switch"
       @change="resetCategory"
     >
@@ -19,17 +21,19 @@
       ><a-radio-button value="scenario">API 场景</a-radio-button>
     </a-radio-group>
     <div class="associate-layout">
-      <aside>
+      <aside v-if="!advanced">
         <a-input
+          :disabled="locked"
           v-model:value="moduleSearch"
           placeholder="搜索模块"
           allow-clear
           :maxlength="255"
         />
         <div class="folder-all">
-          <a-button type="text" @click="selectFolder('all')"
+          <a-button :disabled="locked" type="text" @click="selectFolder('all')"
             >全部用例 ({{ data?.counts.all || 0 }})</a-button
           ><a-button
+            :disabled="locked"
             aria-label="展开或收起关联模块"
             type="text"
             @click="
@@ -41,6 +45,7 @@
           /></a-button>
         </div>
         <a-tree
+          :disabled="locked"
           :tree-data="moduleTree"
           :selected-keys="[folder]"
           :expanded-keys="expanded"
@@ -55,19 +60,26 @@
             ><span class="module-count">{{ node.count }}</span></template
           ></a-tree
         >
-        <a-button type="text" @click="selectFolder('unassigned')"
+        <a-button
+          :disabled="locked"
+          type="text"
+          @click="selectFolder('unassigned')"
           >未分配模块 ({{ data?.counts.unassigned || 0 }})</a-button
         >
       </aside>
       <main>
         <div class="search-toolbar">
           <a-input-search
+            v-if="!advanced"
+            :disabled="locked"
             v-model:value="search"
             placeholder="通过 ID / 名称搜索"
             :maxlength="255"
             allow-clear
             @search="resetPage"
           /><a-select
+            v-if="!advanced"
+            :disabled="locked"
             v-model:value="priority"
             allow-clear
             placeholder="等级"
@@ -75,7 +87,27 @@
               ['P0', 'P1', 'P2', 'P3'].map((value) => ({ value, label: value }))
             "
             @change="resetPage"
-          /><a-button :loading="loading" @click="load">刷新</a-button>
+          /><PlanCaseFilters
+            v-if="project"
+            :key="`${planId}:${activeCategory}`"
+            mode="association"
+            :plan-id="planId"
+            :project-id="project.id"
+            :project-name="project.name"
+            :category="activeCategory"
+            :plans="planOptions"
+            :collections="[]"
+            :modules="filterModules"
+            :conditions="filterScope?.conditions"
+            :logic="filterScope?.logic || 'and'"
+            :view-id="viewId"
+            :busy="locked || loading"
+            @apply="applyAdvanced"
+            @saving="(value) => (filterSaving = value)"
+          />
+          <a-button :disabled="locked" :loading="loading" @click="load"
+            >刷新</a-button
+          >
         </div>
         <a-alert
           v-if="failed"
@@ -111,7 +143,7 @@
             ></template
           >
         </a-table>
-        <a-form layout="vertical" class="target-form">
+        <a-form :disabled="locked" layout="vertical" class="target-form">
           <a-form-item label="关联到测试集"
             ><a-tree-select
               v-model:value="collectionId"
@@ -158,11 +190,11 @@
       ><div class="associate-footer">
         <span>已选择 {{ selected.size }} 个用例</span
         ><a-button
-          :disabled="saving || !selected.size"
+          :disabled="locked || !selected.size"
           @click="selected.clear()"
           >清空选择</a-button
         ><a-space
-          ><a-button :disabled="saving" @click="close">取消</a-button
+          ><a-button :disabled="locked" @click="close">取消</a-button
           ><a-button
             type="primary"
             :loading="saving"
@@ -177,6 +209,13 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
+import PlanCaseFilters from "./PlanCaseFilters.vue";
+import type {
+  FilterCondition,
+  FilterLogic,
+} from "@/components/TestCase/advancedFilter";
+import type { CaseFolder } from "@/api/planCaseWorkspace";
 import { message } from "ant-design-vue";
 import { FolderOpenOutlined } from "@ant-design/icons-vue";
 import type { TestCase } from "@/types";
@@ -198,6 +237,12 @@ const activeCategory = ref<"functional" | "api" | "scenario">(
     props.category || "functional",
   ),
   data = ref<PlanAssociateListing>(),
+  project = ref<{ id: string; name: string }>(),
+  planOptions = ref<{ id: string; name: string }[]>([]),
+  filterModules = ref<CaseFolder[]>([]),
+  filterScope = ref<{ conditions: FilterCondition[]; logic: FilterLogic }>(),
+  viewId = ref<string>(),
+  filterSaving = ref(false),
   loading = ref(false),
   saving = ref(false),
   failed = ref(false),
@@ -211,6 +256,21 @@ const activeCategory = ref<"functional" | "api" | "scenario">(
   selected = ref(new Map<string, TestCase>()),
   collectionId = ref<string>(),
   suiteId = ref<string>();
+const locked = computed(() => saving.value || filterSaving.value);
+const advanced = computed(() => filterScope.value !== undefined);
+function applyAdvanced(
+  conditions: FilterCondition[] | undefined,
+  logic: FilterLogic,
+  id?: string,
+) {
+  filterScope.value =
+    conditions === undefined ? undefined : { conditions, logic };
+  viewId.value = id;
+  search.value = "";
+  priority.value = undefined;
+  folder.value = "all";
+  resetPage();
+}
 const moduleTree = computed(() =>
   caseFolderTree(data.value?.modules || [], moduleSearch.value),
 );
@@ -239,6 +299,7 @@ const automatedSelected = computed(() =>
 const canSave = computed(
   () =>
     props.canEdit &&
+    !locked.value &&
     !failed.value &&
     !loading.value &&
     selected.value.size > 0 &&
@@ -252,10 +313,14 @@ const rowSelection = computed(() => ({
   preserveSelectedRowKeys: true,
   onChange: selectRows,
   getCheckboxProps: (row: TestCase & { alreadyLinked: boolean }) => ({
-    disabled: !data.value?.usesTree && row.alreadyLinked,
+    disabled:
+      locked.value ||
+      loading.value ||
+      (!data.value?.usesTree && row.alreadyLinked),
   }),
 }));
 function selectRows(keys: (string | number)[]) {
+  if (locked.value || loading.value) return;
   const ids = new Set(keys.map(String));
   if (ids.size > 500) {
     message.warning("一次最多关联500个用例");
@@ -281,9 +346,17 @@ async function load() {
       priority: priority.value,
       page: page.value,
       size: size.value,
+      filters:
+        filterScope.value === undefined
+          ? undefined
+          : JSON.stringify(filterScope.value),
+      mine: viewId.value === "system:my",
     });
     if (request === sequence) {
       data.value = result;
+      project.value = { id: result.projectId, name: result.projectName };
+      planOptions.value = result.plans;
+      filterModules.value = result.modules;
       if (
         suiteId.value &&
         !compatibleSuites.value.some((item) => item.id === suiteId.value)
@@ -309,11 +382,14 @@ function selectFolder(id: string) {
   resetPage();
 }
 function tableChange(p: { current: number; pageSize: number }) {
+  if (locked.value) return;
   page.value = p.current;
   size.value = p.pageSize;
   void load();
 }
 function resetCategory() {
+  filterScope.value = undefined;
+  viewId.value = undefined;
   selected.value.clear();
   suiteId.value = undefined;
   folder.value = "all";
@@ -322,20 +398,28 @@ function resetCategory() {
   resetPage();
 }
 function close() {
-  if (saving.value) return;
+  if (locked.value) return;
   sequence++;
   emit("update:open", false);
 }
 async function save() {
   if (!canSave.value) return;
   saving.value = true;
+  const plan = props.planId,
+    category = activeCategory.value;
   try {
-    await planCaseWorkspaceApi.associate(props.planId, {
+    await planCaseWorkspaceApi.associate(plan, {
       category: activeCategory.value,
       caseIds: Array.from(selected.value.keys()),
       collectionId: collectionId.value || null,
       suiteId: suiteId.value || null,
     });
+    if (
+      plan !== props.planId ||
+      category !== activeCategory.value ||
+      !props.open
+    )
+      return;
     message.success("用例已关联到计划");
     emit("associated");
     emit("update:open", false);
@@ -347,10 +431,15 @@ async function save() {
   }
 }
 watch(
-  () => [props.open, props.planId],
+  () => [props.open, props.planId, props.category],
   () => {
     sequence++;
     data.value = undefined;
+    project.value = undefined;
+    planOptions.value = [];
+    filterModules.value = [];
+    filterScope.value = undefined;
+    viewId.value = undefined;
     selected.value.clear();
     collectionId.value = props.collectionId || undefined;
     suiteId.value = undefined;
@@ -365,6 +454,15 @@ watch(
   },
   { immediate: true },
 );
+function allowNavigation() {
+  if (locked.value) {
+    message.info("关联或视图保存中，请稍候");
+    return false;
+  }
+  return true;
+}
+onBeforeRouteLeave(allowNavigation);
+onBeforeRouteUpdate(allowNavigation);
 </script>
 <style scoped>
 .category-switch {
@@ -376,7 +474,7 @@ watch(
   min-height: 500px;
 }
 .associate-layout aside {
-  width: 280px;
+  width: 292px;
   flex-shrink: 0;
   padding-right: 16px;
   border-right: 1px solid var(--ms-border);

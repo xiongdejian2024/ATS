@@ -3,7 +3,9 @@
     <a-select
       :value="viewId || 'system:all'"
       :disabled="busy || saving || viewLoading"
-      aria-label="计划功能用例视图"
+      :aria-label="
+        mode === 'association' ? '计划关联用例视图' : '计划功能用例视图'
+      "
       option-label-prop="label"
       :dropdown-match-select-width="280"
       style="width: 145px"
@@ -76,7 +78,11 @@
     :key="planId"
     v-model:visible="visible"
     :available-fields="fields"
-    :initial-fields="['id', 'name', 'moduleId', 'collectionId']"
+    :initial-fields="
+      mode === 'association'
+        ? ['id', 'name', 'moduleId']
+        : ['id', 'name', 'moduleId', 'collectionId']
+    "
     :module-tree-data="moduleTree"
     :conditions="conditions"
     :logic="logic"
@@ -139,18 +145,25 @@ import {
   type ViewSaveMode,
 } from "@/components/TestCase/advancedFilter";
 import { caseFolderTree } from "./planCaseFolders";
+import { planCandidateFilterFields } from "./planCandidateFilterFields";
 import { planCaseFilterFields } from "./planCaseFilterFields";
-const props = defineProps<{
-  planId: string;
-  projectId: string;
-  projectName: string;
-  collections: CaseFolder[];
-  modules: CaseFolder[];
-  conditions?: FilterCondition[];
-  logic: FilterLogic;
-  viewId?: string;
-  busy: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    mode?: import("@/api/planCaseWorkspace").PlanFilterMode;
+    category?: "functional" | "api" | "scenario";
+    plans?: { id: string; name: string }[];
+    planId: string;
+    projectId: string;
+    projectName: string;
+    collections: CaseFolder[];
+    modules: CaseFolder[];
+    conditions?: FilterCondition[];
+    logic: FilterLogic;
+    viewId?: string;
+    busy: boolean;
+  }>(),
+  { mode: "workspace", category: "functional", plans: () => [] },
+);
 const emit = defineEmits<{
   apply: [
     conditions: FilterCondition[] | undefined,
@@ -178,12 +191,20 @@ const viewNames = computed(() => [
   ...views.value.map((v) => v.name),
 ]);
 const fields = computed(() =>
-  planCaseFilterFields(
-    { id: props.projectId, name: props.projectName },
-    props.collections,
-    templates.value,
-    members.value,
-  ),
+  props.mode === "association"
+    ? planCandidateFilterFields(
+        { id: props.projectId, name: props.projectName },
+        props.plans,
+        templates.value,
+        members.value,
+        props.category,
+      )
+    : planCaseFilterFields(
+        { id: props.projectId, name: props.projectName },
+        props.collections,
+        templates.value,
+        members.value,
+      ),
 );
 const moduleTree = computed(() => {
   const mark = (nodes: ReturnType<typeof caseFolderTree>): any[] =>
@@ -204,7 +225,7 @@ async function loadViews() {
     sequence = ++viewSequence;
   viewLoading.value = true;
   try {
-    const rows = await api.views(plan);
+    const rows = await api.views(plan, props.category, props.mode);
     if (sequence !== viewSequence || plan !== props.planId) return;
     views.value = rows;
     viewError.value = "";
@@ -284,13 +305,25 @@ async function saveView(
   mode: ViewSaveMode,
 ) {
   const plan = props.planId,
+    context = `${props.category}:${props.mode}`,
     selected = props.viewId;
   const filters = { filterConditions: conditions, filterLogic: logic };
   const row =
     mode === "update" && activeView.value
-      ? await api.updateView(plan, activeView.value.id, name, filters)
-      : await api.saveView(plan, name, filters);
-  if (plan !== props.planId || selected !== props.viewId)
+      ? await api.updateView(
+          plan,
+          activeView.value.id,
+          name,
+          filters,
+          props.category,
+          props.mode,
+        )
+      : await api.saveView(plan, name, filters, props.category, props.mode);
+  if (
+    plan !== props.planId ||
+    context !== `${props.category}:${props.mode}` ||
+    selected !== props.viewId
+  )
     throw new Error("计划或视图已切换，请重新打开筛选");
   views.value = [row, ...views.value.filter((v) => v.id !== row.id)];
   newView.value = false;
@@ -309,7 +342,9 @@ function rename(view: PlanCaseSavedView) {
 }
 async function saveName() {
   const name = renameName.value.trim(),
-    plan = props.planId;
+    plan = props.planId,
+    category = props.category,
+    mode = props.mode;
   if (
     !name ||
     viewNames.value.some(
@@ -324,8 +359,20 @@ async function saveName() {
   saving.value = true;
   emit("saving", true);
   try {
-    const row = await api.updateView(plan, renameId.value, name);
-    if (plan !== props.planId) return;
+    const row = await api.updateView(
+      plan,
+      renameId.value,
+      name,
+      undefined,
+      category,
+      mode,
+    );
+    if (
+      plan !== props.planId ||
+      category !== props.category ||
+      mode !== props.mode
+    )
+      return;
     views.value = views.value.map((v) => (v.id === row.id ? row : v));
     renameOpen.value = false;
   } catch (error) {
@@ -337,7 +384,9 @@ async function saveName() {
   }
 }
 function remove(view: PlanCaseSavedView) {
-  const plan = props.planId;
+  const plan = props.planId,
+    category = props.category,
+    mode = props.mode;
   const confirmation = Modal.confirm({
     title: `删除视图“${view.name}”？`,
     content: "删除后不可恢复。",
@@ -346,9 +395,19 @@ function remove(view: PlanCaseSavedView) {
       emit("saving", true);
       confirmation.update({ cancelButtonProps: { disabled: true } });
       try {
-        if (plan !== props.planId) throw new Error("计划已切换");
-        await api.deleteView(plan, view.id);
-        if (plan !== props.planId) return;
+        if (
+          plan !== props.planId ||
+          category !== props.category ||
+          mode !== props.mode
+        )
+          throw new Error("计划或分类已切换");
+        await api.deleteView(plan, view.id, category, mode);
+        if (
+          plan !== props.planId ||
+          category !== props.category ||
+          mode !== props.mode
+        )
+          return;
         views.value = views.value.filter((v) => v.id !== view.id);
         if (props.viewId === view.id) emit("apply", undefined, "and");
         message.success("个人视图已删除");
@@ -365,7 +424,7 @@ function remove(view: PlanCaseSavedView) {
   });
 }
 watch(
-  () => [props.planId, props.projectId],
+  () => [props.planId, props.projectId, props.category, props.mode],
   () => {
     ++viewSequence;
     ++metadataSequence;
