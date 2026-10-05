@@ -101,8 +101,16 @@
         "
         v-model:value="condition.value"
         :disabled="disabledValue(condition)"
-        :min="condition.operator.startsWith('count_') ? 0 : undefined"
-        :precision="condition.operator.startsWith('count_') ? 0 : undefined"
+        :min="
+          condition.operator.startsWith('count_')
+            ? 0
+            : field(condition.field)?.min
+        "
+        :precision="
+          condition.operator.startsWith('count_')
+            ? 0
+            : field(condition.field)?.precision
+        "
         :aria-label="`条件${index + 1}值`"
         placeholder="请输入"
       />
@@ -272,6 +280,7 @@ const props = withDefaults(
     availableFields: FilterField[];
     moduleTreeData?: any[];
     conditions?: FilterCondition[];
+    initialFields?: string[];
     logic?: FilterLogic;
     view?: { id: string; name: string; filters: Record<string, any> };
     viewNames?: string[];
@@ -290,6 +299,7 @@ const props = withDefaults(
   {
     moduleTreeData: () => [],
     conditions: () => [],
+    initialFields: () => ["id", "name", "moduleId"],
     logic: "and",
     viewNames: () => [],
     newView: false,
@@ -448,6 +458,7 @@ watch(
             props.availableFields,
             saved?.filterConditions ??
               (props.systemView === "all" ? undefined : []),
+            props.initialFields,
           );
       originalLogic = saved?.filterLogic === "or" ? "or" : "and";
       originalName = props.newView

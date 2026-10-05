@@ -28,7 +28,7 @@ def date_expected(condition):
 
 
 class CaseFilterContext:
-    def __init__(self, db, project_id, conditions, user_id, *, current_read=False):
+    def __init__(self, db, project_id, conditions, user_id, *, current_read=False, include_recycled=False):
         from models.test_case import TestCase, CaseAttachment
         from models.case_features import CaseTemplate, CaseIssue, CaseIssueLink
 
@@ -51,7 +51,8 @@ class CaseFilterContext:
                 db.query(CaseAttachment.case_id, CaseAttachment.file_name)
                 .join(TestCase, TestCase.id == CaseAttachment.case_id)
                 .filter(
-                    TestCase.project_id == project_id, TestCase.deleted_at.is_(None)
+                    TestCase.project_id == project_id,
+                    True if include_recycled else TestCase.deleted_at.is_(None),
                 )
             )
             for case_id, name in rows:
@@ -64,7 +65,7 @@ class CaseFilterContext:
                 .join(TestCase, TestCase.id == CaseIssueLink.case_id)
                 .filter(
                     TestCase.project_id == project_id,
-                    TestCase.deleted_at.is_(None),
+                    True if include_recycled else TestCase.deleted_at.is_(None),
                     CaseIssue.project_id == project_id,
                     CaseIssue.kind == "requirement",
                 )

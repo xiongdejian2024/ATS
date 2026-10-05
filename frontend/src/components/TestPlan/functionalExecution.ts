@@ -53,6 +53,13 @@ export function functionalListingState(query: Record<string, unknown>) {
       : "createdAt",
     direction: value("caseDirection") === "asc" ? "asc" : "desc",
     advanced: value("caseAdvanced") === "1",
+    filters:
+      typeof query.caseFilters === "string"
+        ? query.caseFilters || undefined
+        : query.caseFilters == null
+          ? undefined
+          : JSON.stringify(query.caseFilters),
+    viewId: value("caseViewId") || undefined,
     includeDescendants: value("caseIncludeDescendants") !== "0",
   };
 }

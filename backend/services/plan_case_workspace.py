@@ -83,6 +83,16 @@ def listing(db, plan, category, params):
         and (not params.get('result') or item['result'] in results)
         and (not params.get('executor') or item['assignedTo'] == params['executor'])
         and (not params.get('tag') or params['tag'] in item['tags'])]
+    if params.get('filters') is not None:
+        from services.plan_case_filter import filter_entries
+        filtered = filter_entries(db, plan, items, params['filters'], params.get('user_id'))
+        if params.get('refine'):
+            filtered = [item for item in filtered if
+                (not search or search in (item['name']+' '+item['caseCode']).casefold())
+                and (not params.get('result') or item['result'] in results)]
+    if params.get('mine'):
+        own_ids = {row.id for row in db.query(TestCase.id).filter_by(project_id=plan.project_id, created_by=params.get('user_id'))}
+        filtered = [item for item in filtered if item['caseId'] in own_ids]
     def tree_rows(rows, field):
         payload = []
         for row in rows:
@@ -92,7 +102,7 @@ def listing(db, plan, category, params):
     collections=tree_rows(points,'collectionId'); module_tree=tree_rows(modules,'moduleId')
     counts=dict(all=len(filtered),default=sum(not item['collectionId'] for item in filtered),unassigned=sum(not item['moduleId'] or item['moduleId'] not in {row.id for row in modules} for item in filtered))
     folder=params.get('folder')
-    if folder and folder != 'all':
+    if params.get('filters') is None and folder and folder != 'all':
         field, rows = ('collectionId',points) if params['tree_type']=='COLLECTION' else ('moduleId',modules)
         if folder == 'default': filtered=[item for item in filtered if not item['collectionId']]
         elif folder == 'unassigned': filtered=[item for item in filtered if not item['moduleId'] or item['moduleId'] not in {row.id for row in modules}]

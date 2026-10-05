@@ -68,13 +68,29 @@
             ><SettingOutlined /></a-button></a-space
         ><a-space wrap
           ><a-input-search
+            v-if="!advanced"
             v-model:value="search"
             placeholder="通过 ID / 名称搜索"
             allow-clear
             :maxlength="255"
-            @search="resetPage" /><a-button @click="toggleAdvanced"
-            >高级筛选</a-button
-          ><a-radio-group v-model:value="showType"
+            @search="resetPage" /><PlanCaseFilters
+            :plan-id="plan.id"
+            :project-id="plan.projectId"
+            :project-name="
+              projectStore.projects.find((p) => p.id === plan.projectId)
+                ?.name ||
+              data?.items[0]?.projectName ||
+              '当前项目'
+            "
+            :collections="data?.collections || []"
+            :modules="data?.modules || []"
+            :conditions="filterScope?.conditions"
+            :logic="filterScope?.logic || 'and'"
+            :view-id="viewId"
+            :busy="loading"
+            @apply="applyAdvanced"
+            @saving="(value) => (filterSaving = value)" /><a-radio-group
+            v-model:value="showType"
             ><a-radio-button value="list" aria-label="列表"
               ><UnorderedListOutlined /></a-radio-button
             ><a-radio-button value="mind" aria-label="脑图"
@@ -83,39 +99,6 @@
             ><ReloadOutlined /></a-button
         ></a-space>
       </div>
-      <a-form
-        v-if="advanced"
-        :model="filters"
-        layout="inline"
-        class="advanced-filter"
-        @finish="resetPage"
-        ><a-form-item label="等级"
-          ><a-select
-            v-model:value="filters.priority"
-            allow-clear
-            :options="priorities"
-            style="width: 95px" /></a-form-item
-        ><a-form-item label="执行结果"
-          ><a-select
-            v-model:value="filters.result"
-            allow-clear
-            :options="resultOptions"
-            style="width: 115px" /></a-form-item
-        ><a-form-item label="执行人"
-          ><a-select
-            v-model:value="filters.executor"
-            allow-clear
-            :options="
-              executors.map((item) => ({ value: item.id, label: item.name }))
-            "
-            style="width: 140px" /></a-form-item
-        ><a-form-item label="标签"
-          ><a-input
-            v-model:value="filters.tag"
-            style="width: 120px" /></a-form-item
-        ><a-button html-type="submit" type="primary">查询</a-button
-        ><a-button @click="resetFilters">重置</a-button></a-form
-      >
       <a-alert
         v-if="failed"
         type="error"
@@ -332,6 +315,7 @@ import {
 } from "@ant-design/icons-vue";
 import dayjs from "dayjs";
 import { useMediaQuery } from "@vueuse/core";
+import { useProjectStore } from "@/stores/project";
 import { useUserStore } from "@/stores/user";
 import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
 import {
@@ -351,6 +335,11 @@ import {
 } from "@/api/planCaseWorkspace";
 import { planTreeApi } from "@/api/planTree";
 import { caseFolderTree } from "./planCaseFolders";
+import PlanCaseFilters from "./PlanCaseFilters.vue";
+import type {
+  FilterCondition,
+  FilterLogic,
+} from "@/components/TestCase/advancedFilter";
 import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
 import PlanDefects from "./PlanDefects.vue";
 import { ExecutionMediaDraft } from "./executionMediaDraft";
@@ -371,7 +360,9 @@ const data = ref<PlanCaseListing>(),
   search = ref(initialListing.search),
   folderSearch = ref(""),
   showType = ref("list"),
-  advanced = ref(initialListing.advanced),
+  advancedFilters = ref(initialListing.filters),
+  viewId = ref(initialListing.viewId),
+  filterSaving = ref(false),
   expanded = ref<string[]>([]),
   selected = ref<string[]>([]),
   executors = ref<{ id: string; name: string }[]>([]);
@@ -389,6 +380,71 @@ const filters = reactive({
   size = ref(initialListing.size),
   sort = ref(initialListing.sort),
   direction = ref(initialListing.direction);
+const advanced = computed(() => advancedFilters.value !== undefined);
+const filterScope = computed(() => {
+  try {
+    if (!advancedFilters.value) return undefined;
+    const value = JSON.parse(advancedFilters.value);
+    // 原始范围仍交给API校验；抽屉不能因畸形深链接而崩溃。
+    if (
+      !value ||
+      !Array.isArray(value.conditions) ||
+      value.conditions.some(
+        (c: any) =>
+          !c || typeof c.field !== "string" || typeof c.operator !== "string",
+      )
+    )
+      return undefined;
+    return {
+      conditions: value.conditions as FilterCondition[],
+      logic: value.logic === "or" ? ("or" as const) : ("and" as const),
+    };
+  } catch (error) {
+    console.error("解析计划高级筛选范围失败", error);
+    return undefined;
+  }
+});
+let internalScopeUpdate = false;
+async function applyAdvanced(
+  conditions: FilterCondition[] | undefined,
+  logic: FilterLogic,
+  id?: string,
+) {
+  advancedFilters.value =
+    conditions === undefined
+      ? undefined
+      : JSON.stringify({ conditions, logic });
+  viewId.value = id;
+  page.value = 1;
+  Object.assign(filters, {
+    priority: undefined,
+    result: undefined,
+    executor: undefined,
+    tag: "",
+  });
+  search.value = "";
+  folder.value = "all";
+  internalScopeUpdate = true;
+  try {
+    await router.replace({
+      query: {
+        ...route.query,
+        caseFilters: advancedFilters.value,
+        caseViewId: id,
+        caseFolder: "all",
+        caseSearch: undefined,
+        casePriority: undefined,
+        caseResult: undefined,
+        caseExecutor: undefined,
+        caseTag: undefined,
+        casePage: "1",
+      },
+    });
+  } finally {
+    internalScopeUpdate = false;
+  }
+  void load();
+}
 const folders = computed(() =>
     treeType.value === "COLLECTION"
       ? data.value?.collections || []
@@ -413,29 +469,21 @@ const pagination = computed(() => ({
   pageSizeOptions: pageSizes.map(String),
   showTotal: (total: number) => `共 ${total} 条`,
 }));
-const priorities = ["P0", "P1", "P2", "P3"].map((value) => ({
-    value,
-    label: value,
-  })),
-  resultLabels: Record<string, string> = {
-    pending: "未执行",
-    passed: "通过",
-    failed: "失败",
-    blocked: "阻塞",
-    error: "错误",
-    skipped: "跳过",
-    cancelled: "已取消",
-  };
-const resultOptions = Object.entries(resultLabels).map(([value, label]) => ({
-    value,
-    label,
-  })),
-  resultColor = (result: string) =>
-    result === "passed"
-      ? "green"
-      : ["failed", "error"].includes(result)
-        ? "red"
-        : "default";
+const resultLabels: Record<string, string> = {
+  pending: "未执行",
+  passed: "通过",
+  failed: "失败",
+  blocked: "阻塞",
+  error: "错误",
+  skipped: "跳过",
+  cancelled: "已取消",
+};
+const resultColor = (result: string) =>
+  result === "passed"
+    ? "green"
+    : ["failed", "error"].includes(result)
+      ? "red"
+      : "default";
 const formatTime = (value: string) =>
   value ? dayjs(value).format("YYYY-MM-DD HH:mm:ss") : "-";
 const allColumns = [
@@ -495,6 +543,7 @@ const displayDefinitions: DisplayColumn[] = allColumns
     defaultVisible: column.key !== "projectName",
   }));
 const userStore = useUserStore(),
+  projectStore = useProjectStore(),
   narrowScreen = useMediaQuery("(max-width: 768px)");
 const storageKey = computed(() =>
   displayStorageKey(
@@ -624,6 +673,8 @@ async function load() {
       folder: folder.value,
       search: search.value,
       ...filters,
+      filters: advancedFilters.value,
+      mine: viewId.value === "system:my",
       page: page.value,
       size: size.value,
       sort: sort.value,
@@ -656,10 +707,6 @@ async function chooseFolder(id: string) {
   });
   await load();
 }
-function toggleAdvanced() {
-  advanced.value = !advanced.value;
-  if (advanced.value) void chooseFolder("all");
-}
 function resetFolder() {
   folderSearch.value = "";
   expanded.value = [];
@@ -673,16 +720,6 @@ function toggleExpanded() {
 function resetPage() {
   page.value = 1;
   void load();
-}
-function resetFilters() {
-  Object.assign(filters, {
-    priority: undefined,
-    result: undefined,
-    executor: undefined,
-    tag: "",
-  });
-  search.value = "";
-  resetPage();
 }
 async function tableChange(p: any, _filters: any, sorter: any) {
   page.value = p.current;
@@ -727,6 +764,8 @@ function openExecution(row: PlanCaseEntry) {
       caseSort: sort.value,
       caseDirection: direction.value,
       caseAdvanced: advanced.value ? "1" : "0",
+      caseFilters: advancedFilters.value,
+      caseViewId: viewId.value,
     },
   });
 }
@@ -745,15 +784,19 @@ onBeforeUnmount(() => {
   void mediaDraft.cleanup();
 });
 async function allowNavigation() {
-  if (executeMediaUploading.value || executeSaving.value) {
-    message.info("图片上传或结果提交中，请稍候");
+  if (
+    executeMediaUploading.value ||
+    executeSaving.value ||
+    filterSaving.value
+  ) {
+    message.info("图片上传、结果或视图保存中，请稍候");
     return false;
   }
   await mediaDraft.cleanup();
   return true;
 }
 onBeforeRouteLeave(allowNavigation);
-onBeforeRouteUpdate(allowNavigation);
+onBeforeRouteUpdate(() => (internalScopeUpdate ? true : allowNavigation()));
 async function inlineResult(row: PlanCaseEntry, value: unknown) {
   if (
     !data.value?.canExecute ||
@@ -883,8 +926,34 @@ watch(showType, () => {
   void load();
 });
 watch(
-  () => props.plan.id,
+  () => [route.query.caseFilters, route.query.caseViewId],
   () => {
+    const next = functionalListingState(route.query);
+    if (next.filters === advancedFilters.value && next.viewId === viewId.value)
+      return;
+    advancedFilters.value = next.filters;
+    viewId.value = next.viewId;
+    page.value = next.page;
+    void load();
+  },
+);
+watch(
+  () => props.plan.id,
+  (_id, previous) => {
+    if (previous) {
+      const next = functionalListingState(route.query);
+      advancedFilters.value = next.filters;
+      viewId.value = next.viewId;
+      page.value = next.page;
+      folder.value = String(route.query.caseFolder || "all");
+      search.value = next.search;
+      Object.assign(filters, {
+        priority: next.priority,
+        result: next.result,
+        executor: next.executor,
+        tag: next.tag,
+      });
+    }
     data.value = undefined;
     selected.value = [];
     executeBatchOpen.value = false;
@@ -950,12 +1019,6 @@ watch(
 }
 .case-toolbar :deep(.ant-input-search) {
   width: 220px;
-}
-.advanced-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
 }
 .selection-toolbar {
   position: sticky;

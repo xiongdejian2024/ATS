@@ -9,6 +9,8 @@ export interface FilterField {
   label: string;
   type: "text" | "select" | "number" | "date" | "tags" | "module" | "member";
   showTime?: boolean;
+  min?: number;
+  precision?: number;
   operators?: string[];
   options?: { label: string; value: any }[];
 }
@@ -67,14 +69,17 @@ export function operatorsFor(field?: FilterField, current?: string) {
 export function initialConditions(
   fields: FilterField[],
   conditions?: FilterCondition[],
+  keys = ["id", "name", "moduleId"],
 ) {
   return conditions !== undefined
     ? cloneDeep(conditions)
-    : ["id", "name", "moduleId"]
+    : keys
         .filter((key) => fields.some((f) => f.key === key))
         .map((field) => ({
           field,
-          operator: field === "moduleId" ? "belongs_to" : "contains",
+          operator: ["moduleId", "collectionId"].includes(field)
+            ? "belongs_to"
+            : "contains",
           value: undefined,
         }));
 }

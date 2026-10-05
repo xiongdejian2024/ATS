@@ -13,6 +13,8 @@ from api.v1.case_governance import transact
 from core.project_access import require_project_access
 from services import plan_case_workspace as service
 from schemas.plan_case_execution import ExecuteInput
+from schemas.plan_case_view import PlanCaseViewCreate, PlanCaseViewUpdate
+from services import plan_case_view as views_service
 router=APIRouter()
 Category=Literal['functional','api','scenario']
 class Selection(BaseModel):
@@ -43,14 +45,46 @@ def listing(plan_id:str,category:Category='functional',tree_type:Literal['COLLEC
             view:Literal['list','mind']='list',include_descendants:bool=True,search:str=Query('',max_length=255),priority:str|None=None,result:str|None=None,
             executor:str|None=None,tag:str|None=None,page:int=Query(1,ge=1),size:int=Query(20,ge=1,le=100),
             sort:Literal['caseCode','name','priority','createdAt','updatedAt','result']='createdAt',direction:Literal['asc','desc']='desc',
-            db:Session=Depends(get_db),user=Depends(get_current_user)):
+            filters:str|None=Query(None,max_length=30000),refine:bool=False,mine:bool=False,db:Session=Depends(get_db),user=Depends(get_current_user)):
     plan=plan_access(db,user,plan_id)
     require_project_access(db,user,plan.project_id,'test_case:read')
-    params=dict(view=view,tree_type=tree_type,folder=folder,include_descendants=include_descendants,search=search,priority=priority,result=result,executor=executor,tag=tag,page=page,size=size,sort=sort,direction=direction)
+    params=dict(view=view,tree_type=tree_type,folder=folder,include_descendants=include_descendants,search=search,priority=priority,result=result,executor=executor,tag=tag,page=page,size=size,sort=sort,direction=direction,filters=filters,user_id=str(user.id),refine=refine,mine=mine)
     from services.plan_case_execution import can_execute
     payload = service.listing(db,plan,category,params)
     payload["canExecute"] = can_execute(db,user,plan)
     return ok(payload)
+
+
+def view_access(db, user, plan_id):
+    plan = plan_access(db, user, plan_id)
+    require_project_access(db, user, plan.project_id, 'test_case:read')
+    return plan
+
+
+@router.get('/plans/{plan_id}/case-workspace/views')
+def views(plan_id: str, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+    plan = view_access(db, user, plan_id)
+    rows = views_service.scope(db, user, plan, category).order_by(views_service.PlanCaseSavedView.created_at.desc()).all()
+    return ok([views_service.data(row) for row in rows])
+
+
+@router.post('/plans/{plan_id}/case-workspace/views')
+def create_view(plan_id: str, body: PlanCaseViewCreate, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+    plan = view_access(db, user, plan_id)
+    return ok(transact(db, lambda: views_service.save(db, user, plan, category, body)))
+
+
+@router.put('/plans/{plan_id}/case-workspace/views/{view_id}')
+def update_view(plan_id: str, view_id: str, body: PlanCaseViewUpdate, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+    plan = view_access(db, user, plan_id)
+    return ok(transact(db, lambda: views_service.save(db, user, plan, category, body, view_id)))
+
+
+@router.delete('/plans/{plan_id}/case-workspace/views/{view_id}')
+def delete_view(plan_id: str, view_id: str, category: Category = 'functional', db: Session = Depends(get_db), user=Depends(get_current_user)):
+    plan = view_access(db, user, plan_id)
+    transact(db, lambda: views_service.remove(db, user, plan, category, view_id))
+    return ok()
 
 @router.post('/plans/{plan_id}/case-workspace/batch')
 def batch(plan_id:str,data:Batch,db:Session=Depends(get_db),user=Depends(get_current_user)):

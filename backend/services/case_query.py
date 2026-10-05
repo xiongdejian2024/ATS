@@ -46,7 +46,7 @@ OPERATORS = {
 }
 
 
-def parse_filters(raw):
+def parse_filters(raw, *, extra_fields=()):
     if not raw:
         return [], "and"
     if isinstance(raw, str):
@@ -73,6 +73,7 @@ def parse_filters(raw):
             raise HTTPException(422, "筛选字段必须为字符串")
         if (
             field not in FIELDS
+            and field not in extra_fields
             and field not in {"reviewResult", "review_status", "attachment"}
             and not field.startswith("customFields.")
         ):
@@ -206,44 +207,45 @@ def matches_related(values, operator, expected):
     return not found if positive != operator else found
 
 
-def apply_conditions(cases, conditions, logic, review_statuses, context):
-    def check(case, condition):
-        field = condition["field"]
-        expected = condition.get("value")
-        if field == "attachment":
-            return matches_related(
-                context.attachments.get(case.id, []), condition["operator"], expected
-            )
-        if field == "requirementRef":
-            values = context.requirements.get(case.id, []) + (
-                [case.requirement_ref] if case.requirement_ref else []
-            )
-            return matches_related(values, condition["operator"], expected)
-        if field in {"reviewResult", "review_status"}:
-            value = review_statuses.get(case.id, "not_reviewed")
-        elif field.startswith("customFields."):
-            value, expected = context.custom_value(case, condition)
-        else:
-            value = getattr(case, FIELDS[field])
-        if field == "moduleId":
-            if isinstance(expected, list):
-                expected = [
-                    None if v in {"null", "unplanned", "__unassigned__"} else v
-                    for v in expected
-                ]
-            elif isinstance(expected, str) and expected in {
-                "null",
-                "unplanned",
-                "__unassigned__",
-            }:
-                expected = None
-        return matches(value, condition["operator"], expected)
+def matches_case(case, condition, review_statuses, context):
+    field = condition["field"]
+    expected = condition.get("value")
+    if field == "attachment":
+        return matches_related(
+            context.attachments.get(case.id, []), condition["operator"], expected
+        )
+    if field == "requirementRef":
+        values = context.requirements.get(case.id, []) + (
+            [case.requirement_ref] if case.requirement_ref else []
+        )
+        return matches_related(values, condition["operator"], expected)
+    if field in {"reviewResult", "review_status"}:
+        value = review_statuses.get(case.id, "not_reviewed")
+    elif field.startswith("customFields."):
+        value, expected = context.custom_value(case, condition)
+    else:
+        value = getattr(case, FIELDS[field])
+    if field == "moduleId":
+        if isinstance(expected, list):
+            expected = [
+                None if v in {"null", "unplanned", "__unassigned__"} else v
+                for v in expected
+            ]
+        elif isinstance(expected, str) and expected in {
+            "null",
+            "unplanned",
+            "__unassigned__",
+        }:
+            expected = None
+    return matches(value, condition["operator"], expected)
 
+
+def apply_conditions(cases, conditions, logic, review_statuses, context):
     combine = all if logic == "and" else any
     return [
         case
         for case in cases
-        if not conditions or combine(check(case, c) for c in conditions)
+        if not conditions or combine(matches_case(case, c, review_statuses, context) for c in conditions)
     ]
 
 

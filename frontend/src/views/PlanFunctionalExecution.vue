@@ -471,6 +471,9 @@ async function loadList() {
       direction: initialListing.direction,
       tree_type: route.query.caseTree === "MODULE" ? "MODULE" : "COLLECTION",
       folder: route.query.caseFolder || "all",
+      filters: initialListing.filters,
+      refine: true,
+      mine: initialListing.viewId === "system:my",
     });
     if (request === listSequence) listing.value = data;
   } catch (error) {

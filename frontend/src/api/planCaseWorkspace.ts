@@ -64,9 +64,33 @@ export interface PlanAssociateListing {
   suites: { id: string; name: string; caseIds: string[] }[];
 }
 const base = (id: string) => `/plan-orchestration/plans/${id}/case-workspace`;
+export interface PlanCaseSavedView {
+  id: string;
+  name: string;
+  filters: {
+    filterConditions?: import("@/components/TestCase/advancedFilter").FilterCondition[];
+    filterLogic?: "and" | "or";
+  };
+}
 export const planCaseWorkspaceApi = {
   list: (id: string, params: Record<string, unknown>) =>
     apiClient.get<PlanCaseListing>(base(id), { params }),
+  views: (id: string) =>
+    apiClient.get<PlanCaseSavedView[]>(base(id) + "/views"),
+  saveView: (id: string, name: string, filters: PlanCaseSavedView["filters"]) =>
+    apiClient.post<PlanCaseSavedView>(base(id) + "/views", { name, filters }),
+  updateView: (
+    id: string,
+    view: string,
+    name: string,
+    filters?: PlanCaseSavedView["filters"],
+  ) =>
+    apiClient.put<PlanCaseSavedView>(base(id) + "/views/" + view, {
+      name,
+      ...(filters === undefined ? {} : { filters }),
+    }),
+  deleteView: (id: string, view: string) =>
+    apiClient.delete(base(id) + "/views/" + view),
   batch: (
     id: string,
     data: {
