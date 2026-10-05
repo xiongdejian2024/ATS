@@ -12,6 +12,8 @@ from schemas.review_workspace import (
     ReviewMove,
     ReviewCandidateSelection,
     ReviewAssociate,
+    ReviewItemSelection,
+    ReviewItemReviewers,
 )
 from services import review_workspace as service
 from schemas.case_governance import ReviewHeader
@@ -93,6 +95,36 @@ def linked_item(
     from services.review_case_workspace import get_item
 
     return result(get_item(db, user, project_id, review_id, item_id))
+
+
+@router.post("/{review_id}/item-reviewers")
+def change_item_reviewers(
+    project_id: str,
+    review_id: str,
+    body: ReviewItemReviewers,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.review_item_management import change_reviewers
+
+    return result(
+        transact(db, lambda: change_reviewers(db, user, project_id, review_id, body))
+    )
+
+
+@router.post("/{review_id}/disassociate")
+def disassociate_items(
+    project_id: str,
+    review_id: str,
+    body: ReviewItemSelection,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.review_item_management import disassociate
+
+    return result(
+        transact(db, lambda: disassociate(db, user, project_id, review_id, body))
+    )
 
 
 @router.put("/{review_id}/header")

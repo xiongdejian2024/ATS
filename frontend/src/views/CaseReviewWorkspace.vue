@@ -6,7 +6,9 @@
         <main v-if="active" class="review-workspace">
           <ReviewDetailHeader
             :review="active"
-            :disabled="associateSaving || resultSaving || busy"
+            :disabled="
+              associateSaving || resultSaving || managementSaving || busy
+            "
             @back="router.push({ name: 'CaseReviews', query: { projectId } })"
           >
             <template #actions>
@@ -16,29 +18,40 @@
                   !active.archived &&
                   !['cancelled', 'superseded'].includes(active.status)
                 "
-                :disabled="associateSaving || resultSaving || busy"
+                :disabled="
+                  associateSaving || resultSaving || managementSaving || busy
+                "
                 @click="associateOpen = true"
                 >关联用例</a-button
               >
               <a-button
                 v-if="canManage && !active.archived"
-                :disabled="associateSaving || resultSaving || busy"
+                :disabled="
+                  associateSaving || resultSaving || managementSaving || busy
+                "
                 @click="openEditor(active)"
                 >编辑</a-button
               >
               <a-button
                 v-if="canManage"
-                :disabled="associateSaving || resultSaving || busy"
+                :disabled="
+                  associateSaving || resultSaving || managementSaving || busy
+                "
                 @click="copyReview"
                 >复制</a-button
               >
               <a-button
-                :disabled="associateSaving || resultSaving || busy"
+                :disabled="
+                  associateSaving || resultSaving || managementSaving || busy
+                "
                 @click="follow"
                 >{{ followed ? "取消关注" : "关注" }}</a-button
               >
               <a-dropdown :trigger="['click']">
-                <a-button :disabled="associateSaving || resultSaving || busy"
+                <a-button
+                  :disabled="
+                    associateSaving || resultSaving || managementSaving || busy
+                  "
                   >更多 <DownOutlined
                 /></a-button>
                 <template #overlay
@@ -74,8 +87,17 @@
             :project-id="projectId"
             :review-id="active.id"
             :members="members"
+            :can-manage="
+              canManage &&
+              !active.archived &&
+              !['cancelled', 'superseded'].includes(active.status)
+            "
+            @saving="managementSaving = $event"
+            @changed="load"
             :revision="tableRevision"
-            :disabled="resultSaving || associateSaving || busy"
+            :disabled="
+              resultSaving || associateSaving || managementSaving || busy
+            "
             v-model:selected="selectedItems"
             @select="selectItem"
           >
@@ -86,8 +108,10 @@
               <a-button
                 :disabled="
                   !selectedItems.length ||
+                  !caseTable?.canReviewSelection() ||
                   resultSaving ||
                   associateSaving ||
+                  managementSaving ||
                   busy
                 "
                 @click="batchVisible = true"
@@ -159,7 +183,7 @@
               <template v-if="canVote(activeItem)">
                 <ReviewResultForm
                   :key="`${active.id}:${activeItem.id}`"
-                  :disabled="associateSaving"
+                  :disabled="associateSaving || managementSaving"
                   :submit-result="vote"
                 /> </template
               ><a-alert
@@ -334,7 +358,8 @@ const canManage = ref(false),
   canDelete = ref(false),
   associateOpen = ref(false),
   associateSaving = ref(false),
-  resultSaving = ref(false);
+  resultSaving = ref(false),
+  managementSaving = ref(false);
 const active = computed(() =>
   reviews.value.find((r) => r.id === activeId.value),
 );
@@ -396,7 +421,7 @@ function historyText(entry: Record<string, any>) {
   return `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · ${entry.action || ""}\n${details.decision ? `${statusName(details.decision)}：${details.comment || ""}` : JSON.stringify(details, null, 2)}`;
 }
 async function run(task: () => Promise<void>) {
-  if (associateSaving.value || resultSaving.value)
+  if (associateSaving.value || resultSaving.value || managementSaving.value)
     return void message.info("正在保存评审，请稍候");
   busy.value = true;
   try {
@@ -420,7 +445,15 @@ async function load() {
     reviews.value = [review];
     activeId.value = review.id;
     ++tableRevision.value;
-    if (activeItemId.value) await selectItem(activeItemId.value);
+    if (
+      activeItem.value &&
+      !review.associatedCaseIds?.includes(activeItem.value.caseId)
+    ) {
+      ++itemSequence;
+      activeItem.value = undefined;
+      activeItemId.value = undefined;
+      itemError.value = "";
+    } else if (activeItemId.value) await selectItem(activeItemId.value);
   } catch (error) {
     console.error("加载评审详情失败", error);
   } finally {
@@ -480,6 +513,7 @@ async function associateCases(data: {
 function canLeaveAssociation() {
   if (
     associateSaving.value ||
+    managementSaving.value ||
     resultSaving.value ||
     (deleteVisible.value && busy.value)
   ) {
@@ -665,7 +699,16 @@ watch(activeId, async (id) => {
 watch(
   () => projectStore.currentProject?.id,
   (id) => {
-    if (id && id !== projectId.value) projectId.value = id;
+    if (id && id !== projectId.value) {
+      if (!canLeaveAssociation()) {
+        const previous = projectStore.projects.find(
+          (p) => p.id === projectId.value,
+        );
+        if (previous) projectStore.setCurrentProject(previous);
+        return;
+      }
+      projectId.value = id;
+    }
   },
 );
 watch(projectId, async (id) => {

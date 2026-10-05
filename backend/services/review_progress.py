@@ -20,7 +20,11 @@ def metrics(items, *, archived=False, status="pending", started=False):
     rereview = sum(item["status"] == "re_review" for item in items)
     reviewing = sum(
         item["status"] == "pending"
-        and any(d["decision"] == "approved" for d in item.get("decisions", []))
+        and any(
+            d["decision"] == "approved"
+            and ("reviewerIds" not in item or d["reviewerId"] in item["reviewerIds"])
+            for d in item.get("decisions", [])
+        )
         for item in items
     )
     return count_metrics(
@@ -51,10 +55,12 @@ def count_metrics(
         lifecycle = "archived"
     elif status in {"cancelled", "superseded"}:
         lifecycle = status
-    elif total and reviewed == total:
+    elif reviewed + rereview + reviewing == 0:
+        lifecycle = "prepared"
+    elif reviewed == total:
         lifecycle = "completed"
     else:
-        lifecycle = "underway" if started else "prepared"
+        lifecycle = "underway"
     return dict(
         lifecycle=lifecycle,
         caseCount=total,

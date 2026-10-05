@@ -104,7 +104,7 @@ class ReviewVote(StrictRequest):
 
 
 class ReviewBatchVote(ReviewVote):
-    itemIds: list[str] = Field(min_length=1, max_length=200)
+    itemIds: list[str] = Field(min_length=1, max_length=10000)
 
 
 class ReviewResubmit(StrictRequest):

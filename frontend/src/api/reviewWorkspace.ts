@@ -75,6 +75,13 @@ export interface ReviewCaseListing {
 const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
+  changeItemReviewers: (
+    p: string,
+    id: string,
+    body: { itemIds: string[]; reviewerIds: string[]; append: boolean },
+  ) => apiClient.post<CaseReview>(`${base(p)}/${id}/item-reviewers`, body),
+  disassociate: (p: string, id: string, itemIds: string[]) =>
+    apiClient.post<CaseReview>(`${base(p)}/${id}/disassociate`, { itemIds }),
   detail: (p: string, id: string) =>
     apiClient.get<CaseReview>(`${base(p)}/${id}/detail`),
   items: (p: string, id: string, params: Record<string, unknown>) =>

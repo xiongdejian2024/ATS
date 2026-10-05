@@ -1,6 +1,7 @@
 """用例治理：不可变快照、版本锁定评审及项目内批量更新。"""
 
 from copy import deepcopy
+from uuid import uuid4
 from fastapi import HTTPException
 from sqlalchemy import select
 from models import TestCase, User
@@ -324,21 +325,28 @@ def review_data(db, review, *, include_items=True):
 
     items = []
     if include_items:
-        for item in (
-            db.query(CaseReviewItem)
-            .filter_by(review_id=review.id)
+        rows = (
+            db.query(CaseReviewItem, CaseVersion, TestCase)
+            .join(CaseVersion, CaseVersion.id == CaseReviewItem.version_id)
+            .outerjoin(TestCase, TestCase.id == CaseReviewItem.case_id)
+            .filter(CaseReviewItem.review_id == review.id)
             .order_by(CaseReviewItem.created_at, CaseReviewItem.id)
             .all()
+        )
+        votes = {}
+        for decision in (
+            db.query(CaseReviewDecision)
+            .join(CaseReviewItem, CaseReviewItem.id == CaseReviewDecision.item_id)
+            .filter(CaseReviewItem.review_id == review.id)
+            .all()
         ):
-            items.append(
-                serialize_review_item(
-                    item,
-                    db.get(CaseVersion, item.version_id),
-                    db.get(TestCase, item.case_id),
-                    db.query(CaseReviewDecision).filter_by(item_id=item.id).all(),
-                    review.reviewer_ids,
-                )
+            votes.setdefault(decision.item_id, []).append(decision)
+        items = [
+            serialize_review_item(
+                item, version, current, votes.get(item.id, []), review.reviewer_ids
             )
+            for item, version, current in rows
+        ]
     comments = [
         dict(
             id=c.id,
@@ -430,78 +438,94 @@ def refresh_review_status(db, review):
     review.status = (
         "rejected"
         if "rejected" in states
-        else ("approved" if all(s == "approved" for s in states) else "pending")
+        else (
+            "approved" if states and all(s == "approved" for s in states) else "pending"
+        )
     )
 
 
-def vote_review(db, user, project_id, review_id, item_id, request):
+def apply_review_vote(db, review, item, user, request, votes):
+    """共享单条与批量投票规则；调用方已锁定评审并验证全部权限。"""
+    review_event(db, review, user.id, "评审结论", request.model_dump(), item.id)
+    if request.decision == "suggestion":
+        return
+    decision = next((d for d in votes if d.reviewer_id == str(user.id)), None)
+    if decision is None:
+        decision = CaseReviewDecision(
+            id=str(uuid4()), item_id=item.id, reviewer_id=str(user.id)
+        )
+        db.add(decision)
+        votes.append(decision)
+    decision.decision, decision.comment, decision.updated_at = (
+        request.decision,
+        request.comment,
+        beijing_now(),
+    )
+    assigned = item.reviewer_ids or review.reviewer_ids
+    effective = sorted(
+        (d for d in votes if d.reviewer_id in assigned),
+        key=lambda d: (d.updated_at.replace(tzinfo=None), d.id),
+        reverse=True,
+    )
+    if review.mode == "single":
+        item.status = effective[0].decision
+    elif any(d.decision == "rejected" for d in effective):
+        item.status = "rejected"
+    else:
+        item.status = "approved" if len(effective) == len(assigned) else "pending"
+
+
+def vote_reviews(db, user, project_id, review_id, item_ids, request):
     review = get_review(db, user, project_id, review_id, lock=True)
     from services.review_workspace import require_mutable
 
     require_mutable(db, review)
     if review.status in {"cancelled", "superseded"}:
         raise HTTPException(409, "该评审已取消或已重新提审")
-    item = (
+    items = (
         db.query(CaseReviewItem)
-        .filter_by(review_id=review.id, id=item_id)
+        .filter(CaseReviewItem.review_id == review.id, CaseReviewItem.id.in_(item_ids))
+        .order_by(CaseReviewItem.id)
         .populate_existing()
         .with_for_update()
-        .first()
+        .all()
     )
-    if not item:
+    if len(items) != len(set(item_ids)):
         raise HTTPException(404, "评审用例不存在")
-    assigned = item.reviewer_ids or review.reviewer_ids
-    if str(user.id) not in assigned:
+    if any(
+        str(user.id) not in (item.reviewer_ids or review.reviewer_ids) for item in items
+    ):
         raise HTTPException(403, "只有该用例的指定评审人可以提交结论")
-    review_event(db, review, user.id, "评审结论", request.model_dump(), item.id)
+    mapping = {}
+    for vote in (
+        db.query(CaseReviewDecision)
+        .filter(CaseReviewDecision.item_id.in_(item_ids))
+        .populate_existing()
+        .with_for_update()
+        .all()
+    ):
+        mapping.setdefault(vote.item_id, []).append(vote)
+    for item in items:
+        apply_review_vote(
+            db, review, item, user, request, mapping.setdefault(item.id, [])
+        )
+    db.flush()
     if request.decision != "suggestion":
-        decision = (
-            db.query(CaseReviewDecision)
-            .filter_by(item_id=item.id, reviewer_id=str(user.id))
-            .populate_existing()
-            .with_for_update()
-            .first()
-        )
-        if not decision:
-            decision = CaseReviewDecision(item_id=item.id, reviewer_id=str(user.id))
-            db.add(decision)
-        decision.decision, decision.comment, decision.updated_at = (
-            request.decision,
-            request.comment,
-            beijing_now(),
-        )
-        db.flush()
-        decisions = (
-            db.query(CaseReviewDecision)
-            .filter(
-                CaseReviewDecision.item_id == item.id,
-                CaseReviewDecision.reviewer_id.in_(assigned),
-            )
-            .order_by(
-                CaseReviewDecision.updated_at.desc(), CaseReviewDecision.id.desc()
-            )
-            .populate_existing()
-            .with_for_update()
-            .all()
-        )
-        if review.mode == "single":
-            item.status = decisions[0].decision
-        elif any(d.decision == "rejected" for d in decisions):
-            item.status = "rejected"
-        else:
-            item.status = "approved" if len(decisions) == len(assigned) else "pending"
-        db.flush()
         refresh_review_status(db, review)
     review.updated_at = beijing_now()
     db.flush()
     logger.info(
-        "评审结论已记录 review_id={} item_id={} actor_id={} decision={}",
+        "评审结论已记录 review_id={} actor_id={} decision={} item_count={}",
         review.id,
-        item.id,
         user.id,
         request.decision,
+        len(items),
     )
     return review
+
+
+def vote_review(db, user, project_id, review_id, item_id, request):
+    return vote_reviews(db, user, project_id, review_id, [item_id], request)
 
 
 def revise_review(db, user, project_id, review_id, request):

@@ -1,31 +1,42 @@
 """评审关联用例的数据库分页与模块范围，不修改评审票或版本。"""
 
 import json
-from sqlalchemy import case, cast, String, func, or_, and_
+from sqlalchemy import case, cast, String, func, or_, and_, literal
 from fastapi import HTTPException
 from models import TestCase, Module, User
-from models.case_governance import CaseReviewItem, CaseVersion, CaseReviewDecision
+from models.case_governance import (
+    CaseReview,
+    CaseReviewItem,
+    CaseVersion,
+    CaseReviewDecision,
+)
 from services import case_governance as governance
 from services.case_candidates import descendants
 from services.review_workspace import metadata
 from services.review_progress import count_metrics
 
 
-def approved_vote(db):
+def approved_vote(db, review):
     return (
         db.query(CaseReviewDecision.id)
         .filter(
             CaseReviewDecision.item_id == CaseReviewItem.id,
             CaseReviewDecision.decision == "approved",
+            func.instr(
+                assigned_expression(review),
+                literal('"') + CaseReviewDecision.reviewer_id + literal('"'),
+            )
+            > 0,
         )
         .exists()
+        .correlate(CaseReviewItem, CaseReview)
     )
 
 
-def state_expression(db):
+def state_expression(db, review):
     return case(
         (CaseReviewItem.status != "pending", CaseReviewItem.status),
-        (approved_vote(db), "under_review"),
+        (approved_vote(db, review), "under_review"),
         else_="un_review",
     )
 
@@ -42,7 +53,7 @@ def summary_metrics(db, review, archived, started):
         .filter(
             CaseReviewItem.review_id == review.id,
             CaseReviewItem.status == "pending",
-            approved_vote(db),
+            approved_vote(db, review),
         )
         .count()
     )
@@ -60,7 +71,11 @@ def summary_metrics(db, review, archived, started):
 
 def assigned_expression(review):
     value = cast(CaseReviewItem.reviewer_ids, String)
-    fallback = json.dumps(review.reviewer_ids)
+    fallback = (
+        cast(review.reviewer_ids, String)
+        if review is CaseReview
+        else json.dumps(review.reviewer_ids)
+    )
     return func.coalesce(
         case((value.in_(["[]", "null"]), fallback), else_=value), fallback
     )
@@ -107,7 +122,7 @@ def filtered_query(
     if priority:
         query = query.filter(TestCase.priority == priority)
     if state:
-        query = query.filter(state_expression(db) == state)
+        query = query.filter(state_expression(db, review) == state)
     if reviewer_id:
         query = query.filter(
             assigned_expression(review).contains(
@@ -174,7 +189,8 @@ def item_data(
         item, version, current, decisions, review.reviewer_ids
     )
     reviewing = item.status == "pending" and any(
-        d.decision == "approved" for d in decisions
+        d.decision == "approved" and d.reviewer_id in data["reviewerIds"]
+        for d in decisions
     )
     state = (
         ("under_review" if reviewing else "un_review")

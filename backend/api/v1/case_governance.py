@@ -249,12 +249,14 @@ def batch_vote(
     user=Depends(get_current_user),
 ):
     def operation():
-        review = None
-        vote = ReviewVote(decision=body.decision, comment=body.comment)
-        for identifier in dict.fromkeys(body.itemIds):
-            review = service.vote_review(
-                db, user, project_id, review_id, identifier, vote
-            )
+        review = service.vote_reviews(
+            db,
+            user,
+            project_id,
+            review_id,
+            body.itemIds,
+            ReviewVote(decision=body.decision, comment=body.comment),
+        )
         return service.review_data(db, review)
 
     return result(transact(db, operation))
@@ -359,6 +361,7 @@ def comment(
 ):
     review = service.get_review(db, user, project_id, review_id, lock=True)
     from services.review_workspace import require_mutable
+
     require_mutable(db, review)
     if (
         body.itemId
@@ -394,6 +397,7 @@ def cancel(
     review = service.get_review(db, user, project_id, review_id, lock=True)
     service.project_access(db, user, project_id, "update")
     from services.review_workspace import require_mutable
+
     require_mutable(db, review)
     if review.status != "pending":
         raise HTTPException(409, "评审已结束")
@@ -467,7 +471,11 @@ def save_view(
     def operation():
         # 锁定视图所有者，避免并发创建绕过每个项目10个个人视图的上限。
         db.query(User).filter_by(id=str(user.id)).with_for_update().first()
-        count = db.query(CaseSavedView).filter_by(project_id=project_id, owner_id=str(user.id)).count()
+        count = (
+            db.query(CaseSavedView)
+            .filter_by(project_id=project_id, owner_id=str(user.id))
+            .count()
+        )
         if count >= 10:
             raise HTTPException(409, "每个项目最多创建10个个人视图")
         row = CaseSavedView(
@@ -493,16 +501,24 @@ def rename_view(
     user=Depends(get_current_user),
 ):
     service.project_access(db, user, project_id)
-    row = db.query(CaseSavedView).filter_by(
-        id=view_id, project_id=project_id, owner_id=str(user.id)
-    ).with_for_update().first()
+    row = (
+        db.query(CaseSavedView)
+        .filter_by(id=view_id, project_id=project_id, owner_id=str(user.id))
+        .with_for_update()
+        .first()
+    )
     if not row:
         raise HTTPException(404, "个人视图不存在")
 
     def operation():
         row.name = body.name
         db.flush()
-        logger.info("个人视图已重命名 project_id={} view_id={} owner_id={}", project_id, view_id, user.id)
+        logger.info(
+            "个人视图已重命名 project_id={} view_id={} owner_id={}",
+            project_id,
+            view_id,
+            user.id,
+        )
         return view_data(row)
 
     return result(transact(db, operation))
@@ -526,6 +542,8 @@ def delete_view(
     transact(db, lambda: db.delete(row))
     return result()
 
+
 # 在既有项目权限路径下注册独立评审首页，保留旧版本和评审接口。
 from api.v1.review_workspace import router as review_workspace_router
+
 router.include_router(review_workspace_router)

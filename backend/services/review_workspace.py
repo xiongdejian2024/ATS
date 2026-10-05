@@ -301,13 +301,16 @@ def summary_query(db, project_id):
     )
     total = func.coalesce(item_counts.c.total, 0)
     passed = func.coalesce(item_counts.c.passed, 0)
+    from services.review_case_workspace import approved_vote
+
     started = (
-        db.query(CaseReviewEvent.id)
+        db.query(CaseReviewItem.id)
         .filter(
-            CaseReviewEvent.review_id == CaseReview.id,
-            CaseReviewEvent.action == "评审结论",
+            CaseReviewItem.review_id == CaseReview.id,
+            or_(CaseReviewItem.status != "pending", approved_vote(db, CaseReview)),
         )
         .exists()
+        .correlate(CaseReview)
     )
     lifecycle = case(
         (ReviewWorkspace.archived.is_(True), "archived"),

@@ -88,6 +88,20 @@
       <div v-if="selected.length" class="selection-bar">
         已选择 {{ selected.length }} 条
         <a-button type="link" @click="clearSelection">清空选择</a-button>
+        <a-button
+          v-if="canManage"
+          type="link"
+          :disabled="disabled || loading"
+          @click="openPeople"
+          >修改评审人</a-button
+        >
+        <a-button
+          v-if="canManage"
+          type="link"
+          :disabled="disabled || loading"
+          @click="openUnlink([...selected])"
+          >取消关联</a-button
+        >
       </div>
       <a-alert v-if="error" :message="error" type="error" show-icon
         ><template #action
@@ -116,9 +130,17 @@
             <a v-if="column.key === 'name'" @click="openItem(record.id)">{{
               record.name
             }}</a>
-            <span v-else-if="column.key === 'reviewers'">{{
-              (record.reviewerIds || []).map(memberName).join("、") || "-"
-            }}</span>
+            <ReviewersCell
+              v-else-if="column.key === 'reviewers'"
+              :reviewer-ids="record.reviewerIds || []"
+              :members="members"
+              :name="record.name"
+              :editable="canManage"
+              :disabled="disabled || loading"
+              :save-reviewers="
+                (people: string[]) => saveInlineReviewers(record.id, people)
+              "
+            />
             <a-tag
               v-else-if="column.key === 'result'"
               :color="
@@ -130,12 +152,19 @@
               "
               >{{ stateName(record.reviewState) }}</a-tag
             >
-            <a-button
-              v-else-if="column.key === 'operation'"
-              type="link"
-              :disabled="disabled || loading"
-              @click="openItem(record.id)"
-              >{{ record.canVote ? "评审" : "查看" }}</a-button
+            <a-space v-else-if="column.key === 'operation'" :size="0"
+              ><a-button
+                type="link"
+                :disabled="disabled || loading"
+                @click="openItem(record.id)"
+                >{{ record.canVote ? "评审" : "查看" }}</a-button
+              ><a-button
+                v-if="canManage"
+                type="link"
+                :disabled="disabled || loading"
+                @click="openUnlink([record.id])"
+                >取消关联</a-button
+              ></a-space
             >
           </template>
         </a-table>
@@ -154,6 +183,81 @@
         当前脑图显示前 {{ rows.length }} 条，共 {{ total }} 条；请进一步筛选。
       </p>
     </main>
+    <a-modal
+      destroy-on-close
+      :open="peopleOpen"
+      title="修改评审人"
+      :width="480"
+      :footer="null"
+      :closable="!managementSaving"
+      :mask-closable="!managementSaving"
+      :keyboard="!managementSaving"
+      @cancel="peopleOpen = false"
+    >
+      <a-alert
+        v-if="managementError"
+        :message="managementError"
+        type="error"
+        show-icon
+      />
+      <a-form layout="vertical"
+        ><a-form-item label="选择评审人" required>
+          <a-select
+            v-model:value="draftPeople"
+            mode="multiple"
+            :options="people"
+            show-search
+            option-filter-prop="label"
+            :disabled="managementSaving"
+            placeholder="请选择评审人"
+          /> </a-form-item
+      ></a-form>
+      <div class="management-footer">
+        <a-space
+          ><a-switch
+            v-model:checked="appendPeople"
+            size="small"
+            :disabled="managementSaving"
+            aria-label="追加评审人" /><span>追加</span
+          ><a-tooltip title="开启：新增评审人；关闭：更新评审人"
+            ><QuestionCircleOutlined /></a-tooltip></a-space
+        ><a-space
+          ><a-button :disabled="managementSaving" @click="peopleOpen = false"
+            >取消</a-button
+          ><a-button
+            type="primary"
+            :loading="managementSaving"
+            :disabled="!draftPeople.length"
+            @click="savePeople"
+            >保存</a-button
+          ></a-space
+        >
+      </div>
+    </a-modal>
+    <a-modal
+      destroy-on-close
+      :open="unlinkOpen"
+      title="确认取消关联关系吗？"
+      :width="480"
+      :closable="!managementSaving"
+      :mask-closable="!managementSaving"
+      :keyboard="!managementSaving"
+      :confirm-loading="managementSaving"
+      :cancel-button-props="{ disabled: managementSaving }"
+      ok-text="确认"
+      cancel-text="取消"
+      @cancel="unlinkOpen = false"
+      @ok="saveUnlink"
+    >
+      <a-alert
+        v-if="managementError"
+        :message="managementError"
+        type="error"
+        show-icon
+      />
+      <p>取消后，再次关联，评审结果为：未评审</p>
+      <p>已选择 {{ pendingIds.length }} 条用例</p>
+    </a-modal>
     <TableDisplaySettings
       :open="settings"
       :definitions="definitions"
@@ -170,7 +274,11 @@
 import { ref, computed, watch, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
 import { useWindowSize } from "@vueuse/core";
-import { SettingOutlined, ReloadOutlined } from "@ant-design/icons-vue";
+import {
+  SettingOutlined,
+  ReloadOutlined,
+  QuestionCircleOutlined,
+} from "@ant-design/icons-vue";
 import {
   reviewWorkspaceApi,
   type ReviewCaseEntry,
@@ -179,6 +287,7 @@ import type { CaseFolder } from "@/api/planCaseWorkspace";
 import type { TestCase } from "@/types";
 import { useUserStore } from "@/stores/user";
 import { caseFolderTree } from "@/components/TestPlan/planCaseFolders";
+import ReviewersCell from "./ReviewersCell.vue";
 import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
 import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
 import {
@@ -193,10 +302,13 @@ const props = defineProps<{
   revision: number;
   selected: string[];
   disabled: boolean;
+  canManage: boolean;
 }>();
 const emit = defineEmits<{
   select: [id: string];
   "update:selected": [keys: string[]];
+  saving: [value: boolean];
+  changed: [];
 }>();
 const user = useUserStore();
 const { width: viewportWidth } = useWindowSize();
@@ -239,6 +351,90 @@ const mode = ref("list"),
   error = ref(""),
   settings = ref(false);
 const selectedRows = new Map<string, ReviewCaseEntry>();
+const peopleOpen = ref(false),
+  unlinkOpen = ref(false),
+  managementSaving = ref(false),
+  managementError = ref(""),
+  draftPeople = ref<string[]>([]),
+  appendPeople = ref(false),
+  pendingIds = ref<string[]>([]);
+function openPeople() {
+  pendingIds.value = [...props.selected];
+  draftPeople.value = [];
+  appendPeople.value = false;
+  managementError.value = "";
+  peopleOpen.value = true;
+}
+function openUnlink(ids: string[]) {
+  pendingIds.value = [...ids];
+  managementError.value = "";
+  unlinkOpen.value = true;
+}
+async function performManagement(operation: () => Promise<unknown>) {
+  if (managementSaving.value || !props.canManage)
+    throw new Error("当前评审不能修改关联用例");
+  managementSaving.value = true;
+  emit("saving", true);
+  managementError.value = "";
+  try {
+    await operation();
+    clearSelection();
+    await load();
+    emit("changed");
+  } catch (err) {
+    console.error("修改评审关联用例失败", err);
+    managementError.value = "操作失败，请重试";
+    throw err;
+  } finally {
+    managementSaving.value = false;
+    emit("saving", false);
+  }
+}
+async function saveInlineReviewers(id: string, people: string[]) {
+  await performManagement(() =>
+    reviewWorkspaceApi.changeItemReviewers(props.projectId, props.reviewId, {
+      itemIds: [id],
+      reviewerIds: people,
+      append: false,
+    }),
+  );
+  message.success("评审人已更新");
+}
+async function savePeople() {
+  if (
+    !draftPeople.value.length ||
+    !pendingIds.value.length ||
+    managementSaving.value
+  )
+    return;
+  try {
+    await performManagement(() =>
+      reviewWorkspaceApi.changeItemReviewers(props.projectId, props.reviewId, {
+        itemIds: [...pendingIds.value],
+        reviewerIds: [...draftPeople.value],
+        append: appendPeople.value,
+      }),
+    );
+    peopleOpen.value = false;
+    message.success("评审人已更新");
+  } catch (err) {
+    console.error("批量修改评审人未完成，保留选择", err);
+  }
+}
+async function saveUnlink() {
+  if (!pendingIds.value.length || managementSaving.value) return;
+  try {
+    await performManagement(() =>
+      reviewWorkspaceApi.disassociate(props.projectId, props.reviewId, [
+        ...pendingIds.value,
+      ]),
+    );
+    unlinkOpen.value = false;
+    message.success("取消关联成功");
+  } catch (err) {
+    console.error("取消关联未完成，保留确认窗口", err);
+  }
+}
 const priorities = ["P0", "P1", "P2", "P3"].map((value) => ({
   value,
   label: value,
@@ -255,8 +451,6 @@ const stateName = (value: string) =>
 const people = computed(() =>
   props.members.map((m) => ({ value: m.id, label: m.name })),
 );
-const memberName = (id: string) =>
-  props.members.find((m) => m.id === id)?.name || id;
 const tree = computed(() => [
   { key: "all", title: "全部用例", count: counts.value.all },
   { key: "unassigned", title: "未分配模块", count: counts.value.unassigned },
@@ -317,11 +511,12 @@ const selection = computed(() => ({
   selectedRowKeys: props.selected,
   preserveSelectedRowKeys: true,
   getCheckboxProps: (row: ReviewCaseEntry) => ({
-    disabled: props.disabled || loading.value || !row.canVote,
+    disabled:
+      props.disabled || loading.value || (!row.canVote && !props.canManage),
   }),
   onChange: (keys: (string | number)[]) => {
-    if (keys.length > 200)
-      return void message.info("每批最多评审 200 条，请分批选择");
+    if (keys.length > 10000)
+      return void message.info("每批最多选择10000条用例");
     for (const row of rows.value)
       if (keys.includes(row.id)) selectedRows.set(row.id, row);
     for (const key of selectedRows.keys())
@@ -507,6 +702,8 @@ onBeforeUnmount(() => {
 defineExpose({
   navigate,
   refresh: load,
+  canReviewSelection: () =>
+    props.selected.every((id) => selectedRows.get(id)?.canVote),
   selectedCaseIds: () => {
     const identifiers = props.selected.map(
       (id) => selectedRows.get(id)?.caseId,
@@ -577,10 +774,21 @@ defineExpose({
 .case-filters :deep(.ant-select) {
   width: 125px;
 }
+.management-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
 .selection-bar {
   background: var(--ms-primary-soft);
   padding: 4px 12px;
   margin-bottom: 8px;
+}
+.review-case-table :deep(.ant-space-item > .ant-btn-link) {
+  padding-left: 4px;
+  padding-right: 4px;
 }
 .case-pagination {
   display: flex;
@@ -605,6 +813,10 @@ defineExpose({
   }
   .case-list {
     padding-left: 0;
+  }
+  .review-case-table :deep(.ant-space-item > .ant-btn-link) {
+    padding-left: 4px;
+    padding-right: 4px;
   }
   .case-pagination {
     overflow: auto;
