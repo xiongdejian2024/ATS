@@ -1341,6 +1341,7 @@ const confirmExport=async(options:{format:string;layout:string;fields:string})=>
       ? await caseGovernanceApi.exportSelection(project,body,{...options,sortBy:sortBy.value,sortOrder:sortOrder.value})
       : await testCaseApi.exportCases(project,params);
     saveCaseBlob(blob,`测试用例_${new Date().toISOString().slice(0,10)}.${options.format}`);
+    if (body && project === projectId.value) selection.clear();
     message.success('导出文件已生成');exportVisible.value=false;
   }catch(error){console.error('导出用例失败，保留选择范围',error)}
   finally{hide();exportBusy.value=false;selection.working.value=false}
@@ -1855,7 +1856,7 @@ const getDisplayName = (userId: string) => {
 }
 
 // 生命周期
-watch(() => JSON.stringify([sortBy.value,sortOrder.value,viewLayout.value]), () => { selection.clear() }, { flush:'sync' })
+watch(viewLayout, () => { selection.clear() }, { flush:'sync' })
 watch(
   () => projectId.value,
   () => {
