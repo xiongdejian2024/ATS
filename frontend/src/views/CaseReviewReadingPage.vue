@@ -344,6 +344,7 @@ import ReviewSnapshotContent from "@/components/CaseReview/ReviewSnapshotContent
 import TestCaseEdit from "@/components/TestCase/TestCaseEdit.vue";
 import {
   readingScope,
+  selectedReviewStates,
   afterReviewTarget,
   reviewStates,
   reviewStateName,
@@ -357,9 +358,7 @@ const scope = ref(readingScope(route.query.scope)),
   page = ref(scope.value.page),
   size = ref(scope.value.size),
   keyword = ref(scope.value.search || ""),
-  selectedStates = ref<string[]>(
-    scope.value.states || (scope.value.state ? [scope.value.state] : []),
-  );
+  selectedStates = ref<string[]>(selectedReviewStates(scope.value));
 const itemId = ref(""),
   record = ref<ReviewReading>(),
   review = ref<CaseReview>(),
@@ -543,8 +542,7 @@ async function initialize() {
   page.value = scope.value.page;
   size.value = scope.value.size;
   keyword.value = scope.value.search || "";
-  selectedStates.value =
-    scope.value.states || (scope.value.state ? [scope.value.state] : []);
+  selectedStates.value = selectedReviewStates(scope.value);
   try {
     if (!p || !r) throw new Error("缺少项目或评审标识");
     const [header, people, permissions] = await Promise.all([
@@ -683,10 +681,8 @@ function back() {
         page: page.value,
         size: size.value,
         search: keyword.value,
-        state:
-          selectedStates.value.length === 1
-            ? selectedStates.value[0]
-            : undefined,
+        state: undefined,
+        states: [...selectedStates.value],
       }),
     },
   });

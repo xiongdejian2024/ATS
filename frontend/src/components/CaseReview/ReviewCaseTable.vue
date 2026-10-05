@@ -61,9 +61,12 @@
           :options="priorities"
         />
         <a-select
-          v-model:value="state"
+          v-model:value="selectedStates"
+          mode="multiple"
           placeholder="评审结果"
+          aria-label="筛选评审结果"
           allow-clear
+          :max-tag-count="1"
           :options="states"
         />
         <a-select
@@ -369,7 +372,11 @@ import {
   readDisplay,
   type ColumnVisibility,
 } from "@/components/Table/tableDisplay";
-import { readingScope as readScope } from "./reviewReading";
+import {
+  readingScope as readScope,
+  selectedReviewStates,
+  reviewStates,
+} from "./reviewReading";
 import ReviewSelectionHeader from "./ReviewSelectionHeader.vue";
 import { pageExclusions, selectedPageIds } from "./reviewSelection";
 const props = defineProps<{
@@ -425,7 +432,7 @@ const page = ref(initial?.page || 1),
   search = ref(initial?.search || ""),
   appliedSearch = ref(initial?.search || "");
 const priority = ref<string | undefined>(initial?.priority),
-  state = ref<string | undefined>(initial?.state),
+  selectedStates = ref<string[]>(selectedReviewStates(initial || {})),
   reviewerId = ref<string | undefined>(initial?.reviewerId),
   creatorId = ref<string | undefined>(initial?.creatorId),
   onlyMine = ref(initial?.onlyMine || false);
@@ -490,7 +497,7 @@ function selectionRequest(): ReviewItemSelection {
       folder: folder.value,
       includeDescendants: display.value.includeDescendants,
       priority: priority.value,
-      state: state.value,
+      states: [...selectedStates.value],
       reviewerId: reviewerId.value,
       creatorId: creatorId.value,
       onlyMine: onlyMine.value,
@@ -688,13 +695,7 @@ const priorities = ["P0", "P1", "P2", "P3"].map((value) => ({
   value,
   label: value,
 }));
-const states = [
-  { value: "approved", label: "通过" },
-  { value: "rejected", label: "不通过" },
-  { value: "under_review", label: "评审中" },
-  { value: "un_review", label: "未评审" },
-  { value: "re_review", label: "重新提审" },
-];
+const states = reviewStates;
 const stateName = (value: string) =>
   states.find((s) => s.value === value)?.label || value;
 const people = computed(() =>
@@ -807,7 +808,9 @@ async function load() {
       includeDescendants: display.value.includeDescendants,
       search: appliedSearch.value,
       priority: priority.value,
-      state: state.value,
+      states: selectedStates.value.length
+        ? selectedStates.value.join(",")
+        : undefined,
       reviewerId: reviewerId.value,
       creatorId: creatorId.value,
       onlyMine: onlyMine.value,
@@ -858,7 +861,8 @@ function searchCleared() {
 function clearFilters() {
   search.value = "";
   appliedSearch.value = "";
-  priority.value = state.value = reviewerId.value = creatorId.value = undefined;
+  priority.value = reviewerId.value = creatorId.value = undefined;
+  selectedStates.value = [];
   onlyMine.value = false;
 }
 function clearSelection() {
@@ -932,7 +936,7 @@ watch(
     folder,
     appliedSearch,
     priority,
-    state,
+    selectedStates,
     reviewerId,
     creatorId,
     onlyMine,
@@ -989,7 +993,7 @@ defineExpose({
     folder: folder.value,
     includeDescendants: display.value.includeDescendants,
     priority: priority.value,
-    state: state.value,
+    states: [...selectedStates.value],
     reviewerId: reviewerId.value,
     creatorId: creatorId.value,
     onlyMine: onlyMine.value,

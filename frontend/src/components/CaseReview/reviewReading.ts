@@ -16,6 +16,21 @@ export const reviewStateColor = (state: string) =>
     re_review: "orange",
     un_review: "blue",
   })[state] || "default";
+/** 多结果优先；兼容旧单结果地址，显式清空多结果时不恢复旧值。 */
+export function selectedReviewStates(scope: Record<string, any>): string[] {
+  const values = Array.isArray(scope.states)
+    ? scope.states
+    : scope.state
+      ? [scope.state]
+      : [];
+  return [
+    ...new Set<string>(
+      values.filter((state: unknown) =>
+        reviewStates.some((option) => option.value === state),
+      ),
+    ),
+  ];
+}
 export function readingScope(value: unknown): Record<string, any> {
   let data: Record<string, any> = {};
   try {

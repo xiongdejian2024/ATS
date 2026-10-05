@@ -94,6 +94,7 @@ export interface ReviewItemSelection {
     includeDescendants?: boolean;
     priority?: string;
     state?: string;
+    states?: string[];
     reviewerId?: string;
     creatorId?: string;
     onlyMine?: boolean;
