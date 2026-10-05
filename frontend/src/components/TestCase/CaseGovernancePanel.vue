@@ -613,6 +613,7 @@ defineExpose({
   viewNames,
   cannotAdd,
   persistFilterView,
+  resetViewSelection: () => { viewId.value = undefined; },
   openVersions,
   openOrganize,
   openIssueLinks,

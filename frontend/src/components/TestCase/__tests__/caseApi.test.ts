@@ -18,8 +18,23 @@ vi.mock("@/utils/api", () => ({
 import { testCaseApi } from "@/api/testCase";
 import { caseFeaturesApi } from "@/api/caseFeatures";
 import { caseGovernanceApi } from "@/api/caseGovernance";
+import { caseSearchParams } from "../caseSearchScope";
 beforeEach(() => { vi.clearAllMocks(); });
 describe("用例前端实际接口契约", () => {
+  it("列表与Excel导出传递相同高级范围，零值条件不被旧基础筛选截断", async () => {
+    const params = caseSearchParams({ personalView: false, systemView: "all", conditions: [{ field: "tags", operator: "count_gt", value: 0 }], logic: "and", search: "隐藏关键字", moduleKeys: ["旧模块"], moduleIds: ["旧模块"], priority: "P0", automated: false });
+    await testCaseApi.getTestCases("p", { ...params, page: 1, size: 20 });
+    mocks.rawGet.mockResolvedValue({ data: new Blob(["文件"]) });
+    await testCaseApi.exportCases("p", { ...params, format: "xlsx", caseIds: "a,b" });
+    const list = mocks.get.mock.calls[0][1].params;
+    const exported = new URL(mocks.rawGet.mock.calls[0][0], "http://localhost").searchParams;
+    expect(JSON.parse(exported.get("filters")!)).toEqual(JSON.parse(list.filters));
+    for (const key of ["search", "module_ids", "priority", "is_automated"]) {
+      expect(list).not.toHaveProperty(key);
+      expect(exported.has(key)).toBe(false);
+    }
+    expect(exported.get("case_ids")).toBe("a,b");
+  });
   it("组合OR筛选、排序、个人范围与选中编号全部传递", async () => {
     const filters = {
       conditions: [

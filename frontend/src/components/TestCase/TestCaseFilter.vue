@@ -17,7 +17,7 @@
         :maxlength="255"
         :disabled="saving"
         aria-label="视图名称" /><a-space v-else
-        ><span>{{ view?.name || "全部数据" }}</span
+        ><span>{{ view?.name || systemViewName }}</span
         ><a-button
           v-if="view?.id"
           type="text"
@@ -197,7 +197,7 @@
           @click="save('update')"
           >保存</a-button
         ><a-button
-          v-if="!newView && saveView"
+          v-if="!newView && saveView && (view?.id || systemView === 'all')"
           aria-label="另存为视图"
           type="text"
           :disabled="saving || cannotAdd"
@@ -242,6 +242,7 @@ const props = withDefaults(
     view?: { id: string; name: string; filters: Record<string, any> };
     viewNames?: string[];
     newView?: boolean;
+    systemView?: string;
     cannotAdd?: boolean;
     saveView?: (
       name: string,
@@ -256,6 +257,7 @@ const props = withDefaults(
     logic: "and",
     viewNames: () => [],
     newView: false,
+    systemView: "all",
     cannotAdd: false,
   },
 );
@@ -275,11 +277,13 @@ const draft = ref<FilterCondition[]>([]),
 let original: FilterCondition[] = [],
   originalLogic: FilterLogic = "and",
   originalName = "";
+const systemViewName = computed(() => ({ all: "全部数据", my: "我创建的", followed: "我关注的" }[props.systemView] || "全部数据"));
 const field = (key: string) => props.availableFields.find((f) => f.key === key);
 const disabledValue = (c: FilterCondition) =>
   saving.value || !c.field || noValue(c.operator);
 function fieldOptions(index: number) {
   return props.availableFields
+    .filter((f) => !(props.systemView === "my" && !props.view && !props.newView && f.key === "createdBy"))
     .filter((f) =>
       draft.value.every((c, i) => i === index || c.field !== f.key),
     )
@@ -381,17 +385,17 @@ function close() {
   if (!saving.value) emit("update:visible", false);
 }
 watch(
-  () => props.visible,
-  (visible) => {
-    if (visible) {
+  () => [props.visible, props.view?.id, props.systemView, props.newView] as const,
+  ([visible]) => {
+    if (visible && !saving.value) {
       const saved = props.newView ? undefined : props.view?.filters;
       original = props.newView
         ? [{ field: "", operator: "", value: undefined }]
-        : initialConditions(props.availableFields, saved?.filterConditions);
+        : initialConditions(props.availableFields, saved?.filterConditions ?? (props.systemView === "all" ? undefined : []));
       originalLogic = saved?.filterLogic === "or" ? "or" : "and";
       originalName = props.newView
         ? nextUnnamedView(props.viewNames)
-        : props.view?.name || "全部数据";
+        : props.view?.name || systemViewName.value;
       copyMode.value = false;
       copyName.value = "";
       reset();
@@ -401,6 +405,7 @@ watch(
       }
     }
   },
+  { flush: "post" },
 );
 defineExpose({ isSaving: () => saving.value });
 </script>

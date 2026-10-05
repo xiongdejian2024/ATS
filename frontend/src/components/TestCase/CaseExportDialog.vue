@@ -16,7 +16,7 @@
         :message="
           selectedCount
             ? `导出勾选的 ${selectedCount} 条用例。`
-            : '导出当前模块、搜索与组合筛选匹配的全部用例。'
+            : '导出当前检索范围匹配的全部用例。'
         "
         type="info"
         show-icon

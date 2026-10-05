@@ -91,10 +91,10 @@
             <a-button @click="handleImport">导入</a-button>
           </div>
           <div class="toolbar-filter">
-            <a-input-search v-model:value="searchValue" placeholder="通过ID/名称/标签搜索" style="width:187px" allow-clear @search="handleSearch" />
-            <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" :system-view="viewMode" :filter-saving="filterSaving || filterDrawerVisible" @new-view="openFilter(true)" @system-view="applySystemView" @changed="refreshGovernedCases" @apply-view="applySavedView" />
-            <a-button aria-label="高级筛选" :type="advancedFilters.length ? 'primary' : 'default'" @click="openFilter(false)"><FilterOutlined /> 筛选</a-button>
-            <a-button v-if="advancedFilters.length" type="link" @click="clearAdvancedFilters">清空筛选</a-button>
+            <a-input-search v-if="!isAdvancedSearchMode" v-model:value="searchValue" placeholder="通过ID/名称/标签搜索" style="width:187px" allow-clear @search="handleSearch" />
+            <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" :system-view="viewMode" :filter-saving="filterSaving" @new-view="openFilter(true)" @system-view="applySystemView" @changed="refreshGovernedCases" @apply-view="applySavedView" />
+            <a-button aria-label="高级筛选" :type="isAdvancedSearchMode ? 'primary' : 'default'" @click="openFilter(false)"><FilterOutlined /> 筛选</a-button>
+            <a-button v-if="isAdvancedSearchMode" aria-label="清空高级筛选" type="link" @click="clearAdvancedFilters">清空筛选</a-button>
             <a-button-group>
               <a-button :type="viewLayout === 'list' ? 'primary' : 'default'" aria-label="列表视图" title="列表视图" @click="viewLayout='list'"><UnorderedListOutlined /></a-button>
               <a-button :type="viewLayout === 'mind' ? 'primary' : 'default'" aria-label="脑图视图" title="脑图视图" @click="viewLayout='mind'"><AppstoreOutlined /></a-button>
@@ -323,6 +323,7 @@
       :view-names="governancePanel?.viewNames"
       :cannot-add="governancePanel?.cannotAdd"
       :new-view="newFilterView"
+      :system-view="viewMode"
       :save-view="saveFilterView"
       @saving="filterSaving=$event"
     />
@@ -356,6 +357,7 @@ import TableDisplaySettings from '@/components/Table/TableDisplaySettings.vue'
 import { readDisplay, normalizeDisplay, displayStorageKey, pageSizes, type DisplayColumn, type TableDisplay, type ColumnVisibility } from '@/components/Table/tableDisplay'
 import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
 import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
+import { caseSearchParams, isAdvancedCaseSearch } from '@/components/TestCase/caseSearchScope'
 import ImportCasesModal from '@/components/TestCase/ImportCasesModal.vue'
 import CaseGovernancePanel from '@/components/TestCase/CaseGovernancePanel.vue'
 import CaseMindMap from '@/components/TestCase/CaseMindMap.vue'
@@ -447,7 +449,7 @@ const tableTitle = computed(() => {
 const loading = ref(false)
 const testCases = ref<TestCase[]>([])
 const selectedRowKeys = ref<string[]>([])
-const searchValue = ref('')
+const searchValue = ref(''), appliedSearchValue = ref('')
 const viewMode = ref('all')
 const viewLayout = ref<'list' | 'mind'>('list')
 const exportVisible=ref(false),exportBusy=ref(false),exportFormat=ref('xlsx')
@@ -589,34 +591,50 @@ const getDefaultFilterFields = () => [
 const filters = reactive({
   level: undefined as string | undefined,
   reviewResult: undefined as string | undefined,
-  executionResult: undefined as string | undefined
+  executionResult: undefined as string | undefined,
+  isAutomated: undefined as boolean | undefined
 })
 
 const governancePanel = ref<InstanceType<typeof CaseGovernancePanel>>()
-const savedViewFilters = computed(() => ({ search: searchValue.value, moduleKeys: selectedModuleKeys.value, filterConditions: advancedFilters.value, filterLogic: filterLogic.value, viewMode:viewMode.value, sortBy:sortBy.value,sortOrder:sortOrder.value, ...filters }))
+const savedViewFilters = computed(() => ({ filterConditions: advancedFilters.value, filterLogic: filterLogic.value }))
+const searchScope = computed(() => ({
+  personalView: !!governancePanel.value?.activeView,
+  systemView: viewMode.value,
+  conditions: advancedFilters.value,
+  logic: filterLogic.value,
+  search: appliedSearchValue.value,
+  moduleKeys: selectedModuleKeys.value,
+  moduleIds: selectedModuleKeys.value.filter(key=>!key.startsWith('case_')).flatMap(key=>tableDisplay.value.includeDescendants ? getModuleAndChildrenIds(key) : [key]),
+  priority: filters.level, status: filters.executionResult, reviewStatus: filters.reviewResult, automated: filters.isAutomated
+}))
+const isAdvancedSearchMode = computed(() => isAdvancedCaseSearch(searchScope.value))
+const currentCaseParams = computed(() => caseSearchParams(searchScope.value))
+// 范围改变时清掉旧勾选；翻页和排序仍可保留当前范围内的跨页选择。
+function resetBasicSearch() {
+  searchValue.value=''; appliedSearchValue.value=''; filters.level=undefined; filters.executionResult=undefined; filters.reviewResult=undefined; filters.isAutomated=undefined
+}
+function resetSearchSelection() {
+  resetBasicSearch(); selectedModuleKeys.value=['all']; selectedRowKeys.value=[]; pagination.current=1
+}
 async function saveFilterView(name: string, conditions: any[], logic: 'and' | 'or', mode: 'create' | 'update' | 'copy') {
   if (!governancePanel.value) throw new Error('项目视图尚未加载')
-  await governancePanel.value.persistFilterView(name, { ...savedViewFilters.value, filterConditions: conditions, filterLogic: logic }, mode)
+  await governancePanel.value.persistFilterView(name, { filterConditions: conditions, filterLogic: logic }, mode)
 }
 const refreshGovernedCases = async () => { await loadTestCases(); await loadModuleTree() }
-const clearAdvancedFilters = async () => { advancedFilters.value=[]; filterLogic.value='and'; pagination.current=1; await loadTestCases() }
+const clearAdvancedFilters = async () => {
+  governancePanel.value?.resetViewSelection(); viewMode.value='all'; advancedFilters.value=[]; filterLogic.value='and'; newFilterView.value=false
+  resetSearchSelection(); await loadTestCases()
+}
 const applySystemView = async (value: string) => {
-  viewMode.value=value; searchValue.value=''; advancedFilters.value=[]; filters.level=undefined; filters.executionResult=undefined; filters.reviewResult=undefined; pagination.current=1
-  await loadTestCases()
+  viewMode.value=value; advancedFilters.value=[]; filterLogic.value='and'; newFilterView.value=false
+  resetSearchSelection(); await loadTestCases()
 }
 const applySavedView = async (saved: Record<string, any>) => {
-  searchValue.value = typeof saved.search === 'string' ? saved.search : ''
-  viewMode.value = saved.viewMode || 'all'
-  sortBy.value = saved.sortBy || 'updated_at'; sortOrder.value = saved.sortOrder || 'desc'
-  selectedModuleKeys.value = Array.isArray(saved.moduleKeys) ? saved.moduleKeys : ['all']
+  // 个人视图使用抽屉可见的条件；旧快照中的基础筛选不再暗中约束高级范围。
+  viewMode.value='all'; newFilterView.value=false
   advancedFilters.value = Array.isArray(saved.filterConditions) ? saved.filterConditions : []
   filterLogic.value = saved.filterLogic === 'or' ? 'or' : 'and'
-  filters.level = saved.level
-  filters.executionResult = saved.executionResult
-  filters.reviewResult = saved.reviewResult
-  pagination.current = 1
-  selectedRowKeys.value = []
-  await loadTestCases()
+  resetSearchSelection(); await loadTestCases()
 }
 
 // 分页
@@ -771,7 +789,11 @@ pagination.pageSize = tableDisplay.value.pageSize
 const columnSettingVisible = ref(false), tableSettingsError = ref('')
 const columns = computed(()=>{
   const definitions = new Map(allColumns.map(column=>[column.key,column]))
-  const shown = tableDisplay.value.columns.filter(column=>column.visible).map(column=>definitions.get(column.key)!)
+  const shown = tableDisplay.value.columns.filter(column=>column.visible).map(column=>{
+    const definition=definitions.get(column.key)!
+    const values:Record<string,unknown>={level:filters.level,reviewResult:filters.reviewResult,executionResult:filters.executionResult,isAutomated:filters.isAutomated}
+    return {...definition, filters:isAdvancedSearchMode.value ? undefined : definition.filters, filteredValue:isAdvancedSearchMode.value || values[column.key]===undefined ? null : [values[column.key]]}
+  })
   return [...shown,{...actionColumn,fixed:isNarrowScreen.value ? undefined : actionColumn.fixed}]
 })
 const tableWidth = computed(()=>columns.value.reduce((width,column)=>width+column.width,50))
@@ -1019,33 +1041,7 @@ const loadTestCases = async () => {
 
     loading.value = true
   try {
-    const params: any = {
-      page: pagination.current,
-      size: pagination.pageSize
-    }
-
-    if (searchValue.value) {
-      params.search = searchValue.value
-    }
-
-    if(selectedModuleKeys.value.includes('unplanned')) params.moduleId='null'
-    else if(!selectedModuleKeys.value.includes('all')){const ids=selectedModuleKeys.value.filter(k=>!k.startsWith('case_')).flatMap(key=>tableDisplay.value.includeDescendants ? getModuleAndChildrenIds(key) : [key]);if(ids.length)params.moduleIds=[...new Set(ids)].join(',')}
-
-    // 旧版筛选条件（兼容性）
-    if (filters.level) {
-      params.priority = filters.level
-    }
-
-    if (filters.executionResult) {
-      params.status = filters.executionResult
-    }
-    if (filters.reviewResult) params.review_status = filters.reviewResult
-
-    if (advancedFilters.value.length) params.filters = { conditions: advancedFilters.value, logic: filterLogic.value }
-    params.mine = viewMode.value === 'my'
-    params.followed = viewMode.value === 'followed'
-    params.sortBy = sortBy.value
-    params.sortOrder = sortOrder.value
+    const params = { ...currentCaseParams.value, page:pagination.current, size:pagination.pageSize, sortBy:sortBy.value, sortOrder:sortOrder.value }
 
     console.log('调用 getTestCases API，参数:', params)
     const response = await testCaseApi.getTestCases(currentProject, params)
@@ -1126,15 +1122,19 @@ const handleModuleSearch = () => {
 
 // 处理搜索
 const handleSearch = () => {
+  appliedSearchValue.value = searchValue.value
   pagination.current = 1
   loadTestCases()
 }
 
 // 应用高级筛选
 const handleFilterApply = (conditions: any[], logic: string) => {
+  if (newFilterView.value) viewMode.value='all'
+  newFilterView.value=false
   advancedFilters.value = conditions
   filterLogic.value = logic as 'and' | 'or'
-  pagination.current = 1
+  resetSearchSelection()
+  console.info('应用用例高级检索',{projectId:projectId.value,mode:viewMode.value,conditions:conditions.length,logic})
   loadTestCases()
 }
 
@@ -1149,12 +1149,12 @@ const handleTableChange = (_pag: any, _filters: any, sorter: any) => {
   sortBy.value = keys[sorter?.columnKey] || 'updated_at'
   sortOrder.value = sorter?.order === 'ascend' ? 'asc' : 'desc'
   pagination.current = 1
-  filters.level = _filters?.level?.[0]
-  filters.reviewResult = _filters?.reviewResult?.[0]
-  filters.executionResult = _filters?.executionResult?.[0]
-  const automation=_filters?.isAutomated?.[0]
-  advancedFilters.value=advancedFilters.value.filter(c=>c.field!=='isAutomated')
-  if(automation!==undefined)advancedFilters.value.push({field:'isAutomated',operator:'equals',value:automation})
+  if (!isAdvancedSearchMode.value) {
+    filters.level = _filters?.level?.[0]
+    filters.reviewResult = _filters?.reviewResult?.[0]
+    filters.executionResult = _filters?.executionResult?.[0]
+    filters.isAutomated = _filters?.isAutomated?.[0]
+  }
   loadTestCases()
 }
 
@@ -1285,11 +1285,8 @@ const confirmExport=async(options:{format:string;layout:string;fields:string})=>
   exportBusy.value=true
   const hide=message.loading('正在导出…',0)
   try{
-    const params:Record<string,unknown>={...options,search:searchValue.value,priority:filters.level,status:filters.executionResult,reviewStatus:filters.reviewResult,mine:viewMode.value==='my',followed:viewMode.value==='followed',sortBy:sortBy.value,sortOrder:sortOrder.value}
+    const params:Record<string,unknown>={...currentCaseParams.value,...options,sortBy:sortBy.value,sortOrder:sortOrder.value}
     if(selectedRowKeys.value.length)params.caseIds=selectedRowKeys.value.join(',')
-    else if(selectedModuleKeys.value.includes('unplanned'))params.moduleId='null'
-    else if(!selectedModuleKeys.value.includes('all'))params.moduleIds=[...new Set(selectedModuleKeys.value.filter(k=>!k.startsWith('case_')).flatMap(key=>tableDisplay.value.includeDescendants ? getModuleAndChildrenIds(key) : [key]))].join(',')
-    if(advancedFilters.value.length)params.filters={conditions:advancedFilters.value,logic:filterLogic.value}
     saveCaseBlob(await testCaseApi.exportCases(projectId.value,params),`测试用例_${new Date().toISOString().slice(0,10)}.${params.format}`)
     message.success('导出文件已生成');exportVisible.value=false
   }catch(error){console.error('导出用例失败',error)}finally{hide();exportBusy.value=false}
@@ -1806,12 +1803,13 @@ const getDisplayName = (userId: string) => {
 }
 
 // 生命周期
+watch(() => JSON.stringify([projectId.value, currentCaseParams.value]), () => { selectedRowKeys.value=[] }, { flush:'sync' })
 watch(
   () => projectId.value,
   () => {
     if (projectId.value) {
       if (!filterSaving.value) filterDrawerVisible.value = false
-      advancedFilters.value = []; filterLogic.value = 'and'; searchValue.value = ''
+      advancedFilters.value = []; filterLogic.value = 'and'; viewMode.value='all'; resetBasicSearch()
       selectedRowKeys.value=[];selectedModuleKeys.value=['all'];detailCaseVisible.value=false;recycleVisible.value=route.query.view === 'recycle';templateVisible.value=false;pagination.current=1
       loadTestCases()
       loadModuleTree()
