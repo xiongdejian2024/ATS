@@ -172,6 +172,7 @@ def main():
                         ReviewVote(decision="rejected", comment="不能覆盖归档"),
                     )
                 except HTTPException as error:
+                    log.exception("并发验收捕获评审写入拒绝：状态=%s，原因=%s", error.status_code, error.detail)
                     rejected = error.status_code == 409 and "归档" in error.detail
                     # 再次普通查询仍可能读取旧快照，当前读检查已经拒绝修改。
                     stale = (
