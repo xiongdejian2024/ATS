@@ -73,7 +73,7 @@
         @click="collapsed = true" @keydown.enter="collapsed = true" />
       <a-layout-content class="layout-content">
         <div class="page-breadcrumb"><span>{{ isCaseWorkspace ? '测试用例' : isPlanWorkspace ? '测试计划' : route.meta?.title || '仪表盘' }}</span>
-          <template v-if="isCaseWorkspace"><span class="breadcrumb-separator">/</span><span>{{ route.path === '/case-reviews' ? '评审' : '用例' }}</span></template>
+          <template v-if="isCaseWorkspace"><span class="breadcrumb-separator">/</span><span>{{ route.path.startsWith('/case-reviews') ? '评审' : '用例' }}</span></template>
           <template v-else-if="isPlanWorkspace"><span class="breadcrumb-separator">/</span><span>{{ route.path.startsWith('/test-plan-reports') ? '计划报告' : '计划' }}</span></template>
         </div>
         <div class="page-workspace"><router-view /></div>

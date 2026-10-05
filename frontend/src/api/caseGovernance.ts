@@ -27,6 +27,10 @@ export interface ReviewItem {
 export interface CaseReview {
   id: string;
   name: string;
+  number?: number | null;
+  moduleId?: string | null;
+  tags?: string[];
+  archived?: boolean;
   status: string;
   policy: string;
   reviewerIds: string[];
@@ -74,6 +78,8 @@ export const caseGovernanceApi = {
     apiClient.get<{ id: string; name: string }[]>(`${base(p)}/reviewers`),
   reviews: (p: string, params?: Record<string, string>) =>
     apiClient.get<CaseReview[]>(`${base(p)}/reviews`, { params }),
+  review: (p: string, id: string) =>
+    apiClient.get<CaseReview>(`${base(p)}/reviews/${id}`),
   createReview: (p: string, body: Record<string, unknown>) =>
     apiClient.post<CaseReview>(`${base(p)}/reviews`, body),
   updateReview: (p: string, id: string, body: Record<string, unknown>) =>

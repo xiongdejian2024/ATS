@@ -1,824 +1,982 @@
 <template>
-  <section class="review-page">
-    <header class="review-header">
-      <div>
-        <h2>用例评审</h2>
-        <p>按锁定版本审阅，记录建议和每次结论变更。</p>
-      </div>
-      <a-space wrap
-        ><a-button type="primary" :disabled="!projectId" @click="openEditor()"
-          >新建评审</a-button
-        ><a-button @click="load">刷新</a-button></a-space
-      >
-    </header>
-    <a-alert v-if="!projectId" message="请选择项目" type="info" />
+  <section class="review-index">
+    <a-alert v-if="!projectId" type="info" message="请选择项目" />
     <template v-else>
-      <a-space class="filters" wrap
-        ><a-input-search
-          v-model:value="search"
-          placeholder="搜索评审名称"
-          @search="load" /><a-select
-          v-model:value="status"
+      <aside class="module-panel">
+        <a-input
+          v-model:value="moduleSearch"
+          placeholder="请输入模块名称"
           allow-clear
-          placeholder="评审状态"
-          style="width: 160px"
-          :options="statusOptions"
-          @change="load"
-      /></a-space>
-      <div class="review-layout">
-        <aside class="review-list">
-          <a-spin :spinning="busy"
-            ><a-empty v-if="!reviews.length" description="暂无评审单" /><button
-              v-for="review in reviews"
-              :key="review.id"
-              class="review-entry"
-              :class="{ active: activeId === review.id }"
-              @click="selectReview(review.id)"
-            >
-              <strong>{{ review.name }}</strong
-              ><span
-                >{{ statusName(review.status) }} ·
-                {{ review.items.length }} 条用例</span
-              ><small>{{
-                review.mode === "single" ? "单人评审" : "多人评审"
-              }}</small>
-            </button></a-spin
-          >
-        </aside>
-        <main v-if="active" class="review-workspace">
-          <a-card :title="active.name">
-            <template #extra
-              ><a-space wrap
-                ><a-button @click="follow">{{
-                  followed ? "取消关注" : "关注"
-                }}</a-button
-                ><a-button @click="openEditor(active)">编辑</a-button
-                ><a-button @click="copyReview">复制</a-button
-                ><a-button @click="resubmit">重新提审</a-button
-                ><a-popconfirm
-                  v-if="!['cancelled', 'superseded'].includes(active.status)"
-                  title="取消整张评审单？"
-                  @confirm="cancel"
-                  ><a-button danger>取消评审</a-button></a-popconfirm
-                ></a-space
-              ></template
-            >
-            <p>{{ active.description || "未填写描述" }}</p>
-            <a-space wrap
-              ><a-tag :color="statusColor(active.status)">{{
-                statusName(active.status)
-              }}</a-tag
-              ><span>{{
-                active.mode === "single"
-                  ? "单人：最后一次有效结论"
-                  : "多人：每位评审人的末次有效结论均通过才通过"
-              }}</span
-              ><span
-                >计划周期：{{ active.startDate || "未设置" }} ～
-                {{ active.endDate || "未设置" }}</span
-              ></a-space
-            >
-            <a-alert
-              style="margin-top: 12px"
-              type="info"
-              show-icon
-              message="建议不计入通过或不通过结论。允许改投，历史记录保留。计划日期过期后仍可继续评审。"
-            />
-            <div class="stats">
-              <span
-                >总数 <b>{{ active.items.length }}</b></span
-              ><span
-                >通过 <b>{{ count("approved") }}</b></span
-              ><span
-                >不通过 <b>{{ count("rejected") }}</b></span
-              ><span
-                >待评审 <b>{{ count("pending") }}</b></span
-              ><span
-                >内容已变化
-                <b>{{ active.items.filter((i) => i.outdated).length }}</b></span
-              >
-            </div>
-          </a-card>
-          <a-space wrap style="margin: 16px 0"
-            ><a-radio-group v-model:value="layout"
-              ><a-radio-button value="list">列表</a-radio-button
-              ><a-radio-button value="mind">脑图</a-radio-button></a-radio-group
-            ><a-checkbox v-model:checked="autoNext">评审后自动下一条</a-checkbox
-            ><a-button
-              :disabled="!selectedItems.length"
-              @click="batchVisible = true"
-              >批量评审（{{ selectedItems.length }}）</a-button
-            ></a-space
-          >
-          <CaseMindMap
-            v-if="layout === 'mind'"
-            :cases="mindCases"
-            readonly
-            @select="selectCase"
-          />
-          <a-table
-            v-else
-            :columns="itemColumns"
-            :data-source="active.items"
-            row-key="id"
-            :pagination="{ pageSize: 20 }"
-            :row-selection="{
-              selectedRowKeys: selectedItems,
-              onChange: (keys: any) => (selectedItems = keys),
-            }"
-            :scroll="{ x: 650 }"
-          >
-            <template #bodyCell="{ column, record }"
-              ><a
-                v-if="column.key === 'name'"
-                @click="activeItemId = record.id"
-                >{{ record.snapshot.name }}</a
-              ><span v-else-if="column.key === 'reviewers'">{{
-                (record.reviewerIds || active.reviewerIds)
-                  .map(memberName)
-                  .join("、")
-              }}</span
-              ><a-tag
-                v-else-if="column.key === 'status'"
-                :color="statusColor(record.status)"
-                >{{ statusName(record.status)
-                }}{{ record.outdated ? " · 内容已变化" : "" }}</a-tag
-              ><a-button
-                v-else-if="column.key === 'actions'"
-                @click="activeItemId = record.id"
-                >评审</a-button
-              ></template
-            >
-          </a-table>
-          <a-card
-            v-if="activeItem"
-            class="item-card"
-            :title="`${activeItem.snapshot.name} · v${activeItem.version}`"
-          >
-            <template #extra
-              ><a-space
-                ><a-button @click="previousItem">上一条</a-button
-                ><a-button @click="nextItem">下一条</a-button
-                ><a-button
-                  @click="
-                    editCaseId = activeItem.caseId;
-                    caseEditorVisible = true;
-                  "
-                  >编辑用例</a-button
-                ></a-space
-              ></template
-            >
-            <a-alert
-              v-if="activeItem.outdated"
-              message="当前用例与本次评审快照不同；请确认后重新提审以审阅最新内容。"
-              type="warning"
-              show-icon
-            />
-            <p class="text">
-              <strong>前置条件：</strong
-              >{{ activeItem.snapshot.precondition || "无" }}
-            </p>
-            <a-table
-              :columns="stepColumns"
-              :data-source="activeItem.snapshot.steps || []"
-              :pagination="false"
-              size="small"
-              ><template #bodyCell="{ column, record }"
-                ><span class="text">{{
-                  record[column.dataIndex]
-                }}</span></template
-              ></a-table
-            >
-            <a-list :data-source="activeItem.decisions"
-              ><template #renderItem="{ item }"
-                ><a-list-item
-                  >{{ memberName(item.reviewerId) }} ·
-                  {{ statusName(item.decision) }} · {{ item.comment }} ·
-                  {{ item.updatedAt }}</a-list-item
-                ></template
-              ></a-list
-            >
-            <template v-if="canVote(activeItem)"
-              ><a-textarea
-                v-model:value="opinion"
-                :rows="3"
-                placeholder="评审意见（必填）"
-                :maxlength="10000"
-              /><a-space style="margin-top: 12px"
-                ><a-button
-                  type="primary"
-                  :loading="busy"
-                  @click="vote('approved')"
-                  >通过 / 改为通过</a-button
-                ><a-button danger :loading="busy" @click="vote('rejected')"
-                  >不通过 / 改为不通过</a-button
-                ><a-button :loading="busy" @click="vote('suggestion')"
-                  >仅提建议</a-button
-                ></a-space
-              ></template
-            ><a-alert
-              v-else
-              message="当前账号未被指定为本条用例的评审人，或评审已取消。"
-              type="info"
-            />
-          </a-card>
-          <a-tabs
-            ><a-tab-pane key="discussion" tab="评审讨论"
-              ><a-list :data-source="active.comments"
-                ><template #renderItem="{ item }"
-                  ><a-list-item
-                    ><span class="text"
-                      >{{ memberName(item.authorId) }}：{{ item.content }}</span
-                    ></a-list-item
-                  ></template
-                ></a-list
-              ><a-textarea
-                v-model:value="discussion"
-                :rows="2"
-                placeholder="整单讨论意见"
-              /><a-button
-                style="margin-top: 12px"
-                :loading="busy"
-                @click="comment"
-                >发表评论</a-button
-              ></a-tab-pane
-            ><a-tab-pane key="history" tab="历史记录"
-              ><a-empty
-                v-if="!active.history?.length"
-                description="暂无历史记录"
-              /><a-timeline v-else
-                ><a-timeline-item v-for="(entry, i) in active.history" :key="i">
-                  <pre class="text">{{ historyText(entry) }}</pre>
-                </a-timeline-item></a-timeline
-              ></a-tab-pane
-            ></a-tabs
-          >
-        </main>
-        <a-empty
-          v-else
-          class="empty-workspace"
-          description="选择评审单或新建评审"
         />
-      </div>
+        <div class="module-heading">
+          <a-button type="text" @click="selectModule('all')"
+            >全部评审 <span class="count">({{ data.allCount }})</span></a-button
+          >
+          <a-space
+            ><a-button
+              type="text"
+              aria-label="展开或折叠模块"
+              @click="toggleExpand"
+              ><DownOutlined
+            /></a-button>
+            <a-button
+              v-if="data.permissions.update"
+              type="text"
+              aria-label="新建评审模块"
+              @click="openModule()"
+              ><PlusOutlined /></a-button
+          ></a-space>
+        </div>
+        <a-tree
+          :tree-data="tree"
+          :selected-keys="[selectedModule]"
+          v-model:expanded-keys="expanded"
+          :draggable="data.permissions.update"
+          block-node
+          @select="(keys: any[]) => selectModule(String(keys[0] || 'all'))"
+          @drop="dropModule"
+        >
+          <template #title="node">
+            <div class="module-node">
+              <span :title="node.title"
+                ><FolderOutlined /> {{ node.title }}
+                <span class="count">({{ node.count }})</span></span
+              >
+              <a-dropdown
+                v-if="
+                  node.key !== 'default' &&
+                  (data.permissions.update || data.permissions.delete)
+                "
+                :trigger="['click']"
+              >
+                <a-button
+                  type="text"
+                  size="small"
+                  :aria-label="`操作模块${node.title}`"
+                  @click.stop
+                  ><MoreOutlined
+                /></a-button>
+                <template #overlay
+                  ><a-menu>
+                    <a-menu-item
+                      v-if="data.permissions.update"
+                      @click="openModule(undefined, node.key)"
+                      >添加子模块</a-menu-item
+                    >
+                    <a-menu-item
+                      v-if="data.permissions.update"
+                      @click="openModule(node.key)"
+                      >重命名</a-menu-item
+                    >
+                    <a-menu-item
+                      v-if="data.permissions.delete"
+                      danger
+                      @click="confirmModuleDelete(node.key)"
+                      >删除</a-menu-item
+                    >
+                  </a-menu></template
+                >
+              </a-dropdown>
+            </div>
+          </template>
+        </a-tree>
+      </aside>
+      <main class="review-table-panel">
+        <div class="toolbar">
+          <a-radio-group
+            v-model:value="scope"
+            button-style="solid"
+            @change="reload"
+          >
+            <a-radio-button value="all">全部</a-radio-button
+            ><a-radio-button value="reviewByMe">我评审的</a-radio-button
+            ><a-radio-button value="createByMe">我创建的</a-radio-button>
+          </a-radio-group>
+          <a-space wrap
+            ><a-input-search
+              v-model:value="search"
+              placeholder="通过 ID/名称/标签搜索"
+              allow-clear
+              @search="reload"
+            />
+            <a-button aria-label="刷新评审列表" @click="load"
+              ><ReloadOutlined
+            /></a-button>
+            <a-button aria-label="表格设置" @click="settingsVisible = true"
+              ><SettingOutlined
+            /></a-button>
+            <a-button
+              v-if="data.permissions.update"
+              type="primary"
+              @click="openWorkspace(undefined, 'create')"
+              >创建评审</a-button
+            >
+          </a-space>
+        </div>
+        <a-space class="column-filters" wrap>
+          <a-select
+            v-model:value="lifecycle"
+            allow-clear
+            placeholder="评审状态"
+            :options="reviewStates"
+            @change="reload"
+          />
+          <a-select
+            v-model:value="mode"
+            allow-clear
+            placeholder="模式"
+            :options="[
+              { label: '单人', value: 'single' },
+              { label: '多人', value: 'multiple' },
+            ]"
+            @change="reload"
+          />
+          <a-select
+            v-model:value="reviewerId"
+            allow-clear
+            show-search
+            :filter-option="filterMember"
+            placeholder="评审人"
+            :options="memberOptions"
+            @change="reload"
+          />
+          <a-select
+            v-model:value="creatorId"
+            allow-clear
+            show-search
+            :filter-option="filterMember"
+            placeholder="创建人"
+            :options="memberOptions"
+            @change="reload"
+          />
+          <a-button v-if="hasFilters" type="link" @click="clearFilters"
+            >清空筛选</a-button
+          >
+        </a-space>
+        <a-alert v-if="loadError" type="error" :message="loadError" show-icon />
+        <div v-if="selected.length" class="batch-toolbar">
+          <span>已选择 {{ selected.length }} 条</span>
+          <a-button
+            v-if="data.permissions.update"
+            @click="
+              moveTarget = undefined;
+              moveVisible = true;
+            "
+            >移动到</a-button
+          ><a-button type="link" @click="selected = []">取消选择</a-button>
+        </div>
+        <a-table
+          :columns="columns"
+          :data-source="data.items"
+          row-key="id"
+          :loading="busy"
+          :pagination="pagination"
+          :scroll="{ x: tableWidth }"
+          :row-selection="
+            data.permissions.update
+              ? {
+                  selectedRowKeys: selected,
+                  onChange: (keys: any[]) => (selected = keys.map(String)),
+                  getCheckboxProps: (record: ReviewSummary) => ({
+                    disabled: record.archived,
+                  }),
+                }
+              : undefined
+          "
+          @change="tableChange"
+        >
+          <template #headerCell="{ column }"
+            ><a-tooltip
+              v-if="column.key === 'passRate'"
+              title="通过的用例数 / 总用例数 × 100%"
+              >通过率 <QuestionCircleOutlined /></a-tooltip
+            ><span v-else>{{ column.title }}</span></template
+          >
+          <template #bodyCell="{ column, record }">
+            <a
+              v-if="column.key === 'number'"
+              :title="record.id"
+              @click="openWorkspace(record.id)"
+              >{{ record.number ?? record.id.slice(0, 8) }}</a
+            >
+            <a
+              v-else-if="column.key === 'name'"
+              @click="openWorkspace(record.id)"
+              >{{ record.name }}</a
+            >
+            <a-tag
+              v-else-if="column.key === 'lifecycle'"
+              :color="stateColor(record.lifecycle)"
+              >{{ reviewStateName(record.lifecycle) }}</a-tag
+            >
+            <div v-else-if="column.key === 'passRate'" class="pass-rate">
+              <a-progress
+                :percent="record.passRate"
+                :show-info="false"
+                size="small"
+              /><span>{{ record.passRate }}%</span>
+            </div>
+            <a-tag
+              v-else-if="column.key === 'mode'"
+              :color="record.mode === 'single' ? 'green' : 'blue'"
+              >{{ record.mode === "single" ? "单人" : "多人" }}</a-tag
+            >
+            <a-tooltip
+              v-else-if="column.key === 'reviewers'"
+              :title="record.reviewers.join('、')"
+              ><span>{{ record.reviewers.join("、") }}</span></a-tooltip
+            >
+            <a-tooltip
+              v-else-if="column.key === 'moduleName'"
+              :title="record.modulePath"
+              ><span>{{ record.moduleName }}</span></a-tooltip
+            >
+            <template v-else-if="column.key === 'tags'"
+              ><a-tag v-for="tag in record.tags" :key="tag">{{
+                tag
+              }}</a-tag></template
+            >
+            <span v-else-if="column.key === 'period'">{{
+              record.startDate && record.endDate
+                ? `${record.startDate} ～ ${record.endDate}`
+                : "-"
+            }}</span>
+            <span v-else-if="column.key === 'createdAt'">{{
+              formatDate(record.createdAt)
+            }}</span>
+            <a-space v-else-if="column.key === 'actions'" :size="4">
+              <a-button
+                v-if="data.permissions.update && !record.archived"
+                type="link"
+                size="small"
+                @click="openWorkspace(record.id, 'edit')"
+                >编辑</a-button
+              >
+              <a-dropdown v-if="data.permissions.delete" :trigger="['click']"
+                ><a-button
+                  type="text"
+                  size="small"
+                  :aria-label="`更多操作${record.name}`"
+                  ><MoreOutlined
+                /></a-button>
+                <template #overlay
+                  ><a-menu
+                    ><a-menu-item
+                      v-if="record.lifecycle === 'completed'"
+                      @click="confirmArchive(record)"
+                      >归档</a-menu-item
+                    ><a-menu-item danger @click="confirmDelete(record)"
+                      >删除</a-menu-item
+                    ></a-menu
+                  ></template
+                >
+              </a-dropdown>
+            </a-space>
+          </template>
+          <template #emptyText
+            ><div class="empty">
+              暂无评审数据
+              <a-button
+                v-if="data.permissions.update"
+                type="link"
+                @click="openWorkspace(undefined, 'create')"
+                >创建评审</a-button
+              >
+            </div></template
+          >
+        </a-table>
+      </main>
     </template>
+    <TableDisplaySettings
+      :open="settingsVisible"
+      :definitions="reviewDefinitions"
+      :columns="display.columns"
+      :page-size="display.pageSize"
+      :include-descendants="display.includeDescendants"
+      :error="settingsError"
+      @close="saveColumns"
+      @page-size-change="saveSize"
+      @descendants-change="saveDescendants"
+    />
     <a-modal
-      v-model:open="editorVisible"
-      :title="editingId ? '编辑评审' : '新建评审'"
-      width="min(900px, 96vw)"
-      :confirm-loading="busy"
-      @ok="saveReview"
+      v-model:open="moduleVisible"
+      :title="editingModule ? '重命名模块' : '新建模块'"
+      :confirm-loading="mutating"
+      :mask-closable="false"
+      @ok="saveModule"
     >
       <a-form layout="vertical"
-        ><a-form-item label="名称" required
-          ><a-input v-model:value="form.name" :maxlength="200" /></a-form-item
-        ><a-form-item label="说明"
-          ><a-textarea
-            v-model:value="form.description"
-            :rows="2" /></a-form-item
-        ><a-form-item label="评审模式"
-          ><a-radio-group v-model:value="form.mode"
-            ><a-radio value="single">单人：最后一次有效结论</a-radio
-            ><a-radio value="multiple"
-              >多人：全部评审人通过</a-radio
-            ></a-radio-group
-          ></a-form-item
-        ><a-row :gutter="12"
-          ><a-col :span="12"
-            ><a-form-item label="预计开始"
-              ><a-date-picker
-                v-model:value="form.startDate"
-                value-format="YYYY-MM-DD"
-                style="width: 100%" /></a-form-item></a-col
-          ><a-col :span="12"
-            ><a-form-item label="预计结束"
-              ><a-date-picker
-                v-model:value="form.endDate"
-                value-format="YYYY-MM-DD"
-                style="width: 100%" /></a-form-item></a-col></a-row
-        ><a-form-item label="默认评审人" required
-          ><a-select
-            v-model:value="form.reviewerIds"
-            mode="multiple"
-            :options="memberOptions" /></a-form-item
-        ><a-form-item label="关联用例" required
-          ><a-select
-            v-model:value="form.caseIds"
-            mode="multiple"
-            show-search
-            option-filter-prop="label"
-            :options="
-              cases.map((c) => ({
-                label: `${c.caseCode || ''} ${c.name}`,
-                value: c.id,
-              }))
-            "
-        /></a-form-item>
-        <a-collapse v-if="form.caseIds.length"
-          ><a-collapse-panel
-            key="members"
-            header="逐条指定评审人员（未配置的使用默认人员）"
-            ><a-form-item
-              v-for="id in form.caseIds"
-              :key="id"
-              :label="cases.find((c) => c.id === id)?.name || id"
-              ><a-select
-                v-model:value="form.itemReviewers[id]"
-                mode="multiple"
-                :options="memberOptions"
-                placeholder="默认评审人" /></a-form-item></a-collapse-panel
-        ></a-collapse>
-      </a-form>
+        ><a-form-item label="模块名称" required
+          ><a-input
+            v-model:value="moduleName"
+            :maxlength="100"
+            placeholder="请输入模块名称"
+            @press-enter="saveModule" /></a-form-item
+      ></a-form>
     </a-modal>
     <a-modal
-      v-model:open="batchVisible"
-      title="批量评审"
-      :confirm-loading="busy"
-      @ok="batchVote"
-      ><a-alert
-        message="只允许提交你有评审权限的条目；包含无权限条目时整批拒绝。"
-        type="info" /><a-radio-group
-        v-model:value="batchDecision"
-        style="margin: 16px 0"
-        ><a-radio value="approved">通过</a-radio
-        ><a-radio value="rejected">不通过</a-radio
-        ><a-radio value="suggestion">建议</a-radio></a-radio-group
-      ><a-textarea
-        v-model:value="batchOpinion"
-        placeholder="批量评审意见（必填）"
-        :rows="3"
-    /></a-modal>
-    <a-drawer
-      v-model:open="caseEditorVisible"
-      title="编辑用例"
-      width="min(1000px, 96vw)"
-      destroy-on-close
-      ><TestCaseEdit
-        v-if="caseEditorVisible"
-        :case-id="editCaseId"
-        :project-id="projectId"
-        @cancel="caseEditorVisible = false"
-        @save="
-          caseEditorVisible = false;
-          load();
+      v-model:open="deleteVisible"
+      :title="deletingModule ? '删除模块' : '删除评审'"
+      :confirm-loading="mutating"
+      :mask-closable="false"
+      :ok-button-props="{
+        danger: true,
+        disabled: deleteName !== deleteExpected,
+      }"
+      @ok="performDelete"
+    >
+      <a-alert
+        type="warning"
+        show-icon
+        :message="
+          deletingModule
+            ? '删除模块及其下所有资源，包含子模块中的评审。用例和历史版本保留。'
+            : '删除评审及其结论、评论和关注记录。用例和历史版本保留。'
         "
-    /></a-drawer>
+      />
+      <p>请输入“{{ deleteExpected }}”确认删除</p>
+      <a-input v-model:value="deleteName" placeholder="请输入名称确认" />
+    </a-modal>
+    <a-modal
+      v-model:open="moveVisible"
+      :title="`移动评审（已选 ${selected.length} 条）`"
+      :confirm-loading="mutating"
+      :mask-closable="false"
+      :ok-button-props="{ disabled: moveTarget === undefined }"
+      @ok="moveReviews"
+    >
+      <a-tree-select
+        v-model:value="moveTarget"
+        :tree-data="moveTree"
+        tree-default-expand-all
+        placeholder="请选择目标模块"
+        style="width: 100%"
+      />
+    </a-modal>
   </section>
 </template>
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from "vue";
+import { computed, ref, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { message } from "ant-design-vue";
+import { message, Modal } from "ant-design-vue";
 import {
-  caseGovernanceApi as api,
-  type CaseReview,
-  type ReviewItem,
-} from "@/api/caseGovernance";
-import { testCaseApi } from "@/api/testCase";
+  FolderOutlined,
+  PlusOutlined,
+  MoreOutlined,
+  DownOutlined,
+  ReloadOutlined,
+  SettingOutlined,
+  QuestionCircleOutlined,
+} from "@ant-design/icons-vue";
+import dayjs from "dayjs";
+import { useWindowSize } from "@vueuse/core";
 import { useProjectStore } from "@/stores/project";
 import { useUserStore } from "@/stores/user";
-import type { TestCase } from "@/types";
-import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
-import TestCaseEdit from "@/components/TestCase/TestCaseEdit.vue";
+import { caseGovernanceApi } from "@/api/caseGovernance";
+import {
+  reviewWorkspaceApi as api,
+  type ReviewSummary,
+  type ReviewList,
+} from "@/api/reviewWorkspace";
+import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
+import {
+  displayStorageKey,
+  readDisplay,
+  normalizeDisplay,
+  type ColumnVisibility,
+} from "@/components/Table/tableDisplay";
+import {
+  reviewColumns,
+  reviewDefinitions,
+  reviewStates,
+  reviewStateName,
+} from "@/components/Table/reviewColumns";
 const route = useRoute(),
   router = useRouter(),
-  projectStore = useProjectStore(),
+  projects = useProjectStore(),
   user = useUserStore();
-const projectId = ref(""),
-  search = ref(""),
-  status = ref<string>(),
-  busy = ref(false),
-  reviews = ref<CaseReview[]>([]),
-  members = ref<{ id: string; name: string }[]>([]),
-  cases = ref<TestCase[]>([]);
-const activeId = ref<string>(),
-  activeItemId = ref<string>(),
-  selectedItems = ref<string[]>([]),
-  layout = ref("list"),
-  autoNext = ref(true),
-  opinion = ref(""),
-  discussion = ref(""),
-  followed = ref(false);
-const editorVisible = ref(false),
-  editingId = ref<string>(),
-  batchVisible = ref(false),
-  batchDecision = ref("approved"),
-  batchOpinion = ref(""),
-  caseEditorVisible = ref(false),
-  editCaseId = ref("");
-const form = reactive({
-  name: "",
-  description: "",
-  mode: "multiple",
-  reviewerIds: [] as string[],
-  caseIds: [] as string[],
-  itemReviewers: {} as Record<string, string[]>,
-  startDate: undefined as string | undefined,
-  endDate: undefined as string | undefined,
+const projectId = computed(() => projects.currentProject?.id || "");
+const emptyData = (): ReviewList => ({
+  items: [],
+  total: 0,
+  page: 1,
+  size: 20,
+  modules: [],
+  defaultCount: 0,
+  allCount: 0,
+  permissions: { update: false, delete: false },
 });
-const active = computed(() =>
-    reviews.value.find((r) => r.id === activeId.value),
-  ),
-  activeItem = computed(() =>
-    active.value?.items.find((i) => i.id === activeItemId.value),
-  );
+const data = ref(emptyData()),
+  busy = ref(false),
+  loadError = ref(""),
+  mutating = ref(false);
+const scope = ref("all"),
+  search = ref(""),
+  moduleSearch = ref(""),
+  selectedModule = ref("all"),
+  expanded = ref<string[]>([]),
+  selected = ref<string[]>([]),
+  page = ref(1);
+const lifecycle = ref<string>(),
+  mode = ref<string>(),
+  reviewerId = ref<string>(),
+  creatorId = ref<string>();
+const sort = ref("createdAt"),
+  order = ref("desc");
+const members = ref<{ id: string; name: string }[]>([]);
 const memberOptions = computed(() =>
   members.value.map((m) => ({ label: m.name, value: m.id })),
 );
-const mindCases = computed(
-  () =>
-    (active.value?.items.map((i) => ({
-      ...i.snapshot,
-      id: i.caseId,
-      caseCode: i.snapshot.case_code,
-      moduleId: i.snapshot.module_id,
-      status:
-        i.status === "approved"
-          ? "passed"
-          : i.status === "rejected"
-            ? "failed"
-            : "not_executed",
-    })) as Partial<TestCase>[]) || [],
+const filterMember = (input: string, option: any) =>
+  String(option.label).toLowerCase().includes(input.toLowerCase());
+const display = ref(normalizeDisplay(undefined, reviewDefinitions)),
+  settingsVisible = ref(false),
+  settingsError = ref("");
+const displayKey = computed(() =>
+  displayStorageKey(
+    String(user.user?.id || ""),
+    projectId.value,
+    "review-list",
+  ),
 );
-const statusOptions = [
-  { label: "待评审", value: "pending" },
-  { label: "通过", value: "approved" },
-  { label: "不通过", value: "rejected" },
-  { label: "已取消", value: "cancelled" },
-  { label: "已重新提审", value: "superseded" },
-];
-const itemColumns = [
-  { title: "用例", key: "name" },
-  { title: "评审人", key: "reviewers" },
-  { title: "状态", key: "status" },
-  { title: "操作", key: "actions", width: 90 },
-];
-const stepColumns = [
-  { title: "序号", dataIndex: "step", width: 65 },
-  { title: "操作", dataIndex: "action" },
-  { title: "预期结果", dataIndex: "expected" },
-];
-const statusName = (s: string) =>
+const { width: viewportWidth } = useWindowSize();
+const columns = computed(() => [
+  ...display.value.columns
+    .filter((c) => c.visible)
+    .map((c) => ({
+      ...reviewColumns.find((d) => d.key === c.key)!,
+      dataIndex: c.key,
+      ellipsis: true,
+    })),
+  {
+    key: "actions",
+    title: "操作",
+    width: 110,
+    fixed: viewportWidth.value >= 700 ? "right" : undefined,
+  },
+]);
+const tableWidth = computed(() =>
+  columns.value.reduce((n, c) => n + (c.width || 100), 0),
+);
+const pagination = computed(() => ({
+  current: page.value,
+  pageSize: display.value.pageSize,
+  total: data.value.total,
+  showSizeChanger: false,
+  showTotal: (n: number) => `共 ${n} 条`,
+}));
+const hasFilters = computed(() =>
+  Boolean(
+    search.value ||
+    lifecycle.value ||
+    mode.value ||
+    reviewerId.value ||
+    creatorId.value,
+  ),
+);
+interface Node {
+  key: string;
+  value: string;
+  title: string;
+  count: number;
+  children: Node[];
+}
+function buildTree(filtered: boolean): Node[] {
+  const nodes = new Map(
+    data.value.modules.map((m) => [
+      m.id,
+      {
+        key: m.id,
+        value: m.id,
+        title: m.name,
+        count: m.count,
+        children: [] as Node[],
+      },
+    ]),
+  );
+  const roots: Node[] = [];
+  data.value.modules.forEach((m) => {
+    const node = nodes.get(m.id)!;
+    if (m.parentId && nodes.has(m.parentId))
+      nodes.get(m.parentId)!.children.push(node);
+    else roots.push(node);
+  });
+  roots.unshift({
+    key: "default",
+    value: "default",
+    title: "默认模块",
+    count: data.value.defaultCount,
+    children: [],
+  });
+  function filter(nodes: Node[]): Node[] {
+    return nodes.flatMap((n) => {
+      const children = filter(n.children);
+      return n.title.includes(moduleSearch.value) || children.length
+        ? [{ ...n, children }]
+        : [];
+    });
+  }
+  return filtered && moduleSearch.value ? filter(roots) : roots;
+}
+const tree = computed(() => buildTree(true)),
+  moveTree = computed(() => buildTree(false));
+const stateColor = (s: string) =>
   ({
-    pending: "待评审",
-    approved: "通过",
-    rejected: "不通过",
-    suggestion: "建议",
-    cancelled: "已取消",
-    superseded: "已重新提审",
-  })[s] || s;
-const statusColor = (s: string) =>
-  ({ approved: "green", rejected: "red", cancelled: "default" })[s] || "blue";
-const memberName = (id: string) =>
-  members.value.find((m) => m.id === id)?.name || id;
-const count = (s: string) =>
-  active.value?.items.filter((i) => i.status === s).length || 0;
-const canVote = (item: ReviewItem) =>
-  !!active.value &&
-  !["cancelled", "superseded"].includes(active.value.status) &&
-  (item.reviewerIds || active.value?.reviewerIds || []).includes(
-    String(user.user?.id),
-  );
-function historyText(entry: Record<string, any>) {
-  const details = entry.detail || {};
-  return `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · ${entry.action || ""}\n${details.decision ? `${statusName(details.decision)}：${details.comment || ""}` : JSON.stringify(details, null, 2)}`;
-}
-async function run(task: () => Promise<void>) {
-  busy.value = true;
-  try {
-    await task();
-  } catch (error) {
-    console.error("评审操作失败", error);
-  } finally {
-    busy.value = false;
-  }
-}
+    prepared: "default",
+    underway: "blue",
+    completed: "green",
+    archived: "default",
+    cancelled: "default",
+    superseded: "default",
+  })[s] || "default";
+const formatDate = (date: string) => dayjs(date).format("YYYY-MM-DD HH:mm:ss");
+let loadSequence = 0;
 async function load() {
-  if (!projectId.value) return;
-  await run(async () => {
-    reviews.value = await api.reviews(projectId.value, {
-      ...(search.value ? { search: search.value } : {}),
-      ...(status.value ? { status: status.value } : {}),
-    });
-    if (!reviews.value.some((r) => r.id === activeId.value))
-      activeId.value = reviews.value[0]?.id;
-    if (!active.value?.items.some((i) => i.id === activeItemId.value))
-      activeItemId.value = active.value?.items[0]?.id;
-  });
-}
-async function loadOptions() {
-  [members.value, cases.value] = await Promise.all([
-    api.reviewers(projectId.value),
-    testCaseApi
-      .getTestCases(projectId.value, { size: 10000 })
-      .then((r) => r.items),
-  ]);
-}
-async function selectReview(id: string) {
-  activeId.value = id;
-  activeItemId.value = active.value?.items[0]?.id;
-  selectedItems.value = [];
-  opinion.value = "";
-  await router.replace({ query: { projectId: projectId.value, reviewId: id } });
+  const p = projectId.value,
+    sequence = ++loadSequence;
+  if (!p) return;
+  busy.value = true;
+  loadError.value = "";
   try {
-    followed.value = (
-      await api.reviewFollowState(projectId.value, id)
-    ).followed;
+    const result = await api.list(p, {
+      page: page.value,
+      size: display.value.pageSize,
+      scope: scope.value,
+      search: search.value,
+      moduleId:
+        selectedModule.value === "all" ? undefined : selectedModule.value,
+      includeDescendants: display.value.includeDescendants,
+      lifecycle: lifecycle.value,
+      mode: mode.value,
+      reviewerId: reviewerId.value,
+      creatorId: creatorId.value,
+      sort: sort.value,
+      order: order.value,
+    });
+    if (sequence !== loadSequence || p !== projectId.value) return;
+    data.value = result;
+    if (
+      page.value > 1 &&
+      !result.items.length &&
+      result.total < (page.value - 1) * display.value.pageSize + 1
+    ) {
+      page.value = Math.max(
+        1,
+        Math.ceil(result.total / display.value.pageSize),
+      );
+      await load();
+    }
+    selected.value = selected.value.filter((id) =>
+      result.items.some((r) => r.id === id && !r.archived),
+    );
   } catch (error) {
-    console.error("加载评审关注失败", error);
+    console.error("加载评审首页失败", error);
+    if (sequence === loadSequence && p === projectId.value) {
+      data.value.items = [];
+      loadError.value = "评审列表加载失败，请刷新重试";
+    }
+  } finally {
+    if (sequence === loadSequence) busy.value = false;
   }
 }
-async function openEditor(review?: CaseReview) {
-  await run(async () => {
-    await loadOptions();
-    editingId.value = review?.id;
-    Object.assign(form, {
-      name: review?.name || "",
-      description: review?.description || "",
-      mode: review?.mode || "multiple",
-      reviewerIds: [...(review?.reviewerIds || [String(user.user?.id)])],
-      caseIds:
-        review?.items.map((i) => i.caseId) ||
-        (typeof route.query.caseIds === "string"
-          ? route.query.caseIds.split(",")
-          : []),
-      itemReviewers: Object.fromEntries(
-        (review?.items || []).map((i) => [
-          i.caseId,
-          [...(i.reviewerIds || [])],
-        ]),
-      ),
-      startDate: review?.startDate || undefined,
-      endDate: review?.endDate || undefined,
-    });
-    editorVisible.value = true;
+function reload() {
+  page.value = 1;
+  selected.value = [];
+  void load();
+}
+function selectModule(key: string) {
+  selectedModule.value = key;
+  reload();
+}
+function toggleExpand() {
+  expanded.value = expanded.value.length
+    ? []
+    : data.value.modules.map((m) => m.id);
+}
+function clearFilters() {
+  search.value = "";
+  lifecycle.value = mode.value = reviewerId.value = creatorId.value = undefined;
+  reload();
+}
+function tableChange(p: any, _filters: any, s: any) {
+  page.value = p.current || 1;
+  if (s?.order) {
+    sort.value = s.columnKey;
+    order.value = s.order === "ascend" ? "asc" : "desc";
+  } else {
+    sort.value = "createdAt";
+    order.value = "desc";
+  }
+  selected.value = [];
+  void load();
+}
+function persist(next: typeof display.value) {
+  try {
+    localStorage.setItem(displayKey.value, JSON.stringify(next));
+    display.value = next;
+    settingsError.value = "";
+    return true;
+  } catch (error) {
+    console.error("保存评审表格设置失败", error);
+    settingsError.value = "无法保存表格设置，请释放浏览器存储空间后重试";
+    return false;
+  }
+}
+function saveColumns(columns: ColumnVisibility[]) {
+  if (persist({ ...display.value, columns })) settingsVisible.value = false;
+}
+function saveSize(size: number) {
+  if (persist({ ...display.value, pageSize: size })) reload();
+}
+function saveDescendants(value: boolean) {
+  if (persist({ ...display.value, includeDescendants: value })) reload();
+}
+function openWorkspace(id?: string, action?: string) {
+  void router.push({
+    name: "CaseReviewWorkspace",
+    query: {
+      projectId: projectId.value,
+      ...(id ? { reviewId: id } : {}),
+      ...(action === "create"
+        ? {
+            create: "1",
+            ...(typeof route.query.caseIds === "string"
+              ? { caseIds: route.query.caseIds }
+              : {}),
+            moduleId:
+              selectedModule.value === "all" ? "default" : selectedModule.value,
+          }
+        : {}),
+      ...(action === "edit" ? { edit: "1" } : {}),
+    },
   });
 }
-async function saveReview() {
-  if (!form.name.trim() || !form.caseIds.length || !form.reviewerIds.length)
-    return message.warning("请填写名称、用例和评审人员");
-  await run(async () => {
-    const body = {
-      ...form,
-      name: form.name.trim(),
-      startDate: form.startDate || null,
-      endDate: form.endDate || null,
-      itemReviewers: Object.fromEntries(
-        Object.entries(form.itemReviewers).filter(
-          ([id, ids]) => form.caseIds.includes(id) && ids.length,
-        ),
-      ),
-    };
-    const result = editingId.value
-      ? await api.updateReview(projectId.value, editingId.value, body)
-      : await api.createReview(projectId.value, body);
-    editorVisible.value = false;
-    await load();
-    await selectReview(result.id);
-    message.success("评审已保存");
-  });
-}
-function replace(review: CaseReview) {
-  const index = reviews.value.findIndex((r) => r.id === review.id);
-  if (index < 0) reviews.value.unshift(review);
-  else reviews.value[index] = review;
-}
-function nextItem() {
-  const items = active.value?.items || [];
-  const index = items.findIndex((i) => i.id === activeItemId.value);
-  activeItemId.value = items[(index + 1) % items.length]?.id;
-  opinion.value = "";
-}
-function previousItem() {
-  const items = active.value?.items || [];
-  const index = items.findIndex((i) => i.id === activeItemId.value);
-  activeItemId.value = items[(index - 1 + items.length) % items.length]?.id;
-  opinion.value = "";
-}
-function selectCase(c: Partial<TestCase>) {
-  activeItemId.value = active.value?.items.find((i) => i.caseId === c.id)?.id;
-}
-async function vote(decision: string) {
-  if (!active.value || !activeItem.value) return;
-  if (!opinion.value.trim()) return message.warning("请填写评审意见");
-  await run(async () => {
-    replace(
-      await api.vote(
-        projectId.value,
-        active.value!.id,
-        activeItem.value!.id,
-        decision,
-        opinion.value.trim(),
-      ),
-    );
-    opinion.value = "";
-    if (autoNext.value) nextItem();
-    message.success("评审结论已记录");
-  });
-}
-async function batchVote() {
-  if (!active.value || !batchOpinion.value.trim())
-    return message.warning("请填写批量意见");
-  await run(async () => {
-    replace(
-      await api.batchVote(
-        projectId.value,
-        active.value!.id,
-        selectedItems.value,
-        batchDecision.value,
-        batchOpinion.value.trim(),
-      ),
-    );
-    batchVisible.value = false;
-    batchOpinion.value = "";
-    selectedItems.value = [];
-    message.success("批量评审已保存");
-  });
-}
-async function comment() {
-  if (!active.value || !discussion.value.trim()) return;
-  await run(async () => {
-    replace(
-      await api.comment(
-        projectId.value,
-        active.value!.id,
-        discussion.value.trim(),
-      ),
-    );
-    discussion.value = "";
-  });
-}
-async function follow() {
-  if (active.value)
-    await run(async () => {
-      await api.followReview(
-        projectId.value,
-        active.value!.id,
-        !followed.value,
-      );
-      followed.value = !followed.value;
-    });
-}
-async function cancel() {
-  if (active.value)
-    await run(async () =>
-      replace(await api.cancel(projectId.value, active.value!.id)),
-    );
-}
-async function copyReview() {
-  if (active.value)
-    await run(async () => {
-      const result = await api.copyReview(projectId.value, active.value!.id);
-      replace(result);
-      await selectReview(result.id);
-      message.success("评审已复制，结论已重置");
-    });
-}
-async function resubmit() {
-  if (active.value)
-    await run(async () => {
-      const result = await api.resubmit(
-        projectId.value,
-        active.value!.id,
-        selectedItems.value.length
-          ? active
-              .value!.items.filter((i) => selectedItems.value.includes(i.id))
-              .map((i) => i.caseId)
-          : undefined,
-      );
-      replace(result);
-      await selectReview(result.id);
-      message.success("已按当前用例内容重新提审");
-    });
-}
-watch(activeId, async (id) => {
-  followed.value = false;
-  if (id)
-    try {
-      followed.value = (
-        await api.reviewFollowState(projectId.value, id)
-      ).followed;
-    } catch (error) {
-      console.error("加载评审关注失败", error);
+async function mutation(
+  operation: (p: string) => Promise<unknown>,
+  success: string,
+) {
+  if (mutating.value) return;
+  const p = projectId.value;
+  mutating.value = true;
+  try {
+    await operation(p);
+    if (p === projectId.value) {
+      message.success(success);
+      await load();
     }
-});
-watch(() => projectStore.currentProject?.id, id => {
-  if (id && id !== projectId.value) projectId.value = id;
-});
-watch(projectId, async (id) => {
-  activeId.value = undefined;
-  reviews.value = [];
-  selectedItems.value = [];
-  const p = projectStore.projects.find((p) => p.id === id);
-  if (p) projectStore.setCurrentProject(p);
-  await load();
-  await run(loadOptions);
-});
-onMounted(async () => {
-  if (!projectStore.projects.length) await projectStore.fetchProjects();
-  projectId.value = String(
-    route.query.projectId ||
-      projectStore.currentProject?.id ||
-      projectStore.projects[0]?.id ||
-      "",
+    return true;
+  } catch (error) {
+    console.error("评审首页操作失败", error);
+    return false;
+  } finally {
+    mutating.value = false;
+  }
+}
+const moduleVisible = ref(false),
+  editingModule = ref<string>(),
+  moduleName = ref(""),
+  moduleParent = ref<string | null>(null),
+  modulePosition = ref(0);
+function openModule(id?: string, parent?: string) {
+  const row = data.value.modules.find((m) => m.id === id);
+  editingModule.value = id;
+  moduleName.value = row?.name || "";
+  moduleParent.value = row?.parentId || parent || null;
+  modulePosition.value =
+    row?.position ??
+    data.value.modules.filter((m) => m.parentId === (parent || null)).length;
+  moduleVisible.value = true;
+}
+async function saveModule() {
+  if (!moduleName.value.trim()) return message.warning("请输入模块名称");
+  if (
+    await mutation(
+      (p) =>
+        api.saveModule(
+          p,
+          {
+            name: moduleName.value.trim(),
+            parentId: moduleParent.value,
+            position: modulePosition.value,
+          },
+          editingModule.value,
+        ),
+      "模块已保存",
+    )
+  )
+    moduleVisible.value = false;
+}
+async function dropModule(info: any) {
+  const source = data.value.modules.find(
+      (m) => m.id === String(info.dragNode.key),
+    ),
+    target = data.value.modules.find((m) => m.id === String(info.node.key));
+  if (!source || !target)
+    return message.warning("默认模块不能拖动或添加子模块");
+  const parent = info.dropToGap ? target.parentId : target.id;
+  const siblings = data.value.modules.filter(
+    (m) => m.parentId === parent && m.id !== source.id,
   );
-  await load();
-  if (typeof route.query.reviewId === "string")
-    await selectReview(route.query.reviewId);
-  if (route.query.create === "1") await openEditor();
+  const index = info.dropToGap
+    ? siblings.findIndex((m) => m.id === target.id) +
+      (info.dropPosition > Number(String(info.node.pos).split("-").at(-1))
+        ? 1
+        : 0)
+    : siblings.length;
+  await mutation(
+    (p) =>
+      api.saveModule(
+        p,
+        { name: source.name, parentId: parent, position: Math.max(0, index) },
+        source.id,
+      ),
+    "模块已移动",
+  );
+}
+const deleteVisible = ref(false),
+  deletingModule = ref(false),
+  deleteId = ref(""),
+  deleteExpected = ref(""),
+  deleteName = ref("");
+function confirmDelete(row: ReviewSummary) {
+  deletingModule.value = false;
+  deleteId.value = row.id;
+  deleteExpected.value = row.name;
+  deleteName.value = "";
+  deleteVisible.value = true;
+}
+function confirmModuleDelete(id: string) {
+  const row = data.value.modules.find((m) => m.id === id);
+  if (!row) return;
+  deletingModule.value = true;
+  deleteId.value = id;
+  deleteExpected.value = row.name;
+  deleteName.value = "";
+  deleteVisible.value = true;
+}
+async function performDelete() {
+  if (deleteName.value !== deleteExpected.value) return;
+  if (
+    await mutation(
+      (p) =>
+        deletingModule.value
+          ? api.deleteModule(p, deleteId.value, deleteName.value)
+          : api.delete(p, deleteId.value, deleteName.value),
+      "删除成功",
+    )
+  ) {
+    deleteVisible.value = false;
+    if (
+      deletingModule.value &&
+      !data.value.modules.some((m) => m.id === selectedModule.value)
+    ) {
+      selectedModule.value = "all";
+      reload();
+    }
+  }
+}
+function confirmArchive(row: ReviewSummary) {
+  const p = projectId.value;
+  Modal.confirm({
+    title: "归档评审",
+    content:
+      "归档后不在默认列表展示，可通过已归档筛选查看。归档后的评审内容不能修改。",
+    async onOk() {
+      if (p !== projectId.value) throw new Error("项目已切换，请重新操作");
+      if (!(await mutation((id) => api.archive(id, row.id), "评审已归档")))
+        throw new Error("归档未成功");
+    },
+  });
+}
+const moveVisible = ref(false),
+  moveTarget = ref<string>();
+async function moveReviews() {
+  if (moveTarget.value === undefined) return;
+  if (
+    await mutation(
+      (p) =>
+        api.move(
+          p,
+          selected.value,
+          moveTarget.value === "default" ? null : moveTarget.value!,
+        ),
+      "评审已移动",
+    )
+  ) {
+    moveVisible.value = false;
+    selected.value = [];
+  }
+}
+watch(
+  projectId,
+  async (p) => {
+    ++loadSequence;
+    busy.value = false;
+    data.value = emptyData();
+    members.value = [];
+    scope.value = "all";
+    search.value = moduleSearch.value = "";
+    selectedModule.value = "all";
+    selected.value = [];
+    page.value = 1;
+    lifecycle.value =
+      mode.value =
+      reviewerId.value =
+      creatorId.value =
+        undefined;
+    expanded.value = [];
+    moduleVisible.value =
+      deleteVisible.value =
+      moveVisible.value =
+      settingsVisible.value =
+        false;
+    display.value = readDisplay(
+      localStorage,
+      displayKey.value,
+      reviewDefinitions,
+    );
+    settingsError.value = "";
+    await load();
+    if (p && p === projectId.value) {
+      try {
+        const result = await caseGovernanceApi.reviewers(p);
+        if (p === projectId.value) members.value = result;
+      } catch (error) {
+        console.error("加载评审成员失败", error);
+      }
+    }
+  },
+  { immediate: true },
+);
+onMounted(async () => {
+  if (!projects.projects.length) await projects.fetchProjects();
+  const query =
+    typeof route.query.projectId === "string"
+      ? route.query.projectId
+      : undefined;
+  const project =
+    projects.projects.find((p) => p.id === query) ||
+    projects.currentProject ||
+    projects.projects[0];
+  if (project && project.id !== projectId.value)
+    projects.setCurrentProject(project);
+  if (route.query.create === "1" || route.query.reviewId)
+    openWorkspace(
+      typeof route.query.reviewId === "string"
+        ? route.query.reviewId
+        : undefined,
+      route.query.create === "1" ? "create" : undefined,
+    );
 });
 </script>
 <style scoped>
-.review-page {
-  padding: 24px;
-  max-width: 1800px;
-  margin: auto;
+.review-index {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  min-height: calc(100vh - 130px);
+  background: #fff;
+  margin: 16px;
+  border: 1px solid #eef0f4;
+  border-radius: 4px;
+  min-width: 0;
 }
-.review-header {
+.module-panel {
+  padding: 16px;
+  border-right: 1px solid #eef0f4;
+  min-width: 0;
+}
+.module-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  margin: 12px 0;
 }
-.review-header h2 {
-  margin: 0;
-}
-.review-header p {
-  color: #667085;
-  margin: 8px 0;
-}
-.filters {
-  margin: 20px 0;
-}
-.review-layout {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 20px;
-}
-.review-list {
-  border: 1px solid #e6eaf0;
-  border-radius: 10px;
-  background: white;
-  max-height: 80vh;
-  overflow: auto;
-}
-.review-entry {
+.module-node {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  text-align: left;
-  width: 100%;
-  border: 0;
-  border-bottom: 1px solid #edf0f3;
-  background: #fff;
-  padding: 16px;
-  cursor: pointer;
-}
-.review-entry.active {
-  background: #e6f4ff;
-  border-left: 3px solid #1677ff;
-}
-.review-entry span,
-.review-entry small {
-  color: #667085;
-}
-.review-workspace {
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
   min-width: 0;
 }
-.stats {
+.module-node > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.count {
+  color: #86909c;
+}
+.review-table-panel {
+  padding: 16px;
+  min-width: 0;
+}
+.toolbar {
   display: flex;
-  gap: 24px;
-  padding-top: 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 16px;
 }
-.stats b {
-  font-size: 20px;
-  padding-left: 6px;
+.toolbar :deep(.ant-input-search) {
+  width: 260px;
 }
-.item-card {
-  margin: 16px 0;
+.column-filters {
+  margin-bottom: 16px;
 }
-.text {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-height: 350px;
-  overflow: auto;
+.column-filters :deep(.ant-select) {
+  width: 140px;
 }
-.empty-workspace {
-  align-self: center;
+.batch-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: #f2f7ff;
+}
+.pass-rate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pass-rate :deep(.ant-progress) {
+  width: 100px;
+  margin: 0;
+}
+.empty {
+  padding: 30px;
+}
+.review-table-panel :deep(.ant-table-wrapper) {
+  max-width: 100%;
 }
 @media (max-width: 900px) {
-  .review-page {
+  .review-index {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .review-index {
+    grid-template-columns: minmax(0, 1fr);
+    margin: 8px;
+  }
+  .module-panel {
+    border-right: 0;
+    border-bottom: 1px solid #eef0f4;
+    max-height: 260px;
+    overflow: auto;
+  }
+  .toolbar :deep(.ant-input-search) {
+    width: 220px;
+  }
+  .review-table-panel {
     padding: 12px;
   }
-  .review-header {
-    align-items: flex-start;
-    flex-direction: column;
+  .toolbar :deep(.ant-space) {
+    max-width: 100%;
   }
-  .review-layout {
-    grid-template-columns: 1fr;
-  }
-  .review-list {
-    max-height: 240px;
+  .column-filters :deep(.ant-select) {
+    width: 140px;
   }
 }
 </style>
