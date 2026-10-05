@@ -260,24 +260,18 @@
                 v-if="detail.canExecute && tab === 'details'"
                 class="submit-panel"
               >
-                <PlanCaseExecuteForm
+                <PlanCaseExecutionSubmit
                   v-model:result="result"
                   v-model:description="description"
                   :disabled="saving"
                   :plan-id="planId"
                   v-model:uploading="mediaUploading"
-                /><a-space wrap
+                  v-model:dialog-dirty="dialogDirty"
+                  :on-submit="submit"
                   ><a-switch
                     v-model:checked="autoNext"
-                    :disabled="saving"
-                  /><span>提交后自动切换下一条</span
-                  ><a-button
-                    type="primary"
-                    :loading="saving"
-                    :disabled="mediaUploading"
-                    @click="submit"
-                    >提交结果</a-button
-                  ></a-space
+                    :disabled="saving || mediaUploading"
+                  /><span>提交后自动切换下一条</span></PlanCaseExecutionSubmit
                 >
               </div>
             </template>
@@ -309,7 +303,7 @@ import { useProjectStore } from "@/stores/project";
 import type { TestPlan } from "@/types";
 import CaseAttachments from "@/components/TestCase/CaseAttachments.vue";
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
-import PlanCaseExecuteForm from "@/components/TestPlan/PlanCaseExecuteForm.vue";
+import PlanCaseExecutionSubmit from "@/components/TestPlan/PlanCaseExecutionSubmit.vue";
 import PlanDefects from "@/components/TestPlan/PlanDefects.vue";
 import {
   functionalResults,
@@ -341,7 +335,8 @@ const loading = ref(false),
   detailLoading = ref(false),
   detailFailed = ref(false),
   saving = ref(false),
-  mediaUploading = ref(false);
+  mediaUploading = ref(false),
+  dialogDirty = ref(false);
 const initialListing = functionalListingState(route.query);
 const listSize = initialListing.size;
 const search = ref(initialListing.search),
@@ -366,7 +361,9 @@ const draft = () =>
     steps,
   });
 const baseline = ref(""),
-  dirty = computed(() => !!baseline.value && draft() !== baseline.value);
+  dirty = computed(
+    () => dialogDirty.value || (!!baseline.value && draft() !== baseline.value),
+  );
 let contextSequence = 0,
   listSequence = 0,
   detailSequence = 0,
@@ -553,7 +550,7 @@ function openMainCase() {
     query: { projectId: projectId.value },
   });
 }
-async function submit() {
+async function submit(): Promise<boolean> {
   const entry = detail.value?.entry;
   if (
     !entry ||
@@ -561,10 +558,10 @@ async function submit() {
     saving.value ||
     mediaUploading.value
   )
-    return;
+    return false;
   if (!functionalResults.some((option) => option.value === result.value)) {
     message.warning("请选择通过、失败或阻塞");
-    return;
+    return false;
   }
   const stepResults = steps.some(
     (step) => step.result !== "pending" || step.actual.trim(),
@@ -576,7 +573,7 @@ async function submit() {
     stepResults.some((step) => step.result !== "passed")
   ) {
     message.warning("提交整体通过时，已填写的步骤须全部通过");
-    return;
+    return false;
   }
   const data = {
     selections: [{ source: entry.source, id: entry.associationId }],
@@ -614,9 +611,11 @@ async function submit() {
       if (next) await selectCase(next);
       else message.info("已到当前范围最后一条用例");
     }
+    return true;
   } catch (error) {
     console.error("提交功能用例执行结果失败", error);
     message.error("提交失败，请检查活动批次、关联状态及权限");
+    return false;
   } finally {
     saving.value = false;
   }

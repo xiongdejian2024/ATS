@@ -86,6 +86,7 @@ const editor = useEditor({
   onUpdate: ({ editor: current }) =>
     emit("update:modelValue", current.isEmpty ? "" : current.getHTML()),
 });
+defineExpose({ focus: () => editor.value?.commands.focus("end") });
 const uploading = ref(false);
 let closed = false;
 onBeforeUnmount(() => {
