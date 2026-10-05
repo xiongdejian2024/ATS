@@ -20,6 +20,9 @@ body { font-family:'Helvetica Neue',Arial,'PingFang SC',sans-serif; font-size:14
 .ant-card,.glass-card { border-radius:4px !important; border:1px solid var(--ms-border) !important; background:#fff !important; backdrop-filter:none !important; box-shadow:none; }
 .glass-card:hover { transform:none; box-shadow:none; }
 .ant-table { background:#fff; }
+/* 拖动把手放在本列内部，避免被省略号表头裁切或由相邻列覆盖。 */
+.ant-table-wrapper .ant-table-thead .ant-table-resize-handle { right:0; }
+.ant-table-wrapper .ant-table-thead .ant-table-resize-handle-line { margin-left:15px; }
 .ant-table-thead > tr > th { background:#f7f8fa !important; color:var(--ms-text-secondary); font-weight:500; border-bottom:1px solid var(--ms-border); }
 .ant-table-tbody > tr > td { border-bottom:1px solid var(--ms-border); }
 .ant-table-tbody > tr:hover > td { background:#f7f8fa !important; }
@@ -139,4 +142,3 @@ body { font-family:'Helvetica Neue',Arial,'PingFang SC',sans-serif; font-size:14
   overflow: hidden;
   text-overflow: ellipsis;
 }
-

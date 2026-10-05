@@ -1,4 +1,4 @@
-/** 表格显示偏好只保存字段编号和布尔值，不存放组件或可执行内容。 */
+/** 表格显示偏好只保存字段编号、可见状态和数字列宽。 */
 export interface DisplayColumn {
   key: string;
   title: string;
@@ -8,6 +8,7 @@ export interface DisplayColumn {
 export interface ColumnVisibility {
   key: string;
   visible: boolean;
+  width?: number;
 }
 export interface TableDisplay {
   columns: ColumnVisibility[];
@@ -15,6 +16,25 @@ export interface TableDisplay {
   includeDescendants: boolean;
 }
 export const pageSizes = [10, 20, 30, 40, 50];
+export const columnMinWidth = (key: string) => (key === "tags" ? 216 : 80);
+function validWidth(width: unknown, key: string): number | undefined {
+  return typeof width === "number" && Number.isFinite(width) && width > 0
+    ? Math.max(columnMinWidth(key), width)
+    : undefined;
+}
+export function resizableColumn<T extends { key: string; width: number }>(
+  column: T,
+  preference: ColumnVisibility,
+) {
+  return {
+    ...column,
+    width:
+      validWidth(preference.width, column.key) ??
+      Math.max(column.width, columnMinWidth(column.key)),
+    minWidth: columnMinWidth(column.key),
+    resizable: true,
+  };
+}
 export function normalizeDisplay(
   value: unknown,
   definitions: DisplayColumn[],
@@ -22,7 +42,7 @@ export function normalizeDisplay(
   const input =
     value && typeof value === "object" ? (value as Partial<TableDisplay>) : {};
   const known = new Map(definitions.map((column) => [column.key, column]));
-  const stored = new Map<string, boolean>();
+  const stored = new Map<string, ColumnVisibility>();
   if (Array.isArray(input.columns))
     for (const item of input.columns) {
       if (
@@ -31,7 +51,11 @@ export function normalizeDisplay(
         typeof item.visible === "boolean" &&
         !stored.has(item.key)
       )
-        stored.set(item.key, item.visible);
+        stored.set(item.key, {
+          key: item.key,
+          visible: item.visible,
+          width: validWidth(item.width, item.key),
+        });
     }
   const locked = definitions.filter((column) => column.required);
   const movable = [...stored.keys()].filter((key) => !known.get(key)?.required);
@@ -43,7 +67,11 @@ export function normalizeDisplay(
       key,
       visible: known.get(key)?.required
         ? true
-        : (stored.get(key) ?? known.get(key)?.defaultVisible !== false),
+        : (stored.get(key)?.visible ??
+          known.get(key)?.defaultVisible !== false),
+      ...(stored.get(key)?.width === undefined
+        ? {}
+        : { width: stored.get(key)!.width }),
     })),
     pageSize: pageSizes.includes(input.pageSize as number)
       ? input.pageSize!

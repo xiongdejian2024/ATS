@@ -135,6 +135,7 @@
                 }
               : undefined
           "
+          @resizeColumn="resizeColumn"
           @change="tableChange"
         >
           <template #bodyCell="{ column, record }">
@@ -318,6 +319,8 @@ import dayjs from "dayjs";
 import { useMediaQuery } from "@vueuse/core";
 import { useProjectStore } from "@/stores/project";
 import { useUserStore } from "@/stores/user";
+import { resizableColumn } from "@/components/Table/tableDisplay";
+import { useTableColumnResize } from "@/components/Table/useTableColumnResize";
 import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
 import {
   readDisplay,
@@ -566,7 +569,7 @@ const columns = computed(() => {
   const definitions = new Map(allColumns.map((column) => [column.key, column]));
   const shown = display.value.columns
     .filter((column) => column.visible)
-    .map((column) => definitions.get(column.key)!);
+    .map((column) => resizableColumn(definitions.get(column.key)!, column));
   const actions = definitions.get("actions")!;
   return [
     ...shown,
@@ -595,6 +598,7 @@ function persistDisplay(next: TableDisplay): boolean {
     return false;
   }
 }
+const resizeColumn = useTableColumnResize(display, storageKey, persistDisplay);
 function saveColumns(columns: ColumnVisibility[]) {
   if (persistDisplay({ ...display.value, columns })) settingsOpen.value = false;
 }

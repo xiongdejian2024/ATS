@@ -183,6 +183,7 @@
                 }
               : undefined
           "
+          @resizeColumn="resizeColumn"
           @change="tableChange"
         >
           <template #headerCell="{ column }"
@@ -378,6 +379,8 @@ import {
   type ReviewSummary,
   type ReviewList,
 } from "@/api/reviewWorkspace";
+import { resizableColumn } from "@/components/Table/tableDisplay";
+import { useTableColumnResize } from "@/components/Table/useTableColumnResize";
 import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
 import {
   displayStorageKey,
@@ -444,7 +447,7 @@ const columns = computed(() => [
   ...display.value.columns
     .filter((c) => c.visible)
     .map((c) => ({
-      ...reviewColumns.find((d) => d.key === c.key)!,
+      ...resizableColumn(reviewColumns.find((d) => d.key === c.key)!, c),
       dataIndex: c.key,
       ellipsis: true,
     })),
@@ -612,16 +615,19 @@ function tableChange(p: any, _filters: any, s: any) {
 }
 function persist(next: typeof display.value) {
   try {
-    localStorage.setItem(displayKey.value, JSON.stringify(next));
-    display.value = next;
+    const normalized = normalizeDisplay(next, reviewDefinitions);
+    localStorage.setItem(displayKey.value, JSON.stringify(normalized));
+    display.value = normalized;
     settingsError.value = "";
     return true;
   } catch (error) {
     console.error("保存评审表格设置失败", error);
     settingsError.value = "无法保存表格设置，请释放浏览器存储空间后重试";
+    message.error(settingsError.value);
     return false;
   }
 }
+const resizeColumn = useTableColumnResize(display, displayKey, persist);
 function saveColumns(columns: ColumnVisibility[]) {
   if (persist({ ...display.value, columns })) settingsVisible.value = false;
 }

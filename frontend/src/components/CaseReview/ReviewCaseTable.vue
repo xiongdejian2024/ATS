@@ -162,7 +162,8 @@
           row-key="id"
           :pagination="false"
           :row-selection="selection"
-          :scroll="{ x: 950, y: 'max(240px, calc(100vh - 510px))' }"
+          :scroll="{ x: tableWidth, y: 'max(240px, calc(100vh - 510px))' }"
+          @resizeColumn="resizeColumn"
           @change="sortChanged"
         >
           <template #bodyCell="{ column, record }">
@@ -366,10 +367,14 @@ import { caseFolderTree } from "@/components/TestPlan/planCaseFolders";
 import ReviewersCell from "./ReviewersCell.vue";
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
 import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
+import { resizableColumn } from "@/components/Table/tableDisplay";
+import { useTableColumnResize } from "@/components/Table/useTableColumnResize";
 import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
 import {
   displayStorageKey,
   readDisplay,
+  normalizeDisplay,
+  type TableDisplay,
   type ColumnVisibility,
 } from "@/components/Table/tableDisplay";
 import {
@@ -415,6 +420,9 @@ const storageKey = computed(() =>
   ),
 );
 const display = ref(readDisplay(localStorage, storageKey.value, definitions));
+watch(storageKey, () => {
+  display.value = readDisplay(localStorage, storageKey.value, definitions);
+});
 const initial = props.initialScope ? readScope(props.initialScope) : undefined;
 if (initial) {
   display.value.pageSize = initial.size;
@@ -711,7 +719,7 @@ const columns = computed(() =>
     .filter((c) => c.visible)
     .map((c) => {
       const definition = definitions.find((d) => d.key === c.key)!;
-      return {
+      return resizableColumn({
         key: c.key,
         title: definition.title,
         dataIndex: c.key,
@@ -738,9 +746,10 @@ const columns = computed(() =>
           c.key === "operation" && viewportWidth.value >= 900
             ? ("right" as const)
             : undefined,
-      };
+      }, c);
     }),
 );
+const tableWidth = computed(() => columns.value.reduce((sum, column) => sum + column.width, 56));
 const mindCases = computed(
   () =>
     rows.value.map((row) => ({
@@ -883,26 +892,27 @@ function changePage(value: number) {
   page.value = value;
   void load();
 }
-function persist() {
+function persist(next: TableDisplay): boolean {
   try {
-    localStorage.setItem(storageKey.value, JSON.stringify(display.value));
+    const normalized = normalizeDisplay(next, definitions);
+    localStorage.setItem(storageKey.value, JSON.stringify(normalized));
+    display.value = normalized;
+    return true;
   } catch (err) {
     console.error("保存评审表格配置失败", err);
     message.error("显示设置保存失败");
+    return false;
   }
 }
+const resizeColumn = useTableColumnResize(display, storageKey, persist);
 function closeSettings(columns: ColumnVisibility[]) {
-  display.value.columns = columns;
-  persist();
-  settings.value = false;
+  if (persist({ ...display.value, columns })) settings.value = false;
 }
 function setPageSize(value: number) {
-  display.value.pageSize = value;
-  persist();
+  persist({ ...display.value, pageSize: value });
 }
 function setDescendants(value: boolean) {
-  display.value.includeDescendants = value;
-  persist();
+  persist({ ...display.value, includeDescendants: value });
 }
 function openItem(id: string) {
   if (!loading.value && !props.disabled) emit("select", id);

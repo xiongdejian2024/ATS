@@ -124,6 +124,7 @@
               :pagination="false"
               row-key="id"
               :scroll="{ x: tableWidth }"
+              @resizeColumn="resizeColumn"
               @change="handleTableChange"
               size="middle"
             >
@@ -357,6 +358,8 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch, createVNode } f
 import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
 import { message, Modal, Input } from 'ant-design-vue';
 import { LeftOutlined, RightOutlined, PlusOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
+import { resizableColumn } from "@/components/Table/tableDisplay";
+import { useTableColumnResize } from "@/components/Table/useTableColumnResize";
 import TableDisplaySettings from '@/components/Table/TableDisplaySettings.vue'
 import { readDisplay, normalizeDisplay, displayStorageKey, pageSizes, type DisplayColumn, type TableDisplay, type ColumnVisibility } from '@/components/Table/tableDisplay'
 import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
@@ -832,7 +835,7 @@ const actionColumn = {
   fixed: 'right' as const
 }
 
-// 显示偏好与当前用户、项目隔离；列表字段只保存编号及可见状态。
+// 显示偏好与当前用户、项目隔离，复用本地存储保存列宽。
 const displayDefinitions: DisplayColumn[] = allColumns.map(column=>({key:column.key,title:column.title,required:['id','name'].includes(column.key),defaultVisible:column.defaultVisible}))
 const tableStorageKey = computed(()=>displayStorageKey(userStore.user?.id || '',projectId.value,'test-cases'))
 const tableDisplay = ref<TableDisplay>(readDisplay(localStorage,tableStorageKey.value,displayDefinitions))
@@ -843,7 +846,7 @@ const columns = computed(()=>{
   const shown = tableDisplay.value.columns.filter(column=>column.visible).map(column=>{
     const definition=definitions.get(column.key)!
     const values:Record<string,unknown>={level:filters.level,reviewResult:filters.reviewResult,executionResult:filters.executionResult,isAutomated:filters.isAutomated}
-    return {...definition, filters:isAdvancedSearchMode.value ? undefined : definition.filters, filteredValue:isAdvancedSearchMode.value || values[column.key]===undefined ? null : [values[column.key]]}
+    return {...resizableColumn(definition,column), filters:isAdvancedSearchMode.value ? undefined : definition.filters, filteredValue:isAdvancedSearchMode.value || values[column.key]===undefined ? null : [values[column.key]]}
   })
   return [...shown,{...actionColumn,fixed:isNarrowScreen.value ? undefined : actionColumn.fixed}]
 })
@@ -863,6 +866,7 @@ function persistTableDisplay(next:TableDisplay):boolean {
     return false
   }
 }
+const resizeColumn = useTableColumnResize(tableDisplay,tableStorageKey,persistTableDisplay)
 function saveTableColumns(columns:ColumnVisibility[]) {
   if(persistTableDisplay({...tableDisplay.value,columns}))columnSettingVisible.value=false
 }
