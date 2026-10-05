@@ -92,7 +92,15 @@ class ReviewCreate(ReviewHeader):
 
 class ReviewVote(StrictRequest):
     decision: Literal["approved", "rejected", "suggestion"]
-    comment: str = Field(min_length=1, max_length=10000)
+    comment: str = Field(default="", max_length=10000)
+
+    @model_validator(mode="after")
+    def required_reason(self):
+        from utils.rich_text import has_visible_content
+
+        if self.decision != "approved" and not has_visible_content(self.comment):
+            raise ValueError("不通过或建议必须填写评审理由")
+        return self
 
 
 class ReviewBatchVote(ReviewVote):

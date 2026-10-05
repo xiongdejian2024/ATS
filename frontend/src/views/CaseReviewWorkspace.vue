@@ -15,7 +15,7 @@
           :disabled="!projectId"
           @click="openEditor()"
           >新建评审</a-button
-        ><a-button :disabled="associateSaving" @click="load"
+        ><a-button :disabled="associateSaving || resultSaving" @click="load"
           >刷新</a-button
         ></a-space
       >
@@ -36,22 +36,22 @@
                     !active.archived &&
                     !['cancelled', 'superseded'].includes(active.status)
                   "
-                  :disabled="associateSaving"
+                  :disabled="associateSaving || resultSaving"
                   @click="associateOpen = true"
                   >关联用例</a-button
                 ><a-button
                   v-if="canManage && !active.archived"
-                  :disabled="associateSaving"
+                  :disabled="associateSaving || resultSaving"
                   @click="openEditor(active)"
                   >编辑</a-button
                 ><a-button
                   v-if="canManage"
-                  :disabled="associateSaving"
+                  :disabled="associateSaving || resultSaving"
                   @click="copyReview"
                   >复制</a-button
                 ><a-button
                   v-if="canManage && !active.archived"
-                  :disabled="associateSaving"
+                  :disabled="associateSaving || resultSaving"
                   @click="resubmit"
                   >重新提审</a-button
                 ><a-popconfirm
@@ -106,7 +106,9 @@
               ><a-radio-button value="mind">脑图</a-radio-button></a-radio-group
             ><a-checkbox v-model:checked="autoNext">评审后自动下一条</a-checkbox
             ><a-button
-              :disabled="!selectedItems.length"
+              :disabled="
+                !selectedItems.length || resultSaving || associateSaving
+              "
               @click="batchVisible = true"
               >批量评审（{{ selectedItems.length }}）</a-button
             ></a-space
@@ -165,7 +167,7 @@
                 ><a-button @click="nextItem">下一条</a-button
                 ><a-button
                   v-if="canManage && !active.archived"
-                  :disabled="associateSaving"
+                  :disabled="associateSaving || resultSaving"
                   @click="
                     editCaseId = activeItem.caseId;
                     caseEditorVisible = true;
@@ -199,29 +201,20 @@
               ><template #renderItem="{ item }"
                 ><a-list-item
                   >{{ memberName(item.reviewerId) }} ·
-                  {{ statusName(item.decision) }} · {{ item.comment }} ·
-                  {{ item.updatedAt }}</a-list-item
-                ></template
-              ></a-list
-            >
-            <template v-if="canVote(activeItem)"
-              ><a-textarea
-                v-model:value="opinion"
-                :rows="3"
-                placeholder="评审意见（必填）"
-                :maxlength="10000"
-              /><a-space style="margin-top: 12px"
-                ><a-button
-                  type="primary"
-                  :loading="busy"
-                  @click="vote('approved')"
-                  >通过 / 改为通过</a-button
-                ><a-button danger :loading="busy" @click="vote('rejected')"
-                  >不通过 / 改为不通过</a-button
-                ><a-button :loading="busy" @click="vote('suggestion')"
-                  >仅提建议</a-button
-                ></a-space
-              ></template
+                  {{ statusName(item.decision) }} · {{ item.updatedAt }}
+                  <CaseRichText
+                    v-if="item.comment"
+                    :model-value="item.comment"
+                    readonly
+                    class="decision-reason"
+                  /> </a-list-item></template
+            ></a-list>
+            <template v-if="canVote(activeItem)">
+              <ReviewResultForm
+                :key="`${active.id}:${activeItem.id}`"
+                :disabled="associateSaving"
+                :submit-result="vote"
+              /> </template
             ><a-alert
               v-else
               message="当前账号未被指定为本条用例的评审人，或评审已取消。"
@@ -253,14 +246,19 @@
             ><a-tab-pane key="history" tab="历史记录"
               ><a-empty
                 v-if="!active.history?.length"
-                description="暂无历史记录"
-              /><a-timeline v-else
+                description="暂无历史记录" /><a-timeline v-else
                 ><a-timeline-item v-for="(entry, i) in active.history" :key="i">
-                  <pre class="text">{{ historyText(entry) }}</pre>
-                </a-timeline-item></a-timeline
-              ></a-tab-pane
-            ></a-tabs
-          >
+                  <pre class="text">{{
+                    entry.action === "评审结论"
+                      ? `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · ${statusName(entry.detail?.decision || "")}`
+                      : historyText(entry)
+                  }}</pre>
+                  <CaseRichText
+                    v-if="entry.action === '评审结论' && entry.detail?.comment"
+                    :model-value="entry.detail.comment"
+                    readonly
+                  /> </a-timeline-item></a-timeline></a-tab-pane
+          ></a-tabs>
         </main>
         <a-empty
           v-else
@@ -282,21 +280,24 @@
     <a-modal
       v-model:open="batchVisible"
       title="批量评审"
-      :confirm-loading="busy"
-      @ok="batchVote"
-      ><a-alert
+      :width="680"
+      :footer="null"
+      :closable="!resultSaving"
+      :mask-closable="!resultSaving"
+      :keyboard="!resultSaving"
+      destroy-on-close
+    >
+      <a-alert
         message="只允许提交你有评审权限的条目；包含无权限条目时整批拒绝。"
-        type="info" /><a-radio-group
-        v-model:value="batchDecision"
-        style="margin: 16px 0"
-        ><a-radio value="approved">通过</a-radio
-        ><a-radio value="rejected">不通过</a-radio
-        ><a-radio value="suggestion">建议</a-radio></a-radio-group
-      ><a-textarea
-        v-model:value="batchOpinion"
-        placeholder="批量评审意见（必填）"
-        :rows="3"
-    /></a-modal>
+        type="info"
+      />
+      <ReviewResultForm
+        v-if="batchVisible"
+        inline-reason
+        :disabled="associateSaving || resultSaving"
+        :submit-result="batchVote"
+      />
+    </a-modal>
     <a-drawer
       v-model:open="caseEditorVisible"
       title="编辑用例"
@@ -334,6 +335,10 @@ import type { TestCase } from "@/types";
 import { reviewWorkspaceApi } from "@/api/reviewWorkspace";
 import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
 import ReviewAssociateDrawer from "@/components/CaseReview/ReviewAssociateDrawer.vue";
+import CaseRichText from "@/components/TestCase/CaseRichText.vue";
+import ReviewResultForm, {
+  type ReviewDecision,
+} from "@/components/CaseReview/ReviewResultForm.vue";
 import TestCaseEdit from "@/components/TestCase/TestCaseEdit.vue";
 const route = useRoute(),
   router = useRouter(),
@@ -348,17 +353,15 @@ const activeId = ref<string>(),
   selectedItems = ref<string[]>([]),
   layout = ref("list"),
   autoNext = ref(true),
-  opinion = ref(""),
   discussion = ref(""),
   followed = ref(false);
 const batchVisible = ref(false),
-  batchDecision = ref("approved"),
-  batchOpinion = ref(""),
   caseEditorVisible = ref(false),
   editCaseId = ref("");
 const canManage = ref(false),
   associateOpen = ref(false),
-  associateSaving = ref(false);
+  associateSaving = ref(false),
+  resultSaving = ref(false);
 const active = computed(() =>
     reviews.value.find((r) => r.id === activeId.value),
   ),
@@ -418,7 +421,8 @@ function historyText(entry: Record<string, any>) {
   return `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · ${entry.action || ""}\n${details.decision ? `${statusName(details.decision)}：${details.comment || ""}` : JSON.stringify(details, null, 2)}`;
 }
 async function run(task: () => Promise<void>) {
-  if (associateSaving.value) return void message.info("正在关联用例，请稍候");
+  if (associateSaving.value || resultSaving.value)
+    return void message.info("正在保存评审，请稍候");
   busy.value = true;
   try {
     await task();
@@ -463,7 +467,6 @@ async function selectReview(id: string) {
   activeId.value = id;
   activeItemId.value = active.value?.items[0]?.id;
   selectedItems.value = [];
-  opinion.value = "";
   await router.replace({ query: { projectId: projectId.value, reviewId: id } });
 }
 async function associateCases(data: {
@@ -476,7 +479,8 @@ async function associateCases(data: {
     !id ||
     !canManage.value ||
     active.value?.archived ||
-    associateSaving.value
+    associateSaving.value ||
+    resultSaving.value
   )
     throw new Error("当前评审不能追加关联");
   associateSaving.value = true;
@@ -497,8 +501,8 @@ async function associateCases(data: {
   }
 }
 function canLeaveAssociation() {
-  if (associateSaving.value) {
-    message.info("正在关联用例，请稍候");
+  if (associateSaving.value || resultSaving.value) {
+    message.info("正在保存评审，请稍候");
     return false;
   }
   return true;
@@ -524,53 +528,60 @@ function nextItem() {
   const items = active.value?.items || [];
   const index = items.findIndex((i) => i.id === activeItemId.value);
   activeItemId.value = items[(index + 1) % items.length]?.id;
-  opinion.value = "";
 }
 function previousItem() {
   const items = active.value?.items || [];
   const index = items.findIndex((i) => i.id === activeItemId.value);
   activeItemId.value = items[(index - 1 + items.length) % items.length]?.id;
-  opinion.value = "";
 }
 function selectCase(c: Partial<TestCase>) {
   activeItemId.value = active.value?.items.find((i) => i.caseId === c.id)?.id;
 }
-async function vote(decision: string) {
-  if (!active.value || !activeItem.value) return;
-  if (!opinion.value.trim()) return message.warning("请填写评审意见");
-  await run(async () => {
-    replace(
-      await api.vote(
-        projectId.value,
-        active.value!.id,
-        activeItem.value!.id,
-        decision,
-        opinion.value.trim(),
-      ),
-    );
-    opinion.value = "";
-    if (autoNext.value) nextItem();
-    message.success("评审结论已记录");
-  });
+async function saveResult(
+  decision: ReviewDecision,
+  reason: string,
+  batch = false,
+) {
+  const p = projectId.value,
+    review = active.value,
+    item = activeItem.value;
+  if (
+    !review ||
+    (!batch && (!item || !canVote(item))) ||
+    resultSaving.value ||
+    associateSaving.value
+  )
+    throw new Error("当前评审不能提交结论");
+  const identifiers = [...selectedItems.value];
+  if (batch && !identifiers.length) throw new Error("请先选择评审用例");
+  resultSaving.value = true;
+  try {
+    const record = batch
+      ? await api.batchVote(p, review.id, identifiers, decision, reason)
+      : await api.vote(p, review.id, item!.id, decision, reason);
+    if (p !== projectId.value || review.id !== activeId.value)
+      throw new Error("项目或评审已切换，请重新加载详情");
+    replace(record);
+    if (batch) {
+      batchVisible.value = false;
+      selectedItems.value = [];
+    } else if (autoNext.value && item!.id === activeItemId.value) nextItem();
+    console.info("评审结论已保存", {
+      projectId: p,
+      reviewId: review.id,
+      decision,
+      count: batch ? identifiers.length : 1,
+    });
+    message.success(batch ? "批量评审已保存" : "评审结论已记录");
+  } finally {
+    resultSaving.value = false;
+  }
 }
-async function batchVote() {
-  if (!active.value || !batchOpinion.value.trim())
-    return message.warning("请填写批量意见");
-  await run(async () => {
-    replace(
-      await api.batchVote(
-        projectId.value,
-        active.value!.id,
-        selectedItems.value,
-        batchDecision.value,
-        batchOpinion.value.trim(),
-      ),
-    );
-    batchVisible.value = false;
-    batchOpinion.value = "";
-    selectedItems.value = [];
-    message.success("批量评审已保存");
-  });
+async function vote(decision: ReviewDecision, reason: string) {
+  await saveResult(decision, reason);
+}
+async function batchVote(decision: ReviewDecision, reason: string) {
+  await saveResult(decision, reason, true);
 }
 async function comment() {
   if (!active.value || !discussion.value.trim()) return;
@@ -707,6 +718,13 @@ onMounted(async () => {
 }
 .review-workspace {
   min-width: 0;
+}
+.decision-reason {
+  width: 100%;
+  margin-top: 8px;
+}
+.item-card :deep(.ant-list-item) {
+  flex-wrap: wrap;
 }
 .stats {
   display: flex;
