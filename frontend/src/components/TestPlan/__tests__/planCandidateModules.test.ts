@@ -117,7 +117,7 @@ describe("计划关联多模块联动", () => {
     await flush();
     expect(s.request.value).toBeUndefined();
   });
-  it("逐条跨页保留；当前页替换当前模块范围并保留其他模块", async () => {
+  it("逐条跨页保留；全选当前页保留其他页面和模块", async () => {
     const { s, query, rows } = setup();
     s.keysChanged(["one"]);
     await flush();
@@ -133,11 +133,19 @@ describe("计划关联多模块联动", () => {
     query.value = { ...query.value, folder: "child" };
     s.current();
     await flush();
-    expect(s.request.value!.moduleMaps!.child.selectIds).toEqual(["three"]);
+    expect(s.request.value!.moduleMaps!.child.selectIds).toEqual([
+      "one",
+      "three",
+    ]);
     expect(s.request.value!.moduleMaps!.sibling.selectAll).toBe(true);
     s.keysChanged([]);
     await flush();
-    expect(s.request.value!.moduleMaps!.child).toBeUndefined();
+    expect(s.request.value!.moduleMaps!.child.selectIds).toEqual(["one"]);
+    s.checkModule("child", true);
+    await flush();
+    s.current();
+    await flush();
+    expect(s.request.value!.moduleMaps!.child.selectAll).toBe(true);
     expect(s.hasSelection.value).toBe(true);
   });
   it("断网保留重试，保存锁定，搜索和高级模式切换清除组合", async () => {
@@ -165,6 +173,39 @@ describe("计划关联多模块联动", () => {
     await flush();
     enabled.value = false;
     expect(s.request.value).toBeUndefined();
+  });
+  it("全部目录当前页保留逐条选择和全模块范围", async () => {
+    const { s, rows } = setup();
+    s.keysChanged(["one"]);
+    await flush();
+    rows.value = [{ id: "side", moduleId: "sibling" }];
+    s.current();
+    await flush();
+    expect(s.request.value!.moduleMaps!.child.selectIds).toEqual(["one"]);
+    expect(s.request.value!.moduleMaps!.sibling.selectIds).toEqual(["side"]);
+    s.all();
+    await flush();
+    s.current();
+    await flush();
+    expect(s.request.value!.moduleMaps!.all.selectAll).toBe(true);
+    expect(s.request.value!.moduleMaps!.sibling.selectAll).toBe(true);
+  });
+  it("范围全选的当前页恢复只移除当前页排除，不改变其他页排除", async () => {
+    const { s, rows } = setup();
+    s.checkModule("parent", true);
+    s.keysChanged(["two"]);
+    await flush();
+    rows.value = [{ id: "three", moduleId: "child" }];
+    s.keysChanged([]);
+    await flush();
+    expect(s.request.value!.moduleMaps!.child.excludeIds).toEqual([
+      "one",
+      "three",
+    ]);
+    s.current();
+    await flush();
+    expect(s.request.value!.moduleMaps!.child.selectAll).toBe(true);
+    expect(s.request.value!.moduleMaps!.child.excludeIds).toEqual(["one"]);
   });
   it("循环目录安全展开且使用完整目录不受搜索隐藏影响", () => {
     const rows = [

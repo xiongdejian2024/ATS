@@ -89,9 +89,8 @@ export function useCandidateModules(
     }
     maps.value = next;
   }
-  function current(folder: string) {
-    if (folder === "all") maps.value = {};
-    else check(folder, false);
+  function current() {
+    // 当前页加入选择；其他页的已选项和排除项保持，符合模块表格联动契约。
     keysChanged(context.rows.value.map((row) => row.id));
   }
   function counts(key: string) {

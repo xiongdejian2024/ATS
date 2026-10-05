@@ -103,7 +103,7 @@ export function usePlanCandidateSelection(
   function current() {
     if (working.value) return;
     if (moduleMode.value && modules) {
-      modules.current(query.value.folder || "all");
+      modules.current();
       return;
     }
     selected.value = selectAll.value
