@@ -20,7 +20,7 @@ def state(db, plan, *, current_read=False):
     workspace = workspaces[0] if workspaces else None
     nodes = read(db.query(PlanNode).filter_by(plan_id=plan.id))
     uses_tree = bool(workspace and workspace.uses_tree) or any(n.node_type != 'point' for n in nodes)
-    suites = read(db.query(TestSuite).filter_by(plan_id=plan.id))
+    suites = read(db.query(TestSuite).filter_by(plan_id=plan.id).filter(TestSuite.execution_command != 'ats-native-http'))
     relations = read(db.query(PlanCaseRelation).filter_by(plan_id=plan.id))
     return plan, workspace, uses_tree, suites, relations
 
@@ -72,11 +72,14 @@ def resolve(db, plan, user, selection, *, writing=False):
     if writing and (selection.selectAll or selection.moduleMaps is not None) and not cases:
         raise HTTPException(409, '当前范围已无可关联用例，请刷新后重新选择')
     automated = [c for c in cases if c.is_automated]
-    compatible = [s.id for s in suites if all(c.id in (s.case_ids or []) for c in automated)]
+    from services.native_http_execution import configured
+    required = [c for c in automated if not configured(db, c)]
+    compatible = [s.id for s in suites if all(c.id in (s.case_ids or []) for c in required)]
     summary = dict(count=len(cases), excludedCount=excluded_count, automatedCount=len(automated),
                    usesTree=uses_tree, compatibleSuiteIds=compatible,
                    canAssociate=project_allows(db, user, project, 'test_plan:update') and not bool(workspace and workspace.archived))
     summary.update(module_summary)
+    if len(required) != len(automated): summary['requiresSuiteCount'] = len(required)
     if selection.syncCase:
         from services.plan_candidate_sync import resolve as resolve_sync
         _, summary['sync'] = resolve_sync(db, plan, selection, cases, suites, relations, uses_tree, current_read=writing)

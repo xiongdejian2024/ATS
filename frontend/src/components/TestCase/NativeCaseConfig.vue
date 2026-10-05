@@ -83,6 +83,19 @@
           >同步接口参数</a-button
         >
       </template>
+      <NativeExecutionEditor
+        v-if="
+          category === 'scenario' ||
+          ['HTTP', 'HTTPS'].includes(definition?.protocol || '')
+        "
+        :key="projectId + ':' + caseId + ':' + config.revision"
+        v-model="parametersText"
+        :category="category"
+        :api-cases="catalog.apiCases || []"
+        :disabled="loading || saving || readonly || !config.canEdit"
+        @draft="editorDraft = $event"
+        @error="editorError = $event"
+      />
       <a-form-item :label="category === 'api' ? '用例环境' : '场景环境'"
         ><a-space wrap
           ><a-select
@@ -108,7 +121,7 @@
         v-if="!readonly && config.canEdit"
         type="primary"
         :loading="saving"
-        :disabled="loading || !!loadError"
+        :disabled="loading || !!loadError || !!editorError"
         aria-label="保存原生用例配置"
         @click="save"
         >保存配置</a-button
@@ -173,6 +186,7 @@
 import { computed, ref, watch } from "vue";
 import { message, Modal } from "ant-design-vue";
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
+import NativeExecutionEditor from "./NativeExecutionEditor.vue";
 import {
   nativeCaseApi as api,
   nativeStateOptions,
@@ -204,6 +218,8 @@ const state = ref<string>(),
   environmentId = ref<string>(),
   parametersText = ref("{}"),
   sync = ref(false);
+const editorDraft = ref(""),
+  editorError = ref("");
 const definition = computed(() =>
   catalog.value?.definitions.find((d) => d.id === definitionId.value),
 );
@@ -219,12 +235,15 @@ const draftSignature = () =>
     environmentId.value,
     parametersText.value,
     sync.value,
+    editorDraft.value,
   ]);
 const dirty = computed(
   () => !!config.value && original.value !== draftSignature(),
 );
 watch(dirty, (value) => emit("dirty", value));
 function adopt(value: NativeConfig) {
+  editorDraft.value = "";
+  editorError.value = "";
   config.value = value;
   state.value = value.state || undefined;
   definitionId.value = value.apiDefinitionId || undefined;

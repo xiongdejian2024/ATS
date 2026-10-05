@@ -31,7 +31,9 @@ def catalog(db, user, project_id):
         return [dict(id=r.id, revision=r.revision, **{f: getattr(r, f) for f in fields})
                 for r in db.query(model).filter_by(project_id=project_id).order_by(model.created_at, model.id)]
     definitions = rows(ApiDefinition, ['name', 'protocol', 'path', 'parameters'])
+    from models import TestCase
     return dict(definitions=definitions, environments=rows(ApiTestEnvironment, ['name', 'address']),
+                apiCases=[dict(id=c.id, name=c.name) for c in db.query(TestCase).filter_by(project_id=project_id, type='api').filter(TestCase.deleted_at.is_(None)).order_by(TestCase.created_at, TestCase.id)],
                 protocols=sorted({r['protocol'] for r in definitions}),
                 canCreate=project_allows(db, user, project, 'test_case:create'),
                 canEdit=project_allows(db, user, project, 'test_case:update'))
@@ -43,6 +45,8 @@ def save_entity(db, user, project_id, model, body, identity=None):
     row = entity(db, model, project_id, identity, lock=True) if identity else model(project_id=project_id, revision=0)
     if row.revision != body.expectedRevision:
         raise HTTPException(409, '配置已经被修改，请刷新后重试；当前草稿可保留')
+    if model is ApiDefinition and 'request' in body.parameters:
+        validate_parameters(db, project_id, 'api', body.parameters, body.protocol)
     for field, value in body.model_dump(exclude={'expectedRevision'}).items():
         setattr(row, field, deepcopy(value))
     if model is ApiDefinition:
@@ -110,9 +114,12 @@ def save_config(db, user, project_id, case_id, body):
             raise HTTPException(409, '接口定义已经被修改，请重新加载后再保存用例配置')
     elif body.apiDefinitionId or body.syncDefinition:
         raise HTTPException(422, '场景不能保存接口用例专属配置')
+    native = validate_parameters(db, project_id, case.type, body.parameters, definition.protocol if definition else None)
     from services.case_governance import snapshot_case
     snapshot_case(db, case, str(user.id), '原生配置修改前保存版本')
     if not row: row = NativeCaseConfig(case_id=case.id, revision=0)
+    if native:
+        case.is_automated = True
     changed_definition = row.api_definition_id != body.apiDefinitionId
     row.state = body.state; row.environment_id = body.environmentId
     row.api_definition_id = body.apiDefinitionId
@@ -127,6 +134,29 @@ def save_config(db, user, project_id, case_id, body):
     snapshot_case(db, case, str(user.id), '修改原生用例配置')
     logger.info('原生用例配置已保存 project_id={} case_id={} revision={}', project_id, case_id, row.revision)
     return config_data(db, user, project_id, case_id)
+
+
+def validate_parameters(db, project_id, category, parameters, protocol=None):
+    """声明式请求配置保存前校验；配置实际执行后即为自动化用例。"""
+    from models import TestCase
+    try:
+        if category == 'api' and 'request' in parameters:
+            from framework.native_http.models import RequestSpec
+            if protocol not in {'HTTP', 'HTTPS'}: raise ValueError('请求配置仅用于HTTP/HTTPS接口')
+            RequestSpec.model_validate(parameters['request'])
+            return True
+        if category == 'scenario' and 'scenario' in parameters:
+            from framework.native_http.models import ScenarioSpec
+            scenario = ScenarioSpec.model_validate(parameters['scenario'])
+            ids = {step.apiCaseId for step in scenario.steps}
+            children = db.query(TestCase).filter(TestCase.id.in_(ids), TestCase.project_id == project_id, TestCase.type == 'api', TestCase.deleted_at.is_(None)).populate_existing().with_for_update().all()
+            if len(children) != len(ids) or not any(step.enabled for step in scenario.steps):
+                raise ValueError('场景需启用至少一个同项目API用例步骤')
+            return True
+        return False
+    except ValueError as exception:
+        logger.exception('保存原生执行配置校验失败：项目={}，分类={}', project_id, category)
+        raise HTTPException(422, '请求体、断言或场景步骤配置无效，请检查后重试') from exception
 
 
 def content_changed(case, snapshot, *, current_read=False):

@@ -464,6 +464,13 @@ async def resume_plan(
         logger.exception("重新执行计划失败：计划={}", plan_id)
         db.rollback()
         raise HTTPException(409, str(exc)) from exc
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
+        logger.exception("启动计划执行发生异常：计划={}", plan_id)
+        db.rollback()
+        raise
     return APIResponse(status=ResponseStatus.SUCCESS, message="新的执行批次已创建", data=run_data(db, run))
 
 

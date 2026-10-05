@@ -11,6 +11,13 @@ def result_id(execution_id, case_id):
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"ats:{execution_id}:{case_id}"))
 
 
+def dispatch_case_ids(db, task, suite):
+    """计划执行严格使用该执行ID冻结的范围，不能接受未选模板成员的结果。"""
+    from models.plan_orchestration import PlanRunItem
+    item = db.query(PlanRunItem).filter_by(execution_id=task.execution_id).one_or_none()
+    return item.suite_snapshot.get('caseIds', []) if item else suite.case_ids
+
+
 def handle_run_result(db, environment_id, message):
     suite = db.query(TestSuite).filter(TestSuite.id == message.get("suite_id")).first()
     task = (
@@ -25,7 +32,7 @@ def handle_run_result(db, environment_id, message):
         or task.environment_id != environment_id
     ):
         return False
-    if message.get("case_id") not in suite.case_ids or message.get("result") not in [
+    if message.get("case_id") not in dispatch_case_ids(db, task, suite) or message.get("result") not in [
         "passed",
         "failed",
         "error",

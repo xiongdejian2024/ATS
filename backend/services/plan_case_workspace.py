@@ -265,7 +265,8 @@ def associate(db,plan,user,data):
     suite=next((s for s in suites if s.id == data.suiteId), None)
     if data.suiteId and (not suite or suite.plan_id != plan.id):
         raise HTTPException(422,'测试套必须属于当前计划')
-    if uses and any(case.is_automated and (not suite or suite.plan_id!=plan.id or case.id not in (suite.case_ids or [])) for case in cases):
+    from services.native_http_execution import configured
+    if uses and any(case.is_automated and not configured(db, case) and (not suite or suite.plan_id!=plan.id or case.id not in (suite.case_ids or [])) for case in cases):
         raise HTTPException(422,'自动化用例需要选择包含所有关联用例的当前计划测试套')
     sync_groups, sync_suites = {}, {}
     if data.syncCase:

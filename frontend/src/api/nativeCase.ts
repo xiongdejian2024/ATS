@@ -14,6 +14,7 @@ export interface NativeEnvironment {
   revision: number;
 }
 export interface NativeCatalog {
+  apiCases?: { id: string; name: string }[];
   definitions: NativeDefinition[];
   environments: NativeEnvironment[];
   protocols: string[];

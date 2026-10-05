@@ -736,3 +736,20 @@
 - 第53部分远程CI运行 `37379637963` 精确SHA `699e8d3c13afc476cac90efe3563405135c8be8f` 已全部成功，证据 `logs/第53部分远程CI最终状态.json`。整体目标继续进行：MS完整根/测试集执行资源配置、原生HTTP/场景执行器、分类测试集完整菜单/编辑/拖动、原生编辑器/单条报告、关联API定义/用例双模式，以及其他评审/计划首页/报告高级视图、模板、富文本/附件、脑图和分析仍逐项补齐，不声明100%完成。
 
 本部分官方依据：[API单条与范围执行入口](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiCase/components/caseTable.vue)、[场景单条与范围执行入口](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiScenario/components/scenarioTable.vue)、[API实例执行接口](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/test-plan/src/main/java/io/metersphere/plan/controller/TestPlanApiCaseController.java)、[选定实例、测试集配置与队列](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/test-plan/src/main/java/io/metersphere/plan/service/TestPlanApiCaseBatchRunService.java)。
+
+
+## 第55部分：原生HTTP与场景实际执行链路（2026-10-06）
+
+- 官方源码确认：MS规划脑图中的资源池选择执行节点，环境选择接口请求目标。本部分先补齐实际HTTP/场景执行基础，再继续完整根节点、测试集执行配置；当前ATS规划配置中的历史 `environmentId` 仍表示Agent资源节点，原生用例配置环境是接口请求目标，不声明完整MS配置已复刻。
+- 复用XAT已有httpx/Pydantic、ATS队列与Agent可靠回传。用例保存声明式请求配置后成为可执行自动化用例；HTTP支持方法、查询参数、请求头、JSON/文本/表单正文、总超时、重定向，以及状态/JSON路径/响应头/文本断言。JSON数组下标、缺失字段、null、布尔值和数值比较独立校验；错误状态可由显式断言作为预期。无断言时按实际HTTP状态判定，异常记录完整堆栈，结果日志只保留步骤概要而不复制完整响应或凭据。
+- 原生场景按用户选择顺序执行同来源项目API步骤，重复引用保持独立请求，可停用步骤并按失败停止后续请求。版本冻结包含实际请求路径、目标环境、参数、断言及启用的步骤；单条/范围/规划树/整计划沿同一真实执行链路。原生执行适配记录由计划管理，与用户XAT模板分离；冻结所选用例不会修改原模板成员，也不会通过XAT执行相同原生用例第二次。
+- 主用例配置新增HTTP方法/超时/重定向与Query、Headers、Body、断言页签，以及可添加、选择、启停、重排和移除的场景API步骤。编辑状态模块独立，保留原参数的其他字段；未完成JSON草稿保留并禁用保存，纳入离开保护；保存失败仍保留草稿及版本冲突保护。高级参数仍使用JSON编辑，完整MS原生请求编辑器、脚本/提取器、循环/条件/嵌套场景和单条高级报告留待后续，未声明全部支持。
+- 修复范围回传完成校验：按本次冻结成员接收结果并检查是否齐全，而不是按整个原XAT模板成员检查；未选模板成员结果被拒绝。原生执行可靠结果与完成事件共用既有持久化outbox、ACK及发送锁，结果先于完成；终态标记在完成消息可靠持久化后保存。按执行ID取消正在等待的HTTP请求，重新创建执行器后不会再次派发已完成请求。本次未验证进程在请求途中崩溃的外部副作用恢复，不作HTTP跨系统恰好一次的保证。
+- 新增24项后端专项，最终全量 **370项通过／165.41秒／18条既有框架与ORM提示**，证据 `logs/第55部分最终后端全量.log`。真实回环端到端覆盖后端HTTP入队→WebSocket→Agent→自建本地HTTP服务→真实断言与报告→ACK：整计划API+场景实发3次；入队后更改请求头仍执行原冻结值；失败场景实际只发1次并跳过后续；在途请求取消后无虚构成功；断网后结果留存，重连ACK后清空；四成员XAT模板范围只跑1条也正常完成。证据 `tests/test_native_http_agent_e2e.py`、`logs/第55部分原生执行三次验收.log`。没有连接真实台架或模型。
+- 新增3项前端草稿行为专项，**104项／28文件通过**，类型检查与构建 **12.84秒** 通过；既有构建包体提示保留。证据 `logs/第55部分前端单元.log`、`logs/第55部分类型检查.log`、`logs/第55部分前端构建.log`。全量首次发现选定本地测试套却校验未选跨项目自动化权限的回归，已恢复只校验实际选定范围并完整重验；新增原生预览字段仅在需要时返回，旧范围契约保持兼容。
+- 真实MySQL独立临时库验证旧预览、实际项目锁等待、最新关联/策略/活动批次及并发同请求200/200、不同请求200/409；原生请求额外验证旧请求配置快照之后冻结新路径、新目标环境、新请求头。没有调度或HTTP发送；临时库和授权均回收。修复上一阶段验收脚本存档中的缩进错误，新脚本 `scripts/verify_plan_native_http_mysql.py`，证据 `logs/第55部分MySQL验收.log`、`logs/第55部分MySQL输出.log`。
+- 浏览器复用空间30、13313/18813隔离环境，创建独立项目和API/场景两主用例，没有计划、执行资源或任务。实际通过界面保存POST、查询参数、请求头、JSON正文、两断言及重复API步骤/第二步停用，数据库核验全部内容与修订号；无效JSON保留且保存禁用。1440px HTTP编辑和390px场景编辑截图已实际查看，窄屏整页390、步骤区域342无溢出；等待尺寸调整完成后重新截图，没有把调整首帧当作最终验收。截图 `/tmp/ats-ms55-http-editor-desktop.png`、`/tmp/ats-ms55-scenario-editor-mobile.png`。
+- 按本轮主键及外键后代回收两主用例、配置、版本与变更，完整73表恢复基线，原31用例及历史保留；浏览器偏好逐键恢复一致并返回原计划，登录保留。证据 `logs/第55部分清理输出.log`、`logs/第55部分清理计数.json`、`logs/第55部分浏览器恢复.json`。正式API和Agent已更新加载原生执行器，保留原节点身份、worker未重启；完整73表计数一致，100用例、7计划、28历史任务、0活动任务、在线节点1及页面/健康HTTP200。证据 `logs/第55部分正式服务输出.log`、`logs/第55部分正式服务.log`、`logs/第55部分正式基线.json`。
+- 第54部分远程CI `37382383094` 已确认成功，证据 `logs/第54部分远程CI最终状态.json`。整体100%复刻目标继续：下一步补MS根/测试集完整执行配置及其真实语义，随后逐项补高级编辑器、报告、关联双模式及其他尚未对齐事项。
+
+本部分官方依据：[规划脑图执行配置](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-minders/testPlanMinder/index.vue)、[规划节点配置模型](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/models/testPlan/testPlan.ts)、[测试集资源池与环境](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/framework/domain/src/main/java/io/metersphere/plan/domain/TestPlanCollection.java)。

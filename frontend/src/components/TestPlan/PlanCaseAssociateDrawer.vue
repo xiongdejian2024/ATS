@@ -552,7 +552,10 @@ const columns = computed(() =>
       ],
 );
 const automatedCount = computed(
-    () => selection.summary.value?.automatedCount || 0,
+    () =>
+      selection.summary.value?.requiresSuiteCount ??
+      selection.summary.value?.automatedCount ??
+      0,
   ),
   compatibleSuites = computed(() =>
     (data.value?.suites || []).filter((suite) =>

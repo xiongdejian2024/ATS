@@ -10,7 +10,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 logging.basicConfig(
-    filename=ROOT / "logs/第54部分MySQL验收.log",
+    filename=ROOT / "logs/第55部分MySQL验收.log",
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
@@ -144,6 +144,41 @@ def main():
                 db.get(TestCase,'case-0').priority='P1';db.get(TestSuite,'suite').case_ids=['case-0','case-1','case-2'];db.get(TestSuite,'suite').environment_id='offline'
                 db.query(PlanCaseRelation).filter_by(id='new-relation').delete();db.query(TestCase).filter_by(id='new-case').delete()
                 db.query(PlanSettings).delete();db.query(PlanRun).filter_by(id='active').delete();db.commit()
+        # 原生请求与请求环境不能来自预览时的旧MySQL快照。
+        from models.native_case import ApiDefinition,ApiTestEnvironment,NativeCaseConfig
+        with Sessions() as db:
+            db.add(ApiDefinition(id='http-definition',project_id='project',name='本地接口',protocol='HTTP',path='/before',parameters={},updated_by='owner'))
+            db.add(ApiTestEnvironment(id='http-env',project_id='project',name='本地请求环境',address='http://127.0.0.1:1',updated_by='owner'));db.flush()
+            db.add(NativeCaseConfig(case_id='case-0',state='DONE',api_definition_id='http-definition',environment_id='http-env',parameters={'request':{'headers':{'X-Frozen':'before'}}},updated_by='owner'));db.commit()
+        ready,proceed=threading.Event(),threading.Event()
+        def freeze_stale_http():
+            with Sessions() as db:
+                preview(db,db.get(TestPlan,'plan'),db.get(User,'owner'),NativeWorkspaceSelection(**scope))
+                assert db.get(NativeCaseConfig,'case-0').parameters['request']['headers']['X-Frozen']=='before'
+                ready.set();assert proceed.wait(15)
+                run=start(db,db.get(TestPlan,'plan'),db.get(User,'owner'),request())
+                items=db.query(PlanRunItem).filter_by(run_id=run.id).all()
+                http_item=next(i for i in items if i.suite_snapshot['executionCommand']=='ats-native-http')
+                payload=http_item.suite_snapshot['nativeCases'][0]['requests'][0]
+                assert payload['url']=='http://127.0.0.1:2/after' and payload['headers']=={'X-Frozen':'after'}
+                db.rollback()
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future=pool.submit(freeze_stale_http);assert ready.wait(15)
+            with Sessions() as holder:
+                lock_project(holder,'project')
+                holder.get(NativeCaseConfig,'case-0').parameters={'request':{'headers':{'X-Frozen':'after'}}}
+                holder.get(ApiTestEnvironment,'http-env').address='http://127.0.0.1:2'
+                holder.get(ApiDefinition,'http-definition').path='/after';holder.flush();proceed.set()
+                for _ in range(100):
+                    waits=root_sql("SELECT COUNT(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON w.REQUESTING_ENGINE_LOCK_ID=l.ENGINE_LOCK_ID WHERE l.OBJECT_SCHEMA='"+name+"'")
+                    if int(waits or 0):break
+                    time.sleep(.05)
+                else:raise AssertionError('未观察到原生请求冻结的真实项目锁等待')
+                assert not future.done();holder.commit()
+            future.result(timeout=15)
+        log.info('原生请求当前读通过：旧预览及旧配置读取后等待项目锁，实际冻结新路径、新请求环境和新请求头；无HTTP发送')
+        with Sessions() as db:
+            db.query(NativeCaseConfig).delete();db.query(ApiDefinition).delete();db.query(ApiTestEnvironment).delete();db.commit()
         shared=request()
         def submit(body):
             with Sessions() as db:

@@ -43,7 +43,7 @@ class TestSuiteService:
         limit: int = 100
     ):
         """获取测试套列表"""
-        query = db.query(TestSuite).filter(TestSuite.plan_id == plan_id)
+        query = db.query(TestSuite).filter(TestSuite.plan_id == plan_id, TestSuite.execution_command != 'ats-native-http')
         total = query.count()
         items = query.order_by(TestSuite.created_at.desc()).offset(skip).limit(limit).all()
         
@@ -67,6 +67,8 @@ class TestSuiteService:
         current_user_id: str
     ) -> TestSuite:
         """创建测试套"""
+        if suite_data.get('execution_command') == 'ats-native-http':
+            raise ValueError('原生执行记录由测试计划生成，请配置原生用例请求')
         # 验证计划是否存在
         plan = db.query(TestPlan).filter(TestPlan.id == plan_id).first()
         if not plan:
@@ -132,6 +134,8 @@ class TestSuiteService:
             return None
 
         TestSuiteService.require_idle(db, suite_id)
+        if suite.execution_command == 'ats-native-http' or suite_data.get('execution_command') == 'ats-native-http':
+            raise ValueError('原生执行记录由测试计划管理，请编辑原生用例配置')
         
         # 如果更新计划，验证计划是否存在
         new_plan = None
@@ -211,6 +215,8 @@ class TestSuiteService:
             return False
 
         TestSuiteService.require_idle(db, suite_id)
+        if suite.execution_command == 'ats-native-http':
+            raise ValueError('原生执行记录由测试计划管理，不能单独删除')
         
         db.delete(suite)
         db.commit()

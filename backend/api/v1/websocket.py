@@ -718,10 +718,10 @@ async def handle_test_suite_completed(db: Session, environment_id: str, message:
         if status not in ["completed", "failed", "cancelled"]:
             return False
         if message.get("event_id") and status == "completed":
-            from services.suite_results import result_id
+            from services.suite_results import result_id, dispatch_case_ids
             from models.test_suite import TestSuiteExecution
             expected_suite = db.query(TestSuite).filter(TestSuite.id == suite_id).first()
-            records = [db.get(TestSuiteExecution, result_id(execution_id, cid)) for cid in expected_suite.case_ids]
+            records = [db.get(TestSuiteExecution, result_id(execution_id, cid)) for cid in dispatch_case_ids(db, task, expected_suite)]
             if any(row is None or row.result in ["failed", "error"] for row in records):
                 status = "failed"
 

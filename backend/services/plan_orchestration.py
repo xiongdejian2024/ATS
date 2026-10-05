@@ -86,7 +86,15 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
     workspace = db.query(PlanWorkspace).filter_by(plan_id=plan_id).populate_existing().with_for_update().one_or_none()
     if workspace and workspace.archived:
         raise ValueError("归档计划不能执行，请先取消归档")
+    actor = db.query(User).filter_by(id=user_id).populate_existing().with_for_update().one_or_none()
+    if not actor or not actor.status:
+        raise ValueError("执行用户不存在或已停用")
+    from services.native_http_execution import COMMAND, configured, freeze, managed_suite
+    from types import SimpleNamespace
+    def suite_view(suite):
+        return SimpleNamespace(**{column.name: deepcopy(getattr(suite, column.name)) for column in TestSuite.__table__.columns})
     suites = db.query(TestSuite).filter_by(plan_id=plan_id).order_by(TestSuite.created_at, TestSuite.id).populate_existing().with_for_update().all()
+    suites = [suite for suite in suites if suite.execution_command != COMMAND]
     if suite_ids is not None:
         requested = list(suite_ids)
         known = {s.id for s in suites}
@@ -95,11 +103,14 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
         suites = [s for s in suites if s.id in requested]
     if suite_ids is None:
         suites = [suite for suite in suites if suite.case_ids]
-    policy = get_policy(db, plan_id)
+    policy = get_policy(db, plan_id, current_read=True)
     from services.plan_tree import compile_tree
-    tree_entries = compile_tree(db, plan, policy, current_read=True) if suite_ids is None else None
+    tree_entries = compile_tree(db, plan, policy, current_read=True, user=actor) if suite_ids is None else None
     if tree_entries is not None:
         suites = [e["suite"] for e in tree_entries if e["suite"]]
+        for entry in tree_entries:
+            if entry['suite']:
+                entry['suite'].native_cases = [entry['nativeCase']] if entry.get('nativeCase') else None
         policy = dict(policy, nodeGraph=True)
     ordering = {sid: i for i, sid in enumerate(policy["suiteOrder"])}
     if tree_entries is None:
@@ -115,6 +126,28 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
     if not {c.project_id for c in cases.values()} <= locked_sources or plan.project_id not in locked_sources:
         raise ValueError('计划来源范围已变化，请刷新后重新执行')
     from services.plan_candidate_project import require_case_sources
+    selected_coverage = {cid for suite in suites for cid in suite.case_ids}
+    require_case_sources(db, user_id, [case for case in cases.values() if suite_ids is None or case.id in selected_coverage or not case.is_automated], current_read=True)
+    native = {}
+    if tree_entries is not None:
+        native = {entry['node'].case_id: entry['nativeCase'] for entry in tree_entries if entry.get('nativeCase')}
+    else:
+        for cid in case_ids:
+            case = cases[cid]
+            if (suite_ids is None or cid in selected_coverage) and configured(db, case):
+                native[cid] = freeze(db, case, actor)
+        originals = suites
+        suites = []
+        for suite in originals:
+            view = suite_view(suite)
+            view.case_ids = [cid for cid in view.case_ids if cid not in native]
+            if view.case_ids: suites.append(view)
+        for cid, payload in native.items():
+            compatible = [suite for suite in originals if cid in suite.case_ids]
+            node_id = plan.environment_id or (compatible[0].environment_id if len(compatible) == 1 else None)
+            view = suite_view(managed_suite(db, plan, cases[cid], node_id, actor.id))
+            view.native_cases = [payload]
+            suites.append(view)
     covered = {cid for s in suites for cid in s.case_ids}
     if suite_ids is None and any(c.is_automated and c.id not in covered for c in cases.values()):
         raise ValueError("存在未配置测试套的自动化用例，请先配置执行命令和节点")
@@ -124,13 +157,15 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
     for suite in suites:
         if not db.get(Environment, suite.environment_id):
             raise ValueError("执行环境不存在")
-        build_suite_message(db, suite, "校验", str(user_id))
+        build_suite_message(db, suite, "校验", str(user_id), current_read=True)
     from services.case_governance import snapshot_case
     snapshots = []
+    relation_ids = {relation.case_id: relation.id for relation in relations}
     for cid in case_ids:
         case = cases[cid]
         version = snapshot_case(db, case, str(user_id), "计划执行冻结用例版本")
-        snapshots.append(dict(id=cid, name=case.name, caseCode=case.case_code, isAutomated=case.is_automated, projectId=case.project_id,
+        snapshots.append(dict(id=cid, name=case.name, caseCode=case.case_code, isAutomated=bool(case.is_automated or cid in native), projectId=case.project_id,
+                              **(dict(category=case.type, associationId=relation_ids.get(cid, cid)) if cid in native else {}),
                               versionId=version.id, version=version.version, snapshot=deepcopy(version.snapshot)))
     if tree_entries is not None:
         snapshot_map = {c["id"]: c for c in snapshots}
@@ -158,9 +193,11 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
                            sequence=i, status="waiting",
                            suite_snapshot=dict(name=suite.name, caseIds=list(suite.case_ids),
                                                executionCommand=suite.execution_command,
+                                               nativeCases=deepcopy(getattr(suite, 'native_cases', None)),
+                                               gitEnabled=suite.git_enabled, gitRepoUrl=suite.git_repo_url, gitBranch=suite.git_branch,
                                                environmentId=suite.environment_id,
-                                               nodeId=entry["node"].id if entry else None,
-                                               category=entry["node"].category if entry else "api",
+                                               nodeId=entry["node"].id if entry else relation_ids.get(suite.case_ids[0]) if suite.execution_command == COMMAND else None,
+                                               category=entry["node"].category if entry else native[suite.case_ids[0]]['category'] if suite.execution_command == COMMAND else "api",
                                                linkedFunctionalId=entry["node"].linked_functional_id if entry else None,
                                                prerequisites=entry["prerequisites"] if entry else [],
                                                resourcePool=entry["config"].get("resourcePool", []) if entry else []))
@@ -385,6 +422,7 @@ async def advance_plan_runs(db):
                         view = SimpleNamespace(**{column.name: getattr(suite, column.name) for column in TestSuite.__table__.columns})
                         view.case_ids = item.suite_snapshot["caseIds"]
                         view.execution_command = item.suite_snapshot["executionCommand"]
+                        view.native_cases = item.suite_snapshot.get("nativeCases")
                         # 范围批次冻结仓库和分支；凭据不写入历史快照。
                         if "gitEnabled" in item.suite_snapshot:
                             view.git_enabled = item.suite_snapshot["gitEnabled"]

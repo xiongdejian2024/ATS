@@ -121,6 +121,7 @@ export interface CandidateSelectionPreview {
   count: number;
   excludedCount: number;
   automatedCount: number;
+  requiresSuiteCount?: number;
   usesTree: boolean;
   compatibleSuiteIds: string[];
   canAssociate: boolean;

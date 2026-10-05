@@ -96,7 +96,9 @@ def save_node(db, plan, data, existing=None, *, source_project_id=None):
         if row.category != "functional" and not case.is_automated:
             raise HTTPException(400, "API/场景用例需要可执行的自动化用例")
         if case.is_automated and not row.suite_id:
-            raise HTTPException(400, "自动化用例需要关联测试套")
+            from services.native_http_execution import configured
+            if not configured(db, case):
+                raise HTTPException(400, "自动化用例需要关联测试套或配置真实原生HTTP请求")
     if row.suite_id:
         suite = db.get(TestSuite, row.suite_id)
         if not suite or suite.plan_id != plan.id or (row.case_id and row.case_id not in suite.case_ids):
@@ -152,7 +154,7 @@ def save_node(db, plan, data, existing=None, *, source_project_id=None):
     return row
 
 
-def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None):
+def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None, user=None):
     """将树编译为关联实例及显式前置节点，保留分支串并行语义。"""
     all_nodes = nodes(db, plan.id, current_read=current_read) if scope_nodes is None else scope_nodes
     node_map = {node.id: node for node in all_nodes}
@@ -175,6 +177,16 @@ def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None):
                 case = db.get(TestCase, node.case_id) if node.case_id else None
                 if node.case_id and (not case or case.deleted_at):
                     raise ValueError("计划测试点包含已回收的用例")
+                native_case = None
+                if case and user:
+                    from services.native_http_execution import configured, freeze, managed_suite
+                    if configured(db, case):
+                        native_case = freeze(db, case, user)
+                        resources = config.get('resourcePool') or []
+                        enabled = db.query(Environment).filter(Environment.id.in_(resources), Environment.status.is_(True)).populate_existing().with_for_update().all() if resources else []
+                        enabled.sort(key=lambda env: (not env.is_online, resources.index(env.id)))
+                        resource_id = config.get('environmentId') or (enabled[0].id if enabled else None) or (suite.environment_id if suite else None) or plan.environment_id
+                        suite = managed_suite(db, plan, case, resource_id, user.id)
                 if suite:
                     # 复制 ORM 对象仅作发送视图，不加入 Session；使用独立属性避免修改原套。
                     from types import SimpleNamespace
@@ -191,7 +203,7 @@ def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None):
                             raise ValueError("资源池没有启用的执行环境")
                         available.sort(key=lambda env: (not env.is_online, db.query(TaskQueue).filter(TaskQueue.environment_id == env.id, TaskQueue.status.in_(("pending", "running"))).count(), pool.index(env.id)))
                         suite.environment_id = available[0].id
-                entries.append(dict(node=node, suite=suite, config=config, prerequisites=list(dict.fromkeys(deps))))
+                entries.append(dict(node=node, suite=suite, config=config, prerequisites=list(dict.fromkeys(deps)), nativeCase=native_case))
                 branch = [node.id]
             leaves.extend(branch)
             if mode == "serial":

@@ -21,6 +21,7 @@ if __name__ == "__main__":
     from task_executor import TaskExecutor
     from workspace_manager import WorkspaceManager
     from sat_runner import SATRunner
+    from native_http_runner import NativeHTTPRunner
 else:
     # 作为模块运行时，使用相对导入
     from .config import Config, parse_args
@@ -31,6 +32,7 @@ else:
     from .task_executor import TaskExecutor
     from .workspace_manager import WorkspaceManager
     from .sat_runner import SATRunner
+    from .native_http_runner import NativeHTTPRunner
 
 
 class Agent:
@@ -55,6 +57,7 @@ class Agent:
         self.running = False
         self.running_suites: Dict[str, subprocess.Popen] = {}  # suite_id -> process
         self.sat_runner = SATRunner(self)
+        self.native_http_runner = NativeHTTPRunner(self)
         self.suite_execution_ids: Dict[str, str] = {}  # suite_id -> execution_id
 
     def setup(self) -> None:
@@ -515,6 +518,10 @@ class Agent:
                 self.logger.error(f"测试套执行请求缺少必要参数: suite_id={suite_id}, execution_command={execution_command}, case_ids={case_ids}")
             return
 
+        if execution_command == 'ats-native-http':
+            self.native_http_runner.start(message)
+            return
+
         if execution_command.strip().split(maxsplit=1)[:1] in (["xat"], ["ats-sat"]):
             if not execution_id:
                 return
@@ -554,6 +561,10 @@ class Agent:
 
         if self.logger:
             self.logger.info(f"收到测试套取消指令: {suite_id}")
+
+        if self.native_http_runner.has_suite(suite_id):
+            await self.native_http_runner.cancel(suite_id, message.get('execution_id'))
+            return
 
         if self.sat_runner.has_suite(suite_id):
             await self.sat_runner.cancel(suite_id, message.get("execution_id"))
@@ -1399,6 +1410,8 @@ class Agent:
             except asyncio.CancelledError:
                 pass
 
+        for suite_id in set(self.native_http_runner.suites.values()):
+            await self.native_http_runner.cancel(suite_id)
         for suite_id in set(self.sat_runner.suites.values()):
             await self.sat_runner.cancel(suite_id)
 

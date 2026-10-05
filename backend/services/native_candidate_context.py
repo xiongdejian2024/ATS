@@ -37,4 +37,4 @@ class NativeCandidateContext:
                     environmentName=environment.id if environment else None,
                     environmentLabel=environment.name if environment else None,
                     lastReportStatus=report,
-                    stepTotal=len(case.steps or []) if case.type == 'scenario' else None)
+                    stepTotal=(len((row.parameters.get('scenario') or {}).get('steps', [])) if row and 'scenario' in (row.parameters or {}) else len(case.steps or [])) if case.type == 'scenario' else None)
