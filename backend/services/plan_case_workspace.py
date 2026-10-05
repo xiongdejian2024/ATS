@@ -167,24 +167,17 @@ def batch(db,plan,user,data):
 
 
 def associate(db,plan,user,data):
-    workspace=db.get(PlanWorkspace,plan.id)
-    if workspace and workspace.archived: raise HTTPException(409,'归档计划不可修改关联')
+    from services.plan_candidate_selection import resolve
+    cases, summary, suites, relations = resolve(db, plan, user, data, writing=True)
     collection(db,plan,data.collectionId)
-    if len(set(data.caseIds)) != len(data.caseIds): raise HTTPException(422,'关联用例不能重复')
-    cases=db.query(TestCase).filter(TestCase.id.in_(data.caseIds),TestCase.project_id==plan.project_id,TestCase.deleted_at.is_(None)).all()
-    if len(cases)!=len(data.caseIds): raise HTTPException(404,'用例不存在、已回收或不属于当前项目')
-    uses=uses_tree(db,plan.id)
-    if any((case.type if case.type in ('api','scenario') else 'functional') != data.category for case in cases):
-        raise HTTPException(422,'请选择当前分类的用例')
-    if data.category != 'functional' and any(not case.is_automated for case in cases):
-        raise HTTPException(422,'API/场景分类只能关联可执行的自动化用例')
-    suite=db.get(TestSuite,data.suiteId) if data.suiteId else None
+    uses=summary['usesTree']
+    suite=next((s for s in suites if s.id == data.suiteId), None)
     if data.suiteId and (not suite or suite.plan_id != plan.id):
         raise HTTPException(422,'测试套必须属于当前计划')
-    if uses and any(case.is_automated and (not suite or suite.plan_id!=plan.id or case.id not in suite.case_ids) for case in cases):
+    if uses and any(case.is_automated and (not suite or suite.plan_id!=plan.id or case.id not in (suite.case_ids or [])) for case in cases):
         raise HTTPException(422,'自动化用例需要选择包含所有关联用例的当前计划测试套')
-    existing={row.case_id for row in db.query(PlanCaseRelation).filter_by(plan_id=plan.id)}
-    order=db.query(PlanCaseRelation).filter_by(plan_id=plan.id).count()
+    existing={row.case_id for row in relations}
+    order=max((r.execution_order or 0 for r in relations), default=-1)+1
     added=0
     for case in cases:
         if uses: save_node(db,plan,dict(name=case.name,nodeType='case',category=data.category,caseId=case.id,parentId=data.collectionId,suiteId=suite.id if case.is_automated and suite else None))

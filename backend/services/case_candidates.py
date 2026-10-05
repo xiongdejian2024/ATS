@@ -15,7 +15,7 @@ def descendants(rows, root):
     return found
 
 
-def candidate_query(db, project_id, category, search, folder, priority):
+def candidate_query(db, project_id, category, search, folder, priority, *, current_read=False):
     from sqlalchemy import func, or_
 
     query = db.query(TestCase).filter(
@@ -38,12 +38,12 @@ def candidate_query(db, project_id, category, search, folder, priority):
         )
     if priority:
         query = query.filter(TestCase.priority == priority)
-    modules = (
+    module_query = (
         db.query(Module)
         .filter_by(project_id=project_id)
         .order_by(Module.sort_order, Module.created_at)
-        .all()
     )
+    modules = (module_query.populate_existing().with_for_update() if current_read else module_query).all()
     module_counts = dict(
         query.with_entities(TestCase.module_id, func.count(TestCase.id))
         .group_by(TestCase.module_id)
@@ -74,6 +74,8 @@ def candidate_query(db, project_id, category, search, folder, priority):
         if folder not in {row.id for row in modules}:
             raise HTTPException(404, "关联选择目录不属于当前项目")
         query = query.filter(TestCase.module_id.in_(descendants(modules, folder)))
+    if current_read:
+        query = query.populate_existing().with_for_update()
     return query, modules, folders, counts
 
 

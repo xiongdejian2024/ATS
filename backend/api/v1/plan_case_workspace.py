@@ -15,6 +15,7 @@ from services import plan_case_workspace as service
 from schemas.plan_case_execution import ExecuteInput
 from schemas.plan_case_view import PlanCaseViewCreate, PlanCaseViewUpdate
 from schemas.plan_candidate_view import CandidateViewCreate, CandidateViewUpdate
+from schemas.plan_candidate_selection import Association, CandidateSelection
 from services import plan_case_view as views_service
 router=APIRouter()
 Category=Literal['functional','api','scenario']
@@ -27,11 +28,13 @@ class Batch(BaseModel):
     selections:list[Selection]=Field(min_length=1,max_length=500)
     assignedTo:str|None=Field(None,max_length=36)
     collectionId:str|None=Field(None,max_length=36)
-class Association(BaseModel):
-    category:Category='functional'
-    caseIds:list[str]=Field(min_length=1,max_length=500)
-    collectionId:str|None=Field(None,max_length=36)
-    suiteId:str|None=Field(None,max_length=36)
+
+@router.post('/plans/{plan_id}/case-workspace/candidates/selection')
+def candidate_selection(plan_id: str, data: CandidateSelection, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_candidate_selection import preview
+    plan = plan_access(db, user, plan_id)
+    require_project_access(db, user, plan.project_id, 'test_case:read')
+    return ok(preview(db, plan, user, data))
 
 @router.get('/plans/{plan_id}/case-workspace/candidates')
 def candidates(plan_id:str,category:Category='functional',search:str=Query('',max_length=255),

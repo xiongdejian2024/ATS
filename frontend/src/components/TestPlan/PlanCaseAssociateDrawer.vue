@@ -115,6 +115,19 @@
           message="关联用例列表加载失败，请重试"
           show-icon
         />
+        <a-alert
+          v-if="selection.error.value"
+          type="error"
+          show-icon
+          :message="selection.error.value"
+          class="selection-feedback"
+        >
+          <template #action
+            ><a-button :disabled="locked || loading" @click="selection.preview"
+              >重试范围核对</a-button
+            ></template
+          >
+        </a-alert>
         <a-table
           v-else
           :data-source="data?.items || []"
@@ -176,7 +189,7 @@
               :field-names="{ label: 'title', value: 'key' }"
           /></a-form-item>
           <a-form-item
-            v-if="data?.usesTree && automatedSelected.length"
+            v-if="data?.usesTree && automatedCount"
             label="自动化测试套（须包含所选自动化用例）"
             required
             ><a-select
@@ -192,17 +205,15 @@
           /></a-form-item>
         </a-form>
         <a-alert
-          v-if="selected.size && !data?.usesTree && automatedSelected.length"
+          v-if="
+            selection.hasSelection.value && !data?.usesTree && automatedCount
+          "
           type="info"
           show-icon
           message="自动化用例需在测试套中配置执行命令和节点后才能执行。"
         />
         <a-alert
-          v-if="
-            data?.usesTree &&
-            automatedSelected.length &&
-            !compatibleSuites.length
-          "
+          v-if="data?.usesTree && automatedCount && !compatibleSuites.length"
           type="warning"
           show-icon
           message="当前没有包含全部已选自动化用例的测试套，请调整选择或先配置测试套。"
@@ -225,10 +236,22 @@
     />
     <template #footer
       ><div class="associate-footer">
-        <span>已选择 {{ selected.size }} 个用例</span
-        ><a-button
-          :disabled="locked || !selected.size"
-          @click="selected.clear()"
+        <span v-if="selection.loading.value">正在核对选择范围…</span>
+        <span v-else-if="selection.error.value">选择范围待核对</span>
+        <span v-else
+          >已选择 {{ selection.summary.value?.count || 0 }} 个用例<span
+            v-if="selection.selectAll.value"
+            >（全选所有页，排除
+            {{
+              selection.summary.value?.excludedCount ??
+              selection.excluded.value.length
+            }}
+            个）</span
+          ></span
+        >
+        <a-button
+          :disabled="locked || !selection.hasSelection.value"
+          @click="selection.clear"
           >清空选择</a-button
         ><a-space
           ><a-button :disabled="locked" @click="close">取消</a-button
@@ -247,7 +270,8 @@
 <script setup lang="ts">
 import NativeCaseConfigDrawer from "@/components/TestCase/NativeCaseConfigDrawer.vue";
 import { nativeStateOptions, nativeReportOptions } from "@/api/nativeCase";
-import { computed, ref, watch } from "vue";
+import { computed, h, ref, watch, toRef } from "vue";
+import { cloneDeep } from "lodash-es";
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
 import PlanCaseFilters from "./PlanCaseFilters.vue";
 import type {
@@ -261,9 +285,11 @@ import type { TestCase } from "@/types";
 import {
   planCaseWorkspaceApi,
   type PlanAssociateListing,
+  type CandidateCondition,
 } from "@/api/planCaseWorkspace";
 import { caseFolderTree } from "./planCaseFolders";
-import { mergeCaseSelection } from "./planCaseSelection";
+import { usePlanCandidateSelection } from "./planCandidateSelection";
+import ReviewSelectionHeader from "@/components/CaseReview/ReviewSelectionHeader.vue";
 const props = defineProps<{
     open: boolean;
     planId: string;
@@ -292,7 +318,6 @@ const activeCategory = ref<"functional" | "api" | "scenario">(
   page = ref(1),
   size = ref(20),
   expanded = ref<string[]>([]),
-  selected = ref(new Map<string, TestCase>()),
   collectionId = ref<string>(),
   suiteId = ref<string>();
 const nativeCaseId = ref(""),
@@ -301,6 +326,25 @@ const locked = computed(
   () => saving.value || filterSaving.value || nativeSaving.value,
 );
 const advanced = computed(() => filterScope.value !== undefined);
+const appliedCondition = ref<CandidateCondition>({});
+const selectablePageIds = computed(() =>
+  (data.value?.items || [])
+    .filter((row) => data.value?.usesTree || !row.alreadyLinked)
+    .map((row) => row.id),
+);
+const selection = usePlanCandidateSelection(
+  toRef(props, "planId"),
+  activeCategory,
+  appliedCondition,
+  selectablePageIds,
+);
+watch(
+  locked,
+  (value) => {
+    selection.working.value = value;
+  },
+  { flush: "sync" },
+);
 function applyAdvanced(
   conditions: FilterCondition[] | undefined,
   logic: FilterLogic,
@@ -352,12 +396,12 @@ const columns = computed(() =>
           : [{ title: "步骤数", dataIndex: "stepTotal", width: 80 }]),
       ],
 );
-const automatedSelected = computed(() =>
-    Array.from(selected.value.values()).filter((item) => item.isAutomated),
+const automatedCount = computed(
+    () => selection.summary.value?.automatedCount || 0,
   ),
   compatibleSuites = computed(() =>
     (data.value?.suites || []).filter((suite) =>
-      automatedSelected.value.every((item) => suite.caseIds.includes(item.id)),
+      selection.summary.value?.compatibleSuiteIds.includes(suite.id),
     ),
   );
 const canSave = computed(
@@ -366,35 +410,48 @@ const canSave = computed(
     !locked.value &&
     !failed.value &&
     !loading.value &&
-    selected.value.size > 0 &&
-    selected.value.size <= 500 &&
+    selection.ready.value &&
     (!data.value?.usesTree ||
-      !automatedSelected.value.length ||
+      !automatedCount.value ||
       !!compatibleSuites.value.find((item) => item.id === suiteId.value)),
 );
 const rowSelection = computed(() => ({
-  selectedRowKeys: Array.from(selected.value.keys()),
+  selectedRowKeys: selection.pageSelected.value,
+  columnWidth: 56,
+  columnTitle: () =>
+    h(ReviewSelectionHeader, {
+      count: selection.summary.value?.count || 0,
+      total: data.value?.total || 0,
+      all: selection.selectAll.value,
+      excludedCount: selection.excluded.value.length,
+      disabled:
+        locked.value ||
+        loading.value ||
+        failed.value ||
+        !props.canEdit ||
+        (!selectablePageIds.value.length && !selection.hasSelection.value),
+      onTogglePage: selection.togglePage,
+      onCurrent: selection.current,
+      onAll: selection.all,
+      onClear: selection.clear,
+    }),
   preserveSelectedRowKeys: true,
   onChange: selectRows,
   getCheckboxProps: (row: TestCase & { alreadyLinked: boolean }) => ({
     disabled:
       locked.value ||
       loading.value ||
+      !props.canEdit ||
       (!data.value?.usesTree && row.alreadyLinked),
   }),
 }));
 function selectRows(keys: (string | number)[]) {
   if (locked.value || loading.value) return;
-  const ids = new Set(keys.map(String));
-  if (ids.size > 500) {
-    message.warning("一次最多关联500个用例");
+  if (keys.length > 10000) {
+    message.warning("一次最多关联10000个用例");
     return;
   }
-  selected.value = mergeCaseSelection(
-    selected.value,
-    keys,
-    data.value?.items || [],
-  );
+  selection.keysChanged(keys.map(String));
 }
 let sequence = 0;
 async function load() {
@@ -402,30 +459,31 @@ async function load() {
   const request = ++sequence;
   loading.value = true;
   failed.value = false;
+  const condition: CandidateCondition = cloneDeep({
+    search: search.value,
+    folder: folder.value,
+    priority: priority.value,
+    filters: filterScope.value,
+    mine: viewId.value === "system:my",
+  });
   try {
     const result = await planCaseWorkspaceApi.candidates(props.planId, {
       category: activeCategory.value,
-      search: search.value,
-      folder: folder.value,
-      priority: priority.value,
+      ...condition,
       page: page.value,
       size: size.value,
       filters:
-        filterScope.value === undefined
+        condition.filters === undefined
           ? undefined
-          : JSON.stringify(filterScope.value),
-      mine: viewId.value === "system:my",
+          : JSON.stringify(condition.filters),
     });
     if (request === sequence) {
       data.value = result;
+      appliedCondition.value = condition;
       project.value = { id: result.projectId, name: result.projectName };
       planOptions.value = result.plans;
       filterModules.value = result.modules;
-      if (
-        suiteId.value &&
-        !compatibleSuites.value.some((item) => item.id === suiteId.value)
-      )
-        suiteId.value = undefined;
+      void selection.preview();
     }
   } catch (error) {
     console.error("加载计划关联候选用例失败", error);
@@ -455,7 +513,7 @@ function resetCategory() {
   nativeCaseId.value = "";
   filterScope.value = undefined;
   viewId.value = undefined;
-  selected.value.clear();
+  selection.clear();
   suiteId.value = undefined;
   folder.value = "all";
   search.value = "";
@@ -468,14 +526,14 @@ function close() {
   emit("update:open", false);
 }
 async function save() {
-  if (!canSave.value) return;
+  if (!canSave.value || !selection.request.value) return;
+  const body = cloneDeep(selection.request.value);
   saving.value = true;
   const plan = props.planId,
     category = activeCategory.value;
   try {
     await planCaseWorkspaceApi.associate(plan, {
-      category: activeCategory.value,
-      caseIds: Array.from(selected.value.keys()),
+      ...body,
       collectionId: collectionId.value || null,
       suiteId: suiteId.value || null,
     });
@@ -488,11 +546,16 @@ async function save() {
     message.success("用例已关联到计划");
     emit("associated");
     emit("update:open", false);
-  } catch (error) {
+  } catch (error: any) {
     console.error("保存计划批量用例关联失败", error);
-    message.error("关联失败，请核对分类、测试集和测试套范围");
+    message.error(
+      typeof error.response?.data?.detail === "string"
+        ? error.response.data.detail
+        : "关联失败，已保留选择，请核对分类、测试集和测试套范围",
+    );
   } finally {
     saving.value = false;
+    if (props.open) void selection.preview();
   }
 }
 watch(
@@ -506,7 +569,8 @@ watch(
     filterModules.value = [];
     filterScope.value = undefined;
     viewId.value = undefined;
-    selected.value.clear();
+    selection.clear();
+    appliedCondition.value = {};
     collectionId.value = props.collectionId || undefined;
     suiteId.value = undefined;
     search.value = "";
@@ -574,6 +638,9 @@ onBeforeRouteUpdate(allowNavigation);
 }
 .target-form {
   margin-top: 16px;
+}
+.selection-feedback {
+  margin-bottom: 12px;
 }
 .associate-footer {
   display: flex;

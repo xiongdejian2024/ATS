@@ -9,13 +9,15 @@ NATIVE_FIELDS = {'nativeState', 'protocol', 'path', 'apiChange', 'environmentNam
 
 
 class NativeCandidateContext:
-    def __init__(self, db, project_id):
-        self.configs = {row.case_id: row for row in db.query(NativeCaseConfig).join(TestCase, TestCase.id == NativeCaseConfig.case_id).filter(TestCase.project_id == project_id)}
-        self.definitions = {r.id: r for r in db.query(ApiDefinition).filter_by(project_id=project_id)}
-        self.environments = {r.id: r for r in db.query(ApiTestEnvironment).filter_by(project_id=project_id)}
+    def __init__(self, db, project_id, *, current_read=False):
+        def read(query):
+            return (query.populate_existing().with_for_update() if current_read else query).all()
+        self.configs = {row.case_id: row for row in read(db.query(NativeCaseConfig).join(TestCase, TestCase.id == NativeCaseConfig.case_id).filter(TestCase.project_id == project_id))}
+        self.definitions = {r.id: r for r in read(db.query(ApiDefinition).filter_by(project_id=project_id))}
+        self.environments = {r.id: r for r in read(db.query(ApiTestEnvironment).filter_by(project_id=project_id))}
         records = {}
         for model in [TestExecution, TestSuiteExecution]:
-            for row in db.query(model.id, model.case_id, model.result, model.executed_at).join(TestCase, TestCase.id == model.case_id).filter(TestCase.project_id == project_id):
+            for row in read(db.query(model.id, model.case_id, model.result, model.executed_at).join(TestCase, TestCase.id == model.case_id).filter(TestCase.project_id == project_id)):
                 records.setdefault(row.id, row)
         self.latest = {}
         for row in sorted(records.values(), key=lambda r: (temporal(r.executed_at), r.id), reverse=True):

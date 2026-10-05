@@ -66,6 +66,31 @@ export interface PlanAssociateListing {
   usesTree: boolean;
   suites: { id: string; name: string; caseIds: string[] }[];
 }
+export interface CandidateCondition {
+  search?: string;
+  folder?: string;
+  priority?: string;
+  filters?: {
+    conditions: import("@/components/TestCase/advancedFilter").FilterCondition[];
+    logic: "and" | "or";
+  };
+  mine?: boolean;
+}
+export interface CandidateSelection {
+  category: "functional" | "api" | "scenario";
+  selectAll?: boolean;
+  caseIds?: string[];
+  excludeIds?: string[];
+  condition?: CandidateCondition;
+}
+export interface CandidateSelectionPreview {
+  count: number;
+  excludedCount: number;
+  automatedCount: number;
+  usesTree: boolean;
+  compatibleSuiteIds: string[];
+  canAssociate: boolean;
+}
 const base = (id: string) => `/plan-orchestration/plans/${id}/case-workspace`;
 export type PlanFilterMode = "workspace" | "association";
 const viewBase = (id: string, mode: PlanFilterMode) =>
@@ -136,6 +161,11 @@ export const planCaseWorkspaceApi = {
   ) => apiClient.post(base(id) + "/batch", data),
   candidates: (id: string, params: Record<string, unknown>) =>
     apiClient.get<PlanAssociateListing>(base(id) + "/candidates", { params }),
+  previewCandidates: (id: string, data: CandidateSelection) =>
+    apiClient.post<CandidateSelectionPreview>(
+      base(id) + "/candidates/selection",
+      data,
+    ),
   execute: (
     id: string,
     data: {
@@ -150,9 +180,7 @@ export const planCaseWorkspaceApi = {
     apiClient.get<PlanCaseExecutionDetail>(base(id) + "/execution", { params }),
   associate: (
     id: string,
-    data: {
-      category?: string;
-      caseIds: string[];
+    data: CandidateSelection & {
       collectionId?: string | null;
       suiteId?: string | null;
     },
