@@ -1,5 +1,13 @@
 import { apiClient } from "@/utils/api";
 
+export interface CaseSelection {
+  selectAll?: boolean;
+  caseIds?: string[];
+  excludeIds?: string[];
+  includeIds?: string[];
+  condition?: Record<string, unknown>;
+}
+
 export interface CaseVersion {
   id: string;
   caseId: string;
@@ -69,6 +77,47 @@ export interface CaseSavedView {
 }
 const base = (project: string) => `/projects/${project}/case-governance`;
 export const caseGovernanceApi = {
+  previewSelection: (p: string, body: CaseSelection) =>
+    apiClient.post<{
+      count: number;
+      excludedCount: number;
+      permissions: Record<string, boolean>;
+    }>(`${base(p)}/selection/preview`, body),
+  selectionMembership: (
+    p: string,
+    body: CaseSelection,
+    candidateIds: string[],
+  ) =>
+    apiClient.post<{ caseIds: string[] }>(`${base(p)}/selection/membership`, {
+      ...body,
+      candidateIds,
+    }),
+  deleteSelection: (p: string, body: CaseSelection) =>
+    apiClient.post<{ deleted: number }>(`${base(p)}/selection/delete`, body),
+  linkSelection: (p: string, body: CaseSelection, issueId: string) =>
+    apiClient.post<{ linked: number; created: number }>(
+      `${base(p)}/selection/issues`,
+      { ...body, issueId },
+    ),
+  exportSelection: async (
+    p: string,
+    body: CaseSelection,
+    options: Record<string, unknown>,
+  ) => {
+    const response = await apiClient
+      .getInstance()
+      .post<Blob>(
+        `${base(p)}/selection/export`,
+        { ...body, ...options },
+        { responseType: "blob" },
+      );
+    return response.data;
+  },
+  copySelection: (p: string, body: CaseSelection, moduleId: string | null) =>
+    apiClient.post<{ caseIds: string[] }>(`${base(p)}/batch-copy`, {
+      ...body,
+      moduleId,
+    }),
   versions: (p: string, c: string) =>
     apiClient.get<CaseVersion[]>(`${base(p)}/cases/${c}/versions`),
   compare: (p: string, c: string, before: number, after: number) =>

@@ -272,7 +272,8 @@ def query_cases(db, project_id, **options):
     conditions, logic = parse_filters(options.get("filters"))
     from services.case_filter_context import CaseFilterContext
 
-    context = CaseFilterContext(db, project_id, conditions, options.get("user_id"))
+    current_read = bool(options.get("current_read"))
+    context = CaseFilterContext(db, project_id, conditions, options.get("user_id"), current_read=current_read)
     conditions = context.conditions
     query = db.query(TestCase).filter(
         TestCase.project_id == project_id, TestCase.deleted_at.is_(None)
@@ -291,13 +292,13 @@ def query_cases(db, project_id, **options):
     if options.get("mine"):
         query = query.filter(TestCase.created_by == options.get("user_id"))
     if options.get("followed"):
-        query = query.filter(
-            TestCase.id.in_(
-                db.query(CaseFollow.case_id).filter(
-                    CaseFollow.user_id == options.get("user_id")
-                )
-            )
+        follows = db.query(CaseFollow.case_id).filter(
+            CaseFollow.user_id == options.get("user_id")
         )
+        if current_read:
+            # 外层锁定读不会使嵌套查询自动成为当前读，单独读取关注关系。
+            follows = [row[0] for row in follows.with_for_update().all()]
+        query = query.filter(TestCase.id.in_(follows))
     if options.get("module_ids"):
         ids = [v.strip() for v in options["module_ids"].split(",") if v.strip()]
         criterion = TestCase.module_id.in_(ids)
@@ -320,6 +321,8 @@ def query_cases(db, project_id, **options):
                 getattr(TestCase, field).contains(options[field], autoescape=True)
             )
     # JSON 数组及自定义字段在筛选候选集上统一计算，避免 MySQL/SQLite JSON 运算差异。
+    if current_read:
+        query = query.populate_existing().with_for_update()
     cases = query.order_by(
         (
             getattr(TestCase, sort_by).desc()
@@ -342,7 +345,7 @@ def query_cases(db, project_id, **options):
         cases = [
             case for case in cases if all(tag in (case.tags or []) for tag in tags)
         ]
-    statuses = current_review_statuses(db, cases)
+    statuses = current_review_statuses(db, cases, current_read=current_read)
     if options.get("review_status"):
         cases = [
             case for case in cases if statuses.get(case.id) == options["review_status"]

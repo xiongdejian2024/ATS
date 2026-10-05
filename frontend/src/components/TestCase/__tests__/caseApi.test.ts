@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   put: vi.fn(),
   delete: vi.fn(),
   rawGet: vi.fn(),
+  rawPost: vi.fn(),
 }));
 vi.mock("@/utils/api", () => ({
   apiClient: {
@@ -12,23 +13,58 @@ vi.mock("@/utils/api", () => ({
     post: mocks.post,
     put: mocks.put,
     delete: mocks.delete,
-    getInstance: () => ({ get: mocks.rawGet }),
+    getInstance: () => ({ get: mocks.rawGet, post: mocks.rawPost }),
   },
 }));
 import { testCaseApi } from "@/api/testCase";
 import { caseFeaturesApi } from "@/api/caseFeatures";
 import { caseGovernanceApi } from "@/api/caseGovernance";
 import { caseSearchParams } from "../caseSearchScope";
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 describe("用例前端实际接口契约", () => {
+  it("范围导出保留原始Blob，排除项通过POST而非URL完整传递", async () => {
+    const file = new Blob(["范围文件"]);
+    mocks.rawPost.mockResolvedValue({ data: file });
+    const body = {
+      selectAll: true,
+      condition: { mine: true },
+      excludeIds: ["a"],
+      format: "xlsx",
+    };
+    expect(await caseGovernanceApi.exportSelection("p", body, {})).toBe(file);
+    expect(mocks.rawPost).toHaveBeenCalledWith(
+      "/projects/p/case-governance/selection/export",
+      body,
+      { responseType: "blob" },
+    );
+  });
   it("列表与Excel导出传递相同高级范围，零值条件不被旧基础筛选截断", async () => {
-    const params = caseSearchParams({ personalView: false, systemView: "all", conditions: [{ field: "tags", operator: "count_gt", value: 0 }], logic: "and", search: "隐藏关键字", moduleKeys: ["旧模块"], moduleIds: ["旧模块"], priority: "P0", automated: false });
+    const params = caseSearchParams({
+      personalView: false,
+      systemView: "all",
+      conditions: [{ field: "tags", operator: "count_gt", value: 0 }],
+      logic: "and",
+      search: "隐藏关键字",
+      moduleKeys: ["旧模块"],
+      moduleIds: ["旧模块"],
+      priority: "P0",
+      automated: false,
+    });
     await testCaseApi.getTestCases("p", { ...params, page: 1, size: 20 });
     mocks.rawGet.mockResolvedValue({ data: new Blob(["文件"]) });
-    await testCaseApi.exportCases("p", { ...params, format: "xlsx", caseIds: "a,b" });
+    await testCaseApi.exportCases("p", {
+      ...params,
+      format: "xlsx",
+      caseIds: "a,b",
+    });
     const list = mocks.get.mock.calls[0][1].params;
-    const exported = new URL(mocks.rawGet.mock.calls[0][0], "http://localhost").searchParams;
-    expect(JSON.parse(exported.get("filters")!)).toEqual(JSON.parse(list.filters));
+    const exported = new URL(mocks.rawGet.mock.calls[0][0], "http://localhost")
+      .searchParams;
+    expect(JSON.parse(exported.get("filters")!)).toEqual(
+      JSON.parse(list.filters),
+    );
     for (const key of ["search", "module_ids", "priority", "is_automated"]) {
       expect(list).not.toHaveProperty(key);
       expect(exported.has(key)).toBe(false);

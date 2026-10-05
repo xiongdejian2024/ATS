@@ -206,6 +206,19 @@ def create_review(db, user, project_id, request):
     from services import review_workspace as workspace_service
 
     workspace_service.lock_project(db, project_id)
+    if request.selection:
+        from services.case_selection import resolve, LIMIT
+
+        selection = request.selection
+        field = "includeIds" if selection.selectAll else "caseIds"
+        selection = selection.model_copy(update={
+            field: list(dict.fromkeys(getattr(selection, field) + request.caseIds))
+        })
+        selected, _ = resolve(db, user, project_id, selection, writing=True, action="update")
+        identifiers = [case.id for case in selected]
+        if len(identifiers) > LIMIT:
+            raise HTTPException(422, "每批最多操作10000条用例，请缩小筛选范围")
+        request = request.model_copy(update={"caseIds": identifiers, "selection": None})
     workspace_service.module_for_project(db, project_id, request.moduleId, lock=True)
     eligible = {r["id"] for r in reviewers(db, project_id)}
     requested = set(request.reviewerIds) | {
@@ -536,6 +549,8 @@ def vote_review(db, user, project_id, review_id, item_id, request):
 
 def revise_review(db, user, project_id, review_id, request):
     project_access(db, user, project_id, "update")
+    if request.selection:
+        raise HTTPException(422, "已有评审请通过关联用例入口修改范围")
     review = get_review(db, user, project_id, review_id, lock=True)
     from services.review_workspace import require_mutable, metadata, set_metadata
 
@@ -683,12 +698,10 @@ def clone_review(db, user, project_id, review_id, body, resubmit=False):
 
 
 def batch_update(db, user, project_id, request):
-    project_access(db, user, project_id, "update")
-    cases = [
-        case_for_project(db, project_id, cid, lock=True)
-        for cid in sorted(set(request.caseIds))
-    ]
-    changes = request.model_dump(exclude_unset=True, exclude={"caseIds"})
+    from services.case_selection import resolve, SELECTION_FIELDS
+
+    cases, _ = resolve(db, user, project_id, request, writing=True, action="update")
+    changes = request.model_dump(exclude_unset=True, exclude=SELECTION_FIELDS)
     changes = {
         key: value
         for key, value in changes.items()
@@ -730,11 +743,9 @@ def batch_copy(db, user, project_id, request):
     from services.test_case_service import TestCaseService
     from schemas.test_case import TestCaseCreate
 
-    project_access(db, user, project_id, "create")
-    cases = [
-        case_for_project(db, project_id, cid, lock=True)
-        for cid in sorted(set(request.caseIds))
-    ]
+    from services.case_selection import resolve
+
+    cases, _ = resolve(db, user, project_id, request, writing=True, action="create")
     module = None
     if request.moduleId:
         module = (
@@ -762,13 +773,13 @@ def batch_copy(db, user, project_id, request):
     return copies
 
 
-def current_review_statuses(db, cases):
+def current_review_statuses(db, cases, *, current_read=False):
     """按当前内容匹配评审快照；旧版本通过不得展示为当前版本通过。"""
     mapping = {case.id: case for case in cases}
     statuses = {case.id: "not_reviewed" for case in cases}
     if not mapping:
         return statuses
-    rows = (
+    query = (
         db.query(CaseReviewItem, CaseVersion, CaseReview)
         .join(CaseVersion, CaseVersion.id == CaseReviewItem.version_id)
         .join(CaseReview, CaseReview.id == CaseReviewItem.review_id)
@@ -777,8 +788,10 @@ def current_review_statuses(db, cases):
             CaseReview.status.notin_(["cancelled", "superseded"]),
         )
         .order_by(CaseReview.created_at.desc(), CaseReview.id.desc())
-        .all()
     )
+    if current_read:
+        query = query.populate_existing().with_for_update()
+    rows = query.all()
     matched = set()
     for item, version, review in rows:
         if item.case_id in matched:

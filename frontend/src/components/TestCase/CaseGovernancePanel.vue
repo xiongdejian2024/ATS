@@ -58,6 +58,7 @@
     v-model:open="saveVisible"
     :title="editingViewId ? '重命名视图' : '新建视图'"
     :confirm-loading="busy"
+    :cancel-button-props="{ disabled: busy }"
     :closable="!busy"
     :keyboard="!busy"
     :mask-closable="!busy"
@@ -69,6 +70,10 @@
     v-model:open="batchVisible"
     title="批量更新所选用例"
     :confirm-loading="busy"
+    :cancel-button-props="{ disabled: busy }"
+    :closable="!busy"
+    :keyboard="!busy"
+    :mask-closable="!busy"
     @ok="batchUpdate"
   >
     <a-alert
@@ -76,7 +81,7 @@
       type="info"
       show-icon
     />
-    <a-form layout="vertical" style="margin-top: 16px">
+    <a-form :disabled="busy" layout="vertical" style="margin-top: 16px">
       <a-form-item label="优先级"
         ><a-select
           v-model:value="batchPriority"
@@ -109,8 +114,13 @@
     v-model:open="issueVisible"
     title="批量关联需求 / 缺陷"
     :confirm-loading="busy"
+    :cancel-button-props="{ disabled: busy }"
+    :closable="!busy"
+    :keyboard="!busy"
+    :mask-closable="!busy"
     @ok="linkIssues"
     ><a-select
+      :disabled="busy"
       v-model:value="issueId"
       show-search
       option-filter-prop="label"
@@ -118,16 +128,20 @@
       :options="issues.map((i) => ({ label: i.title, value: i.id }))"
       placeholder="选择当前项目需求或缺陷" /><a-alert
       style="margin-top: 16px"
-      message="重复关联会由服务保持幂等。单条失败时会报告成功与失败数量。"
+      message="重复关联保持幂等；本次关联作为一个事务提交，失败保留选择范围。"
       type="info"
   /></a-modal>
   <a-modal
     v-model:open="organizeVisible"
     :title="organizeMode === 'move' ? '批量移动到模块' : '批量复制到模块'"
     :confirm-loading="busy"
+    :cancel-button-props="{ disabled: busy }"
+    :closable="!busy"
+    :keyboard="!busy"
+    :mask-closable="!busy"
     @ok="organize"
   >
-    <a-form layout="vertical"
+    <a-form :disabled="busy" layout="vertical"
       ><a-form-item label="目标模块"
         ><a-select
           v-model:value="targetModule"
@@ -137,7 +151,7 @@
           ]" /></a-form-item
     ></a-form>
     <a-alert
-      :message="`操作仅限当前项目，影响所选 ${selectedIds.length} 条用例。`"
+      :message="`操作仅限当前项目，影响所选 ${operationSelection?.count ?? selectedIds.length} 条用例。`"
       type="info"
       show-icon
     />
@@ -230,6 +244,10 @@
     v-model:open="restoreVisible"
     title="恢复历史版本"
     :confirm-loading="busy"
+    :cancel-button-props="{ disabled: busy }"
+    :closable="!busy"
+    :keyboard="!busy"
+    :mask-closable="!busy"
     @ok="restore"
   >
     <a-alert
@@ -256,6 +274,7 @@ import {
   DeleteOutlined,
   PlusOutlined,
 } from "@ant-design/icons-vue";
+import { saveReviewSelection } from "./caseSelection";
 import { useRouter } from "vue-router";
 import { projectApi } from "@/api/project";
 import { caseFeaturesApi, type CaseIssue } from "@/api/caseFeatures";
@@ -263,6 +282,7 @@ import {
   caseGovernanceApi as api,
   type CaseVersion,
   type CaseSavedView,
+  type CaseSelection,
 } from "@/api/caseGovernance";
 const props = defineProps<{
   projectId: string;
@@ -270,15 +290,44 @@ const props = defineProps<{
   filters: Record<string, any>;
   systemView: string;
   filterSaving?: boolean;
+  selection?: CaseSelection;
+  selectedCount?: number;
+  selectionReady?: boolean;
+  afterSelectionChange?: () => Promise<void>;
 }>();
 const emit = defineEmits<{
   (e: "changed"): void;
+  (e: "busy-change", value: boolean): void;
   (e: "apply-view", filters: Record<string, any>): void;
   (e: "system-view", value: string): void;
   (e: "new-view"): void;
 }>();
 const router = useRouter();
 const busy = ref(false);
+watch(busy, (value) => emit("busy-change", value), { flush: "sync" });
+const operationSelection = ref<{
+  projectId: string;
+  body: CaseSelection;
+  count: number;
+}>();
+function captureSelection() {
+  if (busy.value || props.selectionReady === false) return false;
+  const body = props.selection || { caseIds: props.selectedIds };
+  operationSelection.value = {
+    projectId: props.projectId,
+    body: cloneDeep(body),
+    count: props.selectedCount ?? props.selectedIds.length,
+  };
+  return true;
+}
+async function selectionChanged(projectId: string) {
+  if (projectId !== props.projectId) {
+    message.info("操作已保存到原项目");
+    return;
+  }
+  if (props.afterSelectionChange) await props.afterSelectionChange();
+  else emit("changed");
+}
 const clearTags = ref(false),
   issueVisible = ref(false),
   issueId = ref<string>(),
@@ -337,6 +386,7 @@ const fieldName = (v: string) =>
 const display = (value: any) =>
   typeof value === "string" ? value : JSON.stringify(value, null, 2);
 async function run(work: () => Promise<void>) {
+  if (busy.value) return;
   busy.value = true;
   try {
     await work();
@@ -356,6 +406,12 @@ watch(
     viewId.value = undefined;
     versionsVisible.value = false;
     saveVisible.value = false;
+    if (!busy.value) {
+      batchVisible.value = false;
+      issueVisible.value = false;
+      organizeVisible.value = false;
+      operationSelection.value = undefined;
+    }
     if (!p) return;
     try {
       const rows = await api.views(p);
@@ -482,85 +538,100 @@ async function saveView() {
   });
 }
 async function batchUpdate() {
-  const data: Record<string, any> = { caseIds: props.selectedIds };
-  if (batchPriority.value) data.priority = batchPriority.value;
-  if (clearTags.value) data.tags = [];
-  else if (batchTags.value.length) data.tags = batchTags.value;
-  if (batchAutomated.value) data.isAutomated = batchAutomated.value === "yes";
-  if (Object.keys(data).length === 1)
+  const context = operationSelection.value;
+  if (!context) return;
+  const changes: Record<string, unknown> = {};
+  if (batchPriority.value) changes.priority = batchPriority.value;
+  if (clearTags.value) changes.tags = [];
+  else if (batchTags.value.length) changes.tags = [...batchTags.value];
+  if (batchAutomated.value)
+    changes.isAutomated = batchAutomated.value === "yes";
+  if (!Object.keys(changes).length)
     return message.warning("请选择需要修改的属性");
   await run(async () => {
-    const result = await api.batch(props.projectId, data);
+    const result = await api.batch(context.projectId, {
+      ...context.body,
+      ...changes,
+    });
     batchVisible.value = false;
-    emit("changed");
+    await selectionChanged(context.projectId);
     message.success(`已更新 ${result.updated} 条用例`);
   });
 }
 async function openIssueLinks() {
+  if (!captureSelection()) return;
+  const context = operationSelection.value!;
   await run(async () => {
-    issues.value = await caseFeaturesApi.issues(props.projectId);
+    const rows = await caseFeaturesApi.issues(context.projectId);
+    if (context.projectId !== props.projectId) return;
+    issues.value = rows;
     issueId.value = undefined;
     issueVisible.value = true;
   });
 }
 async function linkIssues() {
-  if (!issueId.value) return message.warning("请选择需求或缺陷");
+  const context = operationSelection.value;
+  if (!context || !issueId.value) return message.warning("请选择需求或缺陷");
+  const selectedIssue = issueId.value;
   await run(async () => {
-    const results = await Promise.allSettled(
-      props.selectedIds.map((id) =>
-        caseFeaturesApi.linkIssue(props.projectId, id, issueId.value!),
-      ),
+    const result = await api.linkSelection(
+      context.projectId,
+      context.body,
+      selectedIssue,
     );
-    const failed = results.filter((r) => r.status === "rejected");
-    for (const r of failed)
-      if (r.status === "rejected")
-        console.error("批量关联需求缺陷失败", r.reason);
-    if (failed.length)
-      message.warning(
-        `成功 ${results.length - failed.length} 条，失败 ${failed.length} 条`,
-      );
-    else {
-      message.success("所选用例已关联");
-      issueVisible.value = false;
-    }
-    emit("changed");
+    issueVisible.value = false;
+    await selectionChanged(context.projectId);
+    message.success(`已关联 ${result.linked} 条用例`);
   });
 }
 async function openOrganize(mode: "move" | "copy") {
+  if (!captureSelection()) return;
+  const context = operationSelection.value!;
   organizeMode.value = mode;
   await run(async () => {
-    const data = await projectApi.getModules(props.projectId);
+    const data = await projectApi.getModules(context.projectId);
+    if (context.projectId !== props.projectId) return;
     modules.value = data.modules || data;
     targetModule.value = "__unassigned__";
     organizeVisible.value = true;
   });
 }
 async function organize() {
+  const context = operationSelection.value;
+  if (!context) return;
+  const moduleId =
+    targetModule.value === "__unassigned__" ? null : targetModule.value;
+  const mode = organizeMode.value;
   await run(async () => {
-    const moduleId =
-      targetModule.value === "__unassigned__" ? null : targetModule.value;
-    if (organizeMode.value === "move")
-      await api.batch(props.projectId, {
-        caseIds: props.selectedIds,
-        moduleId,
-      });
-    else await api.copy(props.projectId, props.selectedIds, moduleId);
+    if (mode === "move")
+      await api.batch(context.projectId, { ...context.body, moduleId });
+    else await api.copySelection(context.projectId, context.body, moduleId);
     organizeVisible.value = false;
-    emit("changed");
-    message.success(
-      organizeMode.value === "move" ? "所选用例已移动" : "所选用例已复制",
-    );
+    await selectionChanged(context.projectId);
+    message.success(mode === "move" ? "所选用例已移动" : "所选用例已复制");
   });
 }
-function openCreateReview() {
-  router.push({
-    path: "/case-reviews",
-    query: {
-      projectId: props.projectId,
-      caseIds: props.selectedIds.join(","),
-      create: "1",
-    },
-  });
+async function openCreateReview() {
+  if (!captureSelection()) return;
+  const context = operationSelection.value!;
+  try {
+    const key = context.body.selectAll
+      ? saveReviewSelection(context.projectId, context.body)
+      : undefined;
+    await router.push({
+      name: "CaseReviewEditor",
+      query: {
+        projectId: context.projectId,
+        create: "1",
+        ...(key
+          ? { selectionKey: key }
+          : { caseIds: (context.body.caseIds || []).join(",") }),
+      },
+    });
+  } catch (exception) {
+    console.error("保存或打开评审范围失败", exception);
+    message.error("无法打开评审，请重试");
+  }
 }
 async function openVersions(caseId: string) {
   activeCaseId.value = caseId;
@@ -613,13 +684,21 @@ defineExpose({
   viewNames,
   cannotAdd,
   persistFilterView,
-  resetViewSelection: () => { viewId.value = undefined; },
+  resetViewSelection: () => {
+    viewId.value = undefined;
+  },
   openVersions,
   openOrganize,
   openIssueLinks,
   openCreateReview,
   openBatch: () => {
-    batchVisible.value = true;
+    if (captureSelection()) {
+      batchPriority.value = undefined;
+      batchTags.value = [];
+      clearTags.value = false;
+      batchAutomated.value = undefined;
+      batchVisible.value = true;
+    }
   },
 });
 </script>

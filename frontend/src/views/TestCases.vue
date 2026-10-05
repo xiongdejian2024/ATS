@@ -92,7 +92,7 @@
           </div>
           <div class="toolbar-filter">
             <a-input-search v-if="!isAdvancedSearchMode" v-model:value="searchValue" placeholder="通过ID/名称/标签搜索" style="width:187px" allow-clear @search="handleSearch" />
-            <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" :system-view="viewMode" :filter-saving="filterSaving" @new-view="openFilter(true)" @system-view="applySystemView" @changed="refreshGovernedCases" @apply-view="applySavedView" />
+            <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :selection="selection.request.value" :selected-count="selection.count.value" :selection-ready="selection.ready.value" :after-selection-change="finishSelectionChange" @busy-change="selection.working.value=$event" :filters="savedViewFilters" :system-view="viewMode" :filter-saving="filterSaving" @new-view="openFilter(true)" @system-view="applySystemView" @changed="refreshGovernedCases" @apply-view="applySavedView" />
             <a-button aria-label="高级筛选" :type="isAdvancedSearchMode ? 'primary' : 'default'" @click="openFilter(false)"><FilterOutlined /> 筛选</a-button>
             <a-button v-if="isAdvancedSearchMode" aria-label="清空高级筛选" type="link" @click="clearAdvancedFilters">清空筛选</a-button>
             <a-button-group>
@@ -236,11 +236,12 @@
         <!-- 固定底部分页器和批量操作栏 -->
         <div v-if="!recycleVisible" class="fixed-footer">
           <!-- 批量操作栏 -->
-          <div v-if="selectedRowKeys.length > 0" class="batch-actions">
-            <a-space>
-              <span>已选择 {{ selectedRowKeys.length }} 条</span>
-              <a-dropdown>
-                <a-button>
+          <div v-if="selection.hasSelection.value" class="batch-actions">
+            <a-alert v-if="selection.error.value" :message="selection.error.value" type="error" show-icon><template #action><a-button :loading="selection.loading.value" @click="selection.preview">重试核对选择范围</a-button></template></a-alert>
+            <a-space wrap>
+              <span aria-label="用例选择数量">{{selection.loading.value ? '正在核对选择范围…' : selection.count.value === undefined ? '选择范围未确认' : `已选择 ${selection.count.value} 条`}}</span>
+              <a-dropdown :disabled="!selection.ready.value || !selection.permissions.value.export">
+                <a-button :disabled="!selection.ready.value || !selection.permissions.value.export">
                   导出
                   <template #icon><DownOutlined /></template>
                 </a-button>
@@ -251,22 +252,22 @@
                   </a-menu>
                 </template>
               </a-dropdown>
-              <a-button @click="handleBatchEdit">编辑</a-button>
-              <a-button @click="handleBatchMove">移动到</a-button>
-              <a-button @click="handleBatchCopy">复制到</a-button>
-              <a-button @click="governancePanel?.openIssueLinks()">关联需求 / 缺陷</a-button>
-              <a-button @click="governancePanel?.openCreateReview()">发起评审</a-button>
+              <a-button :disabled="!selection.ready.value || !selection.permissions.value.update" @click="handleBatchEdit">编辑</a-button>
+              <a-button :disabled="!selection.ready.value || !selection.permissions.value.update" @click="handleBatchMove">移动到</a-button>
+              <a-button :disabled="!selection.ready.value || !selection.permissions.value.create" @click="handleBatchCopy">复制到</a-button>
+              <a-button :disabled="!selection.ready.value || !selection.permissions.value.update" @click="governancePanel?.openIssueLinks()">关联需求 / 缺陷</a-button>
+              <a-button :disabled="!selection.ready.value || !selection.permissions.value.update" @click="governancePanel?.openCreateReview()">发起评审</a-button>
               <a-dropdown>
                 <a-button>
                   <template #icon><MoreOutlined /></template>
                 </a-button>
                 <template #overlay>
                   <a-menu>
-                    <a-menu-item key="delete" @click="handleBatchDelete">批量删除</a-menu-item>
+                    <a-menu-item key="delete" :disabled="!selection.ready.value || !selection.permissions.value.delete" @click="handleBatchDelete">批量删除</a-menu-item>
                   </a-menu>
                 </template>
               </a-dropdown>
-              <a-button @click="clearSelection">清空</a-button>
+              <a-button :disabled="selection.working.value" @click="clearSelection">清空</a-button>
             </a-space>
           </div>
           <!-- 分页器 -->
@@ -331,7 +332,7 @@
       @saving="filterSaving=$event"
     />
 
-    <CaseExportDialog v-model:open="exportVisible" :initial-format="exportFormat" :busy="exportBusy" :selected-count="selectedRowKeys.length" @export="confirmExport" />
+    <CaseExportDialog v-model:open="exportVisible" :initial-format="exportFormat" :busy="exportBusy" :selected-count="selection.count.value || 0" @export="confirmExport" />
     <CaseTemplateManager :project-id="projectId" v-model:open="templateVisible" @changed="loadFilterFields" />
     <!-- 导入用例对话框 -->
     <ImportCasesModal
@@ -361,6 +362,7 @@ import { readDisplay, normalizeDisplay, displayStorageKey, pageSizes, type Displ
 import TestCaseDetail from '@/components/TestCase/TestCaseDetail.vue'
 import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
 import { caseSearchParams, isAdvancedCaseSearch } from '@/components/TestCase/caseSearchScope'
+import { useCaseSelection } from '@/components/TestCase/caseSelection'
 import { filterFieldCatalog } from '@/components/TestCase/filterFieldCatalog'
 import { caseGovernanceApi } from '@/api/caseGovernance'
 import ImportCasesModal from '@/components/TestCase/ImportCasesModal.vue'
@@ -462,8 +464,8 @@ const recycleVisible = ref(route.query.view === 'recycle'), templateVisible = re
 const sortBy = ref('updated_at'), sortOrder = ref('desc')
 const filterDrawerVisible = ref(false)
 const newFilterView = ref(false), filterSaving = ref(false)
-onBeforeRouteLeave(() => !filterSaving.value)
-onBeforeRouteUpdate(() => !filterSaving.value)
+onBeforeRouteLeave(() => !filterSaving.value && !selection.working.value && !exportBusy.value)
+onBeforeRouteUpdate(() => !filterSaving.value && !selection.working.value && !exportBusy.value)
 function openFilter(isNew: boolean) {
   if (filterSaving.value) return
   newFilterView.value = isNew
@@ -663,7 +665,7 @@ function resetBasicSearch() {
   searchValue.value=''; appliedSearchValue.value=''; filters.level=undefined; filters.executionResult=undefined; filters.reviewResult=undefined; filters.isAutomated=undefined
 }
 function resetSearchSelection() {
-  resetBasicSearch(); selectedModuleKeys.value=['all']; selectedRowKeys.value=[]; pagination.current=1
+  resetBasicSearch(); selectedModuleKeys.value=['all']; selection.clear(); pagination.current=1
 }
 async function saveFilterView(name: string, conditions: any[], logic: 'and' | 'or', mode: 'create' | 'update' | 'copy') {
   if (!governancePanel.value) throw new Error('项目视图尚未加载')
@@ -897,21 +899,20 @@ const getCaseDisplayId = (record: TestCase, index: number) => {
   return num.toString().padStart(3, '0')
 }
 
-// 行选择配置
+// 行选择复用范围状态，表头默认复选框只改变当前页。
+const selection = useCaseSelection(projectId, currentCaseParams, selectedRowKeys, computed(() => testCases.value.map(c => c.id)))
 const rowSelection = computed(() => ({
-  selectedRowKeys: selectedRowKeys.value,
-  preserveSelectedRowKeys: true,
-  onChange: (keys: string[]) => {
-    selectedRowKeys.value = keys
-  },
-  onSelectAll: (selected: boolean, _selectedRows: TestCase[], _changeRows: TestCase[]) => {
-    if (selected) {
-      selectedRowKeys.value = [...new Set([...selectedRowKeys.value, ...testCases.value.map(c => c.id)])]
-    } else {
-      const currentPageIds = testCases.value.map(c => c.id)
-      selectedRowKeys.value = selectedRowKeys.value.filter(id => !currentPageIds.includes(id))
-    }
-  }
+  selectedRowKeys: selection.pageSelected.value,
+  preserveSelectedRowKeys: !selection.selectAll.value,
+  columnWidth: 50,
+  getCheckboxProps: () => ({ disabled: selection.working.value || exportBusy.value || loading.value }),
+  onChange: selection.keysChanged,
+  selections: [
+    { key: 'current', text: '全选当前页', onSelect: selection.current },
+    selection.selectAll.value
+      ? { key: 'cancelAll', text: '取消全选所有页', onSelect: () => { if (!selection.working.value) selection.clear() } }
+      : { key: 'all', text: '全选所有页', onSelect: () => { if (pagination.total && !loading.value) selection.all() } },
+  ],
 }))
 
 // 详情用例
@@ -1050,7 +1051,7 @@ const rebuildFlatModuleKeys = () => {
 }
 
 // 获取模块及其所有子模块的 ID 列表
-const getModuleAndChildrenIds = (moduleId: string): string[] => {
+function getModuleAndChildrenIds(moduleId: string): string[] {
   const result: string[] = [moduleId]
 
   const findNode = (nodes: any[], targetId: string): any => {
@@ -1330,16 +1331,21 @@ const handleImportSuccess = async (result: any) => {
 // 批量操作
 const handleExport = ({key}:{key:string})=>{exportFormat.value=key==='xmind'?'xmind':'xlsx';exportVisible.value=true}
 const confirmExport=async(options:{format:string;layout:string;fields:string})=>{
-  if(!projectId.value)return
-  exportBusy.value=true
-  const hide=message.loading('正在导出…',0)
+  const project=projectId.value, body=selection.request.value;
+  if(!project || exportBusy.value || (body && (!selection.ready.value || !selection.permissions.value.export)))return;
+  exportBusy.value=true;selection.working.value=true;
+  const hide=message.loading('正在导出…',0);
   try{
-    const params:Record<string,unknown>={...currentCaseParams.value,...options,sortBy:sortBy.value,sortOrder:sortOrder.value}
-    if(selectedRowKeys.value.length)params.caseIds=selectedRowKeys.value.join(',')
-    saveCaseBlob(await testCaseApi.exportCases(projectId.value,params),`测试用例_${new Date().toISOString().slice(0,10)}.${params.format}`)
-    message.success('导出文件已生成');exportVisible.value=false
-  }catch(error){console.error('导出用例失败',error)}finally{hide();exportBusy.value=false}
+    const params={...currentCaseParams.value,...options,sortBy:sortBy.value,sortOrder:sortOrder.value};
+    const blob=body
+      ? await caseGovernanceApi.exportSelection(project,body,{...options,sortBy:sortBy.value,sortOrder:sortOrder.value})
+      : await testCaseApi.exportCases(project,params);
+    saveCaseBlob(blob,`测试用例_${new Date().toISOString().slice(0,10)}.${options.format}`);
+    message.success('导出文件已生成');exportVisible.value=false;
+  }catch(error){console.error('导出用例失败，保留选择范围',error)}
+  finally{hide();exportBusy.value=false;selection.working.value=false}
 }
+const finishSelectionChange=async()=>{selection.clear();await refreshGovernedCases()}
 
 const handleBatchEdit = () => {
   governancePanel.value?.openBatch()
@@ -1354,31 +1360,28 @@ const handleBatchCopy = () => {
 }
 
 const handleBatchDelete = () => {
-  Modal.confirm({
-    title: '确认删除',
-    content: `确定要删除选中的 ${selectedRowKeys.value.length} 个用例吗？`,
+  if (!selection.ready.value || !selection.permissions.value.delete || !selection.request.value) return
+  const body=JSON.parse(JSON.stringify(selection.request.value)), project=projectId.value
+  const confirmation = Modal.confirm({
+    title: '批量删除', content: `确定将选中的 ${selection.count.value} 条用例移入回收站吗？`,
     onOk: async () => {
+      selection.working.value=true
+      confirmation.update({ cancelButtonProps: { disabled:true }, keyboard:false, maskClosable:false })
       try {
-        const ids=[...selectedRowKeys.value]
-        const results=await Promise.allSettled(ids.map(id=>testCaseApi.deleteTestCase(projectId.value,id)))
-        const failed=ids.filter((_,i)=>results[i].status==='rejected')
-        results.forEach((r,i)=>{if(r.status==='rejected')console.error('批量删除用例失败',ids[i],r.reason)})
-        selectedRowKeys.value=failed
-        if(failed.length)message.warning(`已删除 ${ids.length-failed.length} 条，${failed.length} 条失败，已保留勾选`)
-        else message.success('所选用例已移入回收站')
-        await loadTestCases()
-        await loadModuleTree()
-  } catch (error) {
-        console.error('批量删除失败',error)
-        message.error('批量删除失败')
+        const result=await caseGovernanceApi.deleteSelection(project,body)
+        if(project!==projectId.value)return
+        selection.clear();message.success(`已将 ${result.deleted} 条用例移入回收站`)
+        await loadTestCases();await loadModuleTree()
+      } catch (error) {console.error('批量删除失败，保留选择范围',error);throw error}
+      finally {
+        selection.working.value=false
+        confirmation.update({ cancelButtonProps: { disabled:false }, keyboard:true })
       }
-    }
+    },
   })
 }
 
-const clearSelection = () => {
-  selectedRowKeys.value = []
-}
+const clearSelection = () => { if(!selection.working.value)selection.clear() }
 
 // 模块树右键菜单与拖拽
 const hideModuleContextMenu = () => {
@@ -1852,14 +1855,14 @@ const getDisplayName = (userId: string) => {
 }
 
 // 生命周期
-watch(() => JSON.stringify([projectId.value, currentCaseParams.value]), () => { selectedRowKeys.value=[] }, { flush:'sync' })
+watch(() => JSON.stringify([sortBy.value,sortOrder.value,viewLayout.value]), () => { selection.clear() }, { flush:'sync' })
 watch(
   () => projectId.value,
   () => {
     if (projectId.value) {
       if (!filterSaving.value) filterDrawerVisible.value = false
       advancedFilters.value = []; filterLogic.value = 'and'; viewMode.value='all'; resetBasicSearch()
-      selectedRowKeys.value=[];selectedModuleKeys.value=['all'];detailCaseVisible.value=false;recycleVisible.value=route.query.view === 'recycle';templateVisible.value=false;pagination.current=1
+      selection.clear();selectedModuleKeys.value=['all'];detailCaseVisible.value=false;recycleVisible.value=route.query.view === 'recycle';templateVisible.value=false;pagination.current=1
       loadTestCases()
       loadModuleTree()
       loadFilterFields()
@@ -2075,8 +2078,13 @@ const paginationTotal = (total: number) => `共 ${total} 条`
 
 .batch-actions {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 100%;
+  gap: 8px;
 }
+
+.batch-actions [aria-label="用例选择数量"] { white-space: nowrap; }
 
 /* 固定底部分页器和批量操作栏 */
 .fixed-footer {
@@ -2088,6 +2096,8 @@ const paginationTotal = (total: number) => `共 ${total} 条`
   padding: 12px 16px;
   margin-bottom: 20px;
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;

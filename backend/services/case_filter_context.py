@@ -28,7 +28,7 @@ def date_expected(condition):
 
 
 class CaseFilterContext:
-    def __init__(self, db, project_id, conditions, user_id):
+    def __init__(self, db, project_id, conditions, user_id, *, current_read=False):
         from models.test_case import TestCase, CaseAttachment
         from models.case_features import CaseTemplate, CaseIssue, CaseIssueLink
 
@@ -36,25 +36,29 @@ class CaseFilterContext:
         self.requirements = defaultdict(list)
         self.template_types = {}
         fields = {c["field"] for c in conditions}
+        def read(query):
+            if current_read:
+                query = query.populate_existing().with_for_update()
+            return query.all()
+
         if any(field.startswith("customFields.") for field in fields):
             self.template_types = {
                 t.id: {f["key"]: f["type"] for f in t.fields}
-                for t in db.query(CaseTemplate).filter_by(project_id=project_id).all()
+                for t in read(db.query(CaseTemplate).filter_by(project_id=project_id))
             }
         if "attachment" in fields:
-            rows = (
+            rows = read(
                 db.query(CaseAttachment.case_id, CaseAttachment.file_name)
                 .join(TestCase, TestCase.id == CaseAttachment.case_id)
                 .filter(
                     TestCase.project_id == project_id, TestCase.deleted_at.is_(None)
                 )
-                .all()
             )
             for case_id, name in rows:
                 if name:
                     self.attachments[case_id].append(name)
         if "requirementRef" in fields:
-            rows = (
+            rows = read(
                 db.query(CaseIssueLink.case_id, CaseIssue.title)
                 .join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id)
                 .join(TestCase, TestCase.id == CaseIssueLink.case_id)
@@ -64,7 +68,6 @@ class CaseFilterContext:
                     CaseIssue.project_id == project_id,
                     CaseIssue.kind == "requirement",
                 )
-                .all()
             )
             for case_id, name in rows:
                 if name:

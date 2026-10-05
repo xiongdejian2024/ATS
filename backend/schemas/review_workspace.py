@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 from schemas.case_governance import StrictRequest, ReviewVote
+from schemas.case_selection import CaseSelection
 
 
 class ModuleSave(StrictRequest):
@@ -35,6 +36,7 @@ class ReviewCandidateSelection(StrictRequest):
     folder: str = "all"
     priority: Literal["P0", "P1", "P2", "P3"] | None = None
     excludeIds: list[str] = Field(default_factory=list, max_length=10000)
+    selectionScope: CaseSelection | None = None
 
 
 class ReviewAssociate(StrictRequest):

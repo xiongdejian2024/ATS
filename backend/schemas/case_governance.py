@@ -4,6 +4,7 @@ from typing import Literal, Any
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from pydantic import model_validator
 from datetime import date, datetime
+from schemas.case_selection import CaseSelection
 
 
 class StrictRequest(BaseModel):
@@ -74,6 +75,7 @@ class ReviewHeader(StrictRequest):
 
 class ReviewCreate(ReviewHeader):
     caseIds: list[str] = Field(default_factory=list, max_length=10000)
+    selection: CaseSelection | None = None
     policy: Literal["all", "any"] = "all"
     itemReviewers: dict[str, list[str]] = Field(default_factory=dict)
 
@@ -205,14 +207,12 @@ class SavedViewUpdate(SavedViewRename):
         return SavedViewCreate.bounded_filters(values)
 
 
-class CaseBatchUpdate(StrictRequest):
-    caseIds: list[str] = Field(min_length=1, max_length=200)
+class CaseBatchUpdate(CaseSelection):
     priority: Literal["P0", "P1", "P2", "P3"] | None = None
     tags: list[str] | None = Field(default=None, max_length=50)
     isAutomated: bool | None = None
     moduleId: str | None = None
 
 
-class CaseBatchCopy(StrictRequest):
-    caseIds: list[str] = Field(min_length=1, max_length=200)
+class CaseBatchCopy(CaseSelection):
     moduleId: str | None

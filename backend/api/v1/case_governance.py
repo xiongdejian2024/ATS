@@ -29,6 +29,8 @@ from schemas.common import APIResponse
 from models import User
 from services import case_governance as service
 from core.logger import logger
+from schemas.case_selection import CaseSelection, CaseSelectionIssue, CaseSelectionExport, CaseSelectionMembership
+from services import case_selection as selections
 
 router = APIRouter(
     prefix="/projects/{project_id}/case-governance", tags=["用例版本与评审"]
@@ -425,6 +427,46 @@ def batch(
             )
         )
     )
+
+
+@router.post("/selection/preview")
+def selection_preview(project_id: str, body: CaseSelection, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return result(selections.preview(db, user, project_id, body))
+
+
+@router.post("/selection/delete")
+def selection_delete(project_id: str, body: CaseSelection, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return result(transact(db, lambda: selections.delete(db, user, project_id, body)))
+
+
+@router.post("/selection/membership")
+def selection_membership(project_id: str, body: CaseSelectionMembership, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    cases, _ = selections.resolve(db, user, project_id, body)
+    candidates = set(body.candidateIds)
+    return result(dict(caseIds=[case.id for case in cases if case.id in candidates]))
+
+
+@router.post("/selection/issues")
+def selection_issues(project_id: str, body: CaseSelectionIssue, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return result(transact(db, lambda: selections.link_issue(db, user, project_id, body)))
+
+
+@router.post("/selection/export")
+async def selection_export(project_id: str, body: CaseSelectionExport, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from api.v1.projects import export_test_cases
+
+    cases, _ = selections.resolve(db, user, project_id, body, action="export")
+    if not cases:
+        raise HTTPException(409, "所选范围已无可导出用例，请刷新后重新选择")
+    # 导出复用既有字段、排版和XMind生成器；查询只按此处确定的集合执行。
+    response = await export_test_cases(
+        project_id=project_id, db=db, current_user=user,
+        case_ids=",".join(case.id for case in cases),
+        format=body.format, layout=body.layout, fields=body.fields,
+        sort_by=body.sortBy, sort_order=body.sortOrder,
+    )
+    logger.info("主用例范围导出已生成 project_id={} count={}", project_id, len(cases))
+    return response
 
 
 @router.post("/batch-copy")

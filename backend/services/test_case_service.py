@@ -249,7 +249,7 @@ class TestCaseService:
 
     @staticmethod
     def delete_test_case(
-        db: Session, case_id: str, current_user_id: str | None = None
+        db: Session, case_id: str, current_user_id: str | None = None, *, commit: bool = True
     ) -> bool:
         """删除测试用例"""
         test_case = TestCaseService._lock_case_for_write(db, case_id)
@@ -273,7 +273,10 @@ class TestCaseService:
             from services.case_features import change
 
             change(db, test_case, actor, "移入回收站")
-            db.commit()
+            if commit:
+                db.commit()
+            else:
+                db.flush()
         except Exception:
             db.rollback()
             logger.exception("删除用例失败 case_id={}", case_id)

@@ -111,16 +111,27 @@
             ><a-divider v-if="!isCopy" type="vertical" /><a-button
               v-if="!isCopy"
               type="link"
-              :disabled="!caseIds.length"
+              :disabled="!caseIds.length && !rangeSelection"
               @click="clearCases"
               >清空已选用例</a-button
             ></template
           >
           <div class="selected-cases">
-            已选 {{ caseIds.length }} 个用例<a-divider
+            已选 {{ selectedCount }} 个用例
+            <a-alert
+              v-if="rangeError"
+              :message="rangeError"
+              type="error"
+              show-icon
+              ><template #action
+                ><a-button :loading="rangeLoading" @click="loadRange"
+                  >重试核对范围</a-button
+                ></template
+              ></a-alert
+            ><a-divider v-if="!isCopy" type="vertical" /><a-button
               v-if="!isCopy"
-              type="vertical"
-            /><a-button v-if="!isCopy" type="link" @click="associateOpen = true"
+              type="link"
+              @click="associateOpen = true"
               >关联用例</a-button
             >
           </div></a-form-item
@@ -137,8 +148,15 @@
           @click="save(false)"
           >更新</a-button
         ><template v-else
-          ><a-button :loading="saving" @click="save(false)">保存</a-button
-          ><a-button type="primary" :disabled="saving" @click="save(true)"
+          ><a-button
+            :disabled="rangeLoading || !!rangeError"
+            :loading="saving"
+            @click="save(false)"
+            >保存</a-button
+          ><a-button
+            type="primary"
+            :disabled="saving || rangeLoading || !!rangeError"
+            @click="save(true)"
             >评审</a-button
           ></template
         ></template
@@ -148,6 +166,7 @@
       :open="associateOpen"
       :project-id="projectId"
       :excluded="caseIds"
+      :selection-scope="rangeSelection"
       :default-reviewers="form.reviewerIds"
       :members="members"
       @update:open="associateOpen = $event"
@@ -170,7 +189,12 @@ import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import utc from "dayjs/plugin/utc";
 import "dayjs/locale/zh-cn";
-import { caseGovernanceApi, type CaseReview } from "@/api/caseGovernance";
+import { readReviewSelection } from "@/components/TestCase/caseSelection";
+import {
+  caseGovernanceApi,
+  type CaseSelection,
+  type CaseReview,
+} from "@/api/caseGovernance";
 import { reviewWorkspaceApi, type ReviewModule } from "@/api/reviewWorkspace";
 import { useProjectStore } from "@/stores/project";
 import ReviewAssociateDrawer from "@/components/CaseReview/ReviewAssociateDrawer.vue";
@@ -216,6 +240,51 @@ const form = reactive({
   tags: [] as string[],
   cycle: [] as string[],
 });
+const rangeSelection = ref<CaseSelection>(),
+  rangeCount = ref<number>(),
+  rangeError = ref(""),
+  rangeLoading = ref(false);
+const selectedCount = computed(() =>
+  rangeSelection.value ? (rangeCount.value ?? "待核对") : caseIds.value.length,
+);
+let rangeSequence = 0;
+function selectionWithExtras(): CaseSelection {
+  return {
+    ...rangeSelection.value!,
+    includeIds: [
+      ...new Set([
+        ...(rangeSelection.value?.includeIds || []),
+        ...caseIds.value,
+      ]),
+    ],
+  };
+}
+async function loadRange() {
+  const current = ++rangeSequence,
+    p = projectId.value;
+  rangeCount.value = undefined;
+  rangeError.value = "";
+  if (!rangeSelection.value) {
+    rangeLoading.value = false;
+    return;
+  }
+  rangeLoading.value = true;
+  try {
+    const result = await caseGovernanceApi.previewSelection(
+      p,
+      selectionWithExtras(),
+    );
+    if (current !== rangeSequence || p !== projectId.value) return;
+    rangeCount.value = result.count;
+  } catch (exception: any) {
+    console.error("核对评审草稿选择范围失败，保留草稿", exception);
+    if (current === rangeSequence)
+      rangeError.value =
+        exception.response?.data?.detail || "选择范围核对失败，请重试";
+  } finally {
+    if (current === rangeSequence) rangeLoading.value = false;
+  }
+}
 const moduleTree = computed(() => [
   { title: "默认模块", value: "default", key: "default" },
   ...caseFolderTree(
@@ -232,6 +301,7 @@ const signature = () =>
   JSON.stringify({
     form,
     caseIds: caseIds.value,
+    selection: rangeSelection.value,
     itemReviewers: itemReviewers.value,
   });
 const dirty = computed(
@@ -244,6 +314,7 @@ watch(
     reviewId.value,
     copyFrom.value,
     route.query.caseIds,
+    route.query.selectionKey,
     route.query.moduleId,
   ],
   async () => {
@@ -258,6 +329,11 @@ watch(
     members.value = [];
     modules.value = [];
     caseIds.value = [];
+    rangeSelection.value = undefined;
+    rangeCount.value = undefined;
+    rangeError.value = "";
+    ++rangeSequence;
+    rangeLoading.value = false;
     itemReviewers.value = {};
     Object.assign(form, {
       name: "",
@@ -336,6 +412,11 @@ watch(
             ]),
           )
         : {};
+      if (!record && typeof route.query.selectionKey === "string") {
+        rangeSelection.value = readReviewSelection(p, route.query.selectionKey);
+        await loadRange();
+        if (current !== sequence || p !== projectId.value) return;
+      }
       baseline.value = signature();
       console.info("独立评审编辑页面已加载", {
         projectId: p,
@@ -352,12 +433,18 @@ watch(
   },
   { immediate: true },
 );
-function associate(data: { caseIds: string[]; reviewerIds: string[] }) {
+async function associate(data: { caseIds: string[]; reviewerIds: string[] }) {
   caseIds.value = [...new Set([...caseIds.value, ...data.caseIds])];
   for (const id of data.caseIds)
     itemReviewers.value[id] = [...data.reviewerIds];
+  await loadRange();
 }
 function clearCases() {
+  rangeSelection.value = undefined;
+  rangeCount.value = undefined;
+  rangeError.value = "";
+  ++rangeSequence;
+  rangeLoading.value = false;
   caseIds.value = [];
   itemReviewers.value = {};
   console.info("已清空评审草稿关联用例", { projectId: projectId.value });
@@ -375,7 +462,14 @@ function period() {
   };
 }
 async function save(openReview: boolean) {
-  if (saving.value || loading.value || !canManage.value) return;
+  if (
+    saving.value ||
+    loading.value ||
+    !canManage.value ||
+    rangeLoading.value ||
+    rangeError.value
+  )
+    return;
   try {
     await formRef.value?.validate();
   } catch (error) {
@@ -402,10 +496,15 @@ async function save(openReview: boolean) {
         : await caseGovernanceApi.createReview(p, {
             ...header,
             caseIds: [...caseIds.value],
+            ...(rangeSelection.value
+              ? { selection: rangeSelection.value }
+              : {}),
             itemReviewers: itemReviewers.value,
           });
     if (p !== projectId.value || current !== sequence) return;
     baseline.value = signature();
+    if (typeof route.query.selectionKey === "string")
+      sessionStorage.removeItem(route.query.selectionKey);
     console.info("评审已保存", {
       projectId: p,
       reviewId: record.id,
@@ -477,6 +576,7 @@ onMounted(() => {
 });
 onUnmounted(() => {
   ++sequence;
+  ++rangeSequence;
   window.removeEventListener("beforeunload", unload);
   window.removeEventListener("keydown", shortcut);
 });

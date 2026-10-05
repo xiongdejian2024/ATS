@@ -313,9 +313,15 @@ def select_candidates(
     query, _, _, _ = candidate_query(
         db, project_id, "functional", body.search, body.folder, body.priority
     )
-    query = query.filter(TestCase.id.notin_(body.excludeIds))
+    excluded = set(body.excludeIds)
+    if body.selectionScope:
+        from services.case_selection import resolve
+
+        scoped, _ = resolve(db, user, project_id, body.selectionScope)
+        excluded.update(case.id for case in scoped)
+    query = query.filter(TestCase.id.notin_(excluded))
     total = query.count()
-    if total + len(set(body.excludeIds)) > 10000:
+    if total + len(excluded) > 10000:
         raise HTTPException(422, "一个评审最多关联10000个用例，请缩小筛选范围")
     identifiers = [
         row[0]

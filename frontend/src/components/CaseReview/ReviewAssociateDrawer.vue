@@ -121,9 +121,12 @@
           ><template #bodyCell="{ column, record }"
             ><template v-if="column.key === 'name'"
               >{{ record.name
-              }}<a-tag v-if="excluded.includes(record.id)">{{
-                saveSelection ? "已关联" : "已选择"
-              }}</a-tag></template
+              }}<a-tag
+                v-if="
+                  excluded.includes(record.id) || scopedIds.includes(record.id)
+                "
+                >{{ saveSelection ? "已关联" : "已选择" }}</a-tag
+              ></template
             ><a-tag v-else-if="column.key === 'priority'">{{
               record.priority
             }}</a-tag
@@ -175,12 +178,14 @@ import {
   type ReviewCandidates,
 } from "@/api/reviewWorkspace";
 import { caseFolderTree } from "@/components/TestPlan/planCaseFolders";
+import { caseGovernanceApi, type CaseSelection } from "@/api/caseGovernance";
 const props = defineProps<{
   open: boolean;
   projectId: string;
   excluded: string[];
   defaultReviewers: string[];
   members: { id: string; name: string }[];
+  selectionScope?: CaseSelection;
   saveSelection?: (data: {
     caseIds: string[];
     reviewerIds: string[];
@@ -205,6 +210,7 @@ const data = ref<ReviewCandidates>(),
   size = ref(20),
   selected = ref(new Set<string>()),
   reviewers = ref<string[]>([]);
+const scopedIds = ref<string[]>([]);
 const locked = computed(() => selecting.value || saving.value);
 const moduleTree = computed(() =>
   caseFolderTree(data.value?.modules || [], moduleSearch.value),
@@ -227,7 +233,11 @@ const rowSelection = computed(() => ({
   selectedRowKeys: [...selected.value],
   preserveSelectedRowKeys: true,
   getCheckboxProps: (row: { id: string }) => ({
-    disabled: props.excluded.includes(row.id) || locked.value,
+    disabled:
+      props.excluded.includes(row.id) ||
+      scopedIds.value.includes(row.id) ||
+      locked.value ||
+      loading.value,
   }),
   onChange: (keys: (string | number)[]) => {
     if (keys.length + props.excluded.length > 10000)
@@ -250,8 +260,17 @@ async function load() {
       page: page.value,
       size: size.value,
     });
-    if (current === sequence && p === props.projectId && props.open)
+    const membership = props.selectionScope
+      ? await caseGovernanceApi.selectionMembership(
+          p,
+          props.selectionScope,
+          result.items.map((row) => row.id),
+        )
+      : { caseIds: [] };
+    if (current === sequence && p === props.projectId && props.open) {
       data.value = result;
+      scopedIds.value = membership.caseIds;
+    }
   } catch (error) {
     console.error("加载评审关联候选失败", error);
     if (current === sequence) {
@@ -285,6 +304,7 @@ async function selectAll() {
       folder: folder.value,
       priority: priority.value,
       excludeIds: [...new Set([...props.excluded, ...selected.value])],
+      ...(props.selectionScope ? { selectionScope: props.selectionScope } : {}),
     });
     if (p !== props.projectId || !props.open || current !== sequence) return;
     selected.value = new Set([...selected.value, ...result.caseIds]);
@@ -330,6 +350,7 @@ watch(
   () => {
     ++sequence;
     data.value = undefined;
+    scopedIds.value = [];
     selected.value = new Set();
     reviewers.value = [...props.defaultReviewers];
     search.value = "";
