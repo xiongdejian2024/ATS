@@ -99,9 +99,14 @@ def main():
             CaseReviewEvent,
         )
         from models.review_workspace import ReviewWorkspace
-        from schemas.case_governance import ReviewCreate, ReviewVote
+        from schemas.case_governance import ReviewCreate, ReviewVote, ReviewHeader
         from services.case_governance import create_review, vote_review
-        from services.review_workspace import archive_review, workspace, list_reviews
+        from services.review_workspace import (
+            archive_review,
+            workspace,
+            list_reviews,
+            update_header,
+        )
 
         with Sessions() as db:
             owner = User(
@@ -131,7 +136,9 @@ def main():
                 owner,
                 "race-project",
                 ReviewCreate(
-                    name="归档并发验收",
+                    name="评" * 255,
+                    startTime="2026-10-05T01:30:01.123456Z",
+                    endTime="2026-10-05T10:00:00+08:00",
                     caseIds=["race-case"],
                     reviewerIds=[owner.id],
                     mode="single",
@@ -148,6 +155,27 @@ def main():
                 item_id,
                 ReviewVote(decision="approved", comment="完成软件评审"),
             )
+            db.commit()
+            db.expire_all()
+            stored = workspace(db, review)
+            assert stored.start_time.microsecond == 123456
+            edited = update_header(
+                db,
+                owner,
+                "race-project",
+                identifier,
+                ReviewHeader(
+                    name="审" * 255,
+                    reviewerIds=[owner.id],
+                    mode="single",
+                    tags=["中文标签"],
+                    startTime="2026-10-05T09:45:01.654321+08:00",
+                    endTime="2026-10-05T10:15:00+08:00",
+                ),
+            )
+            assert edited["startTime"] == "2026-10-05T09:45:01.654321+08:00"
+            assert edited["items"][0]["id"] == item_id
+            assert edited["items"][0]["decisions"][0]["decision"] == "approved"
             db.commit()
         ready_a, ready_b, start_vote = (
             threading.Event(),
@@ -172,7 +200,11 @@ def main():
                         ReviewVote(decision="rejected", comment="不能覆盖归档"),
                     )
                 except HTTPException as error:
-                    log.exception("并发验收捕获评审写入拒绝：状态=%s，原因=%s", error.status_code, error.detail)
+                    log.exception(
+                        "并发验收捕获评审写入拒绝：状态=%s，原因=%s",
+                        error.status_code,
+                        error.detail,
+                    )
                     rejected = error.status_code == 409 and "归档" in error.detail
                     # 再次普通查询仍可能读取旧快照，当前读检查已经拒绝修改。
                     stale = (
@@ -226,12 +258,17 @@ def main():
                 .count()
                 == 1
             )
+            assert len(review.name) == 255
+            assert workspace(db, review).start_time.microsecond == 654321
             assert db.query(TaskQueue).count() == 0
             owner = db.get(User, "race-owner")
             summary = list_reviews(
                 db, owner, "race-project", lifecycle="archived", search="中文标签"
             )
             assert summary["total"] == 1 and summary["items"][0]["passRate"] == 100
+            assert (
+                summary["items"][0]["startTime"] == "2026-10-05T09:45:01.654321+08:00"
+            )
         log.info(
             "MySQL评审并发验收通过：真实锁等待=%s，旧快照=%s，归档后改投已拒绝，历史结论保持通过；原业务库未写入",
             observed,
@@ -244,6 +281,8 @@ def main():
                 "改投拒绝": rejected,
                 "原结论未改变": True,
                 "中文标签搜索": True,
+                "255字符名称与微秒周期": True,
+                "基本信息编辑保留有效票": True,
                 "节点任务": 0,
             }
         )

@@ -39,7 +39,7 @@ class CaseReview(Base, BaseModel):
         nullable=False,
         index=True,
     )
-    name = Column(String(200), nullable=False)
+    name = Column(String(255), nullable=False)
     policy = Column(String(20), nullable=False, default="all")
     reviewer_ids = Column(JSON, nullable=False)
     status = Column(String(30), nullable=False, default="pending")

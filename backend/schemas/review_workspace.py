@@ -11,11 +11,11 @@ class ModuleSave(StrictRequest):
 
 
 class ConfirmDelete(StrictRequest):
-    name: str = Field(min_length=1, max_length=200)
+    name: str = Field(min_length=1, max_length=255)
 
 
 class ReviewMove(StrictRequest):
-    reviewIds: list[str] = Field(min_length=1, max_length=200)
+    reviewIds: list[str] = Field(min_length=1, max_length=255)
     moduleId: str | None = None
 
     @field_validator("reviewIds")

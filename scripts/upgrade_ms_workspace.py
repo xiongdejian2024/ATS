@@ -18,7 +18,7 @@ from core.logger import logger
 EXTENSIBLE_TABLES = {
     "test_cases", "case_reviews", "case_review_items", "case_saved_views",
     "test_plans", "plan_settings", "plan_runs", "plan_run_items", "plan_case_relations",
-    "task_schedules", "task_schedule_runs", "plan_groups", "plan_workspaces",
+    "task_schedules", "task_schedule_runs", "plan_groups", "plan_workspaces", "review_workspaces",
 }
 
 
@@ -83,6 +83,12 @@ def migration_plan(engine):
             timestamp = actual.get("created_at", {})
             if getattr(timestamp.get("type"), "fsp", None) != 6:
                 steps.append(("扩大计划批次创建时间精度至微秒", "ALTER TABLE plan_runs MODIFY COLUMN created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)"))
+        if table.name == "case_reviews" and engine.dialect.name == "mysql":
+            length = getattr(actual.get("name", {}).get("type"), "length", None)
+            if length is None:
+                raise RuntimeError("评审名称类型无法审查，已停止升级")
+            if length < 255:
+                steps.append(("扩大评审名称至255字符，保留已有名称", "ALTER TABLE case_reviews MODIFY COLUMN name VARCHAR(255) NOT NULL"))
         missing_columns=set(table.columns.keys())-set(actual)
         for column in table.columns:
             if column.name in actual:

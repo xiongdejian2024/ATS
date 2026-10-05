@@ -71,3 +71,21 @@ def test_execution_history_upgrade_preserves_runs_and_is_idempotent():
         assert connection.execute(text("SELECT report FROM plan_runs WHERE id='old-run'")).scalar()=='{"total":1,"passed":1}'
         assert connection.execute(text('SELECT COUNT(*) FROM plan_case_executions')).scalar()==0
     assert module.upgrade(engine,True)==[]
+
+
+def test_review_time_columns_upgrade_keeps_legacy_dates_and_rows():
+    with engine.begin() as connection:
+        connection.execute(text("INSERT INTO users (id,username,email,password_hash,status) VALUES ('owner','周期升级','period@example.test','仅测试',1)"))
+        connection.execute(text("INSERT INTO projects (id,name,owner_id,status) VALUES ('project','周期历史项目','owner','active')"))
+        connection.execute(text("INSERT INTO case_reviews (id,project_id,name,policy,reviewer_ids,status,created_by,description,mode,start_date,end_date) VALUES ('review','project','历史周期','all','[\"owner\"]','pending','owner','','multiple','2026-10-05','2026-10-06')"))
+        connection.execute(text("INSERT INTO review_workspaces (review_id,tags,archived) VALUES ('review','[\"旧标签\"]',0)"))
+        connection.execute(text('ALTER TABLE review_workspaces DROP COLUMN start_time'))
+        connection.execute(text('ALTER TABLE review_workspaces DROP COLUMN end_time'))
+    preview=module.upgrade(engine,False)
+    assert any('review_workspaces.start_time' in description for description,_ in preview)
+    assert 'start_time' not in {column['name'] for column in inspect(engine).get_columns('review_workspaces')}
+    module.upgrade(engine,True)
+    with engine.connect() as connection:
+        assert tuple(connection.execute(text("SELECT start_date,end_date,name FROM case_reviews WHERE id='review'")).one())==('2026-10-05','2026-10-06','历史周期')
+        assert tuple(connection.execute(text("SELECT tags,start_time,end_time FROM review_workspaces WHERE review_id='review'")).one())==('["旧标签"]',None,None)
+    assert module.upgrade(engine,True)==[]

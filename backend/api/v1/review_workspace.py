@@ -8,8 +8,24 @@ from database import get_db
 from api.v1.case_governance import result, transact
 from schemas.review_workspace import ModuleSave, ConfirmDelete, ReviewMove
 from services import review_workspace as service
+from schemas.case_governance import ReviewHeader
 
 router = APIRouter(prefix="/review-workspace", tags=["评审首页"])
+
+
+@router.put("/{review_id}/header")
+def update_header(
+    project_id: str,
+    review_id: str,
+    body: ReviewHeader,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return result(
+        transact(
+            db, lambda: service.update_header(db, user, project_id, review_id, body)
+        )
+    )
 
 
 @router.get("")

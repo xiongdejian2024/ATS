@@ -16,6 +16,8 @@ from core.project_access import project_allows
 from core.logger import logger
 from services import case_governance as governance
 import json
+from datetime import datetime, time
+from utils.datetime_utils import BEIJING_TZ, beijing_now
 
 
 def lock_project(db, project_id):
@@ -115,7 +117,93 @@ def metadata(db, review):
         moduleId=row.module_id if row else None,
         tags=list(row.tags or []) if row else [],
         archived=bool(row and row.archived),
+        startTime=period_value(row.start_time if row else None, review.start_date),
+        endTime=period_value(row.end_time if row else None, review.end_date),
     )
+
+
+def period_value(value, legacy_date):
+    value = value or (datetime.combine(legacy_date, time.min) if legacy_date else None)
+    return value.replace(tzinfo=BEIJING_TZ).isoformat() if value else None
+
+
+def apply_period(db, review, request):
+    row = workspace(db, review, lock=True)
+    if row is None:
+        old = metadata(db, review)
+        row = set_metadata(db, review, old["moduleId"], old["tags"])
+    if {"startTime", "endTime"} & request.model_fields_set:
+        row.start_time = (
+            request.startTime.replace(tzinfo=None) if request.startTime else None
+        )
+        row.end_time = request.endTime.replace(tzinfo=None) if request.endTime else None
+        review.start_date = request.startTime.date() if request.startTime else None
+        review.end_date = request.endTime.date() if request.endTime else None
+    elif {"startDate", "endDate"} & request.model_fields_set:
+        # 日期版客户端往返相同日期时保留精确时间；只有明确改日期才退回日期精度。
+        same_dates = (
+            row.start_time
+            and row.end_time
+            and row.start_time.date() == request.startDate
+            and row.end_time.date() == request.endDate
+        )
+        if not same_dates:
+            row.start_time = row.end_time = None
+        review.start_date, review.end_date = request.startDate, request.endDate
+    db.flush()
+
+
+def update_header(db, user, project_id, identifier, request):
+    governance.project_access(db, user, project_id, "update")
+    review = governance.get_review(db, user, project_id, identifier, lock=True)
+    require_mutable(db, review)
+    if review.status in {"cancelled", "superseded"}:
+        raise HTTPException(409, "评审已关闭，不能编辑基本信息")
+    if request.mode and request.mode != review.mode:
+        raise HTTPException(422, "已创建评审的模式不能修改")
+    eligible = {r["id"] for r in governance.reviewers(db, project_id)}
+    if not set(request.reviewerIds) <= eligible:
+        raise HTTPException(422, "默认评审人必须属于当前项目")
+    # 旧数据未保存逐条分配时先冻结既有人员，改默认人员只作用于之后关联的用例。
+    items = (
+        db.query(CaseReviewItem)
+        .filter_by(review_id=identifier)
+        .populate_existing()
+        .with_for_update()
+        .all()
+    )
+    for item in items:
+        if not item.reviewer_ids:
+            item.reviewer_ids = list(review.reviewer_ids)
+    before = dict(
+        name=review.name,
+        reviewerIds=review.reviewer_ids,
+        description=review.description,
+        **metadata(db, review)
+    )
+    review.name, review.description, review.reviewer_ids = (
+        request.name,
+        request.description,
+        request.reviewerIds,
+    )
+    set_metadata(db, review, request.moduleId, request.tags)
+    apply_period(db, review, request)
+    review.updated_at = beijing_now()
+    governance.review_event(
+        db,
+        review,
+        user.id,
+        "编辑基本信息",
+        {"before": before, "after": request.model_dump(mode="json")},
+    )
+    db.flush()
+    logger.info(
+        "评审基本信息已更新，历史结论保留 project_id={} review_id={} actor_id={}",
+        project_id,
+        identifier,
+        user.id,
+    )
+    return governance.review_data(db, review)
 
 
 def require_mutable(db, review):
@@ -333,6 +421,10 @@ def list_reviews(
                 description=review.description,
                 startDate=review.start_date,
                 endDate=review.end_date,
+                startTime=period_value(
+                    info.start_time if info else None, review.start_date
+                ),
+                endTime=period_value(info.end_time if info else None, review.end_date),
                 createdAt=review.created_at,
                 archived=bool(info and info.archived),
             )

@@ -3,7 +3,7 @@
 from typing import Literal, Any
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from pydantic import model_validator
-from datetime import date
+from datetime import date, datetime
 
 
 class StrictRequest(BaseModel):
@@ -15,41 +15,44 @@ class RestoreVersion(StrictRequest):
     reason: str = Field(min_length=1, max_length=500)
 
 
-class ReviewCreate(StrictRequest):
-    name: str = Field(min_length=1, max_length=200)
-    caseIds: list[str] = Field(min_length=1, max_length=200)
+class ReviewHeader(StrictRequest):
+    """创建与基本信息编辑共享字段，不携带用例或结论写入字段。"""
+
+    name: str = Field(min_length=1, max_length=255)
     reviewerIds: list[str] = Field(min_length=1, max_length=50)
-    policy: Literal["all", "any"] = "all"
     mode: Literal["single", "multiple"] | None = None
     description: str = Field(default="", max_length=10000)
-    itemReviewers: dict[str, list[str]] = Field(default_factory=dict)
     startDate: date | None = None
     endDate: date | None = None
+    startTime: datetime | None = None
+    endTime: datetime | None = None
     moduleId: str | None = None
     tags: list[str] = Field(default_factory=list, max_length=50)
+
+    @field_validator("startTime", "endTime")
+    @classmethod
+    def local_period(cls, value):
+        from utils.datetime_utils import BEIJING_TZ
+
+        if value is None:
+            return None
+        return (
+            value.replace(tzinfo=BEIJING_TZ)
+            if value.tzinfo is None
+            else value.astimezone(BEIJING_TZ)
+        )
 
     @field_validator("tags")
     @classmethod
     def normalized_tags(cls, values):
         values = [v.strip() for v in values]
-        if any(not v or len(v) > 100 for v in values) or len(set(values)) != len(values):
+        if any(not v or len(v) > 100 for v in values) or len(set(values)) != len(
+            values
+        ):
             raise ValueError("标签必须不重复且长度为1至100个字符")
         return values
 
-    @model_validator(mode="after")
-    def period_and_assignments(self):
-        if self.startDate and self.endDate and self.endDate < self.startDate:
-            raise ValueError("评审结束日期不能早于开始日期")
-        if set(self.itemReviewers) - set(self.caseIds):
-            raise ValueError("逐条评审人仅可指定本评审用例")
-        if any(
-            not ids or len(ids) > 50 or len(set(ids)) != len(ids)
-            for ids in self.itemReviewers.values()
-        ):
-            raise ValueError("每条用例必须有不重复的评审人")
-        return self
-
-    @field_validator("caseIds", "reviewerIds")
+    @field_validator("reviewerIds")
     @classmethod
     def unique_ids(cls, values):
         if any(not value.strip() for value in values) or len(set(values)) != len(
@@ -57,6 +60,41 @@ class ReviewCreate(StrictRequest):
         ):
             raise ValueError("ID 不能为空或重复")
         return values
+
+    @model_validator(mode="after")
+    def period_order(self):
+        if bool(self.startTime) != bool(self.endTime):
+            raise ValueError("评审周期开始时间和结束时间必须同时填写")
+        if self.startTime and self.endTime < self.startTime:
+            raise ValueError("评审结束时间不能早于开始时间")
+        if self.startDate and self.endDate and self.endDate < self.startDate:
+            raise ValueError("评审结束日期不能早于开始日期")
+        return self
+
+
+class ReviewCreate(ReviewHeader):
+    caseIds: list[str] = Field(default_factory=list, max_length=10000)
+    policy: Literal["all", "any"] = "all"
+    itemReviewers: dict[str, list[str]] = Field(default_factory=dict)
+
+    @field_validator("caseIds")
+    @classmethod
+    def unique_cases(cls, values):
+        return ReviewHeader.unique_ids(values)
+
+    @model_validator(mode="after")
+    def assignments(self):
+        if set(self.itemReviewers) - set(self.caseIds):
+            raise ValueError("逐条评审人仅可指定本评审用例")
+        if any(
+            not ids
+            or len(ids) > 50
+            or len(set(ids)) != len(ids)
+            or any(not i.strip() for i in ids)
+            for ids in self.itemReviewers.values()
+        ):
+            raise ValueError("每条用例必须有不重复的评审人")
+        return self
 
 
 class ReviewVote(StrictRequest):
@@ -70,7 +108,7 @@ class ReviewBatchVote(ReviewVote):
 
 class ReviewResubmit(StrictRequest):
     caseIds: list[str] | None = None
-    name: str | None = Field(default=None, min_length=1, max_length=200)
+    name: str | None = Field(default=None, min_length=1, max_length=255)
     reviewerIds: list[str] | None = None
     mode: Literal["single", "multiple"] | None = None
     description: str | None = Field(default=None, max_length=10000)

@@ -8,7 +8,9 @@ from sqlalchemy import (
     JSON,
     Boolean,
     UniqueConstraint,
+    DateTime,
 )
+from sqlalchemy.dialects.mysql import DATETIME
 from database import Base
 from models.base import BaseModel
 
@@ -51,3 +53,7 @@ class ReviewWorkspace(Base):
     )
     tags = Column(JSON, nullable=False, default=list)
     archived = Column(Boolean, nullable=False, default=False)
+    start_time = Column(
+        DateTime().with_variant(DATETIME(fsp=6), "mysql"), nullable=True
+    )
+    end_time = Column(DateTime().with_variant(DATETIME(fsp=6), "mysql"), nullable=True)
