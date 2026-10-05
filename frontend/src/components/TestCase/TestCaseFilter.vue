@@ -62,7 +62,9 @@
       />
       <a-tree-select
         v-if="field(condition.field)?.type === 'module'"
-        :value="(condition.value || []).map((value: string) => ({ value }))"
+        :value="
+          selectionValues(condition.value).map((value: string) => ({ value }))
+        "
         :disabled="disabledValue(condition)"
         :aria-label="`条件${index + 1}值`"
         :tree-data="moduleOptions"
@@ -224,6 +226,7 @@ import {
   initialConditions,
   effectiveConditions,
   nextUnnamedView,
+  selectionValues,
   type FilterCondition,
   type FilterField,
   type FilterLogic,

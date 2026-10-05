@@ -4,6 +4,7 @@ import {
   effectiveConditions,
   operatorsFor,
   nextUnnamedView,
+  selectionValues,
   type FilterField,
 } from "./advancedFilter";
 const fields: FilterField[] = [
@@ -12,6 +13,12 @@ const fields: FilterField[] = [
   { key: "moduleId", label: "模块", type: "module" },
 ];
 describe("高级筛选草稿与持久化迁移", () => {
+  it("历史视图的单值集合可交给多选控件，false和0仍被保留", () => {
+    expect(selectionValues("历史模块ID")).toEqual(["历史模块ID"]);
+    expect(selectionValues(false)).toEqual([false]);
+    expect(selectionValues(0)).toEqual([0]);
+    expect(selectionValues(undefined)).toEqual([]);
+  });
   it("新建视图取首个空闲编号，不覆盖已有个人视图", () => {
     expect(nextUnnamedView(["未命名视图001", "未命名视图003"])).toBe(
       "未命名视图002",

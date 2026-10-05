@@ -96,3 +96,8 @@ export function nextUnnamedView(names: string[]) {
   }
   return "";
 }
+
+export function selectionValues(value: any): any[] {
+  if (value === undefined || value === null || value === "") return [];
+  return Array.isArray(value) ? value : [value];
+}
