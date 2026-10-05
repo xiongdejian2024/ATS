@@ -195,6 +195,11 @@ def associate(db,plan,user,data):
         raise HTTPException(422,'测试套必须属于当前计划')
     if uses and any(case.is_automated and (not suite or suite.plan_id!=plan.id or case.id not in (suite.case_ids or [])) for case in cases):
         raise HTTPException(422,'自动化用例需要选择包含所有关联用例的当前计划测试套')
+    sync_groups, sync_suites = {}, {}
+    if data.syncCase:
+        from services.plan_candidate_sync import resolve as resolve_sync, validate_suites
+        sync_groups, _ = resolve_sync(db, plan, data, cases, suites, relations, uses, current_read=True)
+        sync_suites = validate_suites(sync_groups, data, suites, uses)
     existing={row.case_id for row in relations}
     order=max((r.execution_order or 0 for r in relations), default=-1)+1
     added=0
@@ -205,7 +210,21 @@ def associate(db,plan,user,data):
         else: continue
         added+=1
     logger.info('已关联计划分类用例：计划={}，分类={}，数量={}',plan.id,data.category,added)
-    return dict(added=added)
+    result = dict(added=added)
+    if data.syncCase:
+        result['synced'] = {}
+        for category, group in sync_groups.items():
+            count = 0
+            for case in group['cases']:
+                if uses:
+                    save_node(db, plan, dict(name=case.name, nodeType='case', category=category, caseId=case.id,
+                                            parentId=group['collectionId'], suiteId=sync_suites[category].id), source_project_id=case.project_id)
+                else:
+                    db.add(PlanCaseRelation(plan_id=plan.id, case_id=case.id, collection_id=group['collectionId'], execution_order=order+added+sum(result['synced'].values())+count))
+                count += 1
+            result['synced'][category] = count
+        logger.info('已同步功能用例关联：计划={}，功能={}，接口={}，场景={}', plan.id, added, result['synced']['api'], result['synced']['scenario'])
+    return result
 
 
 def candidates(db, plan, category, search, folder, priority, page, size, *, filters=None, mine=False, user_id=None, source=None):
@@ -230,4 +249,5 @@ def candidates(db, plan, category, search, folder, priority, page, size, *, filt
     plans = [dict(id=p.id, name=p.name) for p in db.query(TestPlan).filter_by(project_id=source.project_id)]
     return dict(**{key:value for key,value in result.items() if key != "items"}, items=items, usesTree=uses,
                 projectId=source.project_id, projectName=project.name, plans=plans,
-                collections=[dict(id=row.id, name=row.name, parentId=row.parent_id, count=0) for row in points], suites=suites)
+                collections=[dict(id=row.id, name=row.name, parentId=row.parent_id, count=0) for row in points], suites=suites,
+                syncCollections={kind: [dict(id='default', name='默认测试集', count=0)] + [dict(id=row.id, name=row.name, parentId=row.parent_id, count=0) for row in points if row.category == kind] for kind in ('api', 'scenario')})

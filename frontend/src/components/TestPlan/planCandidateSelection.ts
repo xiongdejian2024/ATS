@@ -23,6 +23,12 @@ export function usePlanCandidateSelection(
   pageIds: Ref<string[]>,
   moduleContext?: CandidateModulesContext,
   project?: Ref<string | undefined>,
+  extras?: Ref<
+    Pick<
+      CandidateSelection,
+      "syncCase" | "apiCaseCollectionId" | "apiScenarioCollectionId"
+    >
+  >,
 ) {
   const selected = ref<string[]>([]),
     selectAll = ref(false),
@@ -48,6 +54,7 @@ export function usePlanCandidateSelection(
       : {
           category: category.value,
           ...(project?.value ? { projectId: project.value } : {}),
+          ...extras?.value,
           ...(moduleMode.value && modules
             ? {
                 moduleMaps: cloneDeep(modules.maps.value),

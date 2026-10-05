@@ -246,6 +246,35 @@
               "
           /></a-form-item>
         </a-form>
+        <a-form
+          v-if="activeCategory === 'functional' && syncCase && data?.usesTree"
+          :disabled="locked"
+          layout="vertical"
+        >
+          <a-form-item
+            v-for="kind in ['api', 'scenario'] as const"
+            :key="kind"
+            v-show="selection.summary.value?.sync?.[kind].count"
+            :label="`${kind === 'api' ? '接口' : '场景'}同步测试套`"
+            required
+          >
+            <a-select
+              :value="syncSuites[kind]"
+              allow-clear
+              :aria-label="`${kind === 'api' ? '接口' : '场景'}同步测试套`"
+              placeholder="选择包含同步用例的当前计划测试套"
+              :options="
+                syncCompatibleSuites(kind).map((s) => ({
+                  label: s.name,
+                  value: s.id,
+                }))
+              "
+              @update:value="
+                (value: string | undefined) => (syncSuites[kind] = value)
+              "
+            />
+          </a-form-item>
+        </a-form>
         <a-alert
           v-if="
             selection.hasSelection.value && !data?.usesTree && automatedCount
@@ -278,6 +307,41 @@
     />
     <template #footer
       ><div class="associate-footer">
+        <div v-if="activeCategory === 'functional'" class="sync-controls">
+          <a-switch
+            v-model:checked="syncCase"
+            size="small"
+            :disabled="locked || !canEdit"
+            aria-label="同步添加功能用例的关联用例"
+          />
+          <a-tooltip title="自动添加已关联的接口用例、场景用例"
+            ><span>同步添加功能用例的关联用例</span></a-tooltip
+          >
+          <template v-if="syncCase">
+            <a-tree-select
+              v-model:value="apiCaseCollectionId"
+              allow-clear
+              :disabled="locked || loading || failed"
+              aria-label="接口同步测试集"
+              placeholder="接口测试集"
+              :tree-data="caseFolderTree(data?.syncCollections.api || [])"
+              :field-names="{ label: 'title', value: 'key' }"
+            />
+            <a-tree-select
+              v-model:value="apiScenarioCollectionId"
+              allow-clear
+              :disabled="locked || loading || failed"
+              aria-label="场景同步测试集"
+              placeholder="场景测试集"
+              :tree-data="caseFolderTree(data?.syncCollections.scenario || [])"
+              :field-names="{ label: 'title', value: 'key' }"
+            />
+            <span v-if="selection.summary.value?.sync"
+              >同步接口 {{ selection.summary.value.sync.api.count }} 条、场景
+              {{ selection.summary.value.sync.scenario.count }} 条</span
+            >
+          </template>
+        </div>
         <span v-if="selection.loading.value">正在核对选择范围…</span>
         <span v-else-if="selection.error.value">选择范围待核对</span>
         <span v-else
@@ -312,7 +376,7 @@
 <script setup lang="ts">
 import NativeCaseConfigDrawer from "@/components/TestCase/NativeCaseConfigDrawer.vue";
 import { nativeStateOptions, nativeReportOptions } from "@/api/nativeCase";
-import { computed, h, ref, watch, toRef } from "vue";
+import { computed, h, ref, watch, toRef, reactive } from "vue";
 import { cloneDeep } from "lodash-es";
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
 import PlanCaseFilters from "./PlanCaseFilters.vue";
@@ -367,6 +431,33 @@ const sourceProjectId = ref<string>(),
   projectsLoading = ref(false);
 const nativeCaseId = ref(""),
   nativeSaving = ref(false);
+const syncCase = ref(false),
+  apiCaseCollectionId = ref<string>(),
+  apiScenarioCollectionId = ref<string>();
+const syncSuites = reactive<{ api?: string; scenario?: string }>({});
+const syncRequest = computed(() =>
+  activeCategory.value === "functional" && syncCase.value
+    ? {
+        syncCase: true,
+        apiCaseCollectionId: apiCaseCollectionId.value,
+        apiScenarioCollectionId: apiScenarioCollectionId.value,
+      }
+    : {},
+);
+function resetSync() {
+  syncCase.value = false;
+  apiCaseCollectionId.value = apiScenarioCollectionId.value = undefined;
+  syncSuites.api = syncSuites.scenario = undefined;
+}
+watch(syncCase, (value) => {
+  if (value) {
+    apiCaseCollectionId.value = data.value?.syncCollections.api[0]?.id;
+    apiScenarioCollectionId.value = data.value?.syncCollections.scenario[0]?.id;
+  } else {
+    apiCaseCollectionId.value = apiScenarioCollectionId.value = undefined;
+    syncSuites.api = syncSuites.scenario = undefined;
+  }
+});
 const locked = computed(
   () => saving.value || filterSaving.value || nativeSaving.value,
 );
@@ -392,6 +483,7 @@ const selection = usePlanCandidateSelection(
     ),
   },
   sourceProjectId,
+  syncRequest,
 );
 const moduleSelectionDisabled = computed(
   () =>
@@ -475,9 +567,21 @@ const canSave = computed(
     !loading.value &&
     selection.ready.value &&
     (!data.value?.usesTree ||
+      !syncCase.value ||
+      (["api", "scenario"] as const).every(
+        (kind) =>
+          !selection.summary.value?.sync?.[kind].count ||
+          syncCompatibleSuites(kind).some((s) => s.id === syncSuites[kind]),
+      )) &&
+    (!data.value?.usesTree ||
       !automatedCount.value ||
       !!compatibleSuites.value.find((item) => item.id === suiteId.value)),
 );
+function syncCompatibleSuites(kind: "api" | "scenario") {
+  return (data.value?.suites || []).filter((s) =>
+    selection.summary.value?.sync?.[kind].compatibleSuiteIds.includes(s.id),
+  );
+}
 const rowSelection = computed(() => ({
   selectedRowKeys: selection.pageSelected.value,
   columnWidth: 56,
@@ -610,6 +714,7 @@ function switchProject() {
   });
 }
 function resetCategory() {
+  resetSync();
   nativeCaseId.value = "";
   filterScope.value = undefined;
   viewId.value = undefined;
@@ -636,6 +741,8 @@ async function save() {
       ...body,
       collectionId: collectionId.value || null,
       suiteId: suiteId.value || null,
+      syncApiSuiteId: syncCase.value ? syncSuites.api || null : null,
+      syncScenarioSuiteId: syncCase.value ? syncSuites.scenario || null : null,
     });
     if (
       plan !== props.planId ||
@@ -663,6 +770,7 @@ watch(
   () => {
     sequence++;
     sourceProjectId.value = undefined;
+    resetSync();
     sourceProjects.value = [];
     nativeCaseId.value = "";
     data.value = undefined;
@@ -768,6 +876,17 @@ onBeforeRouteUpdate(allowNavigation);
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+}
+.sync-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.sync-controls :deep(.ant-select) {
+  width: 200px;
+  max-width: 100%;
 }
 .associate-footer :deep(.ant-space) {
   margin-left: auto;

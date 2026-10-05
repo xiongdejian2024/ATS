@@ -77,6 +77,9 @@ def resolve(db, plan, user, selection, *, writing=False):
                    usesTree=uses_tree, compatibleSuiteIds=compatible,
                    canAssociate=project_allows(db, user, project, 'test_plan:update') and not bool(workspace and workspace.archived))
     summary.update(module_summary)
+    if selection.syncCase:
+        from services.plan_candidate_sync import resolve as resolve_sync
+        _, summary['sync'] = resolve_sync(db, plan, selection, cases, suites, relations, uses_tree, current_read=writing)
     if writing:
         logger.info('计划关联范围已在锁内解析：计划={}，分类={}，全选={}，模块组合={}，数量={}，排除={}', plan.id, selection.category, selection.selectAll, selection.moduleMaps is not None, len(cases), excluded_count)
     return cases, summary, suites, relations

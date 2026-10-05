@@ -43,6 +43,9 @@ class CandidateSelection(ScopeRequest):
     excludeIds: list[str] = Field(default_factory=list, max_length=10000)
     condition: CandidateCondition = Field(default_factory=CandidateCondition)
     moduleMaps: dict[str, CandidateModuleSelection] | None = None
+    syncCase: StrictBool = False
+    apiCaseCollectionId: str | None = Field(None, min_length=1, max_length=36)
+    apiScenarioCollectionId: str | None = Field(None, min_length=1, max_length=36)
 
     @field_validator('caseIds', 'excludeIds')
     @classmethod
@@ -55,6 +58,10 @@ class CandidateSelection(ScopeRequest):
 
     @model_validator(mode='after')
     def selection_mode(self):
+        if self.syncCase and self.category != 'functional':
+            raise ValueError('只有功能用例支持同步关联用例')
+        if not self.syncCase and (self.apiCaseCollectionId or self.apiScenarioCollectionId):
+            raise ValueError('请先开启同步关联用例')
         if self.moduleMaps is not None:
             if not self.moduleMaps or len(self.moduleMaps) > 10000:
                 raise ValueError('请选择1到10000个模块范围')
@@ -88,3 +95,5 @@ class CandidateSelection(ScopeRequest):
 class Association(CandidateSelection):
     collectionId: str | None = Field(None, min_length=1, max_length=36)
     suiteId: str | None = Field(None, min_length=1, max_length=36)
+    syncApiSuiteId: str | None = Field(None, min_length=1, max_length=36)
+    syncScenarioSuiteId: str | None = Field(None, min_length=1, max_length=36)

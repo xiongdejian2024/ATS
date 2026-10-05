@@ -12,6 +12,76 @@ vi.mock("@/api/planCaseWorkspace", () => ({
   planCaseWorkspaceApi: { previewCandidates: vi.fn() },
 }));
 const scopes: EffectScope[] = [];
+it("同步目标变化保留原选择和排除，旧同步预览不能覆盖新目标", async () => {
+  const extras = ref<
+    Pick<
+      CandidateSelection,
+      "syncCase" | "apiCaseCollectionId" | "apiScenarioCollectionId"
+    >
+  >({});
+  const scope = effectScope();
+  scopes.push(scope);
+  const s = scope.run(() =>
+    usePlanCandidateSelection(
+      ref("plan"),
+      ref("functional"),
+      ref({}),
+      ref(["one", "two"]),
+      undefined,
+      ref("source"),
+      extras,
+    ),
+  )!;
+  vi.mocked(planCaseWorkspaceApi.previewCandidates).mockResolvedValue(
+    response(1),
+  );
+  s.all();
+  s.keysChanged(["one"]);
+  await flush();
+  let finish!: (value: CandidateSelectionPreview) => void;
+  vi.mocked(planCaseWorkspaceApi.previewCandidates).mockReturnValueOnce(
+    new Promise((resolve) => (finish = resolve)),
+  );
+  extras.value = { syncCase: true, apiCaseCollectionId: "default" };
+  await flush();
+  expect(s.loading.value).toBe(true);
+  const latest = {
+    ...response(1),
+    sync: {
+      api: { count: 2, compatibleSuiteIds: ["api-suite"] },
+      scenario: { count: 1, compatibleSuiteIds: ["scene-suite"] },
+    },
+  };
+  vi.mocked(planCaseWorkspaceApi.previewCandidates).mockResolvedValueOnce(
+    latest,
+  );
+  extras.value = {
+    syncCase: true,
+    apiCaseCollectionId: "api-target",
+    apiScenarioCollectionId: "scenario-target",
+  };
+  await flush();
+  finish({
+    ...response(999),
+    sync: {
+      api: { count: 999, compatibleSuiteIds: [] },
+      scenario: { count: 0, compatibleSuiteIds: [] },
+    },
+  });
+  await flush();
+  expect(s.request.value).toMatchObject({
+    projectId: "source",
+    selectAll: true,
+    excludeIds: ["two"],
+    apiCaseCollectionId: "api-target",
+    apiScenarioCollectionId: "scenario-target",
+  });
+  expect(s.summary.value?.sync).toEqual(latest.sync);
+  extras.value = {};
+  await flush();
+  expect(s.request.value?.syncCase).toBeUndefined();
+  expect(s.request.value?.excludeIds).toEqual(["two"]);
+});
 const response = (count = 23): CandidateSelectionPreview => ({
   count,
   excludedCount: 0,

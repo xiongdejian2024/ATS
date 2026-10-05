@@ -57,6 +57,7 @@ export interface PlanCaseListing {
   projects?: { id: string; name: string }[];
 }
 export interface PlanAssociateListing {
+  syncCollections: { api: CaseFolder[]; scenario: CaseFolder[] };
   projectId: string;
   projectName: string;
   plans: { id: string; name: string }[];
@@ -86,6 +87,9 @@ export interface CandidateModuleSelection {
   excludeIds: string[];
 }
 export interface CandidateSelection {
+  syncCase?: boolean;
+  apiCaseCollectionId?: string;
+  apiScenarioCollectionId?: string;
   projectId?: string;
   category: "functional" | "api" | "scenario";
   selectAll?: boolean;
@@ -95,6 +99,10 @@ export interface CandidateSelection {
   moduleMaps?: Record<string, CandidateModuleSelection>;
 }
 export interface CandidateSelectionPreview {
+  sync?: Record<
+    "api" | "scenario",
+    { count: number; compatibleSuiteIds: string[] }
+  >;
   moduleCounts?: Record<string, { total: number; selected: number }>;
   eligibleCount?: number;
   count: number;
@@ -210,6 +218,8 @@ export const planCaseWorkspaceApi = {
     data: CandidateSelection & {
       collectionId?: string | null;
       suiteId?: string | null;
+      syncApiSuiteId?: string | null;
+      syncScenarioSuiteId?: string | null;
     },
   ) => apiClient.post(base(id) + "/associate", data),
 };
