@@ -858,6 +858,9 @@ def main():
             observed,
             stale,
         )
+        from review_selection_mysql import verify_selection
+
+        selection_checks = verify_selection(Sessions, root_sql, name, log)
         print(
             {
                 "真实MySQL锁等待": observed,
@@ -878,6 +881,7 @@ def main():
                 "自动提审开关与版本当前读真实等待": editor_waited,
                 "自动提审跳过归档并保留旧结论": True,
                 "独立审阅只读与个人历史结果": True,
+                **selection_checks,
                 "节点任务": 0,
             }
         )

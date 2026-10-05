@@ -95,6 +95,7 @@
             "
             @saving="managementSaving = $event"
             @changed="load"
+            @selection-summary="selectionSummary = $event"
             :revision="tableRevision"
             :disabled="
               resultSaving || associateSaving || managementSaving || busy
@@ -105,7 +106,8 @@
             <template #actions>
               <a-button
                 :disabled="
-                  !selectedItems.length ||
+                  !selectionSummary.count ||
+                  selectionSummary.loading ||
                   !caseTable?.canReviewSelection() ||
                   resultSaving ||
                   associateSaving ||
@@ -113,7 +115,7 @@
                   busy
                 "
                 @click="batchVisible = true"
-                >批量评审（{{ selectedItems.length }}）</a-button
+                >批量评审（{{ selectionSummary.count }}）</a-button
               >
             </template>
           </ReviewCaseTable>
@@ -196,7 +198,10 @@ import {
   type CaseReview,
 } from "@/api/caseGovernance";
 import { useProjectStore } from "@/stores/project";
-import { reviewWorkspaceApi } from "@/api/reviewWorkspace";
+import {
+  reviewWorkspaceApi,
+  type ReviewSelectionSummary,
+} from "@/api/reviewWorkspace";
 import ReviewCaseTable from "@/components/CaseReview/ReviewCaseTable.vue";
 import ReviewAssociateDrawer from "@/components/CaseReview/ReviewAssociateDrawer.vue";
 import ReviewResultForm, {
@@ -213,6 +218,12 @@ const activeId = ref<string>(),
   selectedItems = ref<string[]>([]),
   followed = ref(false);
 const batchVisible = ref(false);
+const selectionSummary = ref<ReviewSelectionSummary>({
+  count: 0,
+  excludedCount: 0,
+  canVote: false,
+  canReReview: false,
+});
 const deleteVisible = ref(false),
   deleteName = ref("");
 const canManage = ref(false),
@@ -364,22 +375,24 @@ async function batchVote(decision: ReviewDecision, reason: string) {
     resultSaving.value ||
     associateSaving.value ||
     managementSaving.value ||
-    !selectedItems.value.length
+    !selectionSummary.value.count ||
+    selectionSummary.value.loading
   )
     throw new Error("当前评审不能批量提交结论");
-  const identifiers = [...selectedItems.value];
+  const selection = caseTable.value?.selectionRequest(),
+    count = selectionSummary.value.count;
+  if (!selection) throw new Error("选择范围不存在，请重新选择");
   resultSaving.value = true;
   try {
-    const record = await api.batchVote(
-      p,
-      review.id,
-      identifiers,
+    const record = await reviewWorkspaceApi.batchVote(p, review.id, {
+      ...selection,
       decision,
-      reason,
-    );
+      comment: reason,
+    });
     if (p !== projectId.value || review.id !== activeId.value)
       throw new Error("项目或评审已切换，请重新加载详情");
     replace(record, false);
+    caseTable.value?.clearSelection();
     await caseTable.value?.refresh();
     batchVisible.value = false;
     selectedItems.value = [];
@@ -387,7 +400,7 @@ async function batchVote(decision: ReviewDecision, reason: string) {
       projectId: p,
       reviewId: review.id,
       decision,
-      count: identifiers.length,
+      count,
     });
     message.success("批量评审已保存");
   } finally {
@@ -451,8 +464,8 @@ async function resubmit() {
       const result = await api.resubmit(
         projectId.value,
         active.value!.id,
-        selectedItems.value.length
-          ? caseTable.value?.selectedCaseIds()
+        selectionSummary.value.count
+          ? await caseTable.value?.selectedCaseIds()
           : undefined,
       );
       replace(result);

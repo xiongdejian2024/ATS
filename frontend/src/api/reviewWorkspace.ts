@@ -84,23 +84,60 @@ export interface ReviewReading {
   requirements: CaseIssue[];
   attachments: CaseFile[];
 }
+export interface ReviewItemSelection {
+  itemIds?: string[];
+  selectAll?: boolean;
+  excludeIds?: string[];
+  condition?: {
+    search?: string;
+    folder?: string;
+    includeDescendants?: boolean;
+    priority?: string;
+    state?: string;
+    reviewerId?: string;
+    creatorId?: string;
+    onlyMine?: boolean;
+  };
+}
+export interface ReviewSelectionSummary {
+  count: number;
+  excludedCount: number;
+  canVote: boolean;
+  canReReview: boolean;
+  loading?: boolean;
+}
 const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
+  selection: (p: string, id: string, body: ReviewItemSelection) =>
+    apiClient.post<ReviewSelectionSummary>(
+      `${base(p)}/${id}/item-selection`,
+      body,
+    ),
+  selectionCaseIds: (p: string, id: string, body: ReviewItemSelection) =>
+    apiClient.post<{ caseIds: string[] }>(
+      `${base(p)}/${id}/selection-case-ids`,
+      body,
+    ),
+  batchVote: (
+    p: string,
+    id: string,
+    body: ReviewItemSelection & { decision: string; comment: string },
+  ) => apiClient.post<CaseReview>(`${base(p)}/${id}/batch-decision`, body),
   reading: (p: string, id: string, item: string) =>
     apiClient.get<ReviewReading>(`${base(p)}/${id}/items/${item}/reading`),
   reReview: (
     p: string,
     id: string,
-    body: { itemIds: string[]; comment: string },
+    body: ReviewItemSelection & { comment: string },
   ) => apiClient.post<CaseReview>(`${base(p)}/${id}/re-review`, body),
   changeItemReviewers: (
     p: string,
     id: string,
-    body: { itemIds: string[]; reviewerIds: string[]; append: boolean },
+    body: ReviewItemSelection & { reviewerIds: string[]; append: boolean },
   ) => apiClient.post<CaseReview>(`${base(p)}/${id}/item-reviewers`, body),
-  disassociate: (p: string, id: string, itemIds: string[]) =>
-    apiClient.post<CaseReview>(`${base(p)}/${id}/disassociate`, { itemIds }),
+  disassociate: (p: string, id: string, body: ReviewItemSelection) =>
+    apiClient.post<CaseReview>(`${base(p)}/${id}/disassociate`, body),
   detail: (p: string, id: string) =>
     apiClient.get<CaseReview>(`${base(p)}/${id}/detail`),
   items: (p: string, id: string, params: Record<string, unknown>) =>

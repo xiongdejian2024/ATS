@@ -85,21 +85,50 @@
         <a-checkbox v-model:checked="onlyMine">仅看我的评审</a-checkbox>
         <a-button type="text" @click="clearFilters">重置</a-button>
       </div>
-      <div v-if="selected.length" class="selection-bar">
-        已选择 {{ selected.length }} 条
-        <a-button type="link" @click="clearSelection">清空选择</a-button>
+      <div v-if="selectedCount || allSelected" class="selection-bar">
+        <span v-if="selectionLoading">正在核对选择范围…</span>
+        <span v-else-if="selectionError">选择范围核对失败</span>
+        <span v-else
+          >已选择 {{ selectedCount }} 条<span v-if="allSelected"
+            >（所有页，已排除 {{ selectionInfo?.excludedCount || 0 }} 条）</span
+          ></span
+        >
+        <a-button
+          v-if="selectionError"
+          type="link"
+          :disabled="disabled"
+          @click="previewSelection"
+          >重试</a-button
+        >
+        <a-button type="link" :disabled="disabled" @click="clearSelection"
+          >清空选择</a-button
+        >
         <a-button
           v-if="canManage"
           type="link"
-          :disabled="disabled || loading"
+          :disabled="
+            disabled ||
+            loading ||
+            selectionLoading ||
+            !selectedCount ||
+            !!selectionError ||
+            !!error
+          "
           @click="openPeople"
           >修改评审人</a-button
         >
         <a-button
           v-if="canManage"
           type="link"
-          :disabled="disabled || loading"
-          @click="openUnlink([...selected])"
+          :disabled="
+            disabled ||
+            loading ||
+            selectionLoading ||
+            !selectedCount ||
+            !!selectionError ||
+            !!error
+          "
+          @click="openUnlink()"
           >取消关联</a-button
         >
         <a-button
@@ -266,12 +295,12 @@
         show-icon
       />
       <p>取消后，再次关联，评审结果为：未评审</p>
-      <p>已选择 {{ pendingIds.length }} 条用例</p>
+      <p>已选择 {{ pendingCount }} 条用例</p>
     </a-modal>
     <a-modal
       destroy-on-close
       :open="reReviewOpen"
-      :title="`重新提审（已选择 ${pendingIds.length} 条用例）`"
+      :title="`重新提审（已选择 ${pendingCount} 条用例）`"
       :width="680"
       :closable="!managementSaving"
       :mask-closable="false"
@@ -313,7 +342,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount, reactive } from "vue";
+import { ref, computed, watch, onBeforeUnmount, reactive, h } from "vue";
 import { message } from "ant-design-vue";
 import { useWindowSize } from "@vueuse/core";
 import {
@@ -324,6 +353,8 @@ import {
 import {
   reviewWorkspaceApi,
   type ReviewCaseEntry,
+  type ReviewItemSelection,
+  type ReviewSelectionSummary,
 } from "@/api/reviewWorkspace";
 import type { CaseFolder } from "@/api/planCaseWorkspace";
 import type { TestCase } from "@/types";
@@ -339,6 +370,8 @@ import {
   type ColumnVisibility,
 } from "@/components/Table/tableDisplay";
 import { readingScope as readScope } from "./reviewReading";
+import ReviewSelectionHeader from "./ReviewSelectionHeader.vue";
+import { pageExclusions, selectedPageIds } from "./reviewSelection";
 const props = defineProps<{
   projectId: string;
   reviewId: string;
@@ -353,6 +386,7 @@ const emit = defineEmits<{
   select: [id: string];
   "update:selected": [keys: string[]];
   saving: [value: boolean];
+  selectionSummary: [value: ReviewSelectionSummary];
   changed: [];
 }>();
 const user = useUserStore();
@@ -402,23 +436,153 @@ const mode = ref("list"),
   error = ref(""),
   settings = ref(false);
 const selectedRows = reactive(new Map<string, ReviewCaseEntry>());
+const allSelected = ref(false),
+  excludeIds = ref<string[]>([]),
+  selectionInfo = ref<ReviewSelectionSummary>(),
+  selectionLoading = ref(false),
+  selectionError = ref("");
+let selectionSequence = 0;
+const selectedCount = computed(() =>
+  allSelected.value ? selectionInfo.value?.count || 0 : props.selected.length,
+);
+const selectedSummary = computed<ReviewSelectionSummary>(() =>
+  allSelected.value
+    ? {
+        count: selectedCount.value,
+        excludedCount: selectionInfo.value?.excludedCount || 0,
+        canVote:
+          !error.value &&
+          !loading.value &&
+          !selectionError.value &&
+          !selectionLoading.value &&
+          !!selectionInfo.value?.canVote,
+        canReReview:
+          !error.value &&
+          !loading.value &&
+          !selectionError.value &&
+          !selectionLoading.value &&
+          !!selectionInfo.value?.canReReview,
+        loading: selectionLoading.value || loading.value,
+      }
+    : {
+        count: props.selected.length,
+        excludedCount: 0,
+        canVote:
+          !error.value &&
+          !loading.value &&
+          !!props.selected.length &&
+          props.selected.every((id) => selectedRows.get(id)?.canVote),
+        canReReview:
+          !error.value &&
+          !loading.value &&
+          !!props.selected.length &&
+          props.selected.every((id) => selectedRows.get(id)?.canReReview),
+        loading: loading.value,
+      },
+);
+function selectionRequest(): ReviewItemSelection {
+  if (!allSelected.value) return { itemIds: [...props.selected] };
+  return {
+    selectAll: true,
+    excludeIds: [...excludeIds.value],
+    condition: {
+      search: appliedSearch.value,
+      folder: folder.value,
+      includeDescendants: display.value.includeDescendants,
+      priority: priority.value,
+      state: state.value,
+      reviewerId: reviewerId.value,
+      creatorId: creatorId.value,
+      onlyMine: onlyMine.value,
+    },
+  };
+}
+async function previewSelection() {
+  if (!allSelected.value) return;
+  const sequence = ++selectionSequence,
+    project = props.projectId,
+    review = props.reviewId;
+  selectionLoading.value = true;
+  selectionError.value = "";
+  selectionInfo.value = undefined;
+  try {
+    const info = await reviewWorkspaceApi.selection(
+      project,
+      review,
+      selectionRequest(),
+    );
+    if (
+      sequence === selectionSequence &&
+      project === props.projectId &&
+      review === props.reviewId
+    )
+      selectionInfo.value = info;
+  } catch (error) {
+    console.error("核对评审全部筛选范围失败，保留排除项", error);
+    if (sequence === selectionSequence)
+      selectionError.value = "选择范围核对失败，请重试";
+  } finally {
+    if (sequence === selectionSequence) selectionLoading.value = false;
+  }
+}
+function chooseAll() {
+  if (props.disabled || loading.value) return;
+  allSelected.value = true;
+  excludeIds.value = [];
+  selectedRows.clear();
+  emit("update:selected", []);
+  void previewSelection();
+}
+function selectableRows() {
+  return rows.value
+    .filter((row) => row.canVote || props.canManage)
+    .map((row) => row.id);
+}
+function chooseCurrent() {
+  clearSelection();
+  const keys = selectableRows();
+  for (const row of rows.value)
+    if (keys.includes(row.id)) selectedRows.set(row.id, row);
+  emit("update:selected", keys);
+}
+function updateSelectedKeys(keys: string[]) {
+  if (allSelected.value) {
+    excludeIds.value = pageExclusions(excludeIds.value, selectableRows(), keys);
+    void previewSelection();
+    return;
+  }
+  if (keys.length > 10000) return void message.info("每批最多选择10000条用例");
+  for (const row of rows.value)
+    if (keys.includes(row.id)) selectedRows.set(row.id, row);
+  for (const key of selectedRows.keys())
+    if (!keys.includes(key)) selectedRows.delete(key);
+  emit("update:selected", keys);
+}
+function togglePage() {
+  const current = selectableRows(),
+    selected = allSelected.value
+      ? selectedPageIds(current, excludeIds.value)
+      : props.selected;
+  const keys = current.every((id) => selected.includes(id))
+    ? selected.filter((id) => !current.includes(id))
+    : [...new Set([...selected, ...current])];
+  updateSelectedKeys(keys);
+}
 const peopleOpen = ref(false),
   unlinkOpen = ref(false),
   managementSaving = ref(false),
   managementError = ref(""),
   draftPeople = ref<string[]>([]),
   appendPeople = ref(false),
-  pendingIds = ref<string[]>([]);
+  pendingSelection = ref<ReviewItemSelection>({ itemIds: [] }),
+  pendingCount = ref(0);
 const reReviewOpen = ref(false),
   reReviewReason = ref("");
-const canReReviewSelection = computed(
-  () =>
-    props.selected.length > 0 &&
-    props.selected.every((id) => selectedRows.get(id)?.canReReview),
-);
+const canReReviewSelection = computed(() => selectedSummary.value.canReReview);
 function openReReview() {
   if (!canReReviewSelection.value) return;
-  pendingIds.value = [...props.selected];
+  pendingSelection.value = selectionRequest();
+  pendingCount.value = selectedCount.value;
   reReviewReason.value = "";
   managementError.value = "";
   reReviewOpen.value = true;
@@ -428,7 +592,7 @@ async function saveReReview() {
   try {
     await performManagement(() =>
       reviewWorkspaceApi.reReview(props.projectId, props.reviewId, {
-        itemIds: [...pendingIds.value],
+        ...pendingSelection.value,
         comment: reReviewReason.value.trim(),
       }),
     );
@@ -440,14 +604,16 @@ async function saveReReview() {
   }
 }
 function openPeople() {
-  pendingIds.value = [...props.selected];
+  pendingSelection.value = selectionRequest();
+  pendingCount.value = selectedCount.value;
   draftPeople.value = [];
   appendPeople.value = false;
   managementError.value = "";
   peopleOpen.value = true;
 }
-function openUnlink(ids: string[]) {
-  pendingIds.value = [...ids];
+function openUnlink(ids?: string[]) {
+  pendingSelection.value = ids ? { itemIds: [...ids] } : selectionRequest();
+  pendingCount.value = ids?.length || selectedCount.value;
   managementError.value = "";
   unlinkOpen.value = true;
 }
@@ -484,14 +650,14 @@ async function saveInlineReviewers(id: string, people: string[]) {
 async function savePeople() {
   if (
     !draftPeople.value.length ||
-    !pendingIds.value.length ||
+    !pendingCount.value ||
     managementSaving.value
   )
     return;
   try {
     await performManagement(() =>
       reviewWorkspaceApi.changeItemReviewers(props.projectId, props.reviewId, {
-        itemIds: [...pendingIds.value],
+        ...pendingSelection.value,
         reviewerIds: [...draftPeople.value],
         append: appendPeople.value,
       }),
@@ -503,12 +669,14 @@ async function savePeople() {
   }
 }
 async function saveUnlink() {
-  if (!pendingIds.value.length || managementSaving.value) return;
+  if (!pendingCount.value || managementSaving.value) return;
   try {
     await performManagement(() =>
-      reviewWorkspaceApi.disassociate(props.projectId, props.reviewId, [
-        ...pendingIds.value,
-      ]),
+      reviewWorkspaceApi.disassociate(
+        props.projectId,
+        props.reviewId,
+        pendingSelection.value,
+      ),
     );
     unlinkOpen.value = false;
     message.success("取消关联成功");
@@ -589,20 +757,39 @@ const mindCases = computed(
     })) as Partial<TestCase>[],
 );
 const selection = computed(() => ({
-  selectedRowKeys: props.selected,
+  selectedRowKeys: allSelected.value
+    ? selectedPageIds(
+        rows.value.map((row) => row.id),
+        excludeIds.value,
+      )
+    : props.selected,
+  columnWidth: 56,
+  columnTitle: () =>
+    h(ReviewSelectionHeader, {
+      count: selectedCount.value,
+      total: total.value,
+      all: allSelected.value,
+      excludedCount: selectionInfo.value?.excludedCount || 0,
+      disabled:
+        props.disabled ||
+        loading.value ||
+        selectionLoading.value ||
+        (!total.value && !allSelected.value),
+      onTogglePage: togglePage,
+      onCurrent: chooseCurrent,
+      onAll: chooseAll,
+      onClear: clearSelection,
+    }),
   preserveSelectedRowKeys: true,
   getCheckboxProps: (row: ReviewCaseEntry) => ({
     disabled:
-      props.disabled || loading.value || (!row.canVote && !props.canManage),
+      props.disabled ||
+      loading.value ||
+      selectionLoading.value ||
+      (!row.canVote && !props.canManage),
   }),
   onChange: (keys: (string | number)[]) => {
-    if (keys.length > 10000)
-      return void message.info("每批最多选择10000条用例");
-    for (const row of rows.value)
-      if (keys.includes(row.id)) selectedRows.set(row.id, row);
-    for (const key of selectedRows.keys())
-      if (!keys.includes(key)) selectedRows.delete(key);
-    emit("update:selected", keys.map(String));
+    updateSelectedKeys(keys.map(String));
   },
 }));
 let sequence = 0;
@@ -648,6 +835,7 @@ async function load() {
     total.value = result.total;
     for (const row of rows.value)
       if (props.selected.includes(row.id)) selectedRows.set(row.id, row);
+    if (allSelected.value) await previewSelection();
   } catch (err) {
     console.error("加载评审关联用例失败", err);
     if (request === sequence) {
@@ -674,6 +862,12 @@ function clearFilters() {
   onlyMine.value = false;
 }
 function clearSelection() {
+  ++selectionSequence;
+  allSelected.value = false;
+  excludeIds.value = [];
+  selectionInfo.value = undefined;
+  selectionLoading.value = false;
+  selectionError.value = "";
   selectedRows.clear();
   emit("update:selected", []);
 }
@@ -781,6 +975,10 @@ watch(moduleSearch, (keyword) => {
 });
 onBeforeUnmount(() => {
   ++sequence;
+  ++selectionSequence;
+});
+watch(selectedSummary, (value) => emit("selectionSummary", value), {
+  immediate: true,
 });
 defineExpose({
   navigate,
@@ -799,9 +997,18 @@ defineExpose({
     order: order.value,
   }),
   refresh: load,
-  canReviewSelection: () =>
-    props.selected.every((id) => selectedRows.get(id)?.canVote),
-  selectedCaseIds: () => {
+  clearSelection,
+  selectionRequest,
+  canReviewSelection: () => selectedSummary.value.canVote,
+  selectedCaseIds: async () => {
+    if (allSelected.value)
+      return (
+        await reviewWorkspaceApi.selectionCaseIds(
+          props.projectId,
+          props.reviewId,
+          selectionRequest(),
+        )
+      ).caseIds;
     const identifiers = props.selected.map(
       (id) => selectedRows.get(id)?.caseId,
     );

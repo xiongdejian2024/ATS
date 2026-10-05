@@ -15,6 +15,7 @@ from schemas.review_workspace import (
     ReviewItemSelection,
     ReviewItemReviewers,
     ReviewItemReReview,
+    ReviewItemVote,
 )
 from services import review_workspace as service
 from schemas.case_governance import ReviewHeader
@@ -131,9 +132,22 @@ def change_item_reviewers(
     user=Depends(get_current_user),
 ):
     from services.review_item_management import change_reviewers
+    from services.review_item_selection import apply
 
     return result(
-        transact(db, lambda: change_reviewers(db, user, project_id, review_id, body))
+        transact(
+            db,
+            lambda: apply(
+                db,
+                user,
+                project_id,
+                review_id,
+                body,
+                lambda selected: change_reviewers(
+                    db, user, project_id, review_id, selected
+                ),
+            ),
+        )
     )
 
 
@@ -146,9 +160,22 @@ def disassociate_items(
     user=Depends(get_current_user),
 ):
     from services.review_item_management import disassociate
+    from services.review_item_selection import apply
 
     return result(
-        transact(db, lambda: disassociate(db, user, project_id, review_id, body))
+        transact(
+            db,
+            lambda: apply(
+                db,
+                user,
+                project_id,
+                review_id,
+                body,
+                lambda selected: disassociate(
+                    db, user, project_id, review_id, selected
+                ),
+            ),
+        )
     )
 
 
@@ -161,10 +188,60 @@ def re_review_items(
     user=Depends(get_current_user),
 ):
     from services.review_item_management import re_review
+    from services.review_item_selection import apply
 
     return result(
-        transact(db, lambda: re_review(db, user, project_id, review_id, body))
+        transact(
+            db,
+            lambda: apply(
+                db,
+                user,
+                project_id,
+                review_id,
+                body,
+                lambda selected: re_review(db, user, project_id, review_id, selected),
+            ),
+        )
     )
+
+
+@router.post("/{review_id}/item-selection")
+def item_selection(
+    project_id: str,
+    review_id: str,
+    body: ReviewItemSelection,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.review_item_selection import preview
+
+    return result(preview(db, user, project_id, review_id, body))
+
+
+@router.post("/{review_id}/selection-case-ids")
+def selection_case_ids(
+    project_id: str,
+    review_id: str,
+    body: ReviewItemSelection,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.review_item_selection import selected_cases
+
+    return result(selected_cases(db, user, project_id, review_id, body))
+
+
+@router.post("/{review_id}/batch-decision")
+def selected_vote(
+    project_id: str,
+    review_id: str,
+    body: ReviewItemVote,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.review_item_selection import vote
+
+    return result(transact(db, lambda: vote(db, user, project_id, review_id, body)))
 
 
 @router.put("/{review_id}/header")

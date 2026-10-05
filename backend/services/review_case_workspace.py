@@ -16,27 +16,26 @@ from services.review_workspace import metadata
 from services.review_progress import count_metrics
 
 
-def approved_vote(db, review):
-    return (
-        db.query(CaseReviewDecision.id)
-        .filter(
-            CaseReviewDecision.item_id == CaseReviewItem.id,
-            CaseReviewDecision.decision == "approved",
-            func.instr(
-                assigned_expression(review),
-                literal('"') + CaseReviewDecision.reviewer_id + literal('"'),
-            )
-            > 0,
+def approved_vote(db, review, current_read=False):
+    query = db.query(CaseReviewDecision.id).filter(
+        CaseReviewDecision.item_id == CaseReviewItem.id,
+        CaseReviewDecision.decision == "approved",
+        func.instr(
+            assigned_expression(review),
+            literal('"') + CaseReviewDecision.reviewer_id + literal('"'),
         )
-        .exists()
-        .correlate(CaseReviewItem, CaseReview)
+        > 0,
     )
+    statement = query.statement
+    if current_read:
+        statement = statement.with_for_update()
+    return statement.exists().correlate(CaseReviewItem, CaseReview)
 
 
-def state_expression(db, review):
+def state_expression(db, review, current_read=False):
     return case(
         (CaseReviewItem.status != "pending", CaseReviewItem.status),
-        (approved_vote(db, review), "under_review"),
+        (approved_vote(db, review, current_read), "under_review"),
         else_="un_review",
     )
 
@@ -93,6 +92,7 @@ def filtered_query(
     creator_id=None,
     only_mine=False,
     user=None,
+    current_read=False,
 ):
     query = (
         db.query(CaseReviewItem)
@@ -123,9 +123,9 @@ def filtered_query(
     if priority:
         query = query.filter(TestCase.priority == priority)
     if state:
-        query = query.filter(state_expression(db, review) == state)
+        query = query.filter(state_expression(db, review, current_read) == state)
     if states:
-        query = query.filter(state_expression(db, review).in_(states))
+        query = query.filter(state_expression(db, review, current_read).in_(states))
     if reviewer_id:
         query = query.filter(
             assigned_expression(review).contains(
@@ -143,14 +143,20 @@ def filtered_query(
     return query
 
 
-def query_scope(db, review, folder="all", include_descendants=True, **filters):
-    query = filtered_query(db, review, **filters)
-    modules = (
+def query_scope(
+    db, review, folder="all", include_descendants=True, current_read=False, **filters
+):
+    query = filtered_query(db, review, current_read=current_read, **filters)
+    module_query = (
         db.query(Module)
         .filter_by(project_id=review.project_id)
         .order_by(Module.sort_order, Module.created_at, Module.id)
-        .all()
     )
+    modules = (
+        module_query.populate_existing().with_for_update()
+        if current_read
+        else module_query
+    ).all()
     ids = {m.id for m in modules}
     direct = dict(
         query.with_entities(TestCase.module_id, func.count(CaseReviewItem.id))
