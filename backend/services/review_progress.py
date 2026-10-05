@@ -41,9 +41,10 @@ def metrics(items, *, archived=False, status="pending", started=False):
         underReviewedCount=reviewing,
         unReviewCount=total - reviewed - rereview - reviewing,
         reviewedCount=reviewed,
+        # 使用与官方浏览器相同的IEEE浮点结果，再按toFixed(2)规则舍入。
         progress=(
             float(
-                (Decimal(reviewed) * 100 / Decimal(total)).quantize(
+                Decimal.from_float(reviewed / total * 100).quantize(
                     Decimal("0.01"), rounding=ROUND_HALF_UP
                 )
             )

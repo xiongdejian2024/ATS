@@ -12,6 +12,9 @@ def test_progress_halfway_rounding_matches_official_two_decimal_display():
     rows = [{"status": "approved"}] + [{"status": "pending"}] * 31
     data = metrics(rows, started=True)
     assert data["progress"] == 3.13 and data["passRate"] == 3
+    # JS的23/160*100为14.374999999999998，toFixed(2)显示14.37%。
+    rows = [{"status": "approved"}] * 23 + [{"status": "pending"}] * 137
+    assert metrics(rows, started=True)["progress"] == 14.37
 
 
 def get_detail(g, identifier):
