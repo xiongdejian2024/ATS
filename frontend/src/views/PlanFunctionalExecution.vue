@@ -459,6 +459,7 @@ async function loadList() {
   try {
     const data = await planCaseWorkspaceApi.list(planId.value, {
       category: "functional",
+      include_descendants: initialListing.includeDescendants,
       page: page.value,
       size: listSize,
       search: search.value,

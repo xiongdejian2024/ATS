@@ -1,6 +1,6 @@
 """计划关联列表及原子批量管理，兼容直接关联和独立树实例。"""
 from fastapi import HTTPException
-from models import TestCase, TestSuite, Module, User, PlanCaseRelation
+from models import TestCase, TestSuite, Module, User, PlanCaseRelation, Project
 from models.plan_workspace import PlanNode, PlanWorkspace
 from models.plan_orchestration import PlanRun
 from models.case_features import CaseIssue, CaseIssueLink
@@ -51,6 +51,7 @@ def entries(db, plan, category):
     run = db.query(PlanRun).filter_by(plan_id=plan.id).order_by(PlanRun.created_at.desc()).first()
     results = (run.report if run.status not in ACTIVE and run.report else build_report(db,run))['cases'] if run else []
     by_association = {(item.get('associationId',item['caseId']),item['caseId']):item for item in results}
+    project = db.get(Project, plan.project_id)
     items = []
     for source, association, case_id, collection_id, grouped in associations:
         case = cases.get(case_id)
@@ -62,7 +63,7 @@ def entries(db, plan, category):
         items.append(dict(id=f'{source}:{association.id}:{case_id}', source=source, associationId=association.id, caseId=case.id,
             name=case.name, caseCode=case.case_code, priority=case.priority, tags=case.tags or [],
             collectionId=collection_id, collectionName=points[collection_id].name if collection_id in points else '默认测试集',
-            moduleId=case.module_id, moduleName=module_names.get(case.module_id,'未分配模块'),
+            projectName=project.name if project else '', moduleId=case.module_id, moduleName=module_names.get(case.module_id,'未分配模块'),
             createdAt=case.created_at, updatedAt=case.updated_at, createdByName=users.get(case.created_by,'未知用户'),
             assignedTo=executor, executorName=users.get(executor,'未分配'), isAutomated=case.is_automated, recycled=bool(case.deleted_at),
             result=result['result'] if result else (RESULTS.get(association.execution_status,'pending') if source == 'legacy' else 'pending'),

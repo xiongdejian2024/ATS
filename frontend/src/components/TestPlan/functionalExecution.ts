@@ -53,5 +53,6 @@ export function functionalListingState(query: Record<string, unknown>) {
       : "createdAt",
     direction: value("caseDirection") === "asc" ? "asc" : "desc",
     advanced: value("caseAdvanced") === "1",
+    includeDescendants: value("caseIncludeDescendants") !== "0",
   };
 }

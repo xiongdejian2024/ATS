@@ -1,0 +1,210 @@
+<template>
+  <a-drawer
+    :open="open"
+    title="表格设置"
+    width="min(480px,100vw)"
+    :footer="false"
+    class="table-display-settings"
+    @close="emit('close', [...fixed, ...movable])"
+  >
+    <a-alert
+      v-if="error"
+      :message="error"
+      type="error"
+      show-icon
+      class="settings-error"
+    />
+    <div class="setting-title">每页显示数量</div>
+    <a-radio-group
+      :value="pageSize"
+      class="page-size-options"
+      button-style="solid"
+      @change="emit('pageSizeChange', $event.target.value)"
+    >
+      <a-radio-button v-for="size in pageSizes" :key="size" :value="size">{{
+        size
+      }}</a-radio-button>
+    </a-radio-group>
+    <div class="subdirectory-setting">
+      <a-switch
+        :checked="includeDescendants"
+        size="small"
+        aria-label="显示子模块资源"
+        @change="
+          (value: boolean | string | number) =>
+            emit('descendantsChange', Boolean(value))
+        "
+      />
+      <span>显示子模块资源</span>
+      <a-tooltip
+        placement="topRight"
+        title="开启：显示模块及子模块下的资源；关闭：只显示所选模块下的资源。"
+        ><QuestionCircleOutlined
+      /></a-tooltip>
+    </div>
+    <a-divider />
+    <div class="header-setting">
+      <strong>表头设置</strong>
+      <a-button :disabled="!changed" type="text" @click="resetDraft"
+        >撤销修改</a-button
+      >
+    </div>
+    <div
+      v-for="column in fixed"
+      :key="column.key"
+      class="column-setting fixed-column"
+    >
+      <span>{{ title(column.key) }}</span
+      ><a-switch
+        :checked="true"
+        size="small"
+        disabled
+        :aria-label="`显示${title(column.key)}`"
+      />
+    </div>
+    <a-divider class="fixed-divider">以上属性不可排序</a-divider>
+    <VueDraggable
+      v-model="movable"
+      handle=".sort-handle"
+      ghost-class="column-ghost"
+      :animation="150"
+    >
+      <div
+        v-for="column in movable"
+        :key="column.key"
+        class="column-setting"
+        :data-column-key="column.key"
+      >
+        <span class="column-label"
+          ><HolderOutlined
+            class="sort-handle"
+            :aria-label="`拖动${title(column.key)}`"
+          /><span>{{ title(column.key) }}</span></span
+        >
+        <a-switch
+          v-model:checked="column.visible"
+          size="small"
+          :aria-label="`显示${title(column.key)}`"
+        />
+      </div>
+    </VueDraggable>
+  </a-drawer>
+</template>
+<script setup lang="ts">
+import { ref, computed, watch } from "vue";
+import { VueDraggable } from "vue-draggable-plus";
+import { HolderOutlined, QuestionCircleOutlined } from "@ant-design/icons-vue";
+import {
+  pageSizes,
+  type DisplayColumn,
+  type ColumnVisibility,
+} from "./tableDisplay";
+const props = defineProps<{
+  open: boolean;
+  definitions: DisplayColumn[];
+  columns: ColumnVisibility[];
+  pageSize: number;
+  includeDescendants: boolean;
+  error?: string;
+}>();
+const emit = defineEmits<{
+  close: [columns: ColumnVisibility[]];
+  pageSizeChange: [size: number];
+  descendantsChange: [value: boolean];
+}>();
+const fixed = ref<ColumnVisibility[]>([]),
+  movable = ref<ColumnVisibility[]>([]),
+  original = ref("");
+const title = (key: string) =>
+  props.definitions.find((column) => column.key === key)?.title || key;
+const changed = computed(
+  () => JSON.stringify([...fixed.value, ...movable.value]) !== original.value,
+);
+function resetDraft() {
+  const locked = new Set(
+    props.definitions
+      .filter((column) => column.required)
+      .map((column) => column.key),
+  );
+  fixed.value = props.columns
+    .filter((column) => locked.has(column.key))
+    .map((column) => ({ ...column }));
+  movable.value = props.columns
+    .filter((column) => !locked.has(column.key))
+    .map((column) => ({ ...column }));
+  original.value = JSON.stringify([...fixed.value, ...movable.value]);
+}
+watch(
+  () => props.open,
+  (open) => {
+    if (open) resetDraft();
+  },
+  { immediate: true },
+);
+</script>
+<style scoped>
+.setting-title,
+.header-setting {
+  font-weight: 500;
+  color: #555;
+}
+.page-size-options {
+  display: flex;
+  width: 289px;
+  max-width: 100%;
+  margin-top: 8px;
+}
+.page-size-options :deep(.ant-radio-button-wrapper) {
+  flex: 1;
+  text-align: center;
+  padding: 0;
+}
+.subdirectory-setting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px;
+  color: #555;
+}
+.header-setting,
+.column-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.column-setting {
+  padding: 8px 12px;
+  margin: 4px 0;
+  min-height: 38px;
+}
+.fixed-column {
+  padding-left: 36px;
+}
+.column-setting:hover {
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+.column-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.sort-handle {
+  cursor: move;
+  color: #999;
+  font-size: 16px;
+}
+.fixed-divider :deep(.ant-divider-inner-text) {
+  font-size: 12px;
+  font-weight: 400;
+  color: #888;
+}
+.column-ghost {
+  border: 1px dashed #811fa3;
+  background: #faf0ff;
+}
+.settings-error {
+  margin-bottom: 12px;
+}
+</style>

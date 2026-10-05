@@ -13,6 +13,7 @@ export interface PlanCaseEntry {
   collectionName: string;
   moduleId?: string;
   moduleName: string;
+  projectName: string;
   createdAt: string;
   updatedAt: string;
   createdByName: string;

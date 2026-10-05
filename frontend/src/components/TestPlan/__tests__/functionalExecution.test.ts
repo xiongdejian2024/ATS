@@ -37,6 +37,7 @@ it("执行深链接保留筛选分页，非法分页排序回退安全默认值"
       caseSort: "name",
       caseDirection: "asc",
       casePriority: "P1",
+      caseIncludeDescendants: "0",
     }),
   ).toMatchObject({
     search: "诊断",
@@ -45,6 +46,7 @@ it("执行深链接保留筛选分页，非法分页排序回退安全默认值"
     sort: "name",
     direction: "asc",
     priority: "P1",
+    includeDescendants: false,
   });
   expect(
     functionalListingState({
@@ -60,5 +62,6 @@ it("执行深链接保留筛选分页，非法分页排序回退安全默认值"
     size: 20,
     sort: "createdAt",
     direction: "desc",
+    includeDescendants: true,
   });
 });

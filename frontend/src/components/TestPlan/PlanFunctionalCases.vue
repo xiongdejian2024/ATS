@@ -56,8 +56,16 @@
     </aside>
     <div class="case-list">
       <div class="case-toolbar">
-        <strong
-          >{{ folderTitle }} <span>({{ data?.total || 0 }})</span></strong
+        <a-space
+          ><strong
+            >{{ folderTitle }} <span>({{ data?.total || 0 }})</span></strong
+          ><a-button
+            v-if="showType === 'list'"
+            type="text"
+            aria-label="功能用例表格设置"
+            title="表格设置"
+            @click="settingsOpen = true"
+            ><SettingOutlined /></a-button></a-space
         ><a-space wrap
           ><a-input-search
             v-model:value="search"
@@ -130,7 +138,7 @@
           row-key="id"
           size="small"
           :pagination="pagination"
-          :scroll="{ x: 1850 }"
+          :scroll="{ x: tableWidth }"
           :row-selection="
             canEdit || data?.canExecute
               ? {
@@ -241,6 +249,17 @@
       </div>
     </div>
   </section>
+  <TableDisplaySettings
+    :open="settingsOpen"
+    :definitions="displayDefinitions"
+    :columns="display.columns"
+    :page-size="size"
+    :include-descendants="display.includeDescendants"
+    :error="settingsError"
+    @close="saveColumns"
+    @page-size-change="changePageSize"
+    @descendants-change="changeDescendants"
+  />
   <a-modal
     v-model:open="executeBatchOpen"
     title="批量执行"
@@ -309,8 +328,21 @@ import {
   UnorderedListOutlined,
   ApartmentOutlined,
   ReloadOutlined,
+  SettingOutlined,
 } from "@ant-design/icons-vue";
 import dayjs from "dayjs";
+import { useMediaQuery } from "@vueuse/core";
+import { useUserStore } from "@/stores/user";
+import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
+import {
+  readDisplay,
+  normalizeDisplay,
+  displayStorageKey,
+  pageSizes,
+  type DisplayColumn,
+  type TableDisplay,
+  type ColumnVisibility,
+} from "@/components/Table/tableDisplay";
 import type { TestPlan, TestCase } from "@/types";
 import {
   planCaseWorkspaceApi,
@@ -378,6 +410,7 @@ const pagination = computed(() => ({
   pageSize: size.value,
   total: data.value?.total || 0,
   showSizeChanger: true,
+  pageSizeOptions: pageSizes.map(String),
   showTotal: (total: number) => `共 ${total} 条`,
 }));
 const priorities = ["P0", "P1", "P2", "P3"].map((value) => ({
@@ -405,7 +438,7 @@ const resultOptions = Object.entries(resultLabels).map(([value, label]) => ({
         : "default";
 const formatTime = (value: string) =>
   value ? dayjs(value).format("YYYY-MM-DD HH:mm:ss") : "-";
-const columns = computed(() => [
+const allColumns = [
   {
     title: "ID",
     key: "caseCode",
@@ -420,18 +453,137 @@ const columns = computed(() => [
     width: 180,
     sorter: true,
   },
-  { title: "测试集", dataIndex: "collectionName", width: 150 },
+  {
+    title: "测试集",
+    key: "collectionName",
+    dataIndex: "collectionName",
+    width: 150,
+  },
   { title: "等级", key: "priority", width: 150 },
   { title: "标签", key: "tags", width: 140 },
   { title: "创建时间", key: "createdAt", width: 200, sorter: true },
   { title: "更新时间", key: "updatedAt", width: 200, sorter: true },
   { title: "执行结果", key: "result", width: 150 },
-  { title: "所属模块", dataIndex: "moduleName", width: 200 },
+  { title: "所属模块", key: "moduleName", dataIndex: "moduleName", width: 200 },
+  {
+    title: "所属项目",
+    key: "projectName",
+    dataIndex: "projectName",
+    width: 150,
+  },
   { title: "缺陷数", key: "bugCount", width: 100 },
-  { title: "创建人", dataIndex: "createdByName", width: 150 },
-  { title: "执行人", dataIndex: "executorName", width: 150 },
+  {
+    title: "创建人",
+    key: "createdByName",
+    dataIndex: "createdByName",
+    width: 150,
+  },
+  {
+    title: "执行人",
+    key: "executorName",
+    dataIndex: "executorName",
+    width: 150,
+  },
   { title: "操作", key: "actions", width: 170, fixed: "right" as const },
-]);
+];
+const displayDefinitions: DisplayColumn[] = allColumns
+  .filter((column) => column.key !== "actions")
+  .map((column) => ({
+    key: column.key,
+    title: column.title,
+    required: ["caseCode", "name"].includes(column.key),
+    defaultVisible: column.key !== "projectName",
+  }));
+const userStore = useUserStore(),
+  narrowScreen = useMediaQuery("(max-width: 768px)");
+const storageKey = computed(() =>
+  displayStorageKey(
+    userStore.user?.id || "",
+    props.plan.projectId,
+    "plan-functional",
+  ),
+);
+const display = ref<TableDisplay>(
+  readDisplay(localStorage, storageKey.value, displayDefinitions),
+);
+if (!route.query.caseSize || !pageSizes.includes(size.value))
+  size.value = display.value.pageSize;
+if (["0", "1"].includes(String(route.query.caseIncludeDescendants)))
+  display.value.includeDescendants = initialListing.includeDescendants;
+const settingsOpen = ref(false),
+  settingsError = ref("");
+const columns = computed(() => {
+  const definitions = new Map(allColumns.map((column) => [column.key, column]));
+  const shown = display.value.columns
+    .filter((column) => column.visible)
+    .map((column) => definitions.get(column.key)!);
+  const actions = definitions.get("actions")!;
+  return [
+    ...shown,
+    { ...actions, fixed: narrowScreen.value ? undefined : ("right" as const) },
+  ];
+});
+const tableWidth = computed(() =>
+  columns.value.reduce((width, column) => width + column.width, 50),
+);
+function persistDisplay(next: TableDisplay): boolean {
+  try {
+    const normalized = normalizeDisplay(next, displayDefinitions);
+    localStorage.setItem(storageKey.value, JSON.stringify(normalized));
+    display.value = normalized;
+    settingsError.value = "";
+    console.info("功能用例表格显示配置已保存", {
+      projectId: props.plan.projectId,
+      pageSize: normalized.pageSize,
+      includeDescendants: normalized.includeDescendants,
+    });
+    return true;
+  } catch (error) {
+    console.error("保存功能用例表格配置失败", error);
+    settingsError.value = "保存失败，请检查浏览器存储后重试";
+    message.error(settingsError.value);
+    return false;
+  }
+}
+function saveColumns(columns: ColumnVisibility[]) {
+  if (persistDisplay({ ...display.value, columns })) settingsOpen.value = false;
+}
+async function changePageSize(value: number) {
+  if (
+    !pageSizes.includes(value) ||
+    !persistDisplay({ ...display.value, pageSize: value })
+  )
+    return;
+  size.value = value;
+  await router.replace({
+    query: { ...route.query, caseSize: String(value), casePage: "1" },
+  });
+  resetPage();
+}
+async function changeDescendants(value: boolean) {
+  if (persistDisplay({ ...display.value, includeDescendants: value })) {
+    await router.replace({
+      query: {
+        ...route.query,
+        caseIncludeDescendants: value ? "1" : "0",
+        casePage: "1",
+      },
+    });
+    resetPage();
+  }
+}
+watch(storageKey, () => {
+  settingsOpen.value = false;
+  settingsError.value = "";
+  display.value = readDisplay(
+    localStorage,
+    storageKey.value,
+    displayDefinitions,
+  );
+  page.value = 1;
+  size.value = display.value.pageSize;
+  void load();
+});
 const selectedRows = computed(() =>
   (data.value?.items || []).filter((item) => selected.value.includes(item.id)),
 );
@@ -468,6 +620,7 @@ async function load() {
     const result = await planCaseWorkspaceApi.list(props.plan.id, {
       category: "functional",
       tree_type: treeType.value,
+      include_descendants: display.value.includeDescendants,
       folder: folder.value,
       search: search.value,
       ...filters,
@@ -531,13 +684,25 @@ function resetFilters() {
   search.value = "";
   resetPage();
 }
-function tableChange(p: any, _filters: any, sorter: any) {
+async function tableChange(p: any, _filters: any, sorter: any) {
   page.value = p.current;
+  if (
+    p.pageSize !== size.value &&
+    !persistDisplay({ ...display.value, pageSize: p.pageSize })
+  )
+    return;
   size.value = p.pageSize;
   if (sorter?.columnKey) {
     sort.value = String(sorter.columnKey);
     direction.value = sorter.order === "ascend" ? "asc" : "desc";
   }
+  await router.replace({
+    query: {
+      ...route.query,
+      casePage: String(page.value),
+      caseSize: String(size.value),
+    },
+  });
   void load();
 }
 const defectsOpen = ref(false),
@@ -553,6 +718,7 @@ function openExecution(row: PlanCaseEntry) {
       caseId: row.caseId,
       casePage: String(page.value),
       caseSize: String(size.value),
+      caseIncludeDescendants: display.value.includeDescendants ? "1" : "0",
       caseSearch: search.value,
       casePriority: filters.priority,
       caseResult: filters.result,
