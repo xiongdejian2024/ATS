@@ -19,7 +19,7 @@ from schemas.case_governance import (
     ReviewVote,
     ReviewCommentCreate,
     SavedViewCreate,
-    SavedViewRename,
+    SavedViewUpdate,
     CaseBatchUpdate,
     CaseBatchCopy,
     ReviewBatchVote,
@@ -496,7 +496,7 @@ def save_view(
 def rename_view(
     project_id: str,
     view_id: str,
-    body: SavedViewRename,
+    body: SavedViewUpdate,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
@@ -512,12 +512,15 @@ def rename_view(
 
     def operation():
         row.name = body.name
+        if "filters" in body.model_fields_set:
+            row.filters = body.filters
         db.flush()
         logger.info(
-            "个人视图已重命名 project_id={} view_id={} owner_id={}",
+            "个人视图已更新 project_id={} view_id={} owner_id={} filters_updated={}",
             project_id,
             view_id,
             user.id,
+            "filters" in body.model_fields_set,
         )
         return view_data(row)
 

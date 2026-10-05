@@ -46,14 +46,18 @@ class ReviewHeader(StrictRequest):
     @classmethod
     def normalized_tags(cls, values):
         values = [v.strip() for v in values]
-        if any(not v or len(v) > 100 for v in values) or len(set(values)) != len(values):
+        if any(not v or len(v) > 100 for v in values) or len(set(values)) != len(
+            values
+        ):
             raise ValueError("标签必须不重复且长度为1至100个字符")
         return values
 
     @field_validator("reviewerIds")
     @classmethod
     def unique_ids(cls, values):
-        if any(not value.strip() for value in values) or len(set(values)) != len(values):
+        if any(not value.strip() for value in values) or len(set(values)) != len(
+            values
+        ):
             raise ValueError("ID 不能为空或重复")
         return values
 
@@ -83,7 +87,10 @@ class ReviewCreate(ReviewHeader):
         if set(self.itemReviewers) - set(self.caseIds):
             raise ValueError("逐条评审人仅可指定本评审用例")
         if any(
-            not ids or len(ids) > 50 or len(set(ids)) != len(ids) or any(not i.strip() for i in ids)
+            not ids
+            or len(ids) > 50
+            or len(set(ids)) != len(ids)
+            or any(not i.strip() for i in ids)
             for ids in self.itemReviewers.values()
         ):
             raise ValueError("每条用例必须有不重复的评审人")
@@ -128,7 +135,7 @@ class ReviewCommentCreate(StrictRequest):
 
 
 class SavedViewRename(StrictRequest):
-    name: str = Field(min_length=1, max_length=100)
+    name: str = Field(min_length=1, max_length=255)
 
     @field_validator("name")
     @classmethod
@@ -168,9 +175,34 @@ class SavedViewCreate(SavedViewRename):
             or not all(isinstance(v, str) for v in values["moduleKeys"])
         ):
             raise ValueError("模块筛选必须是字符串数组")
-        if "filterConditions" in values and not isinstance(values["filterConditions"], list):
+        if "filterConditions" in values and not isinstance(
+            values["filterConditions"], list
+        ):
             raise ValueError("筛选条件必须是数组")
+        from services.case_query import parse_filters
+        from fastapi import HTTPException
+
+        try:
+            parse_filters(
+                {
+                    "conditions": values.get("filterConditions", []),
+                    "logic": values.get("filterLogic", "and"),
+                }
+            )
+        except HTTPException as exc:
+            raise ValueError(exc.detail) from exc
         return values
+
+
+class SavedViewUpdate(SavedViewRename):
+    filters: dict[str, Any] | None = None
+
+    @field_validator("filters")
+    @classmethod
+    def valid_filters(cls, values):
+        if values is None:
+            raise ValueError("视图筛选不能为null，请使用空对象清空")
+        return SavedViewCreate.bounded_filters(values)
 
 
 class CaseBatchUpdate(StrictRequest):

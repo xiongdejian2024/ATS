@@ -113,7 +113,7 @@ class CaseSavedView(Base, BaseModel):
         index=True,
     )
     owner_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
-    name = Column(String(100), nullable=False)
+    name = Column(String(255), nullable=False)
     filters = Column(JSON, nullable=False)
 
 

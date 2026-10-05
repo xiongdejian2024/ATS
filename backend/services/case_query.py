@@ -39,6 +39,9 @@ OPERATORS = {
     "lte",
     "starts_with",
     "ends_with",
+    "between",
+    "count_gt",
+    "count_lt",
 }
 
 
@@ -73,14 +76,48 @@ def parse_filters(raw):
             and not field.startswith("customFields.")
         ):
             raise HTTPException(422, "不支持的筛选字段")
-        if item["operator"] in {
-            "in",
-            "not_in",
-            "belongs_to",
-            "not_belongs_to",
-        } and not isinstance(item.get("value"), (list, str)):
+        if (
+            item["operator"]
+            in {
+                "in",
+                "not_in",
+                "belongs_to",
+                "not_belongs_to",
+            }
+            and item.get("value") is not None
+            and not isinstance(item.get("value"), (list, str))
+        ):
             raise HTTPException(422, "筛选集合必须为字符串或数组")
-    return conditions, logic
+        if item["operator"] == "between" and item.get("value") not in (None, [], ""):
+            value = item["value"]
+            if (
+                not isinstance(value, list)
+                or len(value) != 2
+                or any(v is None or v == "" for v in value)
+            ):
+                raise HTTPException(422, "介于条件必须包含两个完整边界")
+            from services.filter_values import comparable, temporal
+
+            try:
+                if field in {"createdAt", "updatedAt"}:
+                    lower, upper = temporal(value[0]), temporal(value[1])
+                else:
+                    lower, upper = comparable(value[0], value[1], date_text=True)
+                if lower > upper:
+                    raise HTTPException(422, "筛选起始边界不能晚于结束边界")
+            except (ValueError, TypeError, OverflowError, OSError) as exc:
+                raise HTTPException(422, "筛选区间边界不是有效值或类型不一致") from exc
+        if item["operator"] in {"count_gt", "count_lt"}:
+            value = item.get("value")
+            if value is not None and (type(value) is not int or value < 0):
+                raise HTTPException(422, "数量条件必须为非负整数")
+    # 官方默认条件可以没有值；它们不参与 AND/OR，不将空包含当作全匹配。
+    return [
+        c
+        for c in conditions
+        if c["operator"] in {"is_empty", "is_not_empty"}
+        or c.get("value") not in (None, "", [])
+    ], logic
 
 
 def matches(actual, operator, expected):
@@ -89,12 +126,34 @@ def matches(actual, operator, expected):
         return empty
     if operator == "is_not_empty":
         return not empty
+    if operator in {"count_gt", "count_lt"}:
+        if actual is not None and not isinstance(actual, list):
+            raise HTTPException(422, "数量比较只适用于数组字段")
+        size = len(actual or [])
+        return size > expected if operator == "count_gt" else size < expected
+    if operator == "between":
+        from services.filter_values import comparable
+
+        lower_actual, lower = comparable(actual, expected[0], date_text=True)
+        upper_actual, upper = comparable(actual, expected[1], date_text=True)
+        if actual is None:
+            return False
+        try:
+            if lower > upper:
+                raise HTTPException(422, "筛选起始边界不能晚于结束边界")
+            return lower_actual >= lower and upper_actual <= upper
+        except TypeError as exc:
+            raise HTTPException(422, "筛选字段与区间边界类型不一致") from exc
     if (
         isinstance(actual, bool)
         and isinstance(expected, str)
         and expected in {"true", "false"}
     ):
         expected = expected == "true"
+    if operator in {"equals", "not_equals", "gt", "gte", "lt", "lte"}:
+        from services.filter_values import comparable
+
+        actual, expected = comparable(actual, expected)
     if operator == "equals":
         return actual == expected
     if operator == "not_equals":
@@ -120,8 +179,6 @@ def matches(actual, operator, expected):
         return str(actual or "").casefold().startswith(str(expected or "").casefold())
     if operator == "ends_with":
         return str(actual or "").casefold().endswith(str(expected or "").casefold())
-    if hasattr(actual, "isoformat"):
-        actual = actual.isoformat()
     if actual is None or expected is None:
         return False
     try:

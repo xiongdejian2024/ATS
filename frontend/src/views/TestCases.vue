@@ -92,8 +92,8 @@
           </div>
           <div class="toolbar-filter">
             <a-input-search v-model:value="searchValue" placeholder="通过ID/名称/标签搜索" style="width:187px" allow-clear @search="handleSearch" />
-            <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" :system-view="viewMode" @system-view="applySystemView" @changed="refreshGovernedCases" @apply-view="applySavedView" />
-            <a-button :type="advancedFilters.length ? 'primary' : 'default'" @click="filterDrawerVisible=true"><FilterOutlined /> 筛选</a-button>
+            <CaseGovernancePanel v-if="projectId" ref="governancePanel" :project-id="projectId" :selected-ids="selectedRowKeys" :filters="savedViewFilters" :system-view="viewMode" :filter-saving="filterSaving || filterDrawerVisible" @new-view="openFilter(true)" @system-view="applySystemView" @changed="refreshGovernedCases" @apply-view="applySavedView" />
+            <a-button aria-label="高级筛选" :type="advancedFilters.length ? 'primary' : 'default'" @click="openFilter(false)"><FilterOutlined /> 筛选</a-button>
             <a-button v-if="advancedFilters.length" type="link" @click="clearAdvancedFilters">清空筛选</a-button>
             <a-button-group>
               <a-button :type="viewLayout === 'list' ? 'primary' : 'default'" aria-label="列表视图" title="列表视图" @click="viewLayout='list'"><UnorderedListOutlined /></a-button>
@@ -319,7 +319,12 @@
       :logic="filterLogic"
       :module-tree-data="moduleTreeData"
       @apply="handleFilterApply"
-      @reset="handleFilterReset"
+      :view="newFilterView ? undefined : governancePanel?.activeView"
+      :view-names="governancePanel?.viewNames"
+      :cannot-add="governancePanel?.cannotAdd"
+      :new-view="newFilterView"
+      :save-view="saveFilterView"
+      @saving="filterSaving=$event"
     />
 
     <CaseExportDialog v-model:open="exportVisible" :initial-format="exportFormat" :busy="exportBusy" :selected-count="selectedRowKeys.length" @export="confirmExport" />
@@ -344,7 +349,7 @@
 import { testSuiteApi, type TestSuite } from '@/api/testSuite'
 import { testPlanApi } from '@/api/testPlan'
 import { ref, reactive, computed, onMounted, onUnmounted, watch, createVNode } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
 import { message, Modal, Input } from 'ant-design-vue';
 import { LeftOutlined, RightOutlined, PlusOutlined, FilterOutlined, UnorderedListOutlined, AppstoreOutlined, ReloadOutlined, MoreOutlined, DownOutlined, FolderOutlined, FileOutlined, FileTextOutlined, SettingOutlined, TagOutlined, BugOutlined, CheckSquareOutlined, FlagOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons-vue';
 import TableDisplaySettings from '@/components/Table/TableDisplaySettings.vue'
@@ -449,6 +454,14 @@ const exportVisible=ref(false),exportBusy=ref(false),exportFormat=ref('xlsx')
 const recycleVisible = ref(route.query.view === 'recycle'), templateVisible = ref(false), mindSaving = ref(false)
 const sortBy = ref('updated_at'), sortOrder = ref('desc')
 const filterDrawerVisible = ref(false)
+const newFilterView = ref(false), filterSaving = ref(false)
+onBeforeRouteLeave(() => !filterSaving.value)
+onBeforeRouteUpdate(() => !filterSaving.value)
+function openFilter(isNew: boolean) {
+  if (filterSaving.value) return
+  newFilterView.value = isNew
+  filterDrawerVisible.value = true
+}
 watch(recycleVisible, async value => {
   const query = { ...route.query }
   if (value) query.view = 'recycle'; else delete query.view
@@ -468,11 +481,14 @@ const filterLogic = ref<'and' | 'or'>('and')
 const filterFields = ref<any[]>([])
 
 // 加载筛选字段配置
+let filterLoadSequence = 0
 const loadFilterFields = async () => {
-  if (!projectId.value) return
-
+  const project = projectId.value
+  if (!project) return
+  const sequence = ++filterLoadSequence
   try {
-    const [fields,templates] = await Promise.all([testCaseApi.getFilterFields(projectId.value),caseFeaturesApi.templates(projectId.value)])
+    const [fields,templates] = await Promise.all([testCaseApi.getFilterFields(project),caseFeaturesApi.templates(project)])
+    if (sequence !== filterLoadSequence || project !== projectId.value) return
     // 转换后端数据格式为前端需要的格式
     filterFields.value = fields.map((field: any) => ({
       key: field.fieldKey,
@@ -484,9 +500,9 @@ const loadFilterFields = async () => {
     const custom = new Map(templates.flatMap(t=>t.fields.map(f=>[f.key,f] as const)))
     for(const f of custom.values()) filterFields.value.push({key:`customFields.${f.key}`,label:`自定义 · ${f.name}`,type:f.type==='textarea'?'text':f.type==='boolean'?'select':f.type==='multiselect'?'select':f.type,options:f.type==='boolean'?[{label:'是',value:true},{label:'否',value:false}]:f.options.map(value=>({label:value,value}))})
   } catch (error) {
-    console.error('Failed to load filter fields:', error)
+    console.error('加载筛选字段失败，使用默认字段', error)
     // 如果加载失败，使用默认字段
-    filterFields.value = getDefaultFilterFields()
+    if (sequence === filterLoadSequence && project === projectId.value) filterFields.value = getDefaultFilterFields()
   }
 }
 
@@ -578,6 +594,10 @@ const filters = reactive({
 
 const governancePanel = ref<InstanceType<typeof CaseGovernancePanel>>()
 const savedViewFilters = computed(() => ({ search: searchValue.value, moduleKeys: selectedModuleKeys.value, filterConditions: advancedFilters.value, filterLogic: filterLogic.value, viewMode:viewMode.value, sortBy:sortBy.value,sortOrder:sortOrder.value, ...filters }))
+async function saveFilterView(name: string, conditions: any[], logic: 'and' | 'or', mode: 'create' | 'update' | 'copy') {
+  if (!governancePanel.value) throw new Error('项目视图尚未加载')
+  await governancePanel.value.persistFilterView(name, { ...savedViewFilters.value, filterConditions: conditions, filterLogic: logic }, mode)
+}
 const refreshGovernedCases = async () => { await loadTestCases(); await loadModuleTree() }
 const clearAdvancedFilters = async () => { advancedFilters.value=[]; filterLogic.value='and'; pagination.current=1; await loadTestCases() }
 const applySystemView = async (value: string) => {
@@ -1112,24 +1132,8 @@ const handleSearch = () => {
 
 // 应用高级筛选
 const handleFilterApply = (conditions: any[], logic: string) => {
-  console.log('handleFilterApply 被调用:', { conditions, logic })
   advancedFilters.value = conditions
   filterLogic.value = logic as 'and' | 'or'
-  console.log('设置筛选条件:', {
-    advancedFilters: advancedFilters.value,
-    filterLogic: filterLogic.value
-  })
-  pagination.current = 1
-  loadTestCases()
-}
-
-// 重置筛选
-const handleFilterReset = () => {
-  advancedFilters.value = []
-  filterLogic.value = 'and'
-  filters.level = undefined
-  filters.reviewResult = undefined
-  filters.executionResult = undefined
   pagination.current = 1
   loadTestCases()
 }
@@ -1806,6 +1810,8 @@ watch(
   () => projectId.value,
   () => {
     if (projectId.value) {
+      if (!filterSaving.value) filterDrawerVisible.value = false
+      advancedFilters.value = []; filterLogic.value = 'and'; searchValue.value = ''
       selectedRowKeys.value=[];selectedModuleKeys.value=['all'];detailCaseVisible.value=false;recycleVisible.value=route.query.view === 'recycle';templateVisible.value=false;pagination.current=1
       loadTestCases()
       loadModuleTree()

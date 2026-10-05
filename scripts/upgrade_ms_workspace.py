@@ -89,6 +89,12 @@ def migration_plan(engine):
                 raise RuntimeError("评审名称类型无法审查，已停止升级")
             if length < 255:
                 steps.append(("扩大评审名称至255字符，保留已有名称", "ALTER TABLE case_reviews MODIFY COLUMN name VARCHAR(255) NOT NULL"))
+        if table.name == "case_saved_views" and engine.dialect.name == "mysql":
+            length = getattr(actual.get("name", {}).get("type"), "length", None)
+            if length is None:
+                raise RuntimeError("个人视图名称类型无法审查，已停止升级")
+            if length < 255:
+                steps.append(("扩大个人视图名称至255字符，保留已有筛选", "ALTER TABLE case_saved_views MODIFY COLUMN name VARCHAR(255) NOT NULL"))
         missing_columns=set(table.columns.keys())-set(actual)
         for column in table.columns:
             if column.name in actual:

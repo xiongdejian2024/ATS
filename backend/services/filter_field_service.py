@@ -1,4 +1,5 @@
 """筛选字段配置服务层"""
+
 from typing import List
 from sqlalchemy.orm import Session
 from models.filter_field import FilterField
@@ -18,21 +19,21 @@ class FilterFieldService:
                 "field_type": "text",
                 "operators": ["contains", "equals", "not_equals"],
                 "sort_order": 1,
-                "is_default": True
+                "is_default": True,
             },
             {
                 "field_key": "name",
                 "field_label": "用例名称",
                 "field_type": "text",
                 "sort_order": 2,
-                "is_default": True
+                "is_default": True,
             },
             {
                 "field_key": "moduleId",
                 "field_label": "所属模块",
                 "field_type": "module",
                 "sort_order": 3,
-                "is_default": True
+                "is_default": True,
             },
             {
                 "field_key": "priority",
@@ -42,10 +43,10 @@ class FilterFieldService:
                     {"label": "P0", "value": "P0"},
                     {"label": "P1", "value": "P1"},
                     {"label": "P2", "value": "P2"},
-                    {"label": "P3", "value": "P3"}
+                    {"label": "P3", "value": "P3"},
                 ],
                 "sort_order": 4,
-                "is_default": True
+                "is_default": True,
             },
             {
                 "field_key": "type",
@@ -56,10 +57,10 @@ class FilterFieldService:
                     {"label": "接口测试", "value": "interface"},
                     {"label": "UI测试", "value": "ui"},
                     {"label": "性能测试", "value": "performance"},
-                    {"label": "安全测试", "value": "security"}
+                    {"label": "安全测试", "value": "security"},
                 ],
                 "sort_order": 5,
-                "is_default": True
+                "is_default": True,
             },
             {
                 "field_key": "status",
@@ -70,10 +71,10 @@ class FilterFieldService:
                     {"label": "通过", "value": "passed"},
                     {"label": "失败", "value": "failed"},
                     {"label": "阻塞", "value": "blocked"},
-                    {"label": "跳过", "value": "skipped"}
+                    {"label": "跳过", "value": "skipped"},
                 ],
                 "sort_order": 6,
-                "is_default": True
+                "is_default": True,
             },
             {
                 "field_key": "isAutomated",
@@ -81,42 +82,73 @@ class FilterFieldService:
                 "field_type": "select",
                 "options": [
                     {"label": "是", "value": True},
-                    {"label": "否", "value": False}
+                    {"label": "否", "value": False},
                 ],
                 "sort_order": 7,
-                "is_default": True
+                "is_default": True,
             },
             {
                 "field_key": "tags",
                 "field_label": "标签",
                 "field_type": "tags",
                 "sort_order": 8,
-                "is_default": True
+                "is_default": True,
             },
             {
                 "field_key": "requirementRef",
                 "field_label": "需求关联",
                 "field_type": "text",
                 "sort_order": 9,
-                "is_default": True
+                "is_default": True,
             },
             {
                 "field_key": "precondition",
                 "field_label": "前置条件",
                 "field_type": "text",
                 "sort_order": 10,
-                "is_default": True
-            }
+                "is_default": True,
+            },
         ]
-        
+
+        default_fields.extend(
+            [
+                {
+                    "field_key": "createdAt",
+                    "field_label": "创建时间",
+                    "field_type": "date",
+                    "sort_order": 11,
+                    "is_default": True,
+                },
+                {
+                    "field_key": "updatedAt",
+                    "field_label": "更新时间",
+                    "field_type": "date",
+                    "sort_order": 12,
+                    "is_default": True,
+                },
+                {
+                    "field_key": "reviewResult",
+                    "field_label": "评审结果",
+                    "field_type": "select",
+                    "sort_order": 13,
+                    "is_default": True,
+                    "options": [
+                        {"label": label, "value": value}
+                        for label, value in [
+                            ("未评审", "not_reviewed"),
+                            ("评审中", "pending"),
+                            ("通过", "approved"),
+                            ("不通过", "rejected"),
+                            ("重新评审", "re_review"),
+                        ]
+                    ],
+                },
+            ]
+        )
         # 创建默认字段对象（不保存到数据库，仅返回）
         fields = []
         for field_data in default_fields:
-            field = FilterField(
-                id=uuid.uuid4(),
-                project_id=project_id,
-                **field_data
-            )
+            field = FilterField(id=uuid.uuid4(), project_id=project_id, **field_data)
             fields.append(field)
-        
+
         return fields
