@@ -87,7 +87,13 @@ def change_reviewers(db, user, project_id, review_id, request):
         ):
             continue
         reset_authors.setdefault(
-            event.item_id, event.actor_id if event.action == "重新提审" else None
+            event.item_id,
+            (
+                event.actor_id
+                if event.action == "重新提审"
+                and not (event.detail or {}).get("automatic")
+                else None
+            ),
         )
     for item in items:
         before = list(item.reviewer_ids or review.reviewer_ids)
@@ -171,10 +177,27 @@ def re_review(db, user, project_id, review_id, request):
     }
     if len(versions) != len(items):
         raise HTTPException(409, "所选用例版本不存在，请刷新后重试")
+    reset_items(db, user, review, items, versions, comment=request.comment)
+    return governance.review_data(db, review, include_items=False)
+
+
+def reset_items(
+    db,
+    user,
+    review,
+    items,
+    versions,
+    *,
+    comment="",
+    automatic=False,
+    changed_fields=None,
+):
+    """仅供已校验权限并持有项目、评审和条目锁的调用方，共用新轮次规则。"""
+    identifiers = [item.id for item in items]
     votes = {}
     for vote in (
         db.query(CaseReviewDecision)
-        .filter(CaseReviewDecision.item_id.in_(request.itemIds))
+        .filter(CaseReviewDecision.item_id.in_(identifiers))
         .populate_existing()
         .with_for_update()
         .all()
@@ -185,7 +208,7 @@ def re_review(db, user, project_id, review_id, request):
         db.query(CaseReviewEvent)
         .filter(
             CaseReviewEvent.review_id == review.id,
-            CaseReviewEvent.item_id.in_(request.itemIds),
+            CaseReviewEvent.item_id.in_(identifiers),
             CaseReviewEvent.action.in_(["评审结论", "重新提审"]),
         )
         .all()
@@ -199,7 +222,9 @@ def re_review(db, user, project_id, review_id, request):
             "重新提审",
             dict(
                 caseId=item.case_id,
-                comment=request.comment,
+                comment=comment,
+                automatic=automatic,
+                changedFields=changed_fields or [],
                 beforeStatus=item.status,
                 beforeVersionId=item.version_id,
                 versionId=versions[item.case_id].id,
@@ -220,19 +245,19 @@ def re_review(db, user, project_id, review_id, request):
         item.version_id = versions[item.case_id].id
         item.status = "re_review"
     db.query(CaseReviewDecision).filter(
-        CaseReviewDecision.item_id.in_(request.itemIds)
+        CaseReviewDecision.item_id.in_(identifiers)
     ).delete(synchronize_session=False)
     db.flush()
     governance.refresh_review_status(db, review)
     review.updated_at = beijing_now()
     db.flush()
     logger.info(
-        "评审同单重新提审完成 review_id={} actor_id={} item_count={}",
+        "评审同单重新提审完成 review_id={} actor_id={} item_count={} automatic={}",
         review.id,
         user.id,
         len(items),
+        automatic,
     )
-    return governance.review_data(db, review, include_items=False)
 
 
 def disassociate(db, user, project_id, review_id, request):

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from api.deps import get_current_user
 from api.v1.case_governance import result, transact
+from core.logger import logger
 from core.project_access import require_project_access
 from models.test_case import TestCase, CaseAttachment
 from models.case_features import CaseChange
@@ -56,13 +57,28 @@ def write_project_settings(
     require_project_access(db, user, project_id, "test_case:update")
 
     def operation():
-        row = db.query(CaseProjectSettings).filter_by(project_id=project_id).first()
+        from services.review_workspace import lock_project
+
+        lock_project(db, project_id)
+        row = (
+            db.query(CaseProjectSettings)
+            .filter_by(project_id=project_id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
         if not row:
             row = CaseProjectSettings(project_id=project_id)
         row.auto_resubmit = body.autoResubmit
         db.add(row)
 
     transact(db, operation)
+    logger.info(
+        "项目自动提审设置已保存 project_id={} actor_id={} enabled={}",
+        project_id,
+        user.id,
+        body.autoResubmit,
+    )
     return result(body.model_dump())
 
 

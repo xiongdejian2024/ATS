@@ -48,12 +48,16 @@ def project_access(db, user, project_id, action="read"):
 
 
 def case_for_project(db, project_id, case_id, lock=False):
+    if lock:
+        from services.review_workspace import lock_project
+
+        lock_project(db, project_id)
     query = (
         db.query(TestCase)
         .filter_by(project_id=project_id, id=case_id)
         .filter(TestCase.deleted_at.is_(None))
     )
-    case = (query.with_for_update() if lock else query).first()
+    case = (query.populate_existing().with_for_update() if lock else query).first()
     if not case:
         raise HTTPException(404, "项目中不存在该用例")
     return case
@@ -64,12 +68,26 @@ def latest_version(db, case_id):
         db.query(CaseVersion)
         .filter_by(case_id=case_id)
         .order_by(CaseVersion.version.desc())
+        .populate_existing()
+        .with_for_update()
         .first()
     )
 
 
 def snapshot_case(db, case, actor_id, reason, force=False):
     """由写事务调用；不自行 commit，失败时原用例与快照一起回滚。"""
+    from services.review_workspace import lock_project
+
+    lock_project(db, case.project_id)
+    # 普通读取后取得锁时刷新主用例，保留调用方尚未提交的实际编辑。
+    if not db.is_modified(case, include_collections=False):
+        case = (
+            db.query(TestCase)
+            .filter_by(id=case.id)
+            .populate_existing()
+            .with_for_update()
+            .one()
+        )
     snapshot = {field: deepcopy(getattr(case, field)) for field in SNAPSHOT_FIELDS}
     previous = latest_version(db, case.id)
     if previous and previous.snapshot == snapshot and not force:
@@ -107,43 +125,10 @@ def snapshot_case(db, case, actor_id, reason, force=False):
         version.version,
         actor_id,
     )
-    if previous and not db.info.get("auto_resubmitting"):
-        from models.case_features import CaseProjectSettings
+    if previous:
+        from services.review_auto_resubmit import handle_case_change
 
-        settings = (
-            db.query(CaseProjectSettings)
-            .filter_by(project_id=case.project_id, auto_resubmit=True)
-            .first()
-        )
-        if settings:
-            reviews = (
-                db.query(CaseReview)
-                .join(CaseReviewItem, CaseReviewItem.review_id == CaseReview.id)
-                .filter(
-                    CaseReviewItem.case_id == case.id,
-                    CaseReviewItem.version_id == previous.id,
-                    CaseReview.status.notin_(["cancelled", "superseded"]),
-                )
-                .all()
-            )
-            db.info["auto_resubmitting"] = True
-            try:
-                from schemas.case_governance import ReviewResubmit
-                from services.review_workspace import metadata
-
-                for review in reviews:
-                    if metadata(db, review)["archived"]:
-                        continue
-                    clone_review(
-                        db,
-                        db.get(User, str(actor_id)),
-                        case.project_id,
-                        review.id,
-                        ReviewResubmit(),
-                        resubmit=True,
-                    )
-            finally:
-                db.info.pop("auto_resubmitting", None)
+        handle_case_change(db, case, actor_id, version, previous.snapshot, snapshot)
     return version
 
 
@@ -797,6 +782,7 @@ def current_review_statuses(db, cases):
             "approved": "passed",
             "rejected": "rejected",
             "pending": "pending",
+            "re_review": "resubmit",
         }[item.status]
         matched.add(item.case_id)
     return statuses

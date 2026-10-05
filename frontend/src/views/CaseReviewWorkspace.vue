@@ -424,7 +424,7 @@ const canVote = (item: ReviewItem) =>
 function historyText(entry: Record<string, any>) {
   const details = entry.detail || {};
   if (entry.action === "重新提审")
-    return `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · 重新提审 · 已作废 ${details.invalidatedDecisions?.length || 0} 条原有效结论`;
+    return `${entry.createdAt || ""} · ${details.automatic ? "系统" : memberName(entry.actorId || "")} · ${details.automatic ? "自动重新提审" : "重新提审"} · 已作废 ${details.invalidatedDecisions?.length || 0} 条原有效结论`;
   return `${entry.createdAt || ""} · ${memberName(entry.actorId || "")} · ${entry.action || ""}\n${details.decision ? `${statusName(details.decision)}：${details.comment || ""}` : JSON.stringify(details, null, 2)}`;
 }
 async function run(task: () => Promise<void>) {

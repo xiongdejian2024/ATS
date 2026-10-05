@@ -712,6 +712,105 @@ def main():
             assert (
                 summary["items"][0]["startTime"] == "2026-10-05T09:45:01.654321+08:00"
             )
+        # 已持有旧快照的编辑者等待项目锁：读取最新开关/版本，跳过刚归档评审。
+        from models.case_features import CaseProjectSettings
+        from services.test_case_service import TestCaseService
+        from schemas.test_case import TestCaseUpdate
+        from services.review_workspace import lock_project
+
+        with Sessions() as db:
+            db.add(CaseProjectSettings(project_id="race-project", auto_resubmit=False))
+            db.commit()
+        ready_editor, continue_editor = threading.Event(), threading.Event()
+
+        def case_editor():
+            with Sessions() as db:
+                assert db.get(TestCase, "race-case").name == "软件用例"
+                assert (
+                    not db.query(CaseProjectSettings)
+                    .filter_by(project_id="race-project")
+                    .one()
+                    .auto_resubmit
+                )
+                assert db.query(CaseVersion).filter_by(case_id="race-case").count() == 1
+                ready_editor.set()
+                assert continue_editor.wait(15)
+                TestCaseService.update_test_case(
+                    db,
+                    "race-case",
+                    TestCaseUpdate(name="锁释放后自动同单提审"),
+                    "race-owner",
+                )
+
+        with ThreadPoolExecutor(max_workers=1) as workers:
+            editing = workers.submit(case_editor)
+            assert ready_editor.wait(15)
+            with Sessions() as db:
+                lock_project(db, "race-project")
+                TestCaseService.update_test_case(
+                    db,
+                    "race-case",
+                    TestCaseUpdate(precondition="前一编辑者已保存"),
+                    "race-owner",
+                )
+                lock_project(db, "race-project")
+                db.query(CaseProjectSettings).filter_by(
+                    project_id="race-project"
+                ).with_for_update().one().auto_resubmit = True
+                db.flush()
+                continue_editor.set()
+                editor_waited = False
+                for _ in range(20):
+                    count = root_sql(
+                        "SELECT COUNT(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON w.REQUESTING_ENGINE_LOCK_ID=l.ENGINE_LOCK_ID WHERE l.OBJECT_SCHEMA="
+                        + quote(name)
+                    )
+                    if count and int(count) >= 1:
+                        editor_waited = True
+                        break
+                    time.sleep(0.1)
+                db.commit()
+            editing.result(15)
+        assert editor_waited
+        with Sessions() as db:
+            versions = (
+                db.query(CaseVersion)
+                .filter_by(case_id="race-case")
+                .order_by(CaseVersion.version)
+                .all()
+            )
+            assert [v.version for v in versions] == [1, 2, 3]
+            assert versions[-1].snapshot["precondition"] == "前一编辑者已保存"
+            archived_item = db.get(CaseReviewItem, item_id)
+            assert (
+                archived_item.version_id == versions[0].id
+                and archived_item.status == "approved"
+            )
+            assert (
+                db.query(CaseReviewDecision).filter_by(item_id=item_id).one().decision
+                == "approved"
+            )
+            other = (
+                db.query(CaseReviewItem)
+                .filter(
+                    CaseReviewItem.case_id == "race-case", CaseReviewItem.id != item_id
+                )
+                .one()
+            )
+            assert other.version_id == versions[-1].id and other.status == "re_review"
+            history = (
+                db.query(CaseReviewEvent)
+                .filter_by(item_id=other.id, action="重新提审")
+                .one()
+            )
+            assert history.detail["automatic"] and history.detail["changedFields"] == [
+                "name"
+            ]
+            assert db.query(CaseReviewDecision).filter_by(item_id=other.id).count() == 0
+            assert db.query(TaskQueue).count() == 0
+        log.info(
+            "MySQL自动提审并发核验通过：编辑者实际等待项目锁，旧关闭开关刷新为开启，版本1/2/3连续，归档评审保持原版本和结论"
+        )
         log.info(
             "MySQL评审并发验收通过：真实锁等待=%s，旧快照=%s，归档后改投已拒绝，历史结论保持通过；原业务库未写入",
             observed,
@@ -734,6 +833,8 @@ def main():
                 "同单重新提审与有效票作废": True,
                 "归档后四个实际等待者写入拒绝": management_rejected
                 and rereview_rejected,
+                "自动提审开关与版本当前读真实等待": editor_waited,
+                "自动提审跳过归档并保留旧结论": True,
                 "节点任务": 0,
             }
         )

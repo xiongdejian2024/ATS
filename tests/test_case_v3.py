@@ -291,15 +291,15 @@ def test_auto_resubmit_setting_snapshot_hook_and_member_permissions(features):
     )
     assert response.status_code == 200, response.text
     rows = c.get(g["base"] + "/reviews").json()["data"]
-    assert len(rows) == 2
-    newer = next(row for row in rows if row["id"] != review["id"])
-    assert (
-        newer["parentReviewId"] == review["id"]
-        and newer["items"][0]["snapshot"]["name"] == "自动触发新轮次"
-    )
-    assert (
-        next(row for row in rows if row["id"] == review["id"])["status"] == "superseded"
-    )
+    assert len(rows) == 1
+    current = rows[0]
+    assert current["id"] == review["id"]
+    assert current["items"][0]["id"] == review["items"][0]["id"]
+    assert current["items"][0]["snapshot"]["name"] == "自动触发新轮次"
+    assert current["items"][0]["status"] == "re_review"
+    event = next(e for e in current["history"] if e["action"] == "重新提审")
+    assert event["detail"]["automatic"] is True
+    assert event["detail"]["changedFields"] == ["name"]
 
 
 def test_step_export_fields_and_xmind_module_preview_is_read_only(features):

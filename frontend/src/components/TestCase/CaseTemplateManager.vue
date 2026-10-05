@@ -15,13 +15,20 @@
         ><a-switch
           v-model:checked="autoResubmit"
           :loading="busy"
+          :disabled="busy"
           @change="saveSettings"
         /><span>用例内容变更时自动重新提审</span></a-space
       >
       <p style="color: #667085; margin: 8px 0 0">
-        启用后生成新评审轮次，旧轮次及其结论仍可查阅。
-      </p></a-card
-    >
+        名称、步骤、文本描述或预期结果修改后，关联用例在原评审中重新提审，旧结论标为已作废并保留历史。
+      </p>
+      <a-alert
+        v-if="settingsError"
+        :message="settingsError"
+        type="error"
+        show-icon
+      />
+    </a-card>
     <a-space style="margin: 16px 0" wrap
       ><a-select
         v-model:value="selectedId"
@@ -170,6 +177,7 @@ import CaseCustomFields from "./CaseCustomFields.vue";
 const props = defineProps<{ projectId: string; open: boolean }>(),
   emit = defineEmits<{ "update:open": [value: boolean]; changed: [] }>();
 const autoResubmit = ref(false);
+const settingsError = ref("");
 const templates = ref<CaseTemplate[]>([]),
   selectedId = ref<string>(),
   busy = ref(false);
@@ -204,10 +212,16 @@ const fieldTypes = [
   ["multiselect", "多选"],
 ].map(([value, label]) => ({ value, label }));
 async function load() {
+  const projectId = props.projectId;
+  settingsError.value = "";
   try {
-    [templates.value, { autoResubmit: autoResubmit.value }] = await Promise.all(
-      [api.templates(props.projectId), api.settings(props.projectId)],
-    );
+    const [loadedTemplates, settings] = await Promise.all([
+      api.templates(projectId),
+      api.settings(projectId),
+    ]);
+    if (projectId !== props.projectId) return;
+    templates.value = loadedTemplates;
+    autoResubmit.value = settings.autoResubmit;
     if (!selectedId.value && templates.value.length) {
       selectedId.value =
         templates.value.find((t) => t.isDefault)?.id || templates.value[0].id;
@@ -268,13 +282,19 @@ async function save() {
   }
 }
 async function saveSettings() {
+  const projectId = props.projectId,
+    requested = autoResubmit.value;
   busy.value = true;
+  settingsError.value = "";
   try {
-    await api.saveSettings(props.projectId, autoResubmit.value);
+    await api.saveSettings(projectId, requested);
     message.success("评审设置已保存");
   } catch (error) {
     console.error("保存评审设置失败", error);
-    autoResubmit.value = !autoResubmit.value;
+    if (projectId === props.projectId) {
+      autoResubmit.value = !requested;
+      settingsError.value = "评审设置保存失败，请重试";
+    }
   } finally {
     busy.value = false;
   }

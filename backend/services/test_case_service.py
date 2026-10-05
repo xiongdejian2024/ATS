@@ -177,16 +177,31 @@ class TestCaseService:
         return test_case
 
     @staticmethod
+    def _lock_case_for_write(db: Session, case_id: str) -> Optional[TestCase]:
+        project_id = (
+            db.query(TestCase.project_id)
+            .filter(TestCase.id == case_id, TestCase.deleted_at.is_(None))
+            .scalar()
+        )
+        if not project_id:
+            return None
+        from services.review_workspace import lock_project
+
+        lock_project(db, project_id)
+        return (
+            db.query(TestCase)
+            .filter(TestCase.id == case_id, TestCase.deleted_at.is_(None))
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+    @staticmethod
     def update_test_case(
         db: Session, case_id: str, case_data: TestCaseUpdate, current_user_id: str
     ) -> Optional[TestCase]:
         """更新测试用例"""
-        test_case = (
-            db.query(TestCase)
-            .filter(TestCase.id == case_id, TestCase.deleted_at.is_(None))
-            .with_for_update()
-            .first()
-        )
+        test_case = TestCaseService._lock_case_for_write(db, case_id)
 
         if not test_case:
             return None
@@ -237,12 +252,7 @@ class TestCaseService:
         db: Session, case_id: str, current_user_id: str | None = None
     ) -> bool:
         """删除测试用例"""
-        test_case = (
-            db.query(TestCase)
-            .filter(TestCase.id == case_id, TestCase.deleted_at.is_(None))
-            .with_for_update()
-            .first()
-        )
+        test_case = TestCaseService._lock_case_for_write(db, case_id)
 
         if not test_case:
             return False

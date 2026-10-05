@@ -1073,6 +1073,8 @@ async def import_test_cases(
         deleted_count = 0
         
         try:
+            from services.review_workspace import lock_project
+            lock_project(db, project_id)
             db.add_all(pending_modules)
             db.flush()
             # 执行新增和更新
@@ -1110,7 +1112,11 @@ async def import_test_cases(
                     created_count += 1
                     
                 elif item['operation'] == 'update':
-                    existing_case = item['existing_case']
+                    existing_case = db.query(TestCase).filter_by(
+                        id=item['existing_case'].id, project_id=project_id
+                    ).filter(TestCase.deleted_at.is_(None)).populate_existing().with_for_update().first()
+                    if existing_case is None:
+                        raise HTTPException(409, "导入用例已变化，请重新核对导入文件")
                     snapshot_case(db, existing_case, str(current_user.id), "导入更新前保存版本")
                     existing_case.name = item['data']['name']
                     existing_case.type = item['data']['type']
@@ -1146,6 +1152,7 @@ async def import_test_cases(
             
         except HTTPException:
             db.rollback()
+            logger.exception("导入用例校验或并发冲突 project_id={}", project_id)
             raise
         except Exception as e:
             db.rollback()
