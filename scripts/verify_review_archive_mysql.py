@@ -808,6 +808,48 @@ def main():
             ]
             assert db.query(CaseReviewDecision).filter_by(item_id=other.id).count() == 0
             assert db.query(TaskQueue).count() == 0
+        from services.review_reading import reading
+
+        with Sessions() as db:
+            owner = db.get(User, "race-owner")
+            archived_read = reading(db, owner, "race-project", identifier, item_id)
+            assert (
+                archived_read["review"]["archived"]
+                and not archived_read["item"]["canVote"]
+            )
+            assert (
+                archived_read["item"]["myStatus"] == "approved"
+                and len(archived_read["history"]) == 1
+            )
+            other_id = (
+                db.query(CaseReviewItem)
+                .filter(
+                    CaseReviewItem.case_id == "race-case", CaseReviewItem.id != item_id
+                )
+                .one()
+                .id
+            )
+            other_review = db.get(CaseReviewItem, other_id).review_id
+            active_read = reading(db, owner, "race-project", other_review, other_id)
+            assert (
+                active_read["item"]["myStatus"] == "un_review"
+                and active_read["item"]["reviewState"] == "re_review"
+            )
+            assert any(e["abandoned"] for e in active_read["history"])
+            assert (
+                listing(
+                    db,
+                    owner,
+                    "race-project",
+                    other_review,
+                    states=["un_review", "re_review"],
+                )["total"]
+                == 2
+            )
+            assert db.query(TaskQueue).count() == 0
+        log.info(
+            "MySQL独立审阅只读核验通过：归档只读与个人通过，自动重提审作废历史和个人未评审，多结果筛选保持2条关联"
+        )
         log.info(
             "MySQL自动提审并发核验通过：编辑者实际等待项目锁，旧关闭开关刷新为开启，版本1/2/3连续，归档评审保持原版本和结论"
         )
@@ -835,6 +877,7 @@ def main():
                 and rereview_rejected,
                 "自动提审开关与版本当前读真实等待": editor_waited,
                 "自动提审跳过归档并保留旧结论": True,
+                "独立审阅只读与个人历史结果": True,
                 "节点任务": 0,
             }
         )

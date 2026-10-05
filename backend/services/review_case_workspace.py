@@ -88,6 +88,7 @@ def filtered_query(
     search="",
     priority=None,
     state=None,
+    states=None,
     reviewer_id=None,
     creator_id=None,
     only_mine=False,
@@ -123,6 +124,8 @@ def filtered_query(
         query = query.filter(TestCase.priority == priority)
     if state:
         query = query.filter(state_expression(db, review) == state)
+    if states:
+        query = query.filter(state_expression(db, review).in_(states))
     if reviewer_id:
         query = query.filter(
             assigned_expression(review).contains(
@@ -194,6 +197,7 @@ def item_data(
     people,
     archived,
     re_review_permissions=(False, False),
+    personal_state="un_review",
 ):
     data = governance.serialize_review_item(
         item, version, current, decisions, review.reviewer_ids
@@ -209,6 +213,7 @@ def item_data(
     )
     data.update(
         reviewState=state,
+        myStatus=personal_state,
         name=current.name if current else version.snapshot.get("name", "已删除用例"),
         caseCode=(
             current.case_code if current else version.snapshot.get("case_code", "")
@@ -223,7 +228,9 @@ def item_data(
         createdBy=current.created_by if current else None,
         creator=people.get(current.created_by if current else None, ""),
         recycled=current is None or current.deleted_at is not None,
-        canVote=not archived
+        canVote=current is not None
+        and current.deleted_at is None
+        and not archived
         and review.status not in {"cancelled", "superseded"}
         and str(user.id) in data["reviewerIds"],
         canReReview=not archived
@@ -289,6 +296,9 @@ def listing(
     from services.review_item_management import re_review_permissions
 
     permissions = re_review_permissions(db, user, project_id)
+    from services.review_reading import personal_states
+
+    personal = personal_states(db, user, review.id, [i.id for i, _, _ in rows])
     items = [
         item_data(
             db,
@@ -302,6 +312,7 @@ def listing(
             people,
             archived,
             permissions,
+            personal.get(item.id, "un_review"),
         )
         for item, version, current in rows
     ]
@@ -332,6 +343,8 @@ def get_item(db, user, project_id, review_id, item_id):
         db.get(User, current.created_by) if current and current.created_by else None
     )
     people = {author.id: author.full_name or author.username} if author else {}
+    from services.review_reading import personal_states
+
     return item_data(
         db,
         user,
@@ -344,4 +357,5 @@ def get_item(db, user, project_id, review_id, item_id):
         people,
         metadata(db, review)["archived"],
         re_review_permissions(db, user, project_id),
+        personal_states(db, user, review.id, [item.id]).get(item.id, "un_review"),
     )

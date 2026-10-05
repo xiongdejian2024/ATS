@@ -489,6 +489,19 @@ def vote_reviews(db, user, project_id, review_id, item_ids, request):
         str(user.id) not in (item.reviewer_ids or review.reviewer_ids) for item in items
     ):
         raise HTTPException(403, "只有该用例的指定评审人可以提交结论")
+    live_cases = (
+        db.query(TestCase)
+        .filter(
+            TestCase.id.in_([item.case_id for item in items]),
+            TestCase.project_id == project_id,
+            TestCase.deleted_at.is_(None),
+        )
+        .populate_existing()
+        .with_for_update()
+        .all()
+    )
+    if len(live_cases) != len({item.case_id for item in items}):
+        raise HTTPException(404, "评审用例已回收或不属于当前项目")
     mapping = {}
     for vote in (
         db.query(CaseReviewDecision)

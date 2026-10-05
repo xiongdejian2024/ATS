@@ -1,4 +1,5 @@
 import type { CaseReview, ReviewItem } from "./caseGovernance";
+import type { CaseIssue, CaseFile, CaseCustomField } from "./caseFeatures";
 import type { TestCase } from "@/types";
 import type { CaseFolder } from "./planCaseWorkspace";
 import { apiClient } from "@/utils/api";
@@ -61,6 +62,7 @@ export interface ReviewCaseEntry extends ReviewItem {
   createdBy: string | null;
   creator: string;
   reviewState: string;
+  myStatus: string;
   recycled: boolean;
   canVote: boolean;
   canReReview: boolean;
@@ -73,9 +75,20 @@ export interface ReviewCaseListing {
   modules: CaseFolder[];
   counts: { all: number; unassigned: number };
 }
+export interface ReviewReading {
+  review: CaseReview;
+  item: ReviewCaseEntry;
+  history: Record<string, any>[];
+  createdAt: string | null;
+  customFields: CaseCustomField[];
+  requirements: CaseIssue[];
+  attachments: CaseFile[];
+}
 const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
+  reading: (p: string, id: string, item: string) =>
+    apiClient.get<ReviewReading>(`${base(p)}/${id}/items/${item}/reading`),
   reReview: (
     p: string,
     id: string,

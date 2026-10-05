@@ -134,7 +134,10 @@
           @change="sortChanged"
         >
           <template #bodyCell="{ column, record }">
-            <a v-if="column.key === 'name'" @click="openItem(record.id)">{{
+            <a v-if="column.key === 'caseCode'" @click="openItem(record.id)">{{
+              record.caseCode
+            }}</a>
+            <a v-else-if="column.key === 'name'" @click="openItem(record.id)">{{
               record.name
             }}</a>
             <ReviewersCell
@@ -335,6 +338,7 @@ import {
   readDisplay,
   type ColumnVisibility,
 } from "@/components/Table/tableDisplay";
+import { readingScope as readScope } from "./reviewReading";
 const props = defineProps<{
   projectId: string;
   reviewId: string;
@@ -343,6 +347,7 @@ const props = defineProps<{
   selected: string[];
   disabled: boolean;
   canManage: boolean;
+  initialScope?: unknown;
 }>();
 const emit = defineEmits<{
   select: [id: string];
@@ -369,24 +374,30 @@ const storageKey = computed(() =>
   ),
 );
 const display = ref(readDisplay(localStorage, storageKey.value, definitions));
+const initial = props.initialScope ? readScope(props.initialScope) : undefined;
+if (initial) {
+  display.value.pageSize = initial.size;
+  if (typeof initial.includeDescendants === "boolean")
+    display.value.includeDescendants = initial.includeDescendants;
+}
 const rows = ref<ReviewCaseEntry[]>([]),
   modules = ref<CaseFolder[]>([]),
   total = ref(0),
   counts = ref({ all: 0, unassigned: 0 });
-const page = ref(1),
-  folder = ref("all"),
+const page = ref(initial?.page || 1),
+  folder = ref(initial?.folder || "all"),
   moduleSearch = ref(""),
   expanded = ref<string[]>([]),
-  search = ref(""),
-  appliedSearch = ref("");
-const priority = ref<string>(),
-  state = ref<string>(),
-  reviewerId = ref<string>(),
-  creatorId = ref<string>(),
-  onlyMine = ref(false);
+  search = ref(initial?.search || ""),
+  appliedSearch = ref(initial?.search || "");
+const priority = ref<string | undefined>(initial?.priority),
+  state = ref<string | undefined>(initial?.state),
+  reviewerId = ref<string | undefined>(initial?.reviewerId),
+  creatorId = ref<string | undefined>(initial?.creatorId),
+  onlyMine = ref(initial?.onlyMine || false);
 const mode = ref("list"),
-  sort = ref("caseCode"),
-  order = ref("asc"),
+  sort = ref(initial?.sort || "caseCode"),
+  order = ref(initial?.order || "asc"),
   loading = ref(false),
   error = ref(""),
   settings = ref(false);
@@ -754,10 +765,12 @@ watch(
       if (!keys.includes(key)) selectedRows.delete(key);
   },
 );
+let firstScope = true;
 watch(
   () => props.reviewId,
   () => {
-    page.value = 1;
+    page.value = firstScope && initial ? initial.page : 1;
+    firstScope = false;
     clearSelection();
     void load();
   },
@@ -771,6 +784,20 @@ onBeforeUnmount(() => {
 });
 defineExpose({
   navigate,
+  readingScope: () => ({
+    page: page.value,
+    size: display.value.pageSize,
+    search: appliedSearch.value,
+    folder: folder.value,
+    includeDescendants: display.value.includeDescendants,
+    priority: priority.value,
+    state: state.value,
+    reviewerId: reviewerId.value,
+    creatorId: creatorId.value,
+    onlyMine: onlyMine.value,
+    sort: sort.value,
+    order: order.value,
+  }),
   refresh: load,
   canReviewSelection: () =>
     props.selected.every((id) => selectedRows.get(id)?.canVote),

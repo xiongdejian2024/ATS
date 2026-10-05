@@ -1,7 +1,7 @@
 """评审首页及关联用例工作区接口，复用既有版本和评审票。"""
 
 from typing import Literal
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from api.deps import get_current_user
 from database import get_db
@@ -51,6 +51,7 @@ def linked_items(
     state: (
         Literal["approved", "rejected", "under_review", "un_review", "re_review"] | None
     ) = None,
+    states: str | None = Query(None, max_length=100),
     reviewerId: str | None = None,
     creatorId: str | None = None,
     onlyMine: bool = False,
@@ -62,6 +63,15 @@ def linked_items(
 ):
     from services.review_case_workspace import listing
 
+    selected_states = [value.strip() for value in states.split(",")] if states else []
+    if set(selected_states) - {
+        "approved",
+        "rejected",
+        "under_review",
+        "un_review",
+        "re_review",
+    }:
+        raise HTTPException(422, "不支持的评审结果范围")
     return result(
         listing(
             db,
@@ -75,6 +85,7 @@ def linked_items(
             include_descendants=includeDescendants,
             priority=priority,
             state=state,
+            states=selected_states,
             reviewer_id=reviewerId,
             creator_id=creatorId,
             only_mine=onlyMine,
@@ -96,6 +107,19 @@ def linked_item(
     from services.review_case_workspace import get_item
 
     return result(get_item(db, user, project_id, review_id, item_id))
+
+
+@router.get("/{review_id}/items/{item_id}/reading")
+def read_case(
+    project_id: str,
+    review_id: str,
+    item_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    from services.review_reading import reading
+
+    return result(reading(db, user, project_id, review_id, item_id))
 
 
 @router.post("/{review_id}/item-reviewers")
