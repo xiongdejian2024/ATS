@@ -59,6 +59,7 @@ export interface PlanCaseListing {
   nativeOptions?: import("./nativeCase").NativeFilterCatalog;
   items: PlanCaseEntry[];
   total: number;
+  selectableTotal?: number;
   page: number;
   size: number;
   collections: CaseFolder[];
@@ -123,6 +124,30 @@ export interface CandidateSelectionPreview {
   usesTree: boolean;
   compatibleSuiteIds: string[];
   canAssociate: boolean;
+}
+export interface NativeWorkspaceCondition {
+  tree_type?: "COLLECTION" | "MODULE";
+  folder?: string;
+  search?: string;
+  include_descendants?: boolean;
+  protocols?: string;
+  priority?: string;
+  result?: string;
+  filters?: CandidateCondition["filters"];
+  mine?: boolean;
+}
+export interface NativeWorkspaceSelection {
+  category: "api" | "scenario";
+  selectAll?: boolean;
+  selectIds?: string[];
+  excludeIds?: string[];
+  condition?: NativeWorkspaceCondition;
+}
+export interface NativeWorkspacePreview {
+  count: number;
+  eligibleCount: number;
+  excludedCount: number;
+  canModify: boolean;
 }
 const base = (id: string) => `/plan-orchestration/plans/${id}/case-workspace`;
 export type PlanFilterMode = "workspace" | "association";
@@ -202,6 +227,15 @@ export const planCaseWorkspaceApi = {
       collectionId?: string | null;
     },
   ) => apiClient.post(base(id) + "/batch", data),
+  previewNativeSelection: (id: string, data: NativeWorkspaceSelection) =>
+    apiClient.post<NativeWorkspacePreview>(base(id) + "/selection", data),
+  nativeBatch: (
+    id: string,
+    data: NativeWorkspaceSelection & {
+      action: "move" | "unlink";
+      collectionId?: string | null;
+    },
+  ) => apiClient.post<{ updated: number }>(base(id) + "/batch-range", data),
   candidateProjects: (id: string) =>
     apiClient.get<{ id: string; name: string }[]>(
       base(id) + "/candidates/projects",

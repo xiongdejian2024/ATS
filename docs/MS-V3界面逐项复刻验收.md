@@ -696,3 +696,23 @@
 - 本部分仅完成原生分类列表这一部分。完整目标仍进行：API/场景按选定范围的独立执行与执行配置、列表跨页全选/排除、完整分类测试集编辑/拖动及菜单、原生编辑器/单条报告、关联API定义/用例双模式，以及其他评审/计划首页/报告高级视图、模板、富文本/附件、脑图和分析等继续逐项补齐，不声明100%完成。
 
 本部分官方依据：[API双栏工作区](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiCase/index.vue)、[API列与高级筛选](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiCase/components/caseTable.vue)、[场景列与高级筛选](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiScenario/components/scenarioTable.vue)、[API原生字段与执行结果来源](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/test-plan/src/main/java/io/metersphere/plan/mapper/ExtTestPlanApiCaseMapper.xml)、[场景原生字段与环境条件](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/test-plan/src/main/java/io/metersphere/plan/mapper/ExtTestPlanApiScenarioMapper.xml)。
+
+## 第53部分：原生计划列表跨页全选、排除与范围批量管理（2026-10-06）
+
+- 对照固定官方 `v3.6.9-lts` / `d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51` 的共享表格选择器及API/场景批量参数。新增“全选当前页／全选所有页／取消全选所有页”；普通勾选框只切换当前页，全范围模式保留其他页排除项，下拉切回当前页则清除全范围模式。显式选择跨页累计，用同一主用例的不同关联实例ID分别选择。
+- 新增独立 `planNativeSelection.ts`，复用既有 Vue、lodash、选择表头及分页排除工具，不引入依赖。分页、排序、刷新不丢选择；筛选目录/树种类/协议/高级条件、计划或分类变化清空选择。范围预览失败保留条件和排除项，禁用批量操作，允许重试；迟到响应与卸载后响应不回填。实际数量及可编辑状态由服务端核对，不把当前页数量当作完整范围。
+- 新增原生 `/case-workspace/selection` 与 `/batch-range`，复用原候选状态读取、项目固定顺序锁、权限与原子批量管理。完整筛选条件加全选标志及排除实例ID直接提交；服务端一次解析所有匹配实例，不要求前端逐页枚举。逐条模式使用 `来源:关联ID:用例ID`，验证当前计划/分类/主用例一致性，错误混选整批拒绝。列表新增可单独管理实例总数，整测试套的展开行继续在测试规划管理，不作为可单独批量操作行。
+- 写入在项目/计划锁内重新读取当前目录、关联、主用例、原生状态/协议/环境、模块、高级条件及真实计划实例报告；再次检查用户、计划归档、来源变化、目标分类和活动测试套。MySQL验收发现普通 `db.get` 可能看不到旧预览后才提交的关联，已改为当前查询并保持实际实例与树校验对象引用，重新通过验收。取消关联只处理当前关联、同步未来测试套范围，保留主用例及冻结历史；每批实际选择上限10000，不静默截断。
+- 范围移动/取消关联使用可重试确认窗口，失败保留选择及目标；保存中禁用取消/关闭/Escape和范围变更，继续沿用路由保存保护。完成后回到第一页，避免跨页删除后停留在越界空页。原功能列表及旧500条显式批量接口继续兼容。
+- 新增20项后端范围专项：两页实例身份、跨页排除、预览后范围变化、模块子目录、当前用户、最新实例结果、同主用例多树实例及整套排除、场景隔离、真实501条操作、10000上限解析边界、权限/归档/活动测试套、第二条写入失败全回滚、严格请求字段和错误组合。501条使用实际数据库写入；10000边界使用范围解析替身，不声称真实10000条性能验收。最终全量 **332项通过，148.25秒，18条既有框架/ORM提示**，证据 `logs/第53部分最终全量.log`。
+- 新增5项前端跨页状态专项，最终 **100项／27文件通过**，严格类型检查及构建 **11.74秒** 通过，既有包体提示保留。证据 `logs/第53部分浏览器修复类型.log`、`logs/第53部分浏览器修复单元.log`、`logs/第53部分浏览器修复构建.log`。基础作用域错误、样本参数/数量误写及预期失败均保留异常堆栈并已修正。
+- 新增可重复运行的 `scripts/verify_plan_native_selection_mysql.py`：独立临时MySQL库，先建立旧预览与可重复读快照，另一事务持有真实项目锁并改变优先级、模块层级、协议、原生状态、配置环境、最新实例结果、场景步骤、新关联、活动测试套、归档状态；确认数据库锁等待后提交，全部十组按最新范围处理。并发取消同一范围单胜 **200／409**，排除实例保留，主用例6、版本0、执行队列0；临时库与授权已回收。活动任务仅是隔离记录，不启动执行器。证据 `logs/第53部分MySQL验收.log`、`logs/第53部分MySQL当前读修复输出.log`。
+- 浏览器复用空间30、13313/18813隔离环境；新建双项目49主用例、直接关联24API/24场景、另一计划2个重复树实例，以及明确的冻结历史样本，没有创建队列或运行执行器。24条全范围跨两页排除2条后22条，返回第一页仍保留排除；阻断批量请求后22条与API测试集目标保留，解除阻断重试实际移动22条。阻断预览后范围保留且批量禁用，重试恢复。
+- 浏览器显式两页各选1条，累计2条且返回第一页仍保留，实际移动2条到默认测试集；API按两页排除取消22条，仅API21/API03保留，并返回第一页。协议变化清空选择，切场景不泄漏API选择；所有页切回当前页只选第2页4条，普通表头取消当前页清空。场景24排除两页各1条取消22条，仅场景19/08保留。重复树实例2条排除1条，只取消另外1条；保存延迟时取消按钮禁用，Escape不能关闭。证据 `logs/第53部分浏览器验收.jsonl`。
+- 1440px API/场景范围与390px场景确认窗口截图均已实际查看；窄屏整页宽390、范围文本及按钮换行、完整22条确认可见。截图 `/tmp/ats-ms53-api-range-desktop.png`、`/tmp/ats-ms53-scene-range-desktop.png`、`/tmp/ats-ms53-scene-range-mobile.png`。没有把关闭动画中截图当作最终通过；等待误读隐藏模态框后按可见框继续核验。
+- 本轮隔离样本按主键及新项目/计划边界精确回收，完整73表恢复原基线、原31用例及历史保留；表格偏好逐键恢复原JSON并返回原计划，登录和其他存储保持。证据 `logs/第53部分清理输出.log`、`logs/第53部分清理计数.json`、`logs/第53部分浏览器偏好基线.json`、`logs/第53部分浏览器偏好恢复.json`。
+- 正式API已加载范围预览和范围批量接口，生产前端已构建；仅更新API，原Agent与worker保持。正式完整73表计数一致：100用例、7计划、28历史任务、0活动任务、在线节点1，健康及5173主要页面HTTP200。证据 `logs/第53部分正式服务输出.log`、`logs/第53部分正式服务.log`、`logs/第53部分正式基线.json`。
+- 第52部分远程CI运行 `37375876763` 已核验前后端全部成功，不再是等待状态；证据 `logs/第52部分远程CI状态.json`。
+- 完整复刻目标仍进行。下一部分继续原生API/场景按所选范围独立执行与执行配置；完整分类测试集菜单/编辑/拖动、原生编辑器/单条报告、关联API定义/用例双模式，以及其他评审/计划首页/报告高级视图、模板、富文本/附件、脑图和分析等仍需逐项补齐，不声明100%完成。
+
+本部分官方依据：[共享表格跨页选择器](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-table/useTable.ts)、[API完整筛选与范围批量参数](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiCase/components/caseTable.vue)、[场景范围批量参数](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/views/test-plan/testPlan/detail/apiScenario/components/scenarioTable.vue)。

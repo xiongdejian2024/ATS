@@ -4,6 +4,7 @@
       <a-radio-group
         v-model:value="treeType"
         button-style="solid"
+        :disabled="mutating"
         @change="chooseFolder('all')"
       >
         <a-radio-button value="COLLECTION">测试集</a-radio-button
@@ -11,6 +12,7 @@
       </a-radio-group>
       <a-input
         v-model:value="folderSearch"
+        :disabled="mutating"
         :placeholder="treeType === 'COLLECTION' ? '搜索测试集' : '搜索模块'"
         allow-clear
         :maxlength="255"
@@ -51,7 +53,9 @@
         :expanded-keys="expanded"
         block-node
         @expand="(keys: (string | number)[]) => (expanded = keys.map(String))"
-        @select="(keys: (string | number)[]) => chooseFolder(String(keys[0] || 'all'))"
+        @select="
+          (keys: (string | number)[]) => chooseFolder(String(keys[0] || 'all'))
+        "
       >
         <template #title="node"
           ><span>{{ node.name }}</span
@@ -78,6 +82,7 @@
           ><a-button
             type="text"
             :aria-label="`${title}表格设置`"
+            :disabled="mutating"
             @click="settingsOpen = true"
             ><SettingOutlined /></a-button
         ></a-space>
@@ -85,6 +90,7 @@
           <a-input-search
             v-if="!advanced"
             v-model:value="search"
+            :disabled="mutating"
             placeholder="通过 ID / 名称搜索"
             allow-clear
             :maxlength="255"
@@ -110,6 +116,7 @@
           <a-button
             :loading="loading"
             :aria-label="`刷新${title}`"
+            :disabled="mutating"
             @click="load"
             ><ReloadOutlined
           /></a-button>
@@ -134,17 +141,7 @@
         size="small"
         :pagination="pagination"
         :scroll="{ x: tableWidth }"
-        :row-selection="
-          canEdit
-            ? {
-                selectedRowKeys: selected,
-                onChange: (keys: (string | number)[]) => (selected = keys.map(String)),
-                getCheckboxProps: (row: PlanCaseEntry) => ({
-                  disabled: row.grouped || mutating,
-                }),
-              }
-            : undefined
-        "
+        :row-selection="rowSelection"
         @resizeColumn="resizeColumn"
         @change="tableChange"
       >
@@ -198,25 +195,53 @@
           <template v-else>{{ record[column.dataIndex] ?? "-" }}</template>
         </template>
       </a-table>
-      <div v-if="selected.length" class="native-batch">
-        <span>已选 {{ selected.length }} 条</span
-        ><a-button :disabled="mutating" @click="selected = []"
+      <a-alert
+        v-if="selection.error.value"
+        :message="selection.error.value"
+        type="error"
+        show-icon
+      >
+        <template #action
+          ><a-button :disabled="mutating" @click="selection.preview"
+            >重试核对</a-button
+          ></template
+        >
+      </a-alert>
+      <div v-if="selection.hasSelection.value" class="native-batch">
+        <span
+          >{{
+            selection.loading.value
+              ? "正在核对选择范围…"
+              : selection.summary.value
+                ? `已选 ${selection.summary.value.count} 条`
+                : "选择范围待核对"
+          }}<template
+            v-if="selection.selectAll.value && selection.summary.value"
+            >（全选所有页，已排除
+            {{ selection.summary.value.excludedCount }} 条）</template
+          ></span
+        >
+        <a-button :disabled="mutating" @click="selection.clear"
           >清空选择</a-button
-        ><a-button
+        >
+        <a-button
           v-if="treeType === 'COLLECTION'"
-          :disabled="mutating"
+          :disabled="!batchReady"
           @click="
             moveTarget = undefined;
+            mutationError = '';
             moveOpen = true;
           "
           >移动</a-button
-        ><a-popconfirm
-          title="确认取消所选关联？"
-          description="主用例及历史报告将保留。"
-          @confirm="unlink(selectedRows)"
-          ><a-button danger :loading="mutating"
-            >取消关联</a-button
-          ></a-popconfirm
+        >
+        <a-button
+          danger
+          :disabled="!batchReady"
+          @click="
+            mutationError = '';
+            unlinkOpen = true;
+          "
+          >取消关联</a-button
         >
       </div>
     </div>
@@ -252,21 +277,46 @@
     :closable="!mutating"
     :mask-closable="!mutating"
     :cancel-button-props="{ disabled: mutating }"
+    :keyboard="!mutating"
+    :ok-button-props="{ disabled: !batchReady }"
     @ok="move"
     ><a-alert
       v-if="mutationError"
       :message="mutationError"
       type="error"
       show-icon />
-    <p>将 {{ selected.length }} 条关联移动到</p>
+    <p>将 {{ selection.summary.value?.count || 0 }} 条关联移动到</p>
     <a-tree-select
       v-model:value="moveTarget"
+      :disabled="mutating"
       :tree-data="moveTree"
       :field-names="{ label: 'title', value: 'key' }"
       allow-clear
       placeholder="默认测试集"
       style="width: 100%"
   /></a-modal>
+  <a-modal
+    v-model:open="unlinkOpen"
+    title="确认取消所选关联？"
+    :confirm-loading="mutating"
+    :closable="!mutating"
+    :mask-closable="!mutating"
+    :keyboard="!mutating"
+    :cancel-button-props="{ disabled: mutating }"
+    :ok-button-props="{ disabled: !batchReady }"
+    @ok="unlinkRange"
+  >
+    <p>
+      取消
+      {{ selection.summary.value?.count || 0 }} 条关联，主用例及历史报告将保留。
+    </p>
+    <a-alert
+      v-if="mutationError"
+      :message="mutationError"
+      type="error"
+      show-icon
+    />
+  </a-modal>
   <a-modal
     v-model:open="collectionOpen"
     title="新建测试集"
@@ -324,8 +374,8 @@
   /></a-drawer>
 </template>
 <script setup lang="ts">
-import { computed, ref, watch, onBeforeUnmount } from "vue";
-import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
+import { computed, ref, watch, onBeforeUnmount, h } from "vue";
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute } from "vue-router";
 import { useMediaQuery } from "@vueuse/core";
 import { message } from "ant-design-vue";
 import {
@@ -342,6 +392,7 @@ import {
   planCaseWorkspaceApi,
   type PlanCaseEntry,
   type PlanCaseListing,
+  type NativeWorkspaceCondition,
 } from "@/api/planCaseWorkspace";
 import { planTreeApi } from "@/api/planTree";
 import { nativeStateOptions } from "@/api/nativeCase";
@@ -364,6 +415,8 @@ import PlanCaseAssociateDrawer from "./PlanCaseAssociateDrawer.vue";
 import PlanCaseFilters from "./PlanCaseFilters.vue";
 import PlanDefects from "./PlanDefects.vue";
 import PlanRunReport from "./PlanRunReport.vue";
+import ReviewSelectionHeader from "@/components/CaseReview/ReviewSelectionHeader.vue";
+import { usePlanNativeSelection } from "./planNativeSelection";
 import { caseFolderTree } from "./planCaseFolders";
 import {
   planNativeColumns,
@@ -398,7 +451,6 @@ const page = ref(1),
   folder = ref("all"),
   folderSearch = ref(""),
   search = ref(""),
-  selected = ref<string[]>([]),
   expanded = ref<string[]>([]),
   protocols = ref<string[]>();
 const sort = ref("createdAt"),
@@ -503,8 +555,65 @@ const folderTitle = computed(() =>
         ? "未分配模块"
         : folders.value.find((c) => c.id === folder.value)?.name || title.value,
 );
-const selectedRows = computed(() =>
-  (data.value?.items || []).filter((row) => selected.value.includes(row.id)),
+const query = computed<NativeWorkspaceCondition>(() => ({
+  tree_type: treeType.value,
+  folder: folder.value,
+  search: search.value,
+  protocols: protocols.value?.join(","),
+  priority: priorities.value.join(","),
+  result: results.value.join(","),
+  include_descendants: display.value.includeDescendants,
+  filters: filterScope.value,
+  mine: viewId.value === "system:my",
+}));
+const selection = usePlanNativeSelection(
+  computed(() => props.plan.id),
+  computed(() => props.category),
+  query,
+  computed(() =>
+    (data.value?.items || [])
+      .filter((row) => !row.grouped)
+      .map((row) => row.id),
+  ),
+);
+const batchReady = computed(
+  () =>
+    selection.ready.value &&
+    !loading.value &&
+    !loadError.value &&
+    !mutating.value,
+);
+const rowSelection = computed(() =>
+  props.canEdit
+    ? {
+        selectedRowKeys: selection.pageSelected.value,
+        preserveSelectedRowKeys: true,
+        columnWidth: 64,
+        columnTitle: h(ReviewSelectionHeader, {
+          count: selection.summary.value?.count || 0,
+          total: data.value?.selectableTotal || 0,
+          all: selection.selectAll.value,
+          excludedCount: selection.summary.value?.excludedCount || 0,
+          disabled:
+            loading.value || mutating.value || !data.value?.selectableTotal,
+          onTogglePage: selection.togglePage,
+          onCurrent: selection.current,
+          onAll: selection.all,
+          onClear: selection.clear,
+        }),
+        onChange: selection.keysChanged,
+        getCheckboxProps: (row: PlanCaseEntry) => ({
+          disabled: row.grouped || mutating.value || loading.value,
+        }),
+      }
+    : undefined,
+);
+const route = useRoute();
+watch(
+  () => route.query.tab,
+  () => {
+    if (!mutating.value) selection.clear();
+  },
 );
 const pagination = computed(() => ({
   current: page.value,
@@ -532,9 +641,11 @@ function saveColumns(columns: ColumnVisibility[]) {
   if (persist({ ...display.value, columns })) settingsOpen.value = false;
 }
 function setPageSize(pageSize: number) {
+  if (mutating.value) return;
   if (persist({ ...display.value, pageSize })) reload();
 }
 function setDescendants(includeDescendants: boolean) {
+  if (mutating.value) return;
   if (persist({ ...display.value, includeDescendants })) reload();
 }
 watch(storageKey, () => {
@@ -568,7 +679,6 @@ async function load() {
   const current = ++sequence;
   loading.value = true;
   loadError.value = "";
-  selected.value = [];
   try {
     const response = await planCaseWorkspaceApi.list(props.plan.id, {
       category: props.category,
@@ -588,7 +698,10 @@ async function load() {
         : undefined,
       mine: viewId.value === "system:my",
     });
-    if (current === sequence) data.value = response;
+    if (current === sequence) {
+      data.value = response;
+      if (selection.hasSelection.value) void selection.preview();
+    }
   } catch (error) {
     console.error("加载计划原生分类工作区失败", error);
     if (current === sequence) {
@@ -609,6 +722,7 @@ function chooseFolder(value: string) {
   reload();
 }
 function changeProtocols(values: (string | number | boolean)[]) {
+  if (mutating.value) return;
   protocols.value = values.map(String);
   reload();
 }
@@ -616,6 +730,7 @@ function toggleExpanded() {
   expanded.value = expanded.value.length ? [] : folders.value.map((c) => c.id);
 }
 function tableChange(p: any, f: any, s: any) {
+  if (mutating.value) return;
   page.value = p.current || 1;
   priorities.value = (f.priority || []).map(String);
   results.value = (f.nativeResult || []).map(String);
@@ -642,6 +757,7 @@ function applyAdvanced(
 }
 const associateOpen = ref(false),
   moveOpen = ref(false),
+  unlinkOpen = ref(false),
   moveTarget = ref<string>(),
   collectionOpen = ref(false),
   collectionName = ref("");
@@ -649,12 +765,13 @@ const detail = ref<PlanCaseEntry>(),
   defectCase = ref<PlanCaseEntry>(),
   reportId = ref("");
 async function changed() {
+  page.value = 1;
   await load();
   emit("changed");
 }
 async function batch(action: "move" | "unlink", rows: PlanCaseEntry[]) {
   if (mutating.value || !rows.length) return false;
-  mutating.value = true;
+  mutating.value = selection.working.value = true;
   mutationError.value = "";
   try {
     await planCaseWorkspaceApi.batch(props.plan.id, {
@@ -669,6 +786,7 @@ async function batch(action: "move" | "unlink", rows: PlanCaseEntry[]) {
       操作: action,
       数量: rows.length,
     });
+    selection.clear();
     await changed();
     return true;
   } catch (error) {
@@ -677,16 +795,47 @@ async function batch(action: "move" | "unlink", rows: PlanCaseEntry[]) {
     message.error(mutationError.value);
     return false;
   } finally {
-    mutating.value = false;
+    mutating.value = selection.working.value = false;
   }
 }
 async function unlink(rows: PlanCaseEntry[]) {
   await batch("unlink", rows);
 }
+async function batchRange(action: "move" | "unlink") {
+  if (!batchReady.value || !selection.request.value) return false;
+  mutating.value = selection.working.value = true;
+  mutationError.value = "";
+  try {
+    const result = await planCaseWorkspaceApi.nativeBatch(props.plan.id, {
+      ...selection.request.value,
+      action,
+      ...(action === "move" ? { collectionId: moveTarget.value || null } : {}),
+    });
+    console.info("原生计划范围批量操作完成", {
+      计划: props.plan.id,
+      分类: props.category,
+      操作: action,
+      实际数量: result.updated,
+    });
+    selection.clear();
+    await changed();
+    return true;
+  } catch (error) {
+    console.error("原生计划范围批量操作失败，保留选择和目标", error);
+    mutationError.value = "操作失败，请重试；原选择和目标保留";
+    return false;
+  } finally {
+    mutating.value = selection.working.value = false;
+  }
+}
 async function move() {
-  if (await batch("move", selectedRows.value)) moveOpen.value = false;
+  if (await batchRange("move")) moveOpen.value = false;
+}
+async function unlinkRange() {
+  if (await batchRange("unlink")) unlinkOpen.value = false;
 }
 function newCollection() {
+  if (mutating.value) return;
   collectionName.value = "";
   mutationError.value = "";
   collectionOpen.value = true;
@@ -719,7 +868,7 @@ async function createCollection() {
     console.error("创建计划原生测试集失败", error);
     mutationError.value = "创建失败，请重试";
   } finally {
-    mutating.value = false;
+    mutating.value = selection.working.value = false;
   }
 }
 const navigationGuard = () => {
@@ -734,6 +883,8 @@ watch(
   contextKey,
   () => {
     sequence++;
+    selection.clear();
+    moveOpen.value = unlinkOpen.value = false;
     data.value = undefined;
     filterScope.value = undefined;
     viewId.value = undefined;
@@ -743,7 +894,6 @@ watch(
     protocols.value = undefined;
     priorities.value = [];
     results.value = [];
-    selected.value = [];
     expanded.value = [];
     page.value = 1;
     detail.value = defectCase.value = undefined;

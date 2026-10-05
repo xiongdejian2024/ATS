@@ -18,6 +18,7 @@ from schemas.plan_candidate_view import CandidateViewCreate, CandidateViewUpdate
 from schemas.plan_candidate_selection import Association, CandidateSelection
 from services import plan_case_view as views_service
 from services.plan_candidate_project import source_scope, projects
+from schemas.plan_native_selection import NativeWorkspaceSelection, NativeWorkspaceBatch
 router=APIRouter()
 Category=Literal['functional','api','scenario']
 class Selection(BaseModel):
@@ -145,6 +146,19 @@ def batch(plan_id:str,data:Batch,db:Session=Depends(get_db),user=Depends(get_cur
     plan=plan_access(db,user,plan_id,'update')
     require_project_access(db,user,plan.project_id,'test_case:read')
     return ok(transact(db,lambda:service.batch(db,plan,user,data)))
+
+
+@router.post('/plans/{plan_id}/case-workspace/selection')
+def native_selection(plan_id: str, data: NativeWorkspaceSelection, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_native_selection import preview
+    return ok(preview(db, plan_access(db,user,plan_id), user, data))
+
+
+@router.post('/plans/{plan_id}/case-workspace/batch-range')
+def native_batch_range(plan_id: str, data: NativeWorkspaceBatch, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_native_selection import apply
+    plan = plan_access(db,user,plan_id,'update')
+    return ok(transact(db,lambda:apply(db,plan,user,data)))
 
 @router.post('/plans/{plan_id}/case-workspace/associate')
 def associate(plan_id:str,data:Association,db:Session=Depends(get_db),user=Depends(get_current_user)):

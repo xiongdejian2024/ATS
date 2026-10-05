@@ -19,17 +19,19 @@ class TestSuiteService:
     """测试套服务类"""
 
     @staticmethod
-    def require_idle(db: Session, suite_id: str) -> None:
+    def require_idle(db: Session, suite_id: str, *, current_read=False) -> None:
         """执行结果依赖模板关联，排队和运行期间禁止改动模板。"""
-        active = db.query(TaskQueue.id).filter(
+        active_query = db.query(TaskQueue.id).filter(
             TaskQueue.suite_id == suite_id,
             TaskQueue.status.in_(["pending", "running"]),
-        ).first()
+        )
+        active = (active_query.with_for_update() if current_read else active_query).first()
         from models.plan_orchestration import PlanRunItem
-        plan_active = db.query(PlanRunItem.id).filter(
+        plan_query = db.query(PlanRunItem.id).filter(
             PlanRunItem.suite_id == suite_id,
             PlanRunItem.status.in_(["waiting", "pending", "running", "needs_confirmation"]),
-        ).first()
+        )
+        plan_active = (plan_query.with_for_update() if current_read else plan_query).first()
         if active or plan_active:
             raise ValueError("测试任务正在排队或执行，请结束后再编辑或删除")
 

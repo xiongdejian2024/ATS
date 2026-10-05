@@ -175,8 +175,9 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
     return run
 
 
-def _items(db, run_id):
-    return db.query(PlanRunItem).filter_by(run_id=run_id).order_by(PlanRunItem.sequence).all()
+def _items(db, run_id, *, current_read=False):
+    query = db.query(PlanRunItem).filter_by(run_id=run_id).order_by(PlanRunItem.sequence)
+    return (query.populate_existing().with_for_update() if current_read else query).all()
 
 
 
@@ -196,14 +197,16 @@ def release_plan_run(db, run):
     logger.info("已释放计划组中的冻结批次：批次={}", run.id)
     return True
 
-def build_report(db, run):
+def build_report(db, run, *, current_read=False):
     """只读取本批次 execution_id 对应结果，绝不混入历史或最新用例状态。"""
     rows = []
-    items = _items(db, run.id)
+    items = _items(db, run.id, current_read=current_read)
     cases = {c["id"]: c for c in run.case_snapshot}
     for item in items:
         for cid in item.suite_snapshot["caseIds"]:
-            result = db.get(TestSuiteExecution, result_id(item.execution_id, cid))
+            identifier = result_id(item.execution_id, cid)
+            result = (db.query(TestSuiteExecution).filter_by(id=identifier).populate_existing().with_for_update().one_or_none()
+                      if current_read else db.get(TestSuiteExecution, identifier))
             state = result.result if result else (
                 "skipped" if item.status == "skipped" else
                 "cancelled" if item.status == "cancelled" else

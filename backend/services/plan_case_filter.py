@@ -27,15 +27,16 @@ def parse_plan_filters(raw, category=None):
     return conditions, logic
 
 
-def filter_entries(db, plan, items, raw, user_id, category='functional'):
+def filter_entries(db, plan, items, raw, user_id, category='functional', *, current_read=False):
     conditions, logic = parse_plan_filters(raw, category)
     if not conditions:
         return items
     ids = {item["caseId"] for item in items}
-    cases = {case.id: case for case in db.query(TestCase).filter(TestCase.id.in_(ids))}
-    contexts = {identifier: CaseFilterContext(db, identifier, conditions, user_id, include_recycled=True)
+    query = db.query(TestCase).filter(TestCase.id.in_(ids))
+    cases = {case.id: case for case in (query.populate_existing().with_for_update() if current_read else query).all()}
+    contexts = {identifier: CaseFilterContext(db, identifier, conditions, user_id, include_recycled=True, current_read=current_read)
                 for identifier in {case.project_id for case in cases.values()}}
-    statuses = current_review_statuses(db, list(cases.values())) if any(
+    statuses = current_review_statuses(db, list(cases.values()), current_read=current_read) if any(
         c["field"] in {"reviewResult", "review_status"} for c in conditions
     ) else {}
 

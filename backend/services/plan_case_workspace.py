@@ -25,46 +25,49 @@ def descendants(rows, root):
     return found
 
 
-def entries(db, plan, category):
-    nodes = db.query(PlanNode).filter_by(plan_id=plan.id).order_by(PlanNode.position, PlanNode.created_at).all()
+def entries(db, plan, category, *, current_read=False):
+    def read(query):
+        return (query.populate_existing().with_for_update() if current_read else query).all()
+    nodes = read(db.query(PlanNode).filter_by(plan_id=plan.id).order_by(PlanNode.position, PlanNode.created_at))
     points = {node.id:node for node in nodes if node.node_type == "point"}
-    uses = uses_tree(db, plan.id)
+    uses = uses_tree(db, plan.id) if not current_read else bool(db.get(PlanWorkspace, plan.id) and db.get(PlanWorkspace, plan.id).uses_tree) or any(node.node_type != "point" for node in nodes)
     associations = []
     if uses:
         suite_ids = {node.suite_id for node in nodes if node.suite_id}
-        suites = {row.id:row for row in db.query(TestSuite).filter(TestSuite.id.in_(suite_ids), TestSuite.plan_id == plan.id)}
+        suites = {row.id:row for row in read(db.query(TestSuite).filter(TestSuite.id.in_(suite_ids), TestSuite.plan_id == plan.id))}
         for node in nodes:
             if node.node_type == "point" or node.category != category: continue
             suite = suites.get(node.suite_id)
             for case_id in [node.case_id] if node.case_id else (suite.case_ids if suite else []):
                 associations.append(("node", node, case_id, node.parent_id, node.node_type == "suite"))
     else:
-        for relation in db.query(PlanCaseRelation).filter_by(plan_id=plan.id).order_by(PlanCaseRelation.execution_order):
+        for relation in read(db.query(PlanCaseRelation).filter_by(plan_id=plan.id).order_by(PlanCaseRelation.execution_order)):
             associations.append(("legacy", relation, relation.case_id, relation.collection_id, False))
     ids = {item[2] for item in associations}
-    cases = {case.id:case for case in db.query(TestCase).filter(TestCase.id.in_(ids))}
+    cases = {case.id:case for case in read(db.query(TestCase).filter(TestCase.id.in_(ids)))}
     source_ids = {case.project_id for case in cases.values()} or {plan.project_id}
-    projects = {p.id:p for p in db.query(Project).filter(Project.id.in_(source_ids))}
-    modules = db.query(Module).filter(Module.project_id.in_(source_ids)).order_by(Module.sort_order, Module.created_at).all()
+    projects = {p.id:p for p in read(db.query(Project).filter(Project.id.in_(source_ids)))}
+    modules = read(db.query(Module).filter(Module.project_id.in_(source_ids)).order_by(Module.sort_order, Module.created_at))
     module_names = {row.id:row.name for row in modules}
     user_ids = {uid for case in cases.values() for uid in (case.created_by,case.executor_id) if uid}
     user_ids.update(row.assigned_to for _,row,_,_,_ in associations if row.assigned_to)
-    users = {row.id:row.username for row in db.query(User).filter(User.id.in_(user_ids))}
+    users = dict(db.query(User.id, User.username).filter(User.id.in_(user_ids)).all())
     bugs = {}
-    for link, issue in db.query(CaseIssueLink,CaseIssue).join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id).filter(CaseIssueLink.case_id.in_(ids), CaseIssue.project_id.in_(source_ids), CaseIssue.kind == 'defect'):
+    for link, issue in read(db.query(CaseIssueLink,CaseIssue).join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id).filter(CaseIssueLink.case_id.in_(ids), CaseIssue.project_id.in_(source_ids), CaseIssue.kind == 'defect')):
         bugs.setdefault(link.case_id, set()).add(issue.id)
-    run = db.query(PlanRun).filter_by(plan_id=plan.id).order_by(PlanRun.created_at.desc()).first()
-    results = (run.report if run.status not in ACTIVE and run.report else build_report(db,run))['cases'] if run else []
+    runs = read(db.query(PlanRun).filter_by(plan_id=plan.id).order_by(PlanRun.created_at.desc(), PlanRun.id.desc()))
+    run = runs[0] if runs else None
+    results = (run.report if run.status not in ACTIVE and run.report else build_report(db,run,current_read=current_read))['cases'] if run else []
     by_association = {(item.get('associationId',item['caseId']),item['caseId']):item for item in results}
     association_runs = {key: run for key in by_association}
     native = {}
     if category != 'functional':
         from services.native_candidate_context import NativeCandidateContext
-        native = {identifier: NativeCandidateContext(db, identifier, include_reports=False) for identifier in source_ids}
+        native = {identifier: NativeCandidateContext(db, identifier, include_reports=False, current_read=current_read) for identifier in source_ids}
         # 保留每个实例最近一次真实计划结果，后续只执行部分测试套不能抹掉其他实例的历史。
         by_association, association_runs, report_environments = {}, {}, {}
-        for historical in db.query(PlanRun).filter_by(plan_id=plan.id).order_by(PlanRun.created_at.desc(), PlanRun.id.desc()):
-            report = historical.report if historical.status not in ACTIVE and historical.report else build_report(db, historical)
+        for historical in runs:
+            report = historical.report if historical.status not in ACTIVE and historical.report else build_report(db, historical,current_read=current_read)
             report_environments[historical.id] = {item['executionId']: item.get('environmentId') for item in report.get('items', []) if item.get('executionId')}
             execution_states = {item['executionId']: item.get('status') for item in report.get('items', []) if item.get('executionId')}
             for item in report.get('cases', []):
@@ -73,16 +76,15 @@ def entries(db, plan, category):
                     by_association[key] = dict(item, result='running') if item['result'] == 'pending' and execution_states.get(item.get('executionId')) in {'running', 'cancelling'} else item
                     association_runs[key] = historical
         execution_users = {row.executor_id for row in association_runs.values() if row.executor_id}
-        users.update({row.id: row.username for row in db.query(User).filter(User.id.in_(execution_users))})
+        users.update(dict(db.query(User.id, User.username).filter(User.id.in_(execution_users)).all()))
         from models.environment import Environment
         environment_ids = {identifier for mapping in report_environments.values() for identifier in mapping.values() if identifier}
-        environments = {row.id: row.name for row in db.query(Environment).filter(Environment.id.in_(environment_ids))}
+        environments = {row.id: row.name for row in read(db.query(Environment).filter(Environment.id.in_(environment_ids)))}
         for key, item in by_association.items():
             actual_run = association_runs[key]
             environment_id = report_environments[actual_run.id].get(item.get('executionId'))
             item = dict(item, executionEnvironmentName=environments.get(environment_id))
             by_association[key] = item
-    project = db.get(Project, plan.project_id)
     items = []
     for source, association, case_id, collection_id, grouped in associations:
         case = cases.get(case_id)
@@ -124,8 +126,10 @@ def entries(db, plan, category):
     return items, list(points.values()), modules, uses
 
 
-def listing(db, plan, category, params):
-    items, points, modules, uses = entries(db,plan,category)
+def listing(db, plan, category, params, *, current_read=False):
+    def read(query):
+        return (query.populate_existing().with_for_update() if current_read else query).all()
+    items, points, modules, uses = entries(db,plan,category,current_read=current_read)
     search = (params.get('search') or '').strip().casefold()
     results = set((params.get('result') or '').split(','))
     priorities = set((params.get('priority') or '').split(','))
@@ -138,13 +142,13 @@ def listing(db, plan, category, params):
         and (not params.get('tag') or params['tag'] in item['tags'])]
     if params.get('filters') is not None:
         from services.plan_case_filter import filter_entries
-        filtered = filter_entries(db, plan, items, params['filters'], params.get('user_id'), category)
+        filtered = filter_entries(db, plan, items, params['filters'], params.get('user_id'), category, current_read=current_read)
         if params.get('refine'):
             filtered = [item for item in filtered if
                 (not search or search in (item['name']+' '+item['caseCode']).casefold())
                 and (not params.get('result') or item.get('nativeResult', item['result']) in results)]
     if params.get('mine'):
-        own_ids = {row.id for row in db.query(TestCase.id).filter(TestCase.id.in_([item['caseId'] for item in items]), TestCase.created_by == params.get('user_id'))}
+        own_ids = {row.id for row in read(db.query(TestCase.id).filter(TestCase.id.in_([item['caseId'] for item in items]), TestCase.created_by == params.get('user_id')))}
         filtered = [item for item in filtered if item['caseId'] in own_ids]
     def tree_rows(rows, field):
         payload = []
@@ -156,7 +160,7 @@ def listing(db, plan, category, params):
     collections=tree_rows(points,'collectionId'); module_tree=tree_rows(modules,'moduleId')
     source_ids = {item['projectId'] for item in items}
     grouped_modules = bool(source_ids - {plan.project_id})
-    project_rows = {p.id:p for p in db.query(Project).filter(Project.id.in_(source_ids))}
+    project_rows = {p.id:p for p in read(db.query(Project).filter(Project.id.in_(source_ids)))}
     if grouped_modules:
         module_projects = {row.id:row.project_id for row in modules}
         for row in module_tree:
@@ -183,7 +187,7 @@ def listing(db, plan, category, params):
             filtered=[item for item in filtered if item[field] in scope]
     filtered.sort(key=lambda item:(str(item.get(params['sort']) or ''),item['id']),reverse=params['direction']=='desc')
     page,size=params['page'],params['size'];total=len(filtered)
-    payload = dict(items=filtered if params.get("view")=="mind" else filtered[(page-1)*size:page*size],total=total,page=page,size=size,collections=collections,modules=module_tree,counts=counts,usesTree=uses,projects=[dict(id=p.id, name=p.name) for p in project_rows.values()])
+    payload = dict(items=filtered if params.get("view")=="mind" else filtered[(page-1)*size:page*size],total=total,selectableTotal=sum(not item['grouped'] for item in filtered),page=page,size=size,collections=collections,modules=module_tree,counts=counts,usesTree=uses,projects=[dict(id=p.id, name=p.name) for p in project_rows.values()])
     if category != 'functional':
         payload['nativeOptions'] = dict(protocols=sorted({item['protocol'] for item in items if item.get('protocol')}),
             environments=list({item['environmentName']: dict(id=item['environmentName'], name=item['environmentLabel']) for item in items if item.get('environmentName')}.values()))
@@ -207,10 +211,12 @@ def selected_rows(db,plan,selections,category):
     return [(source,db.get(PlanNode if source=='node' else PlanCaseRelation,identifier)) for source,identifier in keys]
 
 
-def batch(db,plan,user,data):
+def batch(db,plan,user,data, *, resolved_rows=None, current_read=False):
+    def read(query):
+        return (query.populate_existing().with_for_update() if current_read else query).all()
     workspace=db.get(PlanWorkspace,plan.id)
     if workspace and workspace.archived: raise HTTPException(409,'归档计划不可修改关联')
-    rows=selected_rows(db,plan,data.selections,data.category)
+    rows=resolved_rows if resolved_rows is not None else selected_rows(db,plan,data.selections,data.category)
     if data.action=='assign' and data.assignedTo:
         assignee=db.get(User,data.assignedTo)
         if not assignee or not assignee.status: raise HTTPException(422,'执行人不存在或已停用')
@@ -218,12 +224,12 @@ def batch(db,plan,user,data):
     if data.action=='move': collection(db,plan,data.collectionId,data.category)
     if data.action=='unlink':
         legacy_ids={row.id for source,row in rows if source=='legacy'}
-        remaining={row.case_id for row in db.query(PlanCaseRelation).filter(PlanCaseRelation.plan_id==plan.id,~PlanCaseRelation.id.in_(legacy_ids))}
+        remaining={row.case_id for row in read(db.query(PlanCaseRelation).filter(PlanCaseRelation.plan_id==plan.id,~PlanCaseRelation.id.in_(legacy_ids)))}
         removed={row.case_id for source,row in rows if source=='legacy'}-remaining
-        affected=[suite for suite in db.query(TestSuite).filter_by(plan_id=plan.id) if removed.intersection(suite.case_ids or [])]
+        affected=[suite for suite in read(db.query(TestSuite).filter_by(plan_id=plan.id)) if removed.intersection(suite.case_ids or [])]
         from services.test_suite_service import TestSuiteService
         for suite in affected:
-            try: TestSuiteService.require_idle(db,suite.id)
+            try: TestSuiteService.require_idle(db,suite.id,current_read=current_read)
             except ValueError as exc:
                 logger.exception('测试套执行中，拒绝取消对应计划关联：测试套={}',suite.id)
                 raise HTTPException(409,str(exc)) from exc
