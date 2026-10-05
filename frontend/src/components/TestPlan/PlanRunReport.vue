@@ -55,7 +55,7 @@ import {planCollaborationApi,downloadPlanFile,type ReportRun,type ReportCase,typ
 import {caseFeaturesApi,type CaseIssue} from '@/api/caseFeatures'
 const props=defineProps<{runId:string;projectId:string}>(),emit=defineEmits<{changed:[]}>()
 const run=ref<ReportRun>(),loading=ref(false),category=ref<string>(),resultFilter=ref<string>(),view=ref('table')
-const labels:Record<string,string>={group_waiting:'等待计划组前序',queued:'排队中',running:'执行中',cancelling:'取消中',needs_confirmation:'等待核对',cancelled:'已取消',completed:'已完成',passed:'通过',failed:'失败',error:'错误',skipped:'跳过',pending:'未执行'}
+const labels:Record<string,string>={group_waiting:'等待计划组前序',queued:'排队中',running:'执行中',cancelling:'取消中',needs_confirmation:'等待核对',cancelled:'已取消',completed:'已完成',passed:'通过',failed:'失败',error:'错误',fake_error:'误报',skipped:'跳过',pending:'未执行'}
 const label=(s:string)=>labels[s]||s
 const resultOptions=['pending','passed','failed','error','skipped'].map(value=>({value,label:label(value)}))
 const columns=[{title:'用例',dataIndex:'caseName'},{title:'测试套',dataIndex:'suiteName'},{title:'结果',key:'result'},{title:'说明',dataIndex:'notes'},{title:'操作',key:'actions'}]

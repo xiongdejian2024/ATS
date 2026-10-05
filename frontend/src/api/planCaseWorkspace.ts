@@ -1,6 +1,16 @@
 import type { TestCase } from "@/types";
 import { apiClient } from "@/utils/api";
 export interface PlanCaseEntry {
+  nativeState?: string | null;
+  protocol?: string | null;
+  path?: string | null;
+  environmentName?: string | null;
+  environmentLabel?: string | null;
+  stepTotal?: number | null;
+  nativeResult?: string;
+  nativeExecutorId?: string | null;
+  nativeExecutorName?: string;
+  nativeExecutionEnvironmentName?: string | null;
   id: string;
   source: "legacy" | "node";
   associationId: string;
@@ -37,6 +47,7 @@ export interface PlanCaseEntry {
   description?: string;
 }
 export interface CaseFolder {
+  category?: "functional" | "api" | "scenario";
   nodeType?: "PROJECT" | "DEFAULT";
   projectId?: string;
   id: string;
@@ -45,6 +56,7 @@ export interface CaseFolder {
   count: number;
 }
 export interface PlanCaseListing {
+  nativeOptions?: import("./nativeCase").NativeFilterCatalog;
   items: PlanCaseEntry[];
   total: number;
   page: number;

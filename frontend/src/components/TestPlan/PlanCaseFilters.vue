@@ -4,7 +4,13 @@
       :value="viewId || 'system:all'"
       :disabled="busy || saving || viewLoading"
       :aria-label="
-        mode === 'association' ? '计划关联用例视图' : '计划功能用例视图'
+        mode === 'association'
+          ? '计划关联用例视图'
+          : category === 'functional'
+            ? '计划功能用例视图'
+            : category === 'api'
+              ? '计划API用例视图'
+              : '计划API场景视图'
       "
       option-label-prop="label"
       :dropdown-match-select-width="280"
@@ -148,6 +154,7 @@ import {
 import { caseFolderTree } from "./planCaseFolders";
 import { planCandidateFilterFields } from "./planCandidateFilterFields";
 import { planCaseFilterFields } from "./planCaseFilterFields";
+import { planNativeWorkspaceFields } from "./planNativeWorkspaceFields";
 const props = withDefaults(
   defineProps<{
     mode?: import("@/api/planCaseWorkspace").PlanFilterMode;
@@ -159,6 +166,7 @@ const props = withDefaults(
     collections: CaseFolder[];
     modules: CaseFolder[];
     projects?: { id: string; name: string }[];
+    nativeOptions?: import("@/api/nativeCase").NativeFilterCatalog;
     conditions?: FilterCondition[];
     logic: FilterLogic;
     viewId?: string;
@@ -203,13 +211,22 @@ const fields = computed(() =>
         props.category,
         nativeCatalog.value,
       )
-    : planCaseFilterFields(
-        { id: props.projectId, name: props.projectName },
-        props.collections,
-        templates.value,
-        members.value,
-        props.projects,
-      ),
+    : props.category !== "functional"
+      ? planNativeWorkspaceFields(
+          { id: props.projectId, name: props.projectName },
+          props.collections,
+          members.value,
+          props.category,
+          props.nativeOptions || nativeCatalog.value,
+          props.projects,
+        )
+      : planCaseFilterFields(
+          { id: props.projectId, name: props.projectName },
+          props.collections,
+          templates.value,
+          members.value,
+          props.projects,
+        ),
 );
 const moduleTree = computed(() => {
   const mark = (nodes: ReturnType<typeof caseFolderTree>): any[] =>
@@ -260,7 +277,7 @@ async function loadMetadata() {
   const results = await Promise.allSettled([
     caseFeaturesApi.templates(project),
     caseGovernanceApi.reviewers(project),
-    props.mode === "association" && props.category !== "functional"
+    props.category !== "functional" && !props.nativeOptions
       ? nativeCaseApi.catalog(project)
       : Promise.resolve(undefined),
   ]);

@@ -1,7 +1,7 @@
 import {
   nativeStateOptions,
   nativeReportOptions,
-  type NativeCatalog,
+  type NativeFilterCatalog,
 } from "@/api/nativeCase";
 import type { CaseTemplate } from "@/api/caseFeatures";
 import type { FilterField } from "@/components/TestCase/advancedFilter";
@@ -14,7 +14,7 @@ export function planCandidateFilterFields(
   templates: CaseTemplate[],
   members: { id: string; name: string }[],
   category: string,
-  native?: NativeCatalog,
+  native?: NativeFilterCatalog,
 ): FilterField[] {
   const excluded = new Set([
     "collectionId",

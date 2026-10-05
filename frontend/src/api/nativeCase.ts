@@ -20,6 +20,10 @@ export interface NativeCatalog {
   canCreate: boolean;
   canEdit: boolean;
 }
+export interface NativeFilterCatalog {
+  protocols: string[];
+  environments: { id: string; name: string }[];
+}
 export interface NativeConfig {
   lastReportStatus: string | null;
   stepTotal: number | null;

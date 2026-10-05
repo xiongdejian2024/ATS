@@ -110,14 +110,12 @@ def detail(db, user, plan, source, association_id, case_id, page, size):
 
 
 def apply_statistics(db, plan_id, payload):
-    """仅存在独立回填时使用真实当前关联结果，批次报告不被改写。"""
-    if not db.query(PlanCaseExecution.id).filter_by(plan_id=plan_id).first():
-        return
+    """汇总各分类当前实例结果，与分类列表保持一致，冻结报告不被改写。"""
     from models import TestPlan
     from services.plan_case_workspace import entries
     plan = db.get(TestPlan, plan_id)
     states = [row['result'] for category in ('functional','api','scenario') for row in entries(db,plan,category)[0]]
-    mapping = {'passed':'pass','failed':'fail','blocked':'blocked','error':'error','skipped':'skip','cancelled':'skip','pending':'pending'}
+    mapping = {'passed':'pass','failed':'fail','blocked':'blocked','error':'error','skipped':'skip','cancelled':'skip','pending':'pending','fake_error':'fakeError','running':'running'}
     payload['totalCases'] = len(states)
-    payload['executedCases'] = sum(state != 'pending' for state in states)
-    payload['caseStatusCounts'] = {key:sum(mapping.get(state,'pending') == key for state in states) for key in ('pending','pass','fail','blocked','broken','error','skip')}
+    payload['executedCases'] = sum(state not in ('pending','running') for state in states)
+    payload['caseStatusCounts'] = {key:sum(mapping.get(state,'pending') == key for state in states) for key in ('pending','pass','fail','blocked','broken','error','skip','fakeError','running')}

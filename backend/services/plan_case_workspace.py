@@ -10,6 +10,9 @@ from core.project_access import require_project_access
 from core.logger import logger
 
 RESULTS = {"pending":"pending", "pass":"passed", "fail":"failed", "broken":"error", "error":"error", "skip":"skipped"}
+NATIVE_RESULTS = {'pending': 'PENDING', 'running': 'RUNNING', 'passed': 'SUCCESS', 'pass': 'SUCCESS',
+                  'failed': 'ERROR', 'fail': 'ERROR', 'error': 'ERROR', 'broken': 'ERROR',
+                  'fake_error': 'FAKE_ERROR', 'skipped': 'SKIPPED', 'skip': 'SKIPPED', 'cancelled': 'SKIPPED'}
 
 
 def descendants(rows, root):
@@ -53,6 +56,32 @@ def entries(db, plan, category):
     run = db.query(PlanRun).filter_by(plan_id=plan.id).order_by(PlanRun.created_at.desc()).first()
     results = (run.report if run.status not in ACTIVE and run.report else build_report(db,run))['cases'] if run else []
     by_association = {(item.get('associationId',item['caseId']),item['caseId']):item for item in results}
+    association_runs = {key: run for key in by_association}
+    native = {}
+    if category != 'functional':
+        from services.native_candidate_context import NativeCandidateContext
+        native = {identifier: NativeCandidateContext(db, identifier, include_reports=False) for identifier in source_ids}
+        # 保留每个实例最近一次真实计划结果，后续只执行部分测试套不能抹掉其他实例的历史。
+        by_association, association_runs, report_environments = {}, {}, {}
+        for historical in db.query(PlanRun).filter_by(plan_id=plan.id).order_by(PlanRun.created_at.desc(), PlanRun.id.desc()):
+            report = historical.report if historical.status not in ACTIVE and historical.report else build_report(db, historical)
+            report_environments[historical.id] = {item['executionId']: item.get('environmentId') for item in report.get('items', []) if item.get('executionId')}
+            execution_states = {item['executionId']: item.get('status') for item in report.get('items', []) if item.get('executionId')}
+            for item in report.get('cases', []):
+                key = (item.get('associationId') or item['caseId'], item['caseId'])
+                if key not in by_association and item.get('result') is not None:
+                    by_association[key] = dict(item, result='running') if item['result'] == 'pending' and execution_states.get(item.get('executionId')) in {'running', 'cancelling'} else item
+                    association_runs[key] = historical
+        execution_users = {row.executor_id for row in association_runs.values() if row.executor_id}
+        users.update({row.id: row.username for row in db.query(User).filter(User.id.in_(execution_users))})
+        from models.environment import Environment
+        environment_ids = {identifier for mapping in report_environments.values() for identifier in mapping.values() if identifier}
+        environments = {row.id: row.name for row in db.query(Environment).filter(Environment.id.in_(environment_ids))}
+        for key, item in by_association.items():
+            actual_run = association_runs[key]
+            environment_id = report_environments[actual_run.id].get(item.get('executionId'))
+            item = dict(item, executionEnvironmentName=environments.get(environment_id))
+            by_association[key] = item
     project = db.get(Project, plan.project_id)
     items = []
     for source, association, case_id, collection_id, grouped in associations:
@@ -60,7 +89,9 @@ def entries(db, plan, category):
         if not case: continue
         actual_category = case.type if case.type in ('api','scenario') else 'functional'
         if source == 'legacy' and actual_category != category: continue
-        result = by_association.get((association.id if source == 'node' else case_id,case_id))
+        result_key = (association.id if source == 'node' else case_id,case_id)
+        result = by_association.get(result_key)
+        result_run = association_runs.get(result_key)
         executor = association.assigned_to
         items.append(dict(id=f'{source}:{association.id}:{case_id}', source=source, associationId=association.id, caseId=case.id,
             name=case.name, caseCode=case.case_code, priority=case.priority, tags=case.tags or [],
@@ -68,30 +99,50 @@ def entries(db, plan, category):
             projectId=case.project_id, projectName=projects[case.project_id].name if case.project_id in projects else '', moduleId=case.module_id, moduleName=module_names.get(case.module_id,'未分配模块'),
             createdAt=case.created_at, updatedAt=case.updated_at, createdByName=users.get(case.created_by,'未知用户'),
             assignedTo=executor, executorName=users.get(executor,'未分配'), isAutomated=case.is_automated, recycled=bool(case.deleted_at),
-            result=result['result'] if result else (RESULTS.get(association.execution_status,'pending') if source == 'legacy' else 'pending'),
-            bugCount=len(bugs.get(case.id,set())), runId=run.id if result else None,
+            result=result['result'] if result else (RESULTS.get(association.execution_status,'pending') if source == 'legacy' and category == 'functional' else 'pending'),
+            bugCount=len(bugs.get(case.id,set())), runId=result_run.id if result and result_run else None,
             grouped=grouped, precondition=case.precondition, steps=case.steps, caseEditType=case.case_edit_type,
             textDescription=case.text_description, expectedResult=case.expected_result, description=case.description))
     from services.plan_case_execution import overlay
-    return overlay(db, plan.id, items, run), list(points.values()), modules, uses
+    items = overlay(db, plan.id, items, run) if category == 'functional' else items
+    if category != 'functional':
+        for item in items:
+            values = native[item['projectId']].values(cases[item['caseId']])
+            item.update({key: value for key, value in values.items() if key not in {'lastReportStatus', 'apiChange'}})
+            item['nativeResult'] = NATIVE_RESULTS.get(item['result'], item['result'])
+            result_key = (item['associationId'] if item['source'] == 'node' else item['caseId'], item['caseId'])
+            actual_run = association_runs.get(result_key)
+            item['nativeExecutorId'] = actual_run.executor_id if actual_run else None
+            item['nativeExecutorName'] = users.get(item['nativeExecutorId'], '-')
+            item['nativeExecutionEnvironmentName'] = by_association.get(result_key, {}).get('executionEnvironmentName')
+        visible_points = {point.id for point in points.values() if point.category == category}
+        for identifier in list(visible_points):
+            parent = points[identifier].parent_id
+            while parent in points and parent not in visible_points:
+                visible_points.add(parent); parent = points[parent].parent_id
+        points = {key: point for key, point in points.items() if key in visible_points}
+    return items, list(points.values()), modules, uses
 
 
 def listing(db, plan, category, params):
     items, points, modules, uses = entries(db,plan,category)
     search = (params.get('search') or '').strip().casefold()
     results = set((params.get('result') or '').split(','))
+    priorities = set((params.get('priority') or '').split(','))
+    selected_protocols = set(params['protocols'].split(',')) if params.get('protocols') is not None else None
     filtered = [item for item in items if (not search or search in (item['name']+' '+item['caseCode']).casefold())
-        and (not params.get('priority') or item['priority'] == params['priority'])
-        and (not params.get('result') or item['result'] in results)
-        and (not params.get('executor') or item['assignedTo'] == params['executor'])
+        and (not params.get('priority') or item['priority'] in priorities)
+        and (not params.get('result') or item.get('nativeResult', item['result']) in results)
+        and (not params.get('executor') or item.get('nativeExecutorId', item['assignedTo']) == params['executor'])
+        and (selected_protocols is None or item.get('protocol') in selected_protocols)
         and (not params.get('tag') or params['tag'] in item['tags'])]
     if params.get('filters') is not None:
         from services.plan_case_filter import filter_entries
-        filtered = filter_entries(db, plan, items, params['filters'], params.get('user_id'))
+        filtered = filter_entries(db, plan, items, params['filters'], params.get('user_id'), category)
         if params.get('refine'):
             filtered = [item for item in filtered if
                 (not search or search in (item['name']+' '+item['caseCode']).casefold())
-                and (not params.get('result') or item['result'] in results)]
+                and (not params.get('result') or item.get('nativeResult', item['result']) in results)]
     if params.get('mine'):
         own_ids = {row.id for row in db.query(TestCase.id).filter(TestCase.id.in_([item['caseId'] for item in items]), TestCase.created_by == params.get('user_id'))}
         filtered = [item for item in filtered if item['caseId'] in own_ids]
@@ -99,7 +150,8 @@ def listing(db, plan, category, params):
         payload = []
         for row in rows:
             ids=descendants(rows,row.id)
-            payload.append(dict(id=row.id,name=row.name,parentId=row.parent_id,count=sum(item[field] in ids for item in filtered)))
+            payload.append(dict(id=row.id,name=row.name,parentId=row.parent_id,count=sum(item[field] in ids for item in filtered),
+                                **({'category': row.category} if field == 'collectionId' else {})))
         return payload
     collections=tree_rows(points,'collectionId'); module_tree=tree_rows(modules,'moduleId')
     source_ids = {item['projectId'] for item in items}
@@ -131,13 +183,19 @@ def listing(db, plan, category, params):
             filtered=[item for item in filtered if item[field] in scope]
     filtered.sort(key=lambda item:(str(item.get(params['sort']) or ''),item['id']),reverse=params['direction']=='desc')
     page,size=params['page'],params['size'];total=len(filtered)
-    return dict(items=filtered if params.get("view")=="mind" else filtered[(page-1)*size:page*size],total=total,page=page,size=size,collections=collections,modules=module_tree,counts=counts,usesTree=uses,projects=[dict(id=p.id, name=p.name) for p in project_rows.values()])
+    payload = dict(items=filtered if params.get("view")=="mind" else filtered[(page-1)*size:page*size],total=total,page=page,size=size,collections=collections,modules=module_tree,counts=counts,usesTree=uses,projects=[dict(id=p.id, name=p.name) for p in project_rows.values()])
+    if category != 'functional':
+        payload['nativeOptions'] = dict(protocols=sorted({item['protocol'] for item in items if item.get('protocol')}),
+            environments=list({item['environmentName']: dict(id=item['environmentName'], name=item['environmentLabel']) for item in items if item.get('environmentName')}.values()))
+    return payload
 
 
-def collection(db, plan, identifier):
+def collection(db, plan, identifier, category=None):
     row=db.get(PlanNode,identifier) if identifier else None
     if identifier and (not row or row.plan_id != plan.id or row.node_type != 'point'):
         raise HTTPException(422,'测试集必须是当前计划的测试点')
+    if row and category and row.category != category:
+        raise HTTPException(422,'测试集必须属于当前用例分类')
     return row
 
 
@@ -157,7 +215,7 @@ def batch(db,plan,user,data):
         assignee=db.get(User,data.assignedTo)
         if not assignee or not assignee.status: raise HTTPException(422,'执行人不存在或已停用')
         require_project_access(db,assignee,plan.project_id,'test_plan:read')
-    if data.action=='move': collection(db,plan,data.collectionId)
+    if data.action=='move': collection(db,plan,data.collectionId,data.category)
     if data.action=='unlink':
         legacy_ids={row.id for source,row in rows if source=='legacy'}
         remaining={row.case_id for row in db.query(PlanCaseRelation).filter(PlanCaseRelation.plan_id==plan.id,~PlanCaseRelation.id.in_(legacy_ids))}
@@ -188,7 +246,7 @@ def batch(db,plan,user,data):
 def associate(db,plan,user,data):
     from services.plan_candidate_selection import resolve
     cases, summary, suites, relations = resolve(db, plan, user, data, writing=True)
-    collection(db,plan,data.collectionId)
+    collection(db,plan,data.collectionId,data.category)
     uses=summary['usesTree']
     suite=next((s for s in suites if s.id == data.suiteId), None)
     if data.suiteId and (not suite or suite.plan_id != plan.id):
