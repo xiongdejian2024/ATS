@@ -112,6 +112,13 @@ def collaboration(run_id: str, association_id: str, db: Session = Depends(get_db
                "attachments": [{"id": row.id, "name": row.name, "mimeType": row.mime_type, "authorId": row.author_id} for row in attachments]})
 
 
+@router.get("/runs/{run_id}/native-cases/{execution_id}/{case_id}/detail")
+def native_http_detail(run_id: str, execution_id: str, case_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    run = access(db, user, run_id, report_only=True)
+    from services.native_http_report import read_detail
+    return ok(read_detail(db, run, execution_id, case_id))
+
+
 @router.post("/runs/{run_id}/cases/{association_id}/comments")
 def comment(run_id: str, association_id: str, data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
     run = access(db, user, run_id)

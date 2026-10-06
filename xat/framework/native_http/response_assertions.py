@@ -11,6 +11,7 @@ from lxml import etree
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Slice, Descendants, Union, Fields, Index
 from jsonpath_ng.ext.filter import Filter
+from .result_details import assertion_detail
 
 logger = logging.getLogger("XAT响应断言")
 COMPARISONS = {
@@ -176,10 +177,22 @@ def xpath_value(expression, response, response_format):
     return bool(value)
 
 
-def evaluate(groups, response, elapsed_ms):
+def evaluate(groups, response, elapsed_ms, detail_sink=None):
     results = []
 
-    def record(group, index, condition, callback):
+    def record(
+        group,
+        index,
+        condition,
+        callback,
+        *,
+        value=None,
+        expected="",
+        name="",
+        expression="",
+        predicate=None,
+        presence=None,
+    ):
         row = dict(
             groupId=group.id,
             rowIndex=index,
@@ -188,8 +201,12 @@ def evaluate(groups, response, elapsed_ms):
             operator=condition,
             passed=False,
         )
+        actual, present = "", False
         try:
-            row["passed"] = bool(callback())
+            if value is not None:
+                actual = value()
+                present = bool(presence()) if presence else True
+            row["passed"] = bool(predicate(actual) if predicate else callback())
             row["description"] = "断言通过" if row["passed"] else "断言未通过"
         except Exception as exception:
             logger.exception(
@@ -197,6 +214,17 @@ def evaluate(groups, response, elapsed_ms):
             )
             row["description"] = "断言评估失败：" + type(exception).__name__
         results.append(row)
+        if detail_sink is not None:
+            detail_sink.append(
+                assertion_detail(
+                    row,
+                    actual=text_value(actual),
+                    expected=expected,
+                    name=name or group.name,
+                    expression=expression,
+                    present=present,
+                )
+            )
 
     for group in groups:
         if not group.enable:
@@ -211,9 +239,18 @@ def evaluate(groups, response, elapsed_ms):
                     lambda: status_check(
                         group.condition, group.expectedValue, response.status_code
                     ),
+                    value=lambda: response.status_code,
+                    expected=group.expectedValue,
                 )
         elif kind == "RESPONSE_TIME":
-            record(group, 0, "LT_OR_EQUALS", lambda: elapsed_ms <= group.expectedValue)
+            record(
+                group,
+                0,
+                "LT_OR_EQUALS",
+                lambda: elapsed_ms <= group.expectedValue,
+                value=lambda: elapsed_ms,
+                expected=str(group.expectedValue),
+            )
         elif kind == "RESPONSE_HEADER":
             for index, rule in enumerate(group.assertions):
                 if rule.enable and rule.expectedValue.strip():
@@ -222,6 +259,17 @@ def evaluate(groups, response, elapsed_ms):
                         index,
                         rule.condition,
                         lambda: header_check(rule, response),
+                        value=lambda: "\r\n".join(
+                            v.decode("latin-1")
+                            for k, v in response.headers.raw
+                            if match("^(?:" + rule.header + ")$", k.decode("latin-1"))
+                        ),
+                        expected=rule.expectedValue,
+                        name=rule.header,
+                        presence=lambda: any(
+                            match("^(?:" + rule.header + ")$", k.decode("latin-1"))
+                            for k, _ in response.headers.raw
+                        ),
                     )
         else:
             section = {
@@ -238,11 +286,14 @@ def evaluate(groups, response, elapsed_ms):
                             group,
                             index,
                             rule.condition,
-                            lambda: compare(
-                                json_value(rule.expression, response),
-                                rule.condition,
-                                rule.expectedValue,
+                            None,
+                            value=lambda: json_value(rule.expression, response),
+                            predicate=lambda actual: compare(
+                                actual, rule.condition, rule.expectedValue
                             ),
+                            expected=rule.expectedValue,
+                            name=rule.expression,
+                            expression=rule.expression,
                         )
                 elif group.assertionBodyType == "XPATH":
                     record(
@@ -254,6 +305,9 @@ def evaluate(groups, response, elapsed_ms):
                             response,
                             group.xpathAssertion.responseFormat,
                         ),
+                        value=lambda: response.text,
+                        name=rule.expression,
+                        expression=rule.expression,
                     )
                 else:
                     record(
@@ -261,5 +315,8 @@ def evaluate(groups, response, elapsed_ms):
                         index,
                         "REGEX",
                         lambda: match(rule.expression, response.text),
+                        value=lambda: response.text,
+                        name=rule.expression,
+                        expression=rule.expression,
                     )
     return results

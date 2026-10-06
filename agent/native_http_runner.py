@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import re
 import sys
 import time
@@ -35,18 +36,14 @@ class NativeHTTPRunner(SATRunner):
             / message["execution_id"]
         )
         if (directory / "native-run.json").exists():
-            logger.info(
-                "原生HTTP执行已结束，忽略重复派发：执行={}", message["execution_id"]
-            )
+            logger.info("原生HTTP执行已结束，忽略重复派发：执行={}", message["execution_id"])
             return
         super().start(message)
 
     async def execute(self, message):
         suite_id, execution_id = message["suite_id"], message["execution_id"]
         started, rows, status, error = time.monotonic(), [], "failed", None
-        directory = (
-            self.agent.work_dir / "suites" / suite_id / "executions" / execution_id
-        )
+        directory = self.agent.work_dir / "suites" / suite_id / "executions" / execution_id
         directory.mkdir(parents=True, exist_ok=True)
         try:
             # 与现有SAT适配器同样从工作区加载自有XAT，httpx/Pydantic均为XAT已有依赖。
@@ -56,10 +53,7 @@ class NativeHTTPRunner(SATRunner):
             from framework.native_http.models import FrozenCase
             from framework.native_http.engine import execute
 
-            cases = [
-                FrozenCase.model_validate(value)
-                for value in message.get("native_cases", [])
-            ]
+            cases = [FrozenCase.model_validate(value) for value in message.get("native_cases", [])]
             if (
                 not cases
                 or [case.id for case in cases] != message["case_ids"]
@@ -80,14 +74,11 @@ class NativeHTTPRunner(SATRunner):
                         duration=f"{row['duration']:.3f}s",
                         error_message=row["error"],
                         log_output=row["log"],
+                        native_detail=row["native_detail"],
                         executor_id=message.get("executor_id", "system"),
                     )
                 )
-            status = (
-                "completed"
-                if all(row["status"] == "passed" for row in rows)
-                else "failed"
-            )
+            status = "completed" if all(row["status"] == "passed" for row in rows) else "failed"
         except asyncio.CancelledError:
             status, error = "cancelled", "原生HTTP执行已取消"
             logger.opt(exception=True).info("原生HTTP执行已取消：执行={}", execution_id)
@@ -113,9 +104,7 @@ class NativeHTTPRunner(SATRunner):
                                     executor_id=message.get("executor_id", "system"),
                                 )
                             )
-                record = dict(
-                    execution_id=execution_id, status=status, error=error, rows=rows
-                )
+                record = dict(execution_id=execution_id, status=status, error=error, rows=rows)
                 self.runs.pop(execution_id, None)
                 self.suites.pop(execution_id, None)
                 await self.deliver(
@@ -133,9 +122,14 @@ class NativeHTTPRunner(SATRunner):
                 )
                 # 先持久化可靠完成消息，再写终态标记，避免标记成功却丢失完成事件。
                 temporary = directory / "native-run.tmp"
-                temporary.write_text(
-                    json.dumps(record, ensure_ascii=False), encoding="utf-8"
-                )
+                with open(
+                    temporary,
+                    "w",
+                    encoding="utf-8",
+                    opener=lambda path, flags: os.open(path, flags, 0o600),
+                ) as output:
+                    os.fchmod(output.fileno(), 0o600)
+                    output.write(json.dumps(record, ensure_ascii=False))
                 temporary.replace(directory / "native-run.json")
                 logger.info(
                     "原生HTTP执行结束：执行={}，状态={}，实际结果数={}",

@@ -17,6 +17,10 @@
   <a-drawer v-model:open="caseOpen" :title="current?.caseName" width="min(100vw,900px)">
     <template v-if="current">
       <a-alert v-if="current.linkedAutomation" type="info" message="该功能用例的结果由关联自动化批次更新。" />
+      <a-spin v-if="nativeLoading" />
+      <a-alert v-if="nativeError" type="error" :message="nativeError" />
+      <NativeHttpReport v-if="nativeReport && (nativeReport.available || nativeReport.native)" :report="nativeReport" />
+      <template v-else-if="!nativeLoading">
       <h4>前置条件</h4><CaseRichText :model-value="current.snapshot?.precondition || '无'" readonly />
       <template v-if="current.snapshot?.case_edit_type === 'TEXT'"><h4>文本描述</h4><CaseRichText :model-value="current.snapshot?.text_description || '无'" readonly /><h4>预期结果</h4><CaseRichText :model-value="current.snapshot?.expected_result || '无'" readonly /></template>
       <a-table v-else :data-source="stepRows" :columns="stepColumns" row-key="index" :pagination="false" size="small" :scroll="{x:700}">
@@ -31,6 +35,7 @@
       <h4>备注</h4><CaseRichText :model-value="current.snapshot?.description || '无'" readonly />
       <a-space style="margin:16px 0"><span>整体结果</span><a-select v-model:value="manual.result" :disabled="!canFill(current)" :options="resultOptions" style="width:130px" /><a-button v-if="canFill(current)" type="primary" @click="saveResult">保存步骤和结果</a-button></a-space>
       <a-textarea v-model:value="manual.notes" :disabled="!canFill(current)" placeholder="实际结果与说明" :rows="3" />
+      </template>
       <a-divider>证据与缺陷</a-divider>
       <a-space wrap><a-upload :before-upload="upload" :show-upload-list="false"><a-button>上传附件（≤5MB）</a-button></a-upload><a-input v-model:value="defectTitle" placeholder="新缺陷标题" style="width:230px" /><a-button @click="createDefect">创建缺陷</a-button></a-space>
       <p v-for="attachment in collab.attachments" :key="attachment.id"><a @click="downloadAttachment(attachment)">{{attachment.name}}</a></p>
@@ -49,6 +54,8 @@
 import {ref,reactive,computed,onMounted,watch} from 'vue'
 import {message} from 'ant-design-vue'
 import type {TestCase} from '@/types'
+import NativeHttpReport from '@/components/Report/NativeHttpReport.vue'
+import {nativeHttpReportApi,type NativeHttpReport as NativeReport} from '@/api/nativeHttpReport'
 import CaseRichText from '@/components/TestCase/CaseRichText.vue'
 import CaseMindMap from '@/components/TestCase/CaseMindMap.vue'
 import {planCollaborationApi,downloadPlanFile,type ReportRun,type ReportCase,type StepResult} from '@/api/planCollaboration'
@@ -78,7 +85,20 @@ const stepColumns=[{title:'#',key:'index',width:40},{title:'步骤',dataIndex:'a
 const canFill=(row:ReportCase)=>!row.executionId && !row.linkedAutomation && ['queued','running'].includes(run.value?.status||'')
 const association=()=>current.value?.associationId||current.value?.caseId||''
 async function reloadCollab(){Object.assign(collab,await planCollaborationApi.collaboration(props.runId,association()));defects.value=await caseFeaturesApi.issues(props.projectId,{kind:'defect'})}
-async function openCase(row:ReportCase){current.value=row;manual.result=row.result==='pending'?'passed':row.result;manual.notes=row.notes||'';stepRows.value=(row.snapshot?.case_edit_type==='TEXT'?[]:row.snapshot?.steps||[]).map((step,index)=>({index,action:step.action||'',expected:step.expected||'',result:'pending',actual:'',notes:'',defectIds:[],attachments:[],...(row.stepResults||[]).find(s=>s.index===index)}));caseOpen.value=true;try{await reloadCollab()}catch(error){console.error('读取计划执行协作失败',error);message.error('读取执行协作失败')}}
+const nativeReport=ref<NativeReport>(),nativeLoading=ref(false),nativeError=ref('')
+let detailSequence=0
+async function openCase(row:ReportCase){
+ const sequence=++detailSequence
+ current.value=row;nativeReport.value=undefined;nativeError.value=''
+ manual.result=row.result==='pending'?'passed':row.result;manual.notes=row.notes||''
+ stepRows.value=(row.snapshot?.case_edit_type==='TEXT'?[]:row.snapshot?.steps||[]).map((step,index)=>({index,action:step.action||'',expected:step.expected||'',result:'pending',actual:'',notes:'',defectIds:[],attachments:[],...(row.stepResults||[]).find(s=>s.index===index)}))
+ caseOpen.value=true
+ nativeLoading.value=!!row.executionId && ['api','scenario'].includes(row.category||'')
+ const detail=nativeLoading.value?nativeHttpReportApi.detail(props.runId,row.executionId!,row.caseId):Promise.resolve(undefined)
+ try{const value=await detail;if(sequence===detailSequence)nativeReport.value=value}catch(exception){console.error('读取单条HTTP报告失败',exception);if(sequence===detailSequence)nativeError.value='读取HTTP执行详情失败，请重试'}finally{if(sequence===detailSequence)nativeLoading.value=false}
+ try{await reloadCollab()}catch(exception){console.error('读取计划执行协作失败',exception);message.error('读取执行协作失败')}
+}
+
 async function saveResult(){try{await planCollaborationApi.result(props.runId,association(),{...manual,stepResults:stepRows.value.map(({action,expected,...step})=>step)});message.success('执行结果已保存');caseOpen.value=false;await load();emit('changed')}catch(error){console.error('保存步骤执行结果失败',error);message.error('保存失败，请核对步骤结果')}}
 async function upload(file:File){if(file.size>5*1024*1024){message.error('附件超过5MB');return false}try{const encoded=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(file)});await planCollaborationApi.attachment(props.runId,association(),{name:file.name,mimeType:file.type,contentBase64:encoded});await reloadCollab();message.success('附件已保存，可关联到步骤')}catch(error){console.error('上传计划附件失败',error);message.error('上传失败')}return false}
 async function downloadAttachment(file:{id:string;name:string}){try{await downloadPlanFile(`attachments/${file.id}`,file.name)}catch(error){console.error('下载计划附件失败',error);message.error('下载失败')}}
@@ -88,6 +108,6 @@ const shareOpen=ref(false),expiresHours=ref(24),shareUrl=ref(''),shares=ref<{id:
 async function loadShares(){try{shares.value=await planCollaborationApi.shares(props.runId)}catch(error){console.error('读取报告分享失败',error);message.error('读取分享失败')}}
 async function createShare(){try{const result=await planCollaborationApi.share(props.runId,expiresHours.value);shareUrl.value=new URL(result.path,window.location.origin).href;await loadShares()}catch(error){console.error('创建报告分享失败',error);message.error('创建分享失败')}}
 async function revoke(id:string){try{await planCollaborationApi.revoke(id);await loadShares()}catch(error){console.error('撤销报告分享失败',error);message.error('撤销失败')}}
-onMounted(load);watch(()=>props.runId,load)
+onMounted(load);watch(()=>props.runId,()=>{++detailSequence;caseOpen.value=false;nativeReport.value=undefined;nativeLoading.value=false;void load()})
 </script>
 <style scoped>.stats{margin:20px 0}.result-filters :deep(.ant-radio-group){white-space:nowrap}.result-filters :deep(.ant-space-item){flex-shrink:0}</style>

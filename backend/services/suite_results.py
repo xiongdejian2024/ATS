@@ -46,6 +46,10 @@ def handle_run_result(db, environment_id, message):
         "cancelled",
     ]:
         return True  # Already persisted, or cancelled before this delayed message.
+    native_detail = None
+    if message.get("native_detail") is not None:
+        from services.native_http_report import validate_detail
+        native_detail = validate_detail(message["native_detail"], suite, task, message["case_id"], db)
     row = TestSuiteExecution(
         id=identifier,
         suite_id=suite.id,
@@ -55,6 +59,7 @@ def handle_run_result(db, environment_id, message):
         result=message["result"],
         duration=message.get("duration"),
         log_output=message.get("log_output"),
+        native_detail=native_detail,
         error_message=message.get("error_message"),
         executed_at=beijing_now(),
     )

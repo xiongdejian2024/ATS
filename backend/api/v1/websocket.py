@@ -260,10 +260,10 @@ async def websocket_endpoint(
                     # 接收消息（超时30秒）
                     logger.debug(f"[WebSocket] 等待接收消息...")
                     data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
-                    logger.debug(f"[WebSocket] 收到原始数据: {data[:200] if len(data) > 200 else data}")
+                    logger.debug("[WebSocket] 收到消息字节数={}", len(data))
                     message = json.loads(data)
                     message_type = message.get('type', 'unknown')
-                    logger.info(f"[WebSocket] 收到消息: type={message_type}, message={message}")
+                    logger.info("[WebSocket] 收到消息：类型={}，执行={}，用例={}", message_type, message.get("execution_id"), message.get("case_id"))
                     
                     # 特别记录test_suite_result消息
                     if message_type == "test_suite_result":
@@ -833,4 +833,3 @@ async def handle_test_suite_completed(db: Session, environment_id: str, message:
         logger.exception(f"[WebSocket] 处理测试套完成消息时出错: {e}")
         db.rollback()
         return False
-

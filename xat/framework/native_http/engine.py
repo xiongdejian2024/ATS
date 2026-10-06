@@ -11,15 +11,25 @@ logger = logging.getLogger("XAT原生HTTP")
 from .models import FrozenCase
 from .legacy_assertions import equal, check
 from .response_assertions import evaluate
+from .result_details import exchange, bounded_detail, request_detail
 from .parameters import arguments as request_arguments, request_url
 
 
 async def execute(case: FrozenCase, *, transport=None):
     started = time.monotonic()
     rows = []
-    async with httpx.AsyncClient(transport=transport, trust_env=False) as client:
+    details = []
+
+    async def capture_request(value):
+        await value.aread()
+        actual["request"] = request_detail(value)
+
+    async with httpx.AsyncClient(
+        transport=transport, trust_env=False, event_hooks={"request": [capture_request]}
+    ) as client:
         for index, request in enumerate(case.requests):
             attempts = []
+            detail_attempts = []
             step_started = time.monotonic()
             for attempt in range(case.retryTimes + 1):
                 if attempt:
@@ -49,6 +59,7 @@ async def execute(case: FrozenCase, *, transport=None):
                     statusCode=None,
                     assertions=[],
                 )
+                actual = dict(attempt=attempt + 1, assertions=[], console=[])
                 try:
                     arguments = request_arguments(request)
                     if request.bodyType == "json":
@@ -69,6 +80,9 @@ async def execute(case: FrozenCase, *, transport=None):
                         index + 1,
                         request.method,
                     )
+                    actual["console"].append(
+                        f"原生HTTP请求开始：步骤={index + 1}，方法={request.method}，尝试={attempt + 1}"
+                    )
                     response = await asyncio.wait_for(
                         client.request(
                             request.method, request_url(request), **arguments
@@ -82,8 +96,11 @@ async def execute(case: FrozenCase, *, transport=None):
                     )
                     row["statusCode"] = response.status_code
                     elapsed_ms = (time.monotonic() - before) * 1000
+                    actual.update(exchange(response, elapsed_ms))
+                    actual["redirects"] = [exchange(r, None) for r in response.history]
                     row["assertions"] = [
-                        check(assertion, response) for assertion in request.assertions
+                        check(assertion, response, actual["assertions"])
+                        for assertion in request.assertions
                     ]
                     row["assertions"].extend(
                         await asyncio.to_thread(
@@ -91,6 +108,7 @@ async def execute(case: FrozenCase, *, transport=None):
                             request.responseAssertions,
                             response,
                             elapsed_ms,
+                            actual["assertions"],
                         )
                     )
                     # 未指定有效断言时采用真实HTTP状态；显式断言沿已有预期错误状态语义。
@@ -116,6 +134,17 @@ async def execute(case: FrozenCase, *, transport=None):
                     )
                     row["error"] = "请求执行失败：" + type(exception).__name__
                 row["duration"] = round(time.monotonic() - before, 6)
+                actual.update(
+                    result=row["result"],
+                    duration=row["duration"],
+                    error=row.get("error"),
+                )
+                actual["console"].append(
+                    f"原生HTTP步骤结束：结果={row['result']}，HTTP状态={row['statusCode']}，耗时={row['duration']}s"
+                )
+                if row.get("error"):
+                    actual["console"].append(row["error"])
+                detail_attempts.append(actual)
                 logger.info(
                     "原生HTTP步骤结束：用例=%s，步骤=%s，结果=%s，HTTP状态=%s",
                     case.id,
@@ -130,6 +159,17 @@ async def execute(case: FrozenCase, *, transport=None):
                 row["attempts"] = attempts
                 row["duration"] = round(time.monotonic() - step_started, 6)
             rows.append(row)
+            details.append(
+                dict(
+                    index=index,
+                    name=request.name,
+                    method=request.method,
+                    result=row["result"],
+                    duration=row["duration"],
+                    attempts=detail_attempts,
+                    error=row.get("error"),
+                )
+            )
             if row["result"] != "passed" and case.stopOnFailure:
                 rows.extend(
                     dict(
@@ -140,6 +180,18 @@ async def execute(case: FrozenCase, *, transport=None):
                         duration=0,
                         statusCode=None,
                         assertions=[],
+                        error="前序步骤失败，场景停止",
+                    )
+                    for i, r in enumerate(case.requests[index + 1 :], index + 1)
+                )
+                details.extend(
+                    dict(
+                        index=i,
+                        name=r.name,
+                        method=r.method,
+                        result="skipped",
+                        duration=0,
+                        attempts=[],
                         error="前序步骤失败，场景停止",
                     )
                     for i, r in enumerate(case.requests[index + 1 :], index + 1)
@@ -157,4 +209,5 @@ async def execute(case: FrozenCase, *, transport=None):
         steps=rows,
         error=None if result == "passed" else "原生HTTP请求或断言未通过",
         log=json.dumps(dict(步骤=rows), ensure_ascii=False),
+        native_detail=bounded_detail(details),
     )

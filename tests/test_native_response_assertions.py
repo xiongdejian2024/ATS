@@ -264,9 +264,9 @@ async def test_response_time_excludes_legacy_assertion_evaluation(monkeypatch):
     original = engine.check
     monkeypatch.setattr(engine, "time", SimpleNamespace(monotonic=lambda: clock[0]))
 
-    def legacy(assertion, response):
+    def legacy(assertion, response, detail_sink=None):
         clock[0] = 1.0
-        return original(assertion, response)
+        return original(assertion, response, detail_sink)
 
     monkeypatch.setattr(engine, "check", legacy)
     request = FrozenRequest(

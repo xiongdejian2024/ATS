@@ -46,6 +46,7 @@ class TestSuiteExecution(Base):
     result = Column(String(50), nullable=False, index=True, comment="执行结果: passed, failed, error, skipped")
     duration = Column(String(20), comment="执行耗时")
     log_output = Column(Text, comment="执行日志输出")
+    native_detail = Column(JSON, nullable=True, comment="原生HTTP实际请求、响应和断言详情")
     error_message = Column(Text, comment="错误信息")
     executed_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -78,4 +79,3 @@ class TestSuiteLog(Base):
     
     def __repr__(self):
         return f"<TestSuiteLog(id={self.id}, suite_id={self.suite_id})>"
-

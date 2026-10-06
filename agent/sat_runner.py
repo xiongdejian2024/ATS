@@ -63,7 +63,14 @@ def build_invocation(config, options, directory, selection):
             "PYTHONUNBUFFERED": "1",
             "XAT_ALLOW_HARDWARE": "true" if settings.allow_hardware else "false",
             "XAT_PROJECT_ROOT": str(settings.sat_root),
-            "PYTHONPATH": os.pathsep.join([str(xat_root), str(xat_root / "packages/ecu/src"), str(xat_root / "cases/src"), str(ats_root)]),
+            "PYTHONPATH": os.pathsep.join(
+                [
+                    str(xat_root),
+                    str(xat_root / "packages/ecu/src"),
+                    str(xat_root / "cases/src"),
+                    str(ats_root),
+                ]
+            ),
         }
     )
     # 明确传入本次选择和输出目录，不继承别的任务的选择文件。
@@ -140,7 +147,11 @@ class SATRunner:
         payload["event_id"] = key
         path = self.outbox / (key + ".json")
         temporary = path.with_suffix(".tmp")
-        temporary.write_text(json.dumps(payload), encoding="utf-8")
+        with open(
+            temporary, "w", encoding="utf-8", opener=lambda path, flags: os.open(path, flags, 0o600)
+        ) as output:
+            os.fchmod(output.fileno(), 0o600)
+            output.write(json.dumps(payload))
         os.replace(temporary, path)
         await self.flush()
 
@@ -193,8 +204,7 @@ class SATRunner:
         tasks = [
             task
             for key, task in self.runs.items()
-            if self.suites[key] == suite_id
-            and (execution_id is None or key == execution_id)
+            if self.suites[key] == suite_id and (execution_id is None or key == execution_id)
         ]
         for task in tasks:
             task.cancel()
@@ -215,18 +225,12 @@ class SATRunner:
         suite_id, execution_id = message["suite_id"], message["execution_id"]
         process, rows, error, status = None, [], None, "failed"
         started = time.monotonic()
-        directory = (
-            self.agent.work_dir / "suites" / suite_id / "executions" / execution_id
-        )
+        directory = self.agent.work_dir / "suites" / suite_id / "executions" / execution_id
         directory.mkdir(parents=True, exist_ok=True)
         try:
             options = parse_command(message["execution_command"])
             ids, codes = message["case_ids"], message.get("case_codes", [])
-            if (
-                len(ids) != len(codes)
-                or len(set(codes)) != len(codes)
-                or not all(codes)
-            ):
+            if len(ids) != len(codes) or len(set(codes)) != len(codes) or not all(codes):
                 raise ValueError("每个所选 ATS 用例需要唯一的 XAT 用例编号")
             timeout = (
                 options.timeout

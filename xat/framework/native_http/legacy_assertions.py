@@ -3,6 +3,8 @@
 import logging
 import httpx
 from .models import Assertion
+from .result_details import assertion_detail
+import json
 
 logger = logging.getLogger("XAT原生HTTP")
 
@@ -26,7 +28,7 @@ def equal(actual, expected):
     return actual == expected
 
 
-def check(assertion: Assertion, response: httpx.Response):
+def check(assertion: Assertion, response: httpx.Response, detail_sink=None):
     present = True
     if assertion.source == "status":
         actual = response.status_code
@@ -57,12 +59,14 @@ def check(assertion: Assertion, response: httpx.Response):
                     break
         except ValueError:
             logger.exception("响应JSON解析失败，JSON断言未通过")
-            return dict(
+            row = dict(
                 source=assertion.source,
                 operator=assertion.operator,
                 passed=False,
                 description="响应不是有效JSON",
             )
+            capture(assertion, row, None, False, detail_sink)
+            return row
     op, expected = assertion.operator, assertion.expected
     if op == "exists":
         success = present
@@ -89,9 +93,35 @@ def check(assertion: Assertion, response: httpx.Response):
             )
         )
     # 不把完整响应、头部或用户凭据写入执行日志。
-    return dict(
+    row = dict(
         source=assertion.source,
         operator=op,
         passed=success,
         description="断言通过" if success else "断言未通过",
+    )
+
+    capture(assertion, row, actual, present, detail_sink)
+    return row
+
+
+def capture(assertion, row, actual, present, detail_sink):
+    if detail_sink is None:
+        return
+    name = assertion.name or (
+        ".".join(map(str, assertion.path)) if assertion.path else assertion.source
+    )
+    serialize = lambda value: (
+        value
+        if isinstance(value, str)
+        else json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    )
+    detail_sink.append(
+        assertion_detail(
+            row,
+            actual=serialize(actual),
+            expected=serialize(assertion.expected),
+            name=name,
+            expression=name,
+            present=present,
+        )
     )
