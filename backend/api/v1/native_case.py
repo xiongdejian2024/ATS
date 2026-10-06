@@ -1,5 +1,5 @@
 """项目原生配置接口，沿用项目权限和事务日志。"""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from api.deps import get_current_user
@@ -8,6 +8,26 @@ from models.native_case import ApiDefinition, ApiTestEnvironment
 from schemas.native_case import DefinitionInput, EnvironmentInput, ConfigInput
 from services import native_case as service
 router = APIRouter(prefix='/projects/{project_id}/native-cases', tags=['API与场景配置'])
+
+from typing import Literal
+from framework.native_http.schema_models import JsonBodySchema
+
+
+class SchemaConversionInput(JsonBodySchema):
+    action: Literal['preview', 'generate'] = 'preview'
+
+
+@router.post('/json-schema/convert')
+def schema_convert(project_id: str, body: SchemaConversionInput, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from core.project_access import require_project_access
+    from services.native_json_schema import convert_schema
+    from core.logger import logger
+    require_project_access(db, user, project_id)
+    try:
+        return result({'jsonValue': convert_schema(body.jsonSchema, preview=body.action == 'preview')})
+    except ValueError as exception:
+        logger.exception('项目JSON Schema转换失败 project_id={}', project_id)
+        raise HTTPException(422, str(exception)) from exception
 
 @router.get('/catalog')
 def catalog(project_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):

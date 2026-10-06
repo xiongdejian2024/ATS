@@ -56,6 +56,14 @@
             :project-id="projectId || ''"
             :disabled="disabled"
           />
+          <NativeJsonBodyEditor
+            v-else-if="bodyType === 'json'"
+            v-model="body"
+            v-model:schema="jsonSchema"
+            v-model:schema-mode="jsonSchemaMode"
+            :project-id="projectId || ''"
+            :disabled="disabled"
+          />
           <a-textarea
             v-else-if="bodyType !== 'none'"
             v-model:value="body"
@@ -228,6 +236,7 @@
 <script setup lang="ts">
 import NativeRequestParamTable from "./NativeRequestParamTable.vue";
 import NativeBinaryBodyEditor from "./NativeBinaryBodyEditor.vue";
+import NativeJsonBodyEditor from "./NativeJsonBodyEditor.vue";
 import NativeResponseAssertionEditor from "./NativeResponseAssertionEditor.vue";
 import { paramCount } from "./nativeRequestParams";
 const tabTitle = (title: string, raw: string) => {
@@ -254,6 +263,8 @@ const {
   headers,
   bodyType,
   body,
+  jsonSchemaMode,
+  jsonSchema,
   assertions,
   responseAssertions,
   error,

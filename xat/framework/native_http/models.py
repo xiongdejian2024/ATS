@@ -3,6 +3,7 @@
 from typing import Literal
 from .response_assertion_models import ResponseAssertion
 from .body_models import FileReference, BinaryBody, FrozenFile
+from .schema_models import JsonBodySchema
 from urllib.parse import urlsplit
 from pydantic import (
     BaseModel,
@@ -102,6 +103,7 @@ class RequestSpec(NativeModel):
     )
     multipartParams: list[MultipartParam] = Field(default_factory=list, max_length=200)
     binaryBody: BinaryBody = Field(default_factory=BinaryBody)
+    jsonBody: JsonBodySchema | None = None
     bodyDrafts: dict[
         Literal["none", "multipart", "form", "json", "xml", "text", "binary"], str
     ] = Field(default_factory=dict)

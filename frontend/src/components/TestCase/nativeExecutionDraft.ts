@@ -2,6 +2,7 @@ import { ref, watch } from "vue";
 import { readParams, validParams } from "./nativeRequestParams";
 import { readResponseAssertions } from "./nativeResponseAssertions";
 import { requestMethods } from "@/components/TestPlan/planCandidateBasic";
+import { emptySchema, readJsonSchema } from "./nativeJsonSchema";
 export interface ExecutionEditorProps {
   modelValue: string;
   category: string;
@@ -30,6 +31,8 @@ export function useNativeExecutionDraft(
     responseAssertions = ref("[]"),
     error = ref("");
   const steps = ref<{ apiCaseId: string; enabled: boolean }[]>([]);
+  const jsonSchemaMode = ref(false),
+    jsonSchema = ref(JSON.stringify(emptySchema()));
   const rest = ref("[]"),
     authType = ref("NONE"),
     basicUser = ref(""),
@@ -113,6 +116,10 @@ export function useNativeExecutionDraft(
         bodyType.value = data?.bodyType ?? "none";
         previousBodyType = bodyType.value;
         bodyDrafts = { ...(data?.bodyDrafts || {}) };
+        jsonSchemaMode.value = data?.jsonBody?.enableJsonSchema ?? false;
+        jsonSchema.value = JSON.stringify(
+          data?.jsonBody?.jsonSchema ?? emptySchema(),
+        );
         body.value =
           bodyType.value === "text" || bodyType.value === "xml"
             ? (data?.body ?? "")
@@ -179,6 +186,8 @@ export function useNativeExecutionDraft(
         bodyType.value,
         body.value,
         bodyDrafts,
+        jsonSchemaMode.value,
+        jsonSchema.value,
         assertions.value,
         responseAssertions.value,
         stop.value,
@@ -229,6 +238,11 @@ export function useNativeExecutionDraft(
           responseAssertions: readResponseAssertions(responseAssertions.value),
           bodyDrafts: { ...bodyDrafts },
         };
+        if (bodyType.value === "json" || root.request.jsonBody)
+          root.request.jsonBody = {
+            enableJsonSchema: jsonSchemaMode.value,
+            jsonSchema: readJsonSchema(jsonSchema.value),
+          };
         if (bodyType.value === "multipart")
           root.request.multipartParams = validParams(
             readParams(body.value),
@@ -310,6 +324,8 @@ export function useNativeExecutionDraft(
       digestPassword,
       connectTimeout,
       responseTimeout,
+      jsonSchemaMode,
+      jsonSchema,
     ],
     publish,
     { deep: true, flush: "sync" },
@@ -348,6 +364,8 @@ export function useNativeExecutionDraft(
     headers,
     bodyType,
     body,
+    jsonSchemaMode,
+    jsonSchema,
     assertions,
     responseAssertions,
     error,

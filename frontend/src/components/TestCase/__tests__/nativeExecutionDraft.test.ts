@@ -25,6 +25,50 @@ function setup(category = "api", parameters: Record<string, unknown> = {}) {
   return { props, state, errors, drafts };
 }
 describe("原生执行草稿与实际配置范围", () => {
+  it("Schema与Json草稿及模式独立保存，切换正文和重开不会改写实际正文", () => {
+    const { props, state } = setup("api", {
+      request: { bodyType: "json", body: { send: "原正文" } },
+    });
+    state.jsonSchema.value = JSON.stringify({
+      type: "object",
+      properties: { other: { type: "integer", defaultValue: 7 } },
+    });
+    state.jsonSchemaMode.value = true;
+    expect(JSON.parse(props.modelValue).request.body).toEqual({
+      send: "原正文",
+    });
+    state.changeBodyType("xml");
+    state.body.value = "<keep/>";
+    state.changeBodyType("json");
+    expect(state.jsonSchemaMode.value).toBe(true);
+    expect(JSON.parse(state.body.value)).toEqual({ send: "原正文" });
+    const saved = props.modelValue;
+    props.modelValue = "{}";
+    props.modelValue = saved;
+    expect(
+      JSON.parse(state.jsonSchema.value).properties.other.defaultValue,
+    ).toBe(7);
+    state.jsonSchemaMode.value = false;
+    state.body.value = '{"other":7}';
+    expect(JSON.parse(props.modelValue).request.body).toEqual({ other: 7 });
+    expect(
+      JSON.parse(state.jsonSchema.value).properties.other.defaultValue,
+    ).toBe(7);
+  });
+  it("非法Schema只保留草稿，禁止保存时覆盖已有有效配置", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { props, state, errors, drafts } = setup("api", {
+      request: { bodyType: "json", body: { keep: 1 } },
+    });
+    const original = props.modelValue;
+    state.jsonSchema.value = "{";
+    expect(props.modelValue).toBe(original);
+    expect(errors.at(-1)).toBeTruthy();
+    expect(drafts.at(-1)).toContain("{");
+    state.jsonSchema.value = '{"type":"array","items":[]}';
+    expect(errors.at(-1)).toBe("");
+    expect(JSON.parse(props.modelValue).request.body).toEqual({ keep: 1 });
+  });
   it("重开恢复当前JSON草稿排版，过期缓存不能覆盖实际字段", () => {
     const raw = '{ "old" : "原值" }';
     const { props, state } = setup("api", {

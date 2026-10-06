@@ -118,7 +118,7 @@ def _request(db, case, config, override_environment):
     from services.native_request_files import frozen_files
 
     return FrozenRequest(
-        **request.model_dump(exclude={"bodyDrafts"}),
+        **request.model_dump(exclude={"bodyDrafts", "jsonBody"}),
         files=frozen_files(db, case.project_id, request),
         name=case.name,
         url=url,
