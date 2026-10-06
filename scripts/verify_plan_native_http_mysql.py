@@ -17,7 +17,7 @@ logging.basicConfig(
 log = logging.getLogger("原生计划实例范围数据库验收")
 
 
-def main():
+def main(verify_request=None):
     import pymysql
     from sqlalchemy import create_engine
     from sqlalchemy.engine import URL
@@ -177,6 +177,10 @@ def main():
                 assert not future.done();holder.commit()
             future.result(timeout=15)
         log.info('原生请求当前读通过：旧预览及旧配置读取后等待项目锁，实际冻结新路径、新请求环境和新请求头；无HTTP发送')
+        if verify_request:
+            with Sessions() as db:
+                verify_request(db)
+                db.rollback()
         with Sessions() as db:
             db.query(NativeCaseConfig).delete();db.query(ApiDefinition).delete();db.query(ApiTestEnvironment).delete();db.commit()
         shared=request()

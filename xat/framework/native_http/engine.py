@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger("XAT原生HTTP")
 from .models import Assertion, FrozenCase
+from .parameters import arguments as request_arguments, request_url
 
 
 def equal(actual, expected):
@@ -137,21 +138,14 @@ async def execute(case: FrozenCase, *, transport=None):
                     assertions=[],
                 )
                 try:
-                    arguments = dict(
-                        headers=request.headers,
-                        params=httpx.QueryParams(httpx.URL(request.url).query).merge(
-                            request.query
-                        ),
-                        timeout=request.timeoutMs / 1000,
-                        follow_redirects=request.followRedirects,
-                    )
+                    arguments = request_arguments(request)
                     if request.bodyType == "json":
                         arguments["json"] = deepcopy(request.body)
                     elif request.bodyType == "text":
                         if not isinstance(request.body, str):
                             raise ValueError("文本请求体须为字符串")
                         arguments["content"] = request.body
-                    elif request.bodyType == "form":
+                    elif request.bodyType == "form" and request.formParams is None:
                         if not isinstance(request.body, dict) or any(
                             not isinstance(v, str) for v in request.body.values()
                         ):
@@ -164,8 +158,15 @@ async def execute(case: FrozenCase, *, transport=None):
                         request.method,
                     )
                     response = await asyncio.wait_for(
-                        client.request(request.method, request.url, **arguments),
-                        timeout=request.timeoutMs / 1000,
+                        client.request(
+                            request.method, request_url(request), **arguments
+                        ),
+                        timeout=(
+                            request.timeoutMs / 1000
+                            if request.connectTimeoutMs is None
+                            and request.responseTimeoutMs is None
+                            else None
+                        ),
                     )
                     row["statusCode"] = response.status_code
                     row["assertions"] = [

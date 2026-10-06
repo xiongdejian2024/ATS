@@ -18,55 +18,132 @@
             aria-label="HTTP请求方法"
             style="width: 130px"
         /></a-form-item>
-        <a-form-item label="超时（毫秒）"
-          ><a-input-number
-            v-model:value="timeout"
-            :min="1"
-            :max="300000"
-            :precision="0"
-            :disabled="disabled"
-            aria-label="HTTP请求超时"
-        /></a-form-item>
-        <a-form-item label="跟随重定向"
-          ><a-switch
-            v-model:checked="redirects"
-            :disabled="disabled"
-            aria-label="跟随重定向"
-        /></a-form-item>
       </a-space>
       <a-tabs>
-        <a-tab-pane key="query" tab="Query参数"
-          ><a-textarea
-            v-model:value="query"
+        <a-tab-pane key="headers" :tab="tabTitle('Headers', headers)"
+          ><NativeRequestParamTable
+            v-model="headers"
+            title="Headers"
             :disabled="disabled"
-            :rows="4"
-            aria-label="HTTP查询参数JSON"
         /></a-tab-pane>
-        <a-tab-pane key="headers" tab="Headers"
-          ><a-textarea
-            v-model:value="headers"
-            :disabled="disabled"
-            :rows="4"
-            aria-label="HTTP请求头JSON"
-        /></a-tab-pane>
-        <a-tab-pane key="body" tab="Body">
-          <a-select
+        <a-tab-pane key="body" :tab="bodyType === 'none' ? 'Body' : 'Body (1)'">
+          <a-radio-group
             v-model:value="bodyType"
             :disabled="disabled"
             :options="bodyTypes"
             aria-label="HTTP请求体类型"
-            style="width: 160px"
+            @change="changeBodyType($event.target.value)"
+          />
+          <NativeRequestParamTable
+            v-if="bodyType === 'form'"
+            v-model="body"
+            title="x-www-form-urlencoded"
+            typed
+            :disabled="disabled"
           />
           <a-textarea
-            v-if="bodyType !== 'none'"
+            v-else-if="bodyType !== 'none'"
             v-model:value="body"
             :disabled="disabled"
-            :rows="5"
+            :rows="8"
             :aria-label="
               bodyType === 'text' ? 'HTTP文本请求体' : 'HTTP请求体JSON'
             "
           />
+          <a-empty v-else description="该请求没有请求体" />
         </a-tab-pane>
+        <a-tab-pane key="query" :tab="tabTitle('Query', query)"
+          ><NativeRequestParamTable
+            v-model="query"
+            title="Query"
+            typed
+            :disabled="disabled"
+        /></a-tab-pane>
+        <a-tab-pane key="rest" :tab="tabTitle('REST', rest)"
+          ><NativeRequestParamTable
+            v-model="rest"
+            title="REST"
+            typed
+            :disabled="disabled"
+        /></a-tab-pane>
+        <a-tab-pane
+          key="auth"
+          :tab="authType === 'NONE' ? '认证配置' : '认证配置 (1)'"
+        >
+          <div class="request-auth">
+            <p>认证方式</p>
+            <a-radio-group
+              v-model:value="authType"
+              :disabled="disabled"
+              aria-label="HTTP认证方式"
+              ><a-radio value="NONE">No Auth</a-radio
+              ><a-radio value="BASIC">Basic Auth</a-radio
+              ><a-radio value="DIGEST">Digest Auth</a-radio></a-radio-group
+            >
+            <template v-if="authType === 'BASIC'"
+              ><a-form-item label="用户名"
+                ><a-input
+                  v-model:value="basicUser"
+                  :maxlength="255"
+                  :disabled="disabled"
+                  aria-label="Basic认证用户名" /></a-form-item
+              ><a-form-item label="密码"
+                ><a-input-password
+                  v-model:value="basicPassword"
+                  :maxlength="20000"
+                  autocomplete="new-password"
+                  :disabled="disabled"
+                  aria-label="Basic认证密码" /></a-form-item
+            ></template>
+            <template v-else-if="authType === 'DIGEST'"
+              ><a-form-item label="用户名"
+                ><a-input
+                  v-model:value="digestUser"
+                  :maxlength="255"
+                  :disabled="disabled"
+                  aria-label="Digest认证用户名" /></a-form-item
+              ><a-form-item label="密码"
+                ><a-input-password
+                  v-model:value="digestPassword"
+                  :maxlength="20000"
+                  autocomplete="new-password"
+                  :disabled="disabled"
+                  aria-label="Digest认证密码" /></a-form-item
+            ></template>
+          </div>
+        </a-tab-pane>
+        <a-tab-pane key="setting" tab="其他设置"
+          ><a-space wrap>
+            <a-form-item label="连接超时（毫秒）"
+              ><a-input-number
+                v-model:value="connectTimeout"
+                :min="0"
+                :max="600000"
+                :precision="0"
+                :placeholder="String(timeout)"
+                :disabled="disabled"
+                aria-label="HTTP连接超时"
+            /></a-form-item>
+            <a-form-item label="响应超时（毫秒）"
+              ><a-input-number
+                v-model:value="responseTimeout"
+                :min="0"
+                :max="600000"
+                :precision="0"
+                :placeholder="String(timeout)"
+                :disabled="disabled"
+                aria-label="HTTP响应超时"
+            /></a-form-item>
+            <a-form-item label="跟随重定向"
+              ><a-checkbox
+                v-model:checked="redirects"
+                :disabled="disabled"
+                aria-label="跟随重定向"
+                >跟随</a-checkbox
+              ></a-form-item
+            >
+          </a-space></a-tab-pane
+        >
         <a-tab-pane key="assertions" tab="断言"
           ><a-textarea
             v-model:value="assertions"
@@ -126,6 +203,12 @@
   </div>
 </template>
 <script setup lang="ts">
+import NativeRequestParamTable from "./NativeRequestParamTable.vue";
+import { paramCount } from "./nativeRequestParams";
+const tabTitle = (title: string, raw: string) => {
+  const count = paramCount(raw);
+  return count ? `${title} (${count})` : title;
+};
 import {
   useNativeExecutionDraft,
   type ExecutionEditorProps,
@@ -153,6 +236,15 @@ const {
   bodyTypes,
   toggle,
   move,
+  changeBodyType,
+  rest,
+  authType,
+  basicUser,
+  basicPassword,
+  digestUser,
+  digestPassword,
+  connectTimeout,
+  responseTimeout,
 } = useNativeExecutionDraft(props, {
   update: (value) => emit("update:modelValue", value),
   error: (value) => emit("error", value),
@@ -162,6 +254,15 @@ const {
 <style scoped>
 .native-execution-editor {
   margin: 16px 0;
+}
+.request-auth {
+  padding: 16px;
+  border: 1px solid #e5e6eb;
+  border-radius: 4px;
+}
+.request-auth :deep(.ant-form-item) {
+  max-width: 450px;
+  margin-top: 16px;
 }
 .scenario-step {
   display: flex;

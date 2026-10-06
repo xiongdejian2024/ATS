@@ -25,6 +25,65 @@ function setup(category = "api", parameters: Record<string, unknown> = {}) {
   return { props, state, errors, drafts };
 }
 describe("原生执行草稿与实际配置范围", () => {
+  it("参数表、REST及认证可往返；非法名称保留草稿而不覆盖有效配置", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { props, state, errors } = setup("api", {
+      request: {
+        method: "POST",
+        headers: { "X-Old": "keep" },
+        customFuture: "保持未知字段",
+      },
+      outside: "原值",
+    });
+    state.query.value = '[{"key":"q","value":"中文","enable":false}]';
+    state.rest.value = '[{"key":"id","value":"one"}]';
+    state.authType.value = "BASIC";
+    state.basicUser.value = "reader";
+    state.basicPassword.value = "local-only";
+    state.connectTimeout.value = 0;
+    state.responseTimeout.value = 600000;
+    const result = JSON.parse(props.modelValue);
+    expect(result.request).toMatchObject({
+      query: {},
+      queryParams: [{ key: "q", enable: false }],
+      restParams: [{ key: "id", value: "one" }],
+      headers: { "X-Old": "keep" },
+      authConfig: {
+        authType: "BASIC",
+        basicAuth: { userName: "reader", password: "local-only" },
+      },
+      connectTimeoutMs: 0,
+      responseTimeoutMs: 600000,
+      customFuture: "保持未知字段",
+    });
+    const valid = props.modelValue;
+    state.query.value = '[{"key":"","value":"未命名"}]';
+    expect(props.modelValue).toBe(valid);
+    expect(errors.at(-1)).toBeTruthy();
+    state.query.value = "[]";
+    expect(errors.at(-1)).toBe("");
+    state.bodyType.value = "form";
+    state.changeBodyType("form");
+    state.body.value = '[{"key":"field","value":"空格 值","enable":true}]';
+    expect(JSON.parse(props.modelValue).request).toMatchObject({
+      bodyType: "form",
+      body: {},
+      formParams: [{ key: "field", value: "空格 值" }],
+    });
+    props.modelValue = JSON.stringify({
+      ...result,
+      request: {
+        ...result.request,
+        authConfig: {
+          authType: "DIGEST",
+          digestAuth: { userName: "digest-reader", password: "digest-local" },
+        },
+      },
+    });
+    expect(state.authType.value).toBe("DIGEST");
+    expect(state.digestUser.value).toBe("digest-reader");
+    expect(state.basicUser.value).toBe("");
+  });
   it("HTTP请求启用、正文类型及查询参数保留其他配置，关闭执行移除标记", () => {
     const { props, state } = setup("api", { preserved: { key: "原内容" } });
     state.toggle(true);

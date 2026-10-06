@@ -102,16 +102,19 @@ def _request(db, case, config, override_environment):
     request = RequestSpec.model_validate(
         deepcopy((config.parameters or {}).get("request"))
     )
+    from framework.native_http.parameters import path_parameters
+
+    path = path_parameters(definition.path, request.restParams)
     target_id = override_environment or config.environment_id
     target = read(db, ApiTestEnvironment, target_id) if target_id else None
     if target_id and (not target or target.project_id != case.project_id):
         raise ValueError("请求环境不属于接口来源项目或已删除")
     if target:
-        if urlsplit(definition.path).scheme or definition.path.startswith("//"):
+        if urlsplit(path).scheme or path.startswith("//"):
             raise ValueError("使用请求环境时，接口路径须为相对路径，不能覆盖环境主机")
-        url = urljoin(target.address.rstrip("/") + "/", definition.path)
+        url = urljoin(target.address.rstrip("/") + "/", path)
     else:
-        url = definition.path
+        url = path
     return FrozenRequest(**request.model_dump(), name=case.name, url=url)
 
 

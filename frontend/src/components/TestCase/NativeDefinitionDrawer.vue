@@ -63,12 +63,25 @@
             :token-separators="[',']"
             aria-label="接口定义标签"
         /></a-form-item>
-        <a-form-item label="请求参数结构"
-          ><a-textarea
-            v-model:value="parameters"
-            :rows="8"
-            aria-label="接口定义参数结构"
-        /></a-form-item>
+        <NativeExecutionEditor
+          v-if="['HTTP', 'HTTPS'].includes(protocol)"
+          :key="definition.id"
+          v-model="parameters"
+          category="api"
+          :api-cases="[]"
+          :disabled="saving || loading || !canEdit"
+          @draft="editorDraft = $event"
+          @error="editorError = $event"
+        />
+        <details>
+          <summary>高级配置</summary>
+          <a-form-item label="请求参数结构"
+            ><a-textarea
+              v-model:value="parameters"
+              :rows="8"
+              aria-label="接口定义参数结构"
+          /></a-form-item>
+        </details>
       </a-form>
     </a-spin>
     <template #footer
@@ -78,7 +91,7 @@
           v-if="canEdit"
           type="primary"
           :loading="saving"
-          :disabled="loading || !definition || !dirty"
+          :disabled="loading || !definition || !dirty || !!editorError"
           @click="save"
           >保存</a-button
         ></a-space
@@ -96,6 +109,7 @@ import {
 } from "@/api/nativeCase";
 import type { CaseFolder } from "@/api/planCaseWorkspace";
 import { caseFolderTree } from "@/components/TestPlan/planCaseFolders";
+import NativeExecutionEditor from "./NativeExecutionEditor.vue";
 const props = defineProps<{
   open: boolean;
   projectId: string;
@@ -119,7 +133,9 @@ const name = ref(""),
   state = ref<string>(),
   tags = ref<string[]>([]),
   parameters = ref("{}"),
-  original = ref("");
+  original = ref(""),
+  editorDraft = ref(""),
+  editorError = ref("");
 const snapshot = () =>
   JSON.stringify([
     name.value,
@@ -129,6 +145,7 @@ const snapshot = () =>
     state.value,
     tags.value,
     parameters.value,
+    editorDraft.value,
   ]);
 const dirty = computed(
   () => !!definition.value && snapshot() !== original.value,
@@ -152,6 +169,7 @@ async function load(preserve = false) {
       state.value = row.state || undefined;
       tags.value = [...(row.tags || [])];
       parameters.value = JSON.stringify(row.parameters, null, 2);
+      editorDraft.value = editorError.value = "";
       original.value = snapshot();
     }
     error.value = "";
@@ -165,7 +183,13 @@ async function load(preserve = false) {
   }
 }
 async function save() {
-  if (!definition.value || !canEdit.value || loading.value || saving.value)
+  if (
+    !definition.value ||
+    !canEdit.value ||
+    loading.value ||
+    saving.value ||
+    editorError.value
+  )
     return;
   saving.value = true;
   emit("saving", true);

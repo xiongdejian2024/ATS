@@ -70,12 +70,15 @@
                 : "无变更"
           }}</a-descriptions-item></a-descriptions
         >
-        <a-form-item label="请求参数"
-          ><a-textarea
-            v-model:value="parametersText"
-            aria-label="用例请求参数"
-            :rows="5"
-        /></a-form-item>
+        <details>
+          <summary>高级配置</summary>
+          <a-form-item label="请求参数"
+            ><a-textarea
+              v-model:value="parametersText"
+              aria-label="用例请求参数"
+              :rows="5"
+          /></a-form-item>
+        </details>
         <a-button
           v-if="!readonly && definition"
           :disabled="saving || !config.canEdit"
@@ -143,6 +146,10 @@
       :keyboard="!saving"
       :mask-closable="!saving"
       :cancel-button-props="{ disabled: saving }"
+      :ok-button-props="{ disabled: !!entityEditorError }"
+      :width="
+        entityKind === 'definition' ? 'min(800px,100vw)' : 'min(520px,100vw)'
+      "
       @ok="saveEntity"
     >
       <a-form layout="vertical" :disabled="saving"
@@ -162,11 +169,22 @@
               v-model:value="path"
               aria-label="接口请求路径"
               :maxlength="500" /></a-form-item
-          ><a-form-item label="参数结构"
-            ><a-textarea
-              v-model:value="definitionParameters"
-              aria-label="接口参数结构"
-              :rows="5" /></a-form-item></template
+          ><NativeExecutionEditor
+            v-if="entityOpen && ['HTTP', 'HTTPS'].includes(protocol)"
+            :key="entityEditorSequence"
+            v-model="definitionParameters"
+            category="api"
+            :api-cases="[]"
+            :disabled="saving"
+            @error="entityEditorError = $event" />
+          <details>
+            <summary>高级配置</summary>
+            <a-form-item label="参数结构"
+              ><a-textarea
+                v-model:value="definitionParameters"
+                aria-label="接口参数结构"
+                :rows="5"
+            /></a-form-item></details></template
         ><a-form-item v-else label="环境地址" required
           ><a-input
             v-model:value="address"
@@ -355,7 +373,9 @@ const entityOpen = ref(false),
   path = ref(""),
   address = ref(""),
   definitionParameters = ref("{}"),
-  entityError = ref("");
+  entityError = ref(""),
+  entityEditorError = ref(""),
+  entityEditorSequence = ref(0);
 function editEntity(
   kind: "definition" | "environment",
   value?: NativeDefinition | NativeEnvironment,
@@ -373,6 +393,8 @@ function editEntity(
     2,
   );
   entityError.value = "";
+  entityEditorError.value = "";
+  entityEditorSequence.value++;
   entityOpen.value = true;
 }
 async function retryEntity() {
@@ -397,7 +419,7 @@ async function retryEntity() {
   }
 }
 async function saveEntity() {
-  if (saving.value) return;
+  if (saving.value || entityEditorError.value) return;
   const context = props.projectId + ":" + props.caseId;
   setSaving(true);
   entityError.value = "";

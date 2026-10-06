@@ -1,4 +1,6 @@
 import { ref, watch } from "vue";
+import { readParams, validParams } from "./nativeRequestParams";
+import { requestMethods } from "@/components/TestPlan/planCandidateBasic";
 export interface ExecutionEditorProps {
   modelValue: string;
   category: string;
@@ -25,18 +27,25 @@ export function useNativeExecutionDraft(
     assertions = ref("[]"),
     error = ref("");
   const steps = ref<{ apiCaseId: string; enabled: boolean }[]>([]);
-  const methods = [
-    "GET",
-    "POST",
-    "PUT",
-    "PATCH",
-    "DELETE",
-    "HEAD",
-    "OPTIONS",
-  ].map((value) => ({ value, label: value }));
+  const rest = ref("[]"),
+    authType = ref("NONE"),
+    basicUser = ref(""),
+    basicPassword = ref(""),
+    digestUser = ref(""),
+    digestPassword = ref("");
+  const connectTimeout = ref<number | null>(),
+    responseTimeout = ref<number | null>();
+  const methods = requestMethods.map((value) => ({ value, label: value }));
   const bodyTypes = ["none", "json", "text", "form"].map((value) => ({
     value,
-    label: value === "none" ? "无请求体" : value,
+    label: (
+      {
+        none: "none",
+        json: "json",
+        text: "raw",
+        form: "x-www-form-urlencoded",
+      } as Record<string, string>
+    )[value],
   }));
   let adopting = false,
     output = "";
@@ -58,13 +67,29 @@ export function useNativeExecutionDraft(
         method.value = data?.method ?? "GET";
         timeout.value = data?.timeoutMs ?? 10000;
         redirects.value = data?.followRedirects ?? false;
-        query.value = JSON.stringify(data?.query ?? {}, null, 2);
-        headers.value = JSON.stringify(data?.headers ?? {}, null, 2);
+        query.value = JSON.stringify(
+          data?.queryParams ?? data?.query ?? {},
+          null,
+          2,
+        );
+        headers.value = JSON.stringify(
+          data?.headerParams ?? data?.headers ?? {},
+          null,
+          2,
+        );
+        rest.value = JSON.stringify(data?.restParams ?? []);
+        authType.value = data?.authConfig?.authType || "NONE";
+        basicUser.value = data?.authConfig?.basicAuth?.userName || "";
+        basicPassword.value = data?.authConfig?.basicAuth?.password || "";
+        digestUser.value = data?.authConfig?.digestAuth?.userName || "";
+        digestPassword.value = data?.authConfig?.digestAuth?.password || "";
+        connectTimeout.value = data?.connectTimeoutMs;
+        responseTimeout.value = data?.responseTimeoutMs;
         bodyType.value = data?.bodyType ?? "none";
         body.value =
           bodyType.value === "text"
             ? (data?.body ?? "")
-            : JSON.stringify(data?.body ?? null, null, 2);
+            : JSON.stringify(data?.formParams ?? data?.body ?? null, null, 2);
         assertions.value = JSON.stringify(data?.assertions ?? [], null, 2);
         stop.value = data?.stopOnFailure ?? true;
         steps.value = structuredClone(data?.steps ?? []);
@@ -96,29 +121,83 @@ export function useNativeExecutionDraft(
         assertions.value,
         stop.value,
         steps.value,
+        rest.value,
+        authType.value,
+        basicUser.value,
+        basicPassword.value,
+        digestUser.value,
+        digestPassword.value,
+        connectTimeout.value,
+        responseTimeout.value,
       ]),
     );
     try {
       const root = object(props.modelValue),
         key = props.category === "api" ? "request" : "scenario";
       if (!enabled.value) delete root[key];
-      else if (props.category === "api")
+      else if (props.category === "api") {
+        const pairs = (raw: string, headers = false) => {
+          const data = JSON.parse(raw);
+          if (Array.isArray(data))
+            return { value: {}, rows: validParams(readParams(raw), headers) };
+          const value = object(raw);
+          readParams(raw);
+          return { value, rows: undefined };
+        };
+        const q = pairs(query.value),
+          h = pairs(headers.value, true);
+        const form = bodyType.value === "form" ? pairs(body.value) : undefined;
+        const restRows = validParams(readParams(rest.value));
         root.request = {
+          ...(root.request || {}),
           method: method.value,
           timeoutMs: timeout.value,
           followRedirects: redirects.value,
-          query: object(query.value),
-          headers: object(headers.value),
+          query: q.value,
+          headers: h.value,
           bodyType: bodyType.value,
           body:
             bodyType.value === "none"
               ? null
-              : bodyType.value === "text"
-                ? body.value
-                : JSON.parse(body.value),
+              : form
+                ? form.value
+                : bodyType.value === "text"
+                  ? body.value
+                  : JSON.parse(body.value),
           assertions: JSON.parse(assertions.value),
         };
-      else {
+        for (const [key, rows] of [
+          ["queryParams", q.rows],
+          ["headerParams", h.rows],
+          ["formParams", form?.rows],
+        ] as const) {
+          if (rows === undefined) delete root.request[key];
+          else root.request[key] = rows;
+        }
+        if (restRows.length) root.request.restParams = restRows;
+        else delete root.request.restParams;
+        if (authType.value !== "NONE" || root.request.authConfig)
+          root.request.authConfig = {
+            authType: authType.value,
+            basicAuth: {
+              userName: basicUser.value,
+              password: basicPassword.value,
+            },
+            digestAuth: {
+              userName: digestUser.value,
+              password: digestPassword.value,
+            },
+          };
+        for (const [key, value] of [
+          ["connectTimeoutMs", connectTimeout.value],
+          ["responseTimeoutMs", responseTimeout.value],
+        ] as const) {
+          if (value === undefined || value === null) delete root.request[key];
+          else if (!Number.isInteger(value) || value < 0 || value > 600000)
+            throw new Error("超时须为0到600000毫秒的整数");
+          else root.request[key] = value;
+        }
+      } else {
         if (
           !steps.value.length ||
           steps.value.some((s) => !s.apiCaseId) ||
@@ -150,6 +229,14 @@ export function useNativeExecutionDraft(
       assertions,
       stop,
       steps,
+      rest,
+      authType,
+      basicUser,
+      basicPassword,
+      digestUser,
+      digestPassword,
+      connectTimeout,
+      responseTimeout,
     ],
     publish,
     { deep: true, flush: "sync" },
@@ -160,6 +247,16 @@ export function useNativeExecutionDraft(
   function move(index: number, direction: number) {
     const [step] = steps.value.splice(index, 1);
     steps.value.splice(index + direction, 0, step);
+  }
+  function changeBodyType(value: string) {
+    if (value === "form") {
+      try {
+        readParams(body.value);
+      } catch (exception) {
+        console.info("切换表单正文，原内容不能转换为键值表", exception);
+        body.value = "{}";
+      }
+    }
   }
 
   return {
@@ -179,5 +276,14 @@ export function useNativeExecutionDraft(
     bodyTypes,
     toggle,
     move,
+    changeBodyType,
+    rest,
+    authType,
+    basicUser,
+    basicPassword,
+    digestUser,
+    digestPassword,
+    connectTimeout,
+    responseTimeout,
   };
 }
