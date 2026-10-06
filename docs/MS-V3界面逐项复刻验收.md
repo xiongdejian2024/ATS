@@ -33,6 +33,7 @@
 | 新建/编辑计划与组 | 默认值、完整字段、创建/编辑抽屉，组内成员选择与排序 | 当前有基本业务；字段与联动逐项核对 |
 | 计划详情 | 独立页面、测试规划/功能用例/API用例/API场景/缺陷列表/执行历史 | 第十一部分已提供独立页面、按关联数量显示分类页签、缺陷与历史真实数据；第五十二部分已补API/场景双栏原生字段列表、协议/高级筛选、个人视图及移动/取消关联；独立执行、原生编辑器/单条报告及完整菜单仍需逐项对齐 |
 | 测试点/执行配置 | 各分类层级、关联用例/场景、继承/覆盖、环境资源池、串并行、重复关联和分工 | 第十一部分已按分类过滤树并保留公共祖先，配置迁入详情更多菜单抽屉；完整分类操作及字段仍待对照 |
+| 测试规划布局/导航器 | 右向/左右/目录树三布局、缩放、画布移动、缩略图、根定位、快捷键与全屏 | 第六十一部分复用MS锁定布局引擎，实现浮动头栏/导航器和真实连线；三布局方向及拖拽、缩略图定位/拖动、全屏、桌面/390px验收通过。完整节点主题、临时测试集关联草稿与默认集投影仍需继续核对 |
 | 功能用例工作区 | 测试集/模块双栏、目录计数、列表/脑图、筛选、分配、移动、取消关联、缺陷 | 第十二、十三、十七部分已提供真实列表、目录、关联抽屉、批量管理、行内与批量结果回填；第二十三部分已补480px表格设置、列隐藏/排序、撤销、分页数量和子目录范围；第四十四部分已补完整高级条件、个人视图和执行详情范围往返；第四十五部分已补关联抽屉功能高级字段、三分类共同字段和独立视图；第五十一部分已补列宽拖动与本地持久化；完整官方菜单仍待补齐 |
 | 计划关联范围选择 | 表头当前页/所有页、跨页排除、多模块组合、跨项目来源、同步关联用例及真实提交 | 第四十七/四十八部分已补三分类范围全选、排除和多模块组合，第四十九部分已补跨项目候选及来源权限；第五十部分已接功能用例已有接口/场景关系的同步、分类目标测试集及当前范围预览/原子保存；API定义/用例双模式与完整原生工作区仍待对照 |
 | API/场景关联原生筛选 | 官方原生字段、状态/结果分离、项目协议/环境、参数变更、步骤数及视图 | 第四十六部分已接真实定义/配置/执行记录，高级字段顺序及中文文案对照固定官方版本，权限/冲突/同步/复制/回滚已验收；第五十二部分已补计划API/场景双栏列表、独立原生字段/实例结果及高级视图；完整原生编辑器与执行引擎仍待补齐 |
@@ -834,3 +835,20 @@
 - 第59部分远程软件CI `37395989926` 已确认最终成功，证据 `logs/第59部分远程CI最终状态.json`。整体100%目标继续：脑图布局/导航器、临时测试集关联草稿、默认集精细投影；关联API定义/用例双模式、高级请求编辑器及单条报告、评审与报告、跨项目环境组和全局资源池等仍待对齐。本部分不声明完整MS脑图或全平台100%完成。
 
 本部分官方依据：[规划批量删除二级节点限制](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-minders/testPlanMinder/index.vue)、[底部批量工具条](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-minder-editor/menu/batchMenu.vue)、[批量操作默认规则](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-minder-editor/props.ts)、[删除及多选操作](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-minder-editor/hooks/useMinderOperation.ts)、[MS锁定脑图库版本](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/package.json)。
+
+
+## 第六十一部分变更日志
+
+- 2026-10-06：按官方固定 `v3.6.9-lts` 核验 `main/header.vue`、`main/navigator.vue`、`mainEditor.vue`、`minderEnum.ts` 和布局偏好存储。标注标签对象 `d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51` 实际指向提交 `cf7a649a71f4db27c42547d7aa62816826d645ff`；官方规划开放 **right/default/filetree三项**，不是引擎内所有模板。布局、缩放、定位、手形均不属于业务内容变更。取证哈希及诊断保留在 `logs/第61部分准备.log`。
+- 确认原依赖没有脑图布局引擎后，引入官方锁定 **@7polo/kity 2.0.8 / @7polo/kityminder-core 1.4.53**，延迟分块加载。独立隐藏引擎使用公共 `getContentBox/getLayoutBox/getConnection`，以实际DOM节点尺寸计算三种布局与原生连接线；业务节点仍使用已有Vue编辑、菜单、选择、CAS整体保存和取消流程。实例归组件持有、切换/卸载销毁；加载失败明确展示错误并记录完整异常。没有共享业务编辑器全局实例。
+- 右上浮动头栏提供三布局图标菜单、全屏进入/退出及保存快捷键提示，保存按现有权限、加载和草稿条件保护。左下导航器提供100px滑块（手动50%–200%、100%标记）、手形画布平移、240×160缩略图开关、根节点定位及规划开放的五项双列卡片快捷键帮助（窄屏单列）；缩略图默认收起。布局与缩略图可见偏好保存在专用本地键；缩略图使用真实节点和引擎路径，SVG屏幕矩阵逆变换支持点击/按住拖动定位，红色可视框同步滚动/缩放。
+- 画布四周保留半屏空间，使边缘根节点也能居中；手动缩放保留视图中心，根定位保持当前缩放。保留已有适应画布在窄屏下的25%下限，独立于手动滑块50%下限。视图变更不进入业务指纹或规划草稿。
+- 布局接入后发现Sortable父容器 `display:contents` 使其边界为零，改为真实可见子树范围；同分类同级拖拽继续由已有VueDraggable/Sortable实现。缩放后的body拖拽预览曾漂移，独立预览适配器按实际指针和节点矩形更新，排序规则保持原库。实际三布局拖拽、约51%缩放下预览位置/大小与鼠标一致、取消恢复均通过。前两次过快拖拽验收超时及工具工作目录/快照参数错误完整保留，未按回执宣称成功。
+- **前端135项单测/33文件通过**（新增8项视图坐标与缩放中心回归），类型检查及生产构建通过（最终12.54秒）。本轮未修改后端，后端402项全量证据来自第60部分；其远程软件CI `37397203995` 已确认最终成功。构建仍有既有大块提示；当前依赖审计40项告警中，没有本次新增依赖节点命中，本轮没有强制升级官方锁定版本。证据 `logs/第61部分官方细节单元.log`、`logs/第61部分前端类型最终复核.log`、`logs/第61部分官方细节构建.log`、`logs/第61部分依赖审计.json`、`logs/第60部分远程CI最终状态.json`。
+- 浏览器空间30、13313/18813独立样本实际验收：24节点/23连线的三种方向正确，切换后保存仍禁用；滑块50%/200%边界、约51%根定位误差小于1像素、手形拖动80×60像素、缩略图点击和拖动中心映射、关闭后刷新保留、五项帮助、全屏进出及API分类折叠恢复23条连接均通过。新增/改名及取消恢复、多选/框选沿旧流程有效；目录树下改名经右上保存按钮真实落库，刷新保留名称及布局偏好；三布局兄弟排序均有效，试验排序全部取消。证据 `logs/第61部分布局验收.json`、`logs/第61部分导航验收.json`、`logs/第61部分编辑验收.log`、`logs/第61部分拖拽复验.json`、`logs/第61部分多布局拖拽.json`、`logs/第61部分框选验收.json`。
+- 已查看桌面右向/左右/目录树、全屏、拖拽预览和390px窄屏截图。窄屏整页390、画布342、导航器252×32、缩略图240×160和头栏176.5×32均在画布边界内；约29%适应画布时控件保持常规尺寸。打开缩略图后覆盖画布局部，可关闭查看下方节点。截图 `/tmp/ats-ms61-right-verified.png`、`/tmp/ats-ms61-default-verified.png`、`/tmp/ats-ms61-filetree-verified.png`、`/tmp/ats-ms61-fullscreen.png`、`/tmp/ats-ms61-drag-fixed.png`、`/tmp/ats-ms61-mobile-fit.png`；几何记录 `logs/第61部分窄屏验收.json`。
+- 正式Vite实际提供新增布局、导航和预览模块HTTP200；API/Agent/worker不因纯前端变更重启。正式75业务表计数保持，100用例/7计划/28历史任务/0活动任务、在线节点1，API/页面HTTP200、Agent/worker原PID保留。证据 `logs/第61部分正式前端模块.log`、`logs/第61部分正式服务.log`、`logs/第61部分正式复核输出.log`。
+- 最后按源码修正默认收起缩略图、预览边距30.5px、导航器252px宽度、悬浮双列卡片快捷键帮助（窄屏单列），实际浏览器复核通过；最后仅只读打开原隔离计划，未修改其规划。清理前验证本轮改名落库、三实体集/三主用例/三关联及队列保持，再按本轮主键/外键后代回收所有样本和版本；完整75表计数恢复基线、原31用例和历史保留。只读细节复核后再次核验75表基线，原URL/全部偏好/登录/1440视口最终恢复。证据 `logs/第61部分官方细节验收.json`、`logs/第61部分窄屏最终验收.json`、`logs/第61部分清理计数.json`、`logs/第61部分隔离最终基线输出.log`、`logs/第61部分浏览器最终恢复.json`；最终截图 `/tmp/ats-ms61-help.png`、`/tmp/ats-ms61-mobile-final.png`。
+- 整体100%目标继续：完整节点主题及精细菜单布局、临时测试集关联草稿、默认集精细投影；API定义/用例关联双模式、原生请求编辑器及单条报告、评审与报告、环境组和全局资源池等仍待逐项对齐。本部分不声明全平台或全部脑图100%完成。
+
+本部分官方依据：[脑图浮动头栏](https://github.com/metersphere/metersphere/blob/cf7a649a71f4db27c42547d7aa62816826d645ff/frontend/src/components/pure/ms-minder-editor/main/header.vue)、[脑图导航器](https://github.com/metersphere/metersphere/blob/cf7a649a71f4db27c42547d7aa62816826d645ff/frontend/src/components/pure/ms-minder-editor/main/navigator.vue)、[规划布局枚举](https://github.com/metersphere/metersphere/blob/cf7a649a71f4db27c42547d7aa62816826d645ff/frontend/src/enums/minderEnum.ts)、[视图命令与默认主题](https://github.com/metersphere/metersphere/blob/cf7a649a71f4db27c42547d7aa62816826d645ff/frontend/src/components/pure/ms-minder-editor/main/mainEditor.vue)、[MS锁定依赖版本](https://github.com/metersphere/metersphere/blob/cf7a649a71f4db27c42547d7aa62816826d645ff/frontend/package.json)。

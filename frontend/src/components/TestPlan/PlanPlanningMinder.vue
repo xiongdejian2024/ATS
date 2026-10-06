@@ -24,11 +24,13 @@
         ><a-button @click="fit">重置视图</a-button>
         <a-button
           aria-label="缩小脑图"
-          @click="zoom = Math.max(0.25, zoom - 0.1)"
+          @click="changeZoom(Math.max(0.5, zoom - 0.1))"
           >−</a-button
         >
         <span class="zoom-value">{{ Math.round(zoom * 100) }}%</span>
-        <a-button aria-label="放大脑图" @click="zoom = Math.min(2, zoom + 0.1)"
+        <a-button
+          aria-label="放大脑图"
+          @click="changeZoom(Math.min(2, zoom + 0.1))"
           >+</a-button
         >
         <a-button @click="fitCanvas">适应画布</a-button
@@ -57,73 +59,144 @@
       show-icon
     />
     <a-spin v-else :spinning="loading"
-      ><div class="minder-layout">
-        <div
-          ref="viewport"
-          class="minder-viewport"
-          tabindex="0"
-          aria-label="脑图画布，按斜线展开收起，Tab 添加分类下测试集，Enter 添加同级测试集，Ctrl/⌘ 点击多选，空白处拖动框选，Backspace 删除"
-          @pointerdown="marquee.start"
-        >
+      ><div
+        ref="layoutElement"
+        class="minder-layout"
+        :class="{
+          fullscreen: isFullscreen,
+          'config-open': selected && configVisible,
+        }"
+      >
+        <div class="minder-canvas">
           <div
-            class="minder-sizing"
-            :style="{
-              width: `${stageWidth * zoom}px`,
-              height: `${stageHeight * zoom}px`,
-            }"
+            ref="viewport"
+            class="minder-viewport"
+            :class="{ 'hand-mode': hand }"
+            tabindex="0"
+            aria-label="脑图画布，按斜线展开收起，Tab 添加分类下测试集，Enter 添加同级测试集，Ctrl/⌘ 点击多选，空白处拖动框选，Backspace 删除"
+            @pointerdown="marquee.start"
           >
             <div
-              ref="stage"
-              class="minder-stage"
-              :style="{ transform: `scale(${zoom})` }"
+              class="minder-sizing"
+              :style="{
+                width: `${stageWidth * zoom + viewportWidth}px`,
+                height: `${stageHeight * zoom + viewportHeight}px`,
+              }"
             >
-              <PlanningMinderBranch
-                v-if="!failed"
-                :node="tree"
-                :points="nodes"
-                :selected-ids="selectedIds"
-                :collapsed="collapsed"
-                :can-edit="
-                  canEdit &&
-                  !saving &&
-                  !dirty &&
-                  !editingId &&
-                  selectedIds.size <= 1 &&
-                  !marquee.active.value
-                "
-                :editing-id="editingId"
-                :edit-name="editName"
-                @edit="beginNameEdit"
-                @edit-name="(name) => (editName = name)"
-                @rename="commitNameEdit"
-                @cancel-edit="cancelNameEdit"
-                @select="selectCanvasNode"
-                @toggle="toggleById"
-                @reorder="reorderPoints"
-                ><template #menu="{ node }"
-                  ><PlanningMinderMenu
-                    :node="node"
-                    :actions="nodeActions(node)"
-                    :disabled="saving || loading"
-                    :zoom="zoom"
-                    @action="handleNodeAction" />
-                  <PlanningMinderTagMenu
-                    v-if="tagOpen && tagConfiguration"
-                    :zoom="zoom"
-                    :label="tagConfiguration.label"
-                    :value="tagConfiguration.value"
-                    :options="tagConfiguration.options"
-                    :disabled="saving || loading"
-                    @select="saveTag"
-                    @close="tagOpen = false" /></template
-              ></PlanningMinderBranch>
+              <div
+                ref="stage"
+                class="minder-stage"
+                :style="{
+                  transform: `scale(${zoom})`,
+                  width: geometry ? `${geometry.width}px` : undefined,
+                  height: geometry ? `${geometry.height}px` : undefined,
+                  left: `${viewportWidth / 2}px`,
+                  top: `${viewportHeight / 2}px`,
+                }"
+              >
+                <svg
+                  v-if="geometry"
+                  class="minder-connections"
+                  :width="geometry.width"
+                  :height="geometry.height"
+                  aria-hidden="true"
+                >
+                  <g
+                    :transform="`translate(${geometry.offset.x} ${geometry.offset.y})`"
+                  >
+                    <path
+                      v-for="(path, index) in geometry.paths"
+                      :key="index"
+                      :d="path"
+                      fill="none"
+                      stroke="#c5b1d0"
+                      stroke-width="1"
+                    />
+                  </g>
+                </svg>
+                <PlanningMinderBranch
+                  v-if="!failed"
+                  :node="tree"
+                  :geometry="geometry"
+                  :points="nodes"
+                  :selected-ids="selectedIds"
+                  :collapsed="collapsed"
+                  :can-edit="
+                    canEdit &&
+                    !saving &&
+                    !dirty &&
+                    !editingId &&
+                    selectedIds.size <= 1 &&
+                    !marquee.active.value &&
+                    !hand
+                  "
+                  :editing-id="editingId"
+                  :edit-name="editName"
+                  @edit="beginNameEdit"
+                  @edit-name="(name) => (editName = name)"
+                  @rename="commitNameEdit"
+                  @cancel-edit="cancelNameEdit"
+                  @select="selectCanvasNode"
+                  @toggle="toggleById"
+                  @reorder="reorderPoints"
+                  @drag-choose="dragPreview.choose"
+                  @drag-start="dragPreview.start"
+                  @drag-end="dragPreview.end"
+                  ><template #menu="{ node }"
+                    ><PlanningMinderMenu
+                      :node="node"
+                      :actions="nodeActions(node)"
+                      :disabled="saving || loading"
+                      :zoom="zoom"
+                      @action="handleNodeAction" />
+                    <PlanningMinderTagMenu
+                      v-if="tagOpen && tagConfiguration"
+                      :zoom="zoom"
+                      :label="tagConfiguration.label"
+                      :value="tagConfiguration.value"
+                      :options="tagConfiguration.options"
+                      :disabled="saving || loading"
+                      @select="saveTag"
+                      @close="tagOpen = false" /></template
+                ></PlanningMinderBranch>
+              </div>
             </div>
+            <div
+              v-if="marquee.style.value"
+              class="minder-marquee"
+              :style="marquee.style.value"
+              aria-hidden="true"
+            />
           </div>
-          <div
-            v-if="marquee.style.value"
-            class="minder-marquee"
-            :style="marquee.style.value"
-            aria-hidden="true"
+          <a-alert
+            v-if="layoutFailed"
+            class="layout-error"
+            message="脑图布局加载失败，请刷新重试"
+            type="error"
+          />
+          <PlanningMinderHeader
+            :mode="mode"
+            :fullscreen="isFullscreen"
+            :can-edit="canEdit"
+            :disabled="!hasChanges || loading || failed || saving"
+            @mode="changeMode"
+            @fullscreen="toggleFullscreen"
+            @save="savePoint"
+          />
+          <PlanningMinderNavigator
+            :zoom="zoom"
+            :hand="hand"
+            :preview="viewPreferences?.preview === true"
+            :geometry="geometry"
+            :visible="visibleBox"
+            @zoom="changeZoom"
+            @hand="(value) => (hand = value)"
+            @preview="
+              (value) =>
+                (viewPreferences = { ...viewPreferences, preview: value })
+            "
+            @camera="locateRoot"
+            @locate="locatePoint"
           />
         </div>
         <PlanningMinderBatchMenu
@@ -262,7 +335,24 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, reactive, watch, nextTick } from "vue";
-import { useElementSize } from "@vueuse/core";
+import {
+  useElementSize,
+  useScroll,
+  useFullscreen,
+  useStorage,
+} from "@vueuse/core";
+import PlanningMinderHeader from "./PlanningMinderHeader.vue";
+import PlanningMinderNavigator from "./PlanningMinderNavigator.vue";
+import { useMinderLayout } from "./useMinderLayout";
+import { useMinderDragPreview } from "./useMinderDragPreview";
+import { useMinderPan } from "./useMinderPan";
+import {
+  isMinderMode,
+  zoomScroll,
+  cameraScroll,
+  visibleMinderBox,
+  type MinderMode,
+} from "./planMinderView";
 import {
   useRouter,
   useRoute,
@@ -318,7 +408,34 @@ const configVisible = ref(false),
   tagOpen = ref(false),
   editingId = ref<string>(),
   editName = ref("");
-const { width: stageWidth, height: stageHeight } = useElementSize(stage);
+const layoutElement = ref<HTMLElement>();
+const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(layoutElement);
+const hand = ref(false);
+const viewPreferences = useStorage<{ mode: MinderMode; preview: boolean }>(
+  "ats-plan-minder-view",
+  { mode: "right", preview: false },
+  undefined,
+  { onError: (error) => console.error("读取或保存脑图视图偏好失败", error) },
+);
+const mode = computed(() =>
+  isMinderMode(viewPreferences.value?.mode)
+    ? viewPreferences.value.mode
+    : "right",
+);
+const { width: viewportWidth, height: viewportHeight } =
+  useElementSize(viewport);
+const { x: scrollLeft, y: scrollTop } = useScroll(viewport);
+const visibleBox = computed(() =>
+  visibleMinderBox(
+    scrollLeft.value,
+    scrollTop.value,
+    viewportWidth.value,
+    viewportHeight.value,
+    zoom.value,
+  ),
+);
+useMinderPan(viewport, hand);
+const dragPreview = useMinderDragPreview();
 const tree = computed(() =>
   buildPlanMinder(props.plan.name, nodes.value, entries.value, {
     environmentNames: Object.fromEntries(
@@ -329,6 +446,30 @@ const tree = computed(() =>
     executionMode: draft.workspace?.policy.executionMode,
   }),
 );
+const { geometry, failed: layoutFailed } = useMinderLayout(
+  stage,
+  tree,
+  collapsed,
+  mode,
+  editingId,
+);
+const stageWidth = computed(() => geometry.value?.width || 1),
+  stageHeight = computed(() => geometry.value?.height || 1);
+let initialPosition = true;
+watch(
+  () => props.plan.id,
+  () => {
+    initialPosition = true;
+    hand.value = false;
+  },
+);
+watch(geometry, async () => {
+  if (initialPosition && !loading.value) {
+    initialPosition = false;
+    await nextTick();
+    locateRoot();
+  }
+});
 const flatNodes = computed(() => {
   const result: PlanMinderNode[] = [];
   function walk(node: PlanMinderNode) {
@@ -361,7 +502,11 @@ function setSelection(ids: string[]) {
   if (selectedIds.value.size !== 1) configVisible.value = false;
   resetPoint();
 }
-const marquee = useMinderMarquee(viewport, canSelectNodes, setSelection);
+const marquee = useMinderMarquee(
+  viewport,
+  () => !hand.value && canSelectNodes(),
+  setSelection,
+);
 watch(
   () => selected.value?.id,
   (id) => {
@@ -885,22 +1030,51 @@ function handleShortcut(event: KeyboardEvent) {
   }
 }
 
-function fit() {
-  zoom.value = 1;
-  viewport.value?.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+async function changeZoom(value: number) {
+  const element = viewport.value;
+  if (!element) return;
+  const before = zoom.value,
+    left = zoomScroll(element.scrollLeft, before, value),
+    top = zoomScroll(element.scrollTop, before, value);
+  zoom.value = value;
+  await nextTick();
+  element.scrollTo({ left, top });
 }
-function fitCanvas() {
+function locatePoint(point: { x: number; y: number }) {
+  viewport.value?.scrollTo({
+    left: cameraScroll(point.x, zoom.value),
+    top: cameraScroll(point.y, zoom.value),
+  });
+}
+function locateRoot() {
+  const root = geometry.value?.nodes.root;
+  if (root)
+    locatePoint({ x: root.x + root.width / 2, y: root.y + root.height / 2 });
+}
+async function changeMode(value: MinderMode) {
+  if (value === mode.value) return;
+  initialPosition = true;
+  viewPreferences.value = { ...viewPreferences.value, mode: value };
+  console.info("脑图布局已切换", { 布局: value, 计划: props.plan.id });
+}
+async function fit() {
+  await changeZoom(1);
+  locateRoot();
+}
+async function fitCanvas() {
   const element = viewport.value;
   if (!element || !stageWidth.value || !stageHeight.value) return;
-  zoom.value = Math.max(
-    0.25,
-    Math.min(
-      1,
-      (element.clientWidth - 80) / stageWidth.value,
-      (element.clientHeight - 80) / stageHeight.value,
+  await changeZoom(
+    Math.max(
+      0.25,
+      Math.min(
+        1,
+        (element.clientWidth - 80) / stageWidth.value,
+        (element.clientHeight - 80) / stageHeight.value,
+      ),
     ),
   );
-  element.scrollTo({ top: 0, left: 0 });
+  locatePoint({ x: stageWidth.value / 2, y: stageHeight.value / 2 });
 }
 function viewCases() {
   const node = selected.value;
@@ -1117,6 +1291,43 @@ watch(
   min-width: 0;
   border: 1px solid var(--ms-border);
 }
+.minder-canvas {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+.minder-connections {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.hand-mode,
+.hand-mode :deep(.minder-node) {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.hand-mode:active {
+  cursor: grabbing;
+}
+.layout-error {
+  position: absolute;
+  top: 50px;
+  left: 16px;
+  right: 16px;
+  z-index: 50;
+}
+.fullscreen {
+  background: white;
+  width: 100vw;
+  height: 100vh;
+}
+.fullscreen .minder-viewport,
+.fullscreen .node-configuration {
+  height: 100vh;
+  max-height: 100vh;
+}
 .minder-viewport {
   position: relative;
   min-width: 0;
@@ -1124,7 +1335,7 @@ watch(
   overflow: auto;
 }
 .minder-viewport {
-  padding: 40px;
+  padding: 0;
   height: clamp(420px, calc(100vh - 320px), 700px);
 }
 .minder-marquee {
@@ -1165,6 +1376,14 @@ watch(
   margin-top: 16px;
 }
 @media (max-width: 768px) {
+  .fullscreen.config-open .minder-viewport {
+    height: 65vh;
+  }
+  .fullscreen.config-open .node-configuration {
+    height: 35vh;
+    max-height: 35vh;
+    overflow-y: auto;
+  }
   .minder-layout {
     flex-direction: column;
   }

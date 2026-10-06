@@ -12,6 +12,8 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
+    "@7polo/kity": "2.0.8",
+    "@7polo/kityminder-core": "1.4.53",
     "@ant-design/icons-vue": "^7.0.1",
     "@tiptap/extension-image": "3.31.4",
     "@tiptap/pm": "^3.31.4",

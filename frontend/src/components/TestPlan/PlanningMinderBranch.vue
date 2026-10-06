@@ -1,5 +1,10 @@
 <template>
-  <div class="minder-branch" :data-node-id="node.id">
+  <div
+    class="minder-branch"
+    :class="{ 'laid-out': !!box }"
+    :style="position"
+    :data-node-id="node.id"
+  >
     <div class="branch-label">
       <button
         v-if="editingId !== node.id"
@@ -62,6 +67,8 @@
         v-for="child in fixedChildren"
         :key="child.id"
         :node="child"
+        :geometry="geometry"
+        :parent-origin="box"
         :points="points"
         :selected-ids="selectedIds"
         :collapsed="collapsed"
@@ -74,21 +81,29 @@
         @cancel-edit="emit('cancelEdit')"
         @select="(id, event) => emit('select', id, event)"
         @toggle="(id) => emit('toggle', id)"
+        @drag-choose="(event) => emit('dragChoose', event)"
+        @drag-start="emit('dragStart')"
+        @drag-end="emit('dragEnd')"
         @reorder="(parent, ordered) => emit('reorder', parent, ordered)"
         ><template #menu="scope"><slot name="menu" v-bind="scope" /></template
       ></PlanningMinderBranch>
       <VueDraggable
         v-if="collections.length"
         class="collection-children"
+        :style="collectionPosition"
         :model-value="collections"
         :group="{ name: node.id, pull: false, put: false }"
         :disabled="!canEdit || collections.some((child) => !sortable(child))"
         draggable=".minder-branch"
         handle=".branch-label > .minder-node"
+        direction="vertical"
         :animation="160"
         :force-fallback="true"
         :fallback-on-body="true"
         :fallback-tolerance="5"
+        @choose="emit('dragChoose', $event)"
+        @start="emit('dragStart')"
+        @end="emit('dragEnd')"
         @update:model-value="(ordered) => emit('reorder', node, ordered)"
       >
         <PlanningMinderBranch
@@ -96,6 +111,8 @@
           :key="child.id"
           class="sortable-collection"
           :node="child"
+          :geometry="geometry"
+          :parent-origin="collectionBox || box"
           :points="points"
           :selected-ids="selectedIds"
           :collapsed="collapsed"
@@ -108,6 +125,9 @@
           @cancel-edit="emit('cancelEdit')"
           @select="(id, event) => emit('select', id, event)"
           @toggle="(id) => emit('toggle', id)"
+          @drag-choose="(event) => emit('dragChoose', event)"
+          @drag-start="emit('dragStart')"
+          @drag-end="emit('dragEnd')"
           @reorder="(parent, ordered) => emit('reorder', parent, ordered)"
           ><template #menu="scope"><slot name="menu" v-bind="scope" /></template
         ></PlanningMinderBranch>
@@ -119,10 +139,14 @@
 import { computed } from "vue";
 import { VueDraggable } from "vue-draggable-plus";
 import type { PlanMinderNode } from "./planMinderTree";
+import type { MinderDragEvent } from "./useMinderDragPreview";
+import type { MinderBox, MinderGeometry } from "./planMinderView";
 import type { PlanNode } from "@/api/planTree";
 defineSlots<{ menu(props: { node: PlanMinderNode }): unknown }>();
 const props = defineProps<{
   node: PlanMinderNode;
+  geometry?: MinderGeometry;
+  parentOrigin?: MinderBox;
   points: PlanNode[];
   selectedIds: ReadonlySet<string>;
   collapsed: ReadonlySet<string>;
@@ -131,6 +155,9 @@ const props = defineProps<{
   editName?: string;
 }>();
 const emit = defineEmits<{
+  dragChoose: [event: MinderDragEvent];
+  dragStart: [];
+  dragEnd: [];
   select: [id: string, event: MouseEvent];
   toggle: [id: string];
   reorder: [parent: PlanMinderNode, ordered: PlanMinderNode[]];
@@ -151,6 +178,47 @@ const fixedChildren = computed(() =>
 const collections = computed(() =>
   (props.node.children || []).filter((child) => child.kind === "collection"),
 );
+const box = computed(() => props.geometry?.nodes[props.node.id]);
+// Sortable需要真实容器盒；display:contents会使父容器为零尺寸，无法判断拖入。
+const collectionBox = computed(() => {
+  if (!props.geometry) return undefined;
+  const boxes: MinderBox[] = [];
+  function visit(node: PlanMinderNode) {
+    const current = props.geometry?.nodes[node.id];
+    if (current) boxes.push(current);
+    if (!props.collapsed.has(node.id)) node.children?.forEach(visit);
+  }
+  collections.value.forEach(visit);
+  if (!boxes.length) return undefined;
+  const x = Math.min(...boxes.map((item) => item.x));
+  const y = Math.min(...boxes.map((item) => item.y));
+  return {
+    x,
+    y,
+    width: Math.max(...boxes.map((item) => item.x + item.width)) - x,
+    height: Math.max(...boxes.map((item) => item.y + item.height)) - y,
+  };
+});
+const collectionPosition = computed(() =>
+  collectionBox.value && box.value
+    ? {
+        left: `${collectionBox.value.x - box.value.x}px`,
+        top: `${collectionBox.value.y - box.value.y}px`,
+        width: `${collectionBox.value.width}px`,
+        height: `${collectionBox.value.height}px`,
+      }
+    : undefined,
+);
+const position = computed(() =>
+  box.value
+    ? {
+        left: `${box.value.x - (props.parentOrigin?.x || 0)}px`,
+        top: `${box.value.y - (props.parentOrigin?.y || 0)}px`,
+        width: `${box.value.width}px`,
+        height: `${box.value.height}px`,
+      }
+    : undefined,
+);
 const hasChildren = computed(() => !!props.node.children?.length);
 function sortable(node: PlanMinderNode) {
   if (node.kind !== "collection") return false;
@@ -166,6 +234,23 @@ function sortable(node: PlanMinderNode) {
   position: relative;
   padding: 10px 0;
 }
+.laid-out {
+  position: absolute;
+  padding: 0;
+  display: block;
+}
+.laid-out > .branch-children {
+  display: contents;
+}
+.laid-out > .branch-children > .collection-children {
+  display: block;
+  position: absolute;
+}
+.laid-out > .branch-children::before,
+.laid-out > .branch-children > .minder-branch::before,
+.laid-out > .branch-children > .collection-children > .minder-branch::before {
+  display: none;
+}
 .branch-label {
   display: flex;
   align-items: center;
@@ -173,6 +258,8 @@ function sortable(node: PlanMinderNode) {
   flex-shrink: 0;
 }
 .minder-node {
+  flex-shrink: 0;
+  width: max-content;
   border: 1px solid #d8c5e0;
   border-radius: 4px;
   background: #faf7fc;
