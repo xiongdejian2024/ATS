@@ -224,7 +224,8 @@ def bounded_detail(steps):
     selected, size = [], 256
     for step in steps:
         step = Step.model_validate(step).model_dump()
-        needed = len(json.dumps(step, ensure_ascii=False).encode("utf-8")) + 2
+        # 可靠回传沿现有JSON协议转义非ASCII，按实际线上编码计量。
+        needed = len(json.dumps(step, ensure_ascii=True).encode("utf-8")) + 2
         if size + needed > DETAIL_LIMIT:
             break
         selected.append(step)

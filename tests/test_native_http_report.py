@@ -244,6 +244,11 @@ def test_missing_header_and_capture_budget_are_explicit(monkeypatch):
     import json
 
     assert len(json.dumps(value, ensure_ascii=False).encode()) <= 700
+    monkeypatch.setattr(result_details, "DETAIL_LIMIT", 900)
+    steps[0]["name"] = "é" * 255
+    value = result_details.bounded_detail(steps[:1])
+    assert value["omittedSteps"] == 1
+    assert len(json.dumps(value).encode()) <= 900
 
 
 from test_native_http_agent_e2e import native_lab, lab, dispatch, finished, scope

@@ -26,7 +26,7 @@ def validate_detail(raw, suite, task, case_id, db):
     try:
         if (
             suite.execution_command != COMMAND
-            or len(json.dumps(raw, ensure_ascii=False).encode("utf-8")) > limit
+            or len(json.dumps(raw, ensure_ascii=True).encode("utf-8")) > limit
         ):
             raise ValueError("实际详情不属于原生HTTP或超过范围")
         detail = model.model_validate(raw)
