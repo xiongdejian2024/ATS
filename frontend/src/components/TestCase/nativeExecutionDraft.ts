@@ -2,6 +2,7 @@ import { ref, watch } from "vue";
 import { readParams, validParams } from "./nativeRequestParams";
 import { readResponseAssertions } from "./nativeResponseAssertions";
 import { requestMethods } from "@/components/TestPlan/planCandidateBasic";
+import { readProcessors } from "./nativeExtractions";
 import { emptySchema, readJsonSchema } from "./nativeJsonSchema";
 export interface ExecutionEditorProps {
   modelValue: string;
@@ -9,6 +10,7 @@ export interface ExecutionEditorProps {
   apiCases: { id: string; name: string }[];
   disabled?: boolean;
   projectId?: string;
+  caseId?: string;
 }
 export function useNativeExecutionDraft(
   props: ExecutionEditorProps,
@@ -30,6 +32,7 @@ export function useNativeExecutionDraft(
     assertions = ref("[]"),
     responseAssertions = ref("[]"),
     error = ref("");
+  const postProcessors = ref('{"processors":[]}');
   const steps = ref<{ apiCaseId: string; enabled: boolean }[]>([]);
   const jsonSchemaMode = ref(false),
     jsonSchema = ref(JSON.stringify(emptySchema()));
@@ -157,6 +160,10 @@ export function useNativeExecutionDraft(
           data?.responseAssertions ?? [],
         );
         readResponseAssertions(responseAssertions.value);
+        postProcessors.value = JSON.stringify(
+          data?.postProcessorConfig ?? { processors: [] },
+        );
+        readProcessors(postProcessors.value);
         stop.value = data?.stopOnFailure ?? true;
         steps.value = structuredClone(data?.steps ?? []);
         error.value = "";
@@ -190,6 +197,7 @@ export function useNativeExecutionDraft(
         jsonSchema.value,
         assertions.value,
         responseAssertions.value,
+        postProcessors.value,
         stop.value,
         steps.value,
         rest.value,
@@ -237,6 +245,9 @@ export function useNativeExecutionDraft(
           assertions: JSON.parse(assertions.value),
           responseAssertions: readResponseAssertions(responseAssertions.value),
           bodyDrafts: { ...bodyDrafts },
+          postProcessorConfig: {
+            processors: readProcessors(postProcessors.value),
+          },
         };
         if (bodyType.value === "json" || root.request.jsonBody)
           root.request.jsonBody = {
@@ -314,6 +325,7 @@ export function useNativeExecutionDraft(
       body,
       assertions,
       responseAssertions,
+      postProcessors,
       stop,
       steps,
       rest,
@@ -368,6 +380,7 @@ export function useNativeExecutionDraft(
     jsonSchema,
     assertions,
     responseAssertions,
+    postProcessors,
     error,
     steps,
     methods,

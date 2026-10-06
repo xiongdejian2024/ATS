@@ -171,6 +171,13 @@
             >
           </a-space></a-tab-pane
         >
+        <a-tab-pane key="post" tab="后置操作"
+          ><NativePostProcessorEditor
+            v-model="postProcessors"
+            :project-id="projectId"
+            :case-id="caseId"
+            :disabled="disabled"
+        /></a-tab-pane>
         <a-tab-pane key="assertions" tab="断言">
           <NativeResponseAssertionEditor
             v-model="responseAssertions"
@@ -234,6 +241,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import NativePostProcessorEditor from "./NativePostProcessorEditor.vue";
 import NativeRequestParamTable from "./NativeRequestParamTable.vue";
 import NativeBinaryBodyEditor from "./NativeBinaryBodyEditor.vue";
 import NativeJsonBodyEditor from "./NativeJsonBodyEditor.vue";
@@ -267,6 +275,7 @@ const {
   jsonSchema,
   assertions,
   responseAssertions,
+  postProcessors,
   error,
   steps,
   methods,

@@ -49,6 +49,18 @@ export interface HttpAttempt {
   error?: string;
   redirects: { request: HttpRequest; response: HttpResponse }[];
   console?: string[];
+  extractResults?: {
+    name: string;
+    value: string;
+    type: string;
+    expression: string;
+    processorId: string;
+    extractorId: string;
+    matched: boolean;
+    matchCount: number;
+    truncated: boolean;
+    message: string;
+  }[];
 }
 export interface HttpStep {
   index: number;

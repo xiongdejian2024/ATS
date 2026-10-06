@@ -177,6 +177,19 @@ class Assertion(Model):
     rowIndex: StrictInt | None = Field(default=None, ge=0, le=1000)
 
 
+class Extraction(Model):
+    name: str = Field(max_length=100)
+    type: Literal["TEMPORARY"]
+    expression: str = Field(max_length=200)
+    processorId: str = Field(max_length=36)
+    extractorId: str = Field(max_length=36)
+    matched: StrictBool
+    matchCount: StrictInt = Field(ge=0, le=1000)
+    value: str = Field(max_length=4096)
+    truncated: StrictBool
+    message: str = Field(max_length=1000)
+
+
 class Attempt(Model):
     attempt: StrictInt = Field(ge=1, le=11)
     result: Literal["passed", "failed", "error", "skipped"]
@@ -184,6 +197,7 @@ class Attempt(Model):
     request: Request | None = None
     response: Response | None = None
     assertions: list[Assertion] = Field(default_factory=list, max_length=500)
+    extractResults: list[Extraction] = Field(default_factory=list, max_length=200)
     error: str | None = Field(default=None, max_length=1000)
     redirects: list[Redirect] = Field(default_factory=list, max_length=20)
     console: list[str] = Field(default_factory=list, max_length=100)

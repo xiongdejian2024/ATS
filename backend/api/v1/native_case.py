@@ -17,6 +17,26 @@ class SchemaConversionInput(JsonBodySchema):
     action: Literal['preview', 'generate'] = 'preview'
 
 
+from framework.native_http.extraction_models import Extractor
+from pydantic import Field
+
+
+class ExtractionPreviewInput(Extractor):
+    expectedExecutionId: str = Field(min_length=1, max_length=36)
+
+
+@router.get('/cases/{case_id}/extraction-response')
+def extraction_response(project_id: str, case_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.native_extraction import latest_response
+    return result(latest_response(db, user, project_id, case_id))
+
+
+@router.post('/cases/{case_id}/extraction-preview')
+def extraction_preview(project_id: str, case_id: str, body: ExtractionPreviewInput, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.native_extraction import preview
+    return result(preview(db, user, project_id, case_id, Extractor.model_validate(body.model_dump(exclude={'expectedExecutionId'})), body.expectedExecutionId))
+
+
 @router.post('/json-schema/convert')
 def schema_convert(project_id: str, body: SchemaConversionInput, db: Session = Depends(get_db), user=Depends(get_current_user)):
     from core.project_access import require_project_access

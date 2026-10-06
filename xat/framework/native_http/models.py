@@ -4,6 +4,7 @@ from typing import Literal
 from .response_assertion_models import ResponseAssertion
 from .body_models import FileReference, BinaryBody, FrozenFile
 from .schema_models import JsonBodySchema
+from .extraction_models import PostProcessorConfig
 from urllib.parse import urlsplit
 from pydantic import (
     BaseModel,
@@ -92,6 +93,7 @@ class Assertion(NativeModel):
 
 
 class RequestSpec(NativeModel):
+    postProcessorConfig: PostProcessorConfig = Field(default_factory=PostProcessorConfig)
     method: Literal[
         "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "CONNECT"
     ] = "GET"

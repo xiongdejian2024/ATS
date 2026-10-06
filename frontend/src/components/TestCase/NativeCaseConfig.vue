@@ -87,6 +87,7 @@
         >
       </template>
       <NativeExecutionEditor
+        :case-id="caseId"
         :project-id="projectId"
         v-if="
           category === 'scenario' ||

@@ -139,13 +139,13 @@ def header_check(rule, response):
     return not found if rule.condition.startswith("NOT_") else found
 
 
-def xpath_value(expression, response, response_format):
+def xpath_select(expression, content, response_format):
     parser = (
         etree.HTMLParser(no_network=True)
         if response_format == "HTML"
         else etree.XMLParser(resolve_entities=False, no_network=True, load_dtd=False)
     )
-    root = etree.fromstring(response.content, parser)
+    root = etree.fromstring(content, parser)
     if root is None:
         raise ValueError("响应不是有效文档")
     if root.getroottree().docinfo.doctype and response_format == "XML":
@@ -171,7 +171,11 @@ def xpath_value(expression, response, response_format):
     ):
         raise ValueError("响应XPath只读取当前响应文档")
     # XPath断言验证表达式是否命中，布尔/数字结果使用其有效布尔值。
-    value = selector.select(root)
+    return selector.select(root)
+
+
+def xpath_value(expression, response, response_format):
+    value = xpath_select(expression, response.content, response_format)
     if isinstance(value, float) and math.isnan(value):
         return False
     return bool(value)

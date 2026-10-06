@@ -104,7 +104,12 @@ def _request(db, case, config, override_environment):
     )
     from framework.native_http.parameters import path_parameters
 
-    path = path_parameters(definition.path, request.restParams)
+    # 含变量的REST值要到Agent拿到前序响应后再编码，冻结原始占位路径。
+    path = (
+        definition.path
+        if any(r.enable and "${" in r.value for r in (request.restParams or []))
+        else path_parameters(definition.path, request.restParams)
+    )
     target_id = override_environment or config.environment_id
     target = read(db, ApiTestEnvironment, target_id) if target_id else None
     if target_id and (not target or target.project_id != case.project_id):

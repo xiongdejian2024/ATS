@@ -11,6 +11,7 @@ logger = logging.getLogger("XAT原生HTTP")
 from .models import FrozenCase
 from .legacy_assertions import equal, check
 from .response_assertions import evaluate
+from .extractions import evaluate as extract, resolve_request, render_value
 from .result_details import exchange, bounded_detail, request_detail
 from .parameters import arguments as request_arguments, request_url
 from .request_bodies import load_files, arguments as body_arguments
@@ -20,6 +21,7 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
     started = time.monotonic()
     rows = []
     details = []
+    variables = {}
 
     async def capture_request(value):
         await value.aread()
@@ -28,7 +30,8 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
     async with httpx.AsyncClient(
         transport=transport, trust_env=False, event_hooks={"request": [capture_request]}
     ) as client:
-        for index, request in enumerate(case.requests):
+        for index, template in enumerate(case.requests):
+            request = template
             attempts = []
             detail_attempts = []
             step_started = time.monotonic()
@@ -62,6 +65,7 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                 )
                 actual = dict(attempt=attempt + 1, assertions=[], console=[])
                 try:
+                    request = resolve_request(template, variables)
                     arguments = request_arguments(request)
                     arguments.update(
                         body_arguments(request, await load_files(request, file_loader))
@@ -115,6 +119,26 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                     row["statusCode"] = response.status_code
                     elapsed_ms = (time.monotonic() - network_started) * 1000
                     actual.update(exchange(response, elapsed_ms))
+                    actual["extractResults"] = await asyncio.to_thread(
+                        extract, request.postProcessorConfig, response, variables
+                    )
+                    logger.info(
+                        "后置参数提取完成：用例=%s，步骤=%s，执行项数=%s",
+                        case.id,
+                        index + 1,
+                        len(actual["extractResults"]),
+                    )
+                    actual["console"].append(
+                        f"后置参数提取完成：执行{len(actual['extractResults'])}项"
+                    )
+                    request.assertions = [
+                        type(a).model_validate(render_value(a.model_dump(), variables))
+                        for a in template.assertions
+                    ]
+                    request.responseAssertions = [
+                        type(a).model_validate(render_value(a.model_dump(), variables))
+                        for a in template.responseAssertions
+                    ]
                     actual["redirects"] = [exchange(r, None) for r in response.history]
                     row["assertions"] = [
                         check(assertion, response, actual["assertions"])

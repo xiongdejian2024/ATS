@@ -183,6 +183,33 @@
                   ></a-table
                 ></a-tab-pane
               >
+              <a-tab-pane
+                key="extract"
+                :tab="`提取结果 (${attempt.extractResults?.length || 0})`"
+                ><a-table
+                  :data-source="attempt.extractResults || []"
+                  :columns="extractColumns"
+                  :pagination="false"
+                  size="small"
+                  :scroll="{ x: 880 }"
+                  :row-key="(r: any) => r.processorId + ':' + r.extractorId"
+                  ><template #bodyCell="{ column, record }"
+                    ><template v-if="column.key === 'type'">{{
+                      record.type === "TEMPORARY" ? "临时参数" : record.type
+                    }}</template
+                    ><template v-else-if="column.key === 'value'"
+                      >{{ record.value
+                      }}<small v-if="record.truncated"
+                        >（已截断）</small
+                      ></template
+                    ><template v-else-if="column.key === 'message'"
+                      ><a-tag :color="record.matched ? 'green' : 'orange'">{{
+                        record.message
+                      }}</a-tag></template
+                    ></template
+                  ></a-table
+                ></a-tab-pane
+              >
               <a-tab-pane key="console" tab="控制台">
                 <pre class="http-console">{{
                   attempt.console?.join("\n") || "此执行没有额外控制台输出"
@@ -249,6 +276,13 @@ const condition = (value: string) =>
     REGEX: "正则匹配",
   }[value] ||
   value;
+const extractColumns = [
+  { title: "参数名", dataIndex: "name", width: 150 },
+  { title: "提取值", key: "value", width: 200 },
+  { title: "类型", key: "type", width: 120 },
+  { title: "表达式", dataIndex: "expression", width: 200 },
+  { title: "结果", key: "message", width: 210 },
+];
 const headerColumns = [
   { title: "参数名", dataIndex: "name", width: 180 },
   { title: "参数值", dataIndex: "value" },
