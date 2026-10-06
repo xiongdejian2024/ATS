@@ -208,6 +208,12 @@
         <aside v-if="selected && configVisible" class="node-configuration">
           <h3>{{ selected.name }}</h3>
           <p>关联用例 {{ selected.count }} 条</p>
+          <a-alert
+            v-if="pendingAssociation"
+            type="info"
+            show-icon
+            :message="`待关联 ${pendingAssociation.summary.count} 条用例${pendingAssociation.summary.sync ? `，同步接口 ${pendingAssociation.summary.sync.api.count} 条、场景 ${pendingAssociation.summary.sync.scenario.count} 条` : ''}，保存规划后生效`"
+          />
           <a-button
             v-if="selected.children?.length"
             size="small"
@@ -317,6 +323,9 @@
       :can-edit="canEdit"
       :category="selected?.category"
       :collection-id="selected?.nodeId"
+      :minder-draft="associationDraft"
+      :initial-association="pendingAssociation?.request"
+      @staged="stageAssociation"
       @associated="changed"
     />
     <a-drawer
@@ -363,6 +372,10 @@ import { message, Modal } from "ant-design-vue";
 import type { TestPlan, Environment } from "@/types";
 import { environmentApi } from "@/api/environment";
 import { planMinderApi, type MinderWorkspace } from "@/api/planMinder";
+import type {
+  PlanAssociation,
+  CandidateSelectionPreview,
+} from "@/api/planCaseWorkspace";
 import { PlanMinderDraft } from "./planMinderDraft";
 import PlanningMinderBranch from "./PlanningMinderBranch.vue";
 import PlanningMinderMenu from "./PlanningMinderMenu.vue";
@@ -1095,13 +1108,45 @@ function viewCases() {
 }
 const associateOpen = ref(false),
   advancedOpen = ref(false);
+const pendingAssociation = computed(() =>
+  selected.value?.category
+    ? draft.association(selected.value.category, selected.value.nodeId)
+    : undefined,
+);
+const associationDraft = computed(() =>
+  selected.value?.category
+    ? draft.associationPreview(selected.value.category, selected.value.nodeId)
+    : draft.payload,
+);
 function openAssociation() {
   if (!props.canEdit || saving.value || loading.value) return;
-  if (hasChanges.value) {
-    message.warning("请先保存测试规划，再关联用例");
-    return;
+  if (!commitNameEdit()) return;
+  try {
+    stageCurrentConfiguration();
+    draft.validate();
+    associateOpen.value = true;
+  } catch (error) {
+    console.error("打开脑图关联草稿失败，保留当前修改", error);
+    message.error(error instanceof Error ? error.message : "请核对测试集配置");
   }
-  associateOpen.value = true;
+}
+function stageAssociation(
+  request: PlanAssociation,
+  summary: CandidateSelectionPreview,
+) {
+  try {
+    draft.associate(request, summary);
+    console.info("脑图用例关联已暂存", {
+      计划: props.plan.id,
+      分类: request.category,
+      数量: summary.count,
+    });
+    if (!configVisible.value) void savePoint();
+    else message.success("关联选择已加入草稿，请保存规划");
+  } catch (error) {
+    console.error("暂存脑图用例关联失败", error);
+    message.error(error instanceof Error ? error.message : "暂存关联失败");
+  }
 }
 function openAdvanced() {
   if (saving.value || loading.value) return;
@@ -1162,31 +1207,7 @@ async function savePoint() {
   if (!commitNameEdit()) return;
   saving.value = true;
   try {
-    let node = selectedPoint.value;
-    const scope = selectedScope.value;
-    if (dirty.value) {
-      if (canRename.value && selected.value?.category) {
-        if (!node && pointForm.name.trim() !== selected.value.name) {
-          node = draft.materializeDefault(
-            selected.value.category,
-            pointForm.name.trim(),
-          );
-          selected.value = flatNodes.value.find(
-            (n) => n.nodeId === node!.id && n.category === node!.category,
-          );
-        }
-        if (node) draft.rename(node.id, pointForm.name);
-      }
-      const currentScope =
-        node && scope?.startsWith("default:")
-          ? `node:${node.category}:${node.id}`
-          : scope;
-      if (currentScope && executionDraft.value)
-        draft.configure(currentScope, executionDraft.value);
-      selected.value =
-        flatNodes.value.find((n) => n.id === selected.value?.id) || tree.value;
-      resetPoint();
-    }
+    stageCurrentConfiguration();
     draft.validate();
     const result = await planMinderApi.save(props.plan.id, draft.payload);
     acceptWorkspace(result);
@@ -1206,6 +1227,32 @@ async function savePoint() {
   } finally {
     saving.value = false;
   }
+}
+function stageCurrentConfiguration() {
+  if (!dirty.value) return;
+  let node = selectedPoint.value;
+  const scope = selectedScope.value;
+  if (canRename.value && selected.value?.category) {
+    if (!node && pointForm.name.trim() !== selected.value.name) {
+      node = draft.materializeDefault(
+        selected.value.category,
+        pointForm.name.trim(),
+      );
+      selected.value = flatNodes.value.find(
+        (n) => n.nodeId === node!.id && n.category === node!.category,
+      );
+    }
+    if (node) draft.rename(node.id, pointForm.name);
+  }
+  const currentScope =
+    node && scope?.startsWith("default:")
+      ? `node:${node.category}:${node.id}`
+      : scope;
+  if (currentScope && executionDraft.value)
+    draft.configure(currentScope, executionDraft.value);
+  selected.value =
+    flatNodes.value.find((n) => n.id === selected.value?.id) || tree.value;
+  resetPoint();
 }
 async function changed() {
   await load();

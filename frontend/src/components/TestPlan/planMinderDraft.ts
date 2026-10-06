@@ -7,6 +7,10 @@ import type {
 } from "@/api/planMinder";
 import type { PlanNode } from "@/api/planTree";
 import type { ExecutionConfig } from "@/api/planExecutionConfig";
+import type {
+  PlanAssociation,
+  CandidateSelectionPreview,
+} from "@/api/planCaseWorkspace";
 
 /** 整幅规划草稿与远程快照分离；保存失败不丢结构、关联计数或配置。 */
 export class PlanMinderDraft {
@@ -15,12 +19,17 @@ export class PlanMinderDraft {
   private materialized: Partial<Record<MinderCategory, string>> = {};
   private deleteDefaults: MinderCategory[] = [];
   private configurations: MinderSave["configurations"] = {};
+  private associations: {
+    request: PlanAssociation;
+    summary: CandidateSelectionPreview;
+  }[] = [];
   load(value: MinderWorkspace) {
     this.original = cloneDeep(value);
     this.workspace = cloneDeep(value);
     this.materialized = {};
     this.deleteDefaults = [];
     this.configurations = {};
+    this.associations = [];
   }
   clear() {
     this.workspace = undefined;
@@ -28,6 +37,7 @@ export class PlanMinderDraft {
     this.materialized = {};
     this.deleteDefaults = [];
     this.configurations = {};
+    this.associations = [];
   }
   reset() {
     if (this.original) this.load(this.original);
@@ -53,6 +63,7 @@ export class PlanMinderDraft {
         })),
       deleteDefaults: [...this.deleteDefaults],
       configurations: cloneDeep(this.configurations),
+      associations: this.associations.map((a) => cloneDeep(a.request)),
     };
   }
   get dirty() {
@@ -74,8 +85,82 @@ export class PlanMinderDraft {
       this.deleteDefaults.length > 0 ||
       this.workspace?.policy.executionMode !==
         this.original.policy.executionMode ||
-      Object.keys(this.configurations).length > 0
+      Object.keys(this.configurations).length > 0 ||
+      this.associations.length > 0
     );
+  }
+  association(category: MinderCategory, collectionId?: string | null) {
+    return this.associations.find(
+      (a) =>
+        a.request.category === category &&
+        (a.request.collectionId || null) === (collectionId || null),
+    );
+  }
+  associationPreview(
+    category: MinderCategory,
+    collectionId?: string | null,
+  ): MinderSave {
+    const body = this.payload;
+    body.associations = body.associations?.filter(
+      (a) =>
+        !(
+          a.category === category &&
+          (a.collectionId || null) === (collectionId || null)
+        ),
+    );
+    return body;
+  }
+  associate(request: PlanAssociation, summary: CandidateSelectionPreview) {
+    if (!this.workspace) throw new Error("测试规划尚未加载");
+    if (
+      request.collectionId &&
+      !this.workspace.nodes.some(
+        (n) =>
+          n.id === request.collectionId &&
+          n.nodeType === "point" &&
+          n.category === request.category,
+      )
+    )
+      throw new Error("关联测试集已变化，请重新选择");
+    this.associations = this.associations.filter(
+      (a) =>
+        !(
+          a.request.category === request.category &&
+          (a.request.collectionId || null) === (request.collectionId || null)
+        ),
+    );
+    this.associations.push({
+      request: cloneDeep(request),
+      summary: cloneDeep(summary),
+    });
+  }
+  private remapAssociations(
+    category: MinderCategory,
+    from: string | null,
+    to?: string,
+  ) {
+    this.associations = this.associations.filter((a) => {
+      if (
+        a.request.category === category &&
+        (a.request.collectionId || null) === from
+      ) {
+        if (!to) return false;
+        a.request.collectionId = to;
+      }
+      for (const [kind, field, suite] of [
+        ["api", "apiCaseCollectionId", "syncApiSuiteId"],
+        ["scenario", "apiScenarioCollectionId", "syncScenarioSuiteId"],
+      ] as const) {
+        if (kind !== category || a.request[field] !== (from || "default"))
+          continue;
+        a.request[field] = to;
+        if (!to) {
+          delete a.request[suite];
+          if (a.summary.sync) a.summary.sync[kind].count = 0;
+        }
+      }
+      return true;
+    });
   }
   setExecutionMode(mode: "serial" | "parallel") {
     if (!this.workspace) return;
@@ -206,6 +291,7 @@ export class PlanMinderDraft {
     if (existing) return this.workspace.nodes.find((n) => n.id === existing)!;
     const point = this.add(category, name, undefined, true);
     this.materialized[category] = point.id;
+    this.remapAssociations(category, null, point.id);
     const siblings = this.workspace.nodes
       .filter(
         (n) => n.nodeType === "point" && n.category === category && !n.parentId,
@@ -270,6 +356,10 @@ export class PlanMinderDraft {
         if (n.parentId && removed.has(n.parentId)) removed.add(n.id);
       });
     }
+    for (const node of this.workspace.nodes.filter(
+      (n) => removed.has(n.id) && n.nodeType === "point",
+    ))
+      this.remapAssociations(node.category, node.id);
     this.workspace.nodes = this.workspace.nodes.filter(
       (n) => !removed.has(n.id),
     );
@@ -291,6 +381,7 @@ export class PlanMinderDraft {
   }
   removeDefault(category: MinderCategory) {
     if (!this.workspace) return;
+    this.remapAssociations(category, null);
     this.workspace.entries[category] = this.workspace.entries[category].filter(
       (e) => !!e.collectionId,
     );

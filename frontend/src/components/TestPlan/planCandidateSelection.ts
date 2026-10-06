@@ -29,6 +29,10 @@ export function usePlanCandidateSelection(
       "syncCase" | "apiCaseCollectionId" | "apiScenarioCollectionId"
     >
   >,
+  previewRequest?: (
+    id: string,
+    selection: CandidateSelection,
+  ) => Promise<CandidateSelectionPreview>,
 ) {
   const selected = ref<string[]>([]),
     selectAll = ref(false),
@@ -140,6 +144,17 @@ export function usePlanCandidateSelection(
     else pageIds.value.forEach((id) => currentKeys.add(id));
     keysChanged([...currentKeys]);
   }
+  function restore(body: CandidateSelection) {
+    clear();
+    if (body.moduleMaps && modules)
+      modules.maps.value = cloneDeep(body.moduleMaps);
+    else {
+      selected.value = [...(body.caseIds || [])];
+      selectAll.value = !!body.selectAll;
+      excluded.value = [...(body.excludeIds || [])];
+      condition.value = cloneDeep(body.condition || {});
+    }
+  }
   async function preview() {
     const current = ++sequence,
       id = plan.value,
@@ -152,7 +167,9 @@ export function usePlanCandidateSelection(
     }
     loading.value = true;
     try {
-      const result = await planCaseWorkspaceApi.previewCandidates(id, body);
+      const result = await (
+        previewRequest || planCaseWorkspaceApi.previewCandidates
+      )(id, body);
       if (current === sequence && id === plan.value) summary.value = result;
     } catch (exception: any) {
       console.error("核对计划关联范围失败，保留筛选条件与排除项", exception);
@@ -222,5 +239,6 @@ export function usePlanCandidateSelection(
     keysChanged,
     togglePage,
     preview,
+    restore,
   };
 }

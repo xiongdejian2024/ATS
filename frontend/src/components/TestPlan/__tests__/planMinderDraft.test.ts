@@ -349,4 +349,78 @@ describe("规划整体草稿", () => {
     expect(catalog[`node:api:${b.id}`].effectiveConfig.retryTimes).toBe(2);
     expect(draft.payload.configurations["root:api"].expectedRevision).toBe(1);
   });
+  it("临时集关联保持原关联计数，重复打开替换选择，取消完整还原", () => {
+    const source = fixture(),
+      draft = new PlanMinderDraft();
+    draft.load(source);
+    const target = draft.add("api", "关联临时集");
+    const summary = {
+      count: 2,
+      excludedCount: 0,
+      automatedCount: 2,
+      usesTree: false,
+      compatibleSuiteIds: [],
+      canAssociate: true,
+    };
+    draft.associate(
+      { category: "api", collectionId: target.id, caseIds: ["a", "b"] },
+      summary,
+    );
+    expect(draft.workspace!.entries.api).toEqual(source.entries.api);
+    expect(draft.association("api", target.id)?.summary.count).toBe(2);
+    expect(draft.associationPreview("api", target.id).associations).toEqual([]);
+    draft.associate(
+      { category: "api", collectionId: target.id, caseIds: ["c"] },
+      { ...summary, count: 1 },
+    );
+    expect(draft.payload.associations).toHaveLength(1);
+    expect(draft.payload.associations![0].caseIds).toEqual(["c"]);
+    expect(draft.dirty).toBe(true);
+    draft.reset();
+    expect(draft.payload.associations).toEqual([]);
+    expect(draft.workspace).toEqual(source);
+    expect(draft.dirty).toBe(false);
+  });
+  it("待关联默认集实体化时目标迁移，删除同步目标仅撤销该分类，父集删除撤销本集关联", () => {
+    const draft = new PlanMinderDraft();
+    draft.load(fixture());
+    const functional = draft.add("functional", "功能临时集"),
+      scene = draft.add("scenario", "场景临时集");
+    const summary = {
+      count: 1,
+      excludedCount: 0,
+      automatedCount: 0,
+      usesTree: false,
+      compatibleSuiteIds: [],
+      canAssociate: true,
+      sync: {
+        api: { count: 2, compatibleSuiteIds: [] },
+        scenario: { count: 1, compatibleSuiteIds: [] },
+      },
+    };
+    draft.associate(
+      {
+        category: "functional",
+        collectionId: functional.id,
+        caseIds: ["a"],
+        syncCase: true,
+        apiCaseCollectionId: "default",
+        apiScenarioCollectionId: scene.id,
+      },
+      summary,
+    );
+    const api = draft.materializeDefault("api", "实体化默认集");
+    expect(draft.payload.associations![0].apiCaseCollectionId).toBe(api.id);
+    draft.remove(api.id);
+    expect(draft.payload.associations![0].apiCaseCollectionId).toBeUndefined();
+    expect(draft.payload.associations![0].apiScenarioCollectionId).toBe(
+      scene.id,
+    );
+    expect(
+      draft.association("functional", functional.id)?.summary.sync?.api.count,
+    ).toBe(0);
+    draft.remove(functional.id);
+    expect(draft.payload.associations).toEqual([]);
+    expect(draft.payload.points.map((p) => p.id)).toEqual([scene.id]);
+  });
 });

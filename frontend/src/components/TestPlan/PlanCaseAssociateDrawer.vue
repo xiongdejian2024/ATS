@@ -225,6 +225,7 @@
           <a-form-item label="关联到测试集"
             ><a-tree-select
               v-model:value="collectionId"
+              :disabled="!!minderDraft"
               allow-clear
               placeholder="默认测试集"
               :tree-data="caseFolderTree(data?.collections || [])"
@@ -376,7 +377,7 @@
 <script setup lang="ts">
 import NativeCaseConfigDrawer from "@/components/TestCase/NativeCaseConfigDrawer.vue";
 import { nativeStateOptions, nativeReportOptions } from "@/api/nativeCase";
-import { computed, h, ref, watch, toRef, reactive } from "vue";
+import { computed, h, ref, watch, toRef, reactive, nextTick } from "vue";
 import { cloneDeep } from "lodash-es";
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
 import PlanCaseFilters from "./PlanCaseFilters.vue";
@@ -392,7 +393,10 @@ import {
   planCaseWorkspaceApi,
   type PlanAssociateListing,
   type CandidateCondition,
+  type PlanAssociation,
+  type CandidateSelectionPreview,
 } from "@/api/planCaseWorkspace";
+import { planMinderApi, type MinderSave } from "@/api/planMinder";
 import { caseFolderTree } from "./planCaseFolders";
 import { usePlanCandidateSelection } from "./planCandidateSelection";
 import ReviewSelectionHeader from "@/components/CaseReview/ReviewSelectionHeader.vue";
@@ -402,8 +406,14 @@ const props = defineProps<{
     canEdit: boolean;
     category?: "functional" | "api" | "scenario";
     collectionId?: string | null;
+    minderDraft?: MinderSave;
+    initialAssociation?: PlanAssociation;
   }>(),
-  emit = defineEmits<{ "update:open": [value: boolean]; associated: [] }>();
+  emit = defineEmits<{
+    "update:open": [value: boolean];
+    associated: [];
+    staged: [request: PlanAssociation, summary: CandidateSelectionPreview];
+  }>();
 const activeCategory = ref<"functional" | "api" | "scenario">(
     props.category || "functional",
   ),
@@ -484,6 +494,10 @@ const selection = usePlanCandidateSelection(
   },
   sourceProjectId,
   syncRequest,
+  (id, body) =>
+    props.minderDraft
+      ? planMinderApi.previewCandidates(id, props.minderDraft, body)
+      : planCaseWorkspaceApi.previewCandidates(id, body),
 );
 const moduleSelectionDisabled = computed(
   () =>
@@ -666,7 +680,33 @@ async function load() {
     });
     if (request === sequence) {
       sourceProjectId.value = result.projectId;
-      data.value = result;
+      data.value = props.minderDraft
+        ? {
+            ...result,
+            collections: props.minderDraft.points
+              .filter((p) => p.category === activeCategory.value)
+              .map((p) => ({
+                ...p,
+                parentId: p.parentId || undefined,
+                count: 0,
+              })),
+            syncCollections: Object.fromEntries(
+              (["api", "scenario"] as const).map((kind) => [
+                kind,
+                [
+                  { id: "default", name: "默认测试集", count: 0 },
+                  ...props
+                    .minderDraft!.points.filter((p) => p.category === kind)
+                    .map((p) => ({
+                      ...p,
+                      parentId: p.parentId || undefined,
+                      count: 0,
+                    })),
+                ],
+              ]),
+            ) as PlanAssociateListing["syncCollections"],
+          }
+        : result;
       appliedCondition.value = condition;
       project.value = { id: result.projectId, name: result.projectName };
       planOptions.value = result.plans;
@@ -740,13 +780,19 @@ async function save() {
   const plan = props.planId,
     category = activeCategory.value;
   try {
-    await planCaseWorkspaceApi.associate(plan, {
+    const association: PlanAssociation = {
       ...body,
       collectionId: collectionId.value || null,
       suiteId: suiteId.value || null,
       syncApiSuiteId: syncCase.value ? syncSuites.api || null : null,
       syncScenarioSuiteId: syncCase.value ? syncSuites.scenario || null : null,
-    });
+    };
+    if (props.minderDraft && selection.summary.value) {
+      emit("staged", association, cloneDeep(selection.summary.value));
+      emit("update:open", false);
+      return;
+    }
+    await planCaseWorkspaceApi.associate(plan, association);
     if (
       plan !== props.planId ||
       category !== activeCategory.value ||
@@ -793,10 +839,35 @@ watch(
     page.value = 1;
     expanded.value = [];
     activeCategory.value = props.category || "functional";
-    if (props.open) void load();
+    if (props.open) void restoreAndLoad();
   },
   { immediate: true },
 );
+async function restoreAndLoad() {
+  const initial = cloneDeep(props.initialAssociation);
+  const request = sequence + 1;
+  if (initial) {
+    sourceProjectId.value = initial.projectId;
+    search.value = initial.condition?.search || "";
+    priority.value = initial.condition?.priority;
+    folder.value = initial.condition?.folder || "all";
+    filterScope.value = initial.condition?.filters;
+    viewId.value = initial.condition?.mine ? "system:my" : undefined;
+  }
+  await load();
+  if (!initial || !props.open || failed.value || request !== sequence) return;
+  await nextTick();
+  if (!props.open || request !== sequence) return;
+  syncCase.value = !!initial.syncCase;
+  await nextTick();
+  if (!props.open || request !== sequence) return;
+  apiCaseCollectionId.value = initial.apiCaseCollectionId;
+  apiScenarioCollectionId.value = initial.apiScenarioCollectionId;
+  syncSuites.api = initial.syncApiSuiteId || undefined;
+  syncSuites.scenario = initial.syncScenarioSuiteId || undefined;
+  suiteId.value = initial.suiteId || undefined;
+  selection.restore(initial);
+}
 function allowNavigation() {
   if (locked.value) {
     message.info("关联或视图保存中，请稍候");

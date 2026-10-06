@@ -16,6 +16,7 @@ from services.plan_candidate_project import lock_run_sources, require_case_sourc
 from services.plan_execution_config import ConfigSave, ExecutionConfig
 from services.plan_orchestration import ACTIVE, get_policy
 from services import plan_tree
+from schemas.plan_candidate_selection import Association, CandidateSelection
 
 Category = Literal["functional", "api", "scenario"]
 
@@ -39,6 +40,13 @@ class MinderSave(BaseModel):
     configurations: dict[str, ConfigSave] = Field(
         default_factory=dict, max_length=10000
     )
+    associations: list[Association] = Field(default_factory=list, max_length=1000)
+
+
+class MinderCandidatePreview(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    draft: MinderSave
+    selection: CandidateSelection
 
 
 def current_rows(db, model, **filters):
@@ -128,7 +136,7 @@ def state(db, plan):
     )
 
 
-def locked_plan(db, user, plan_id, *, writing):
+def locked_plan(db, user, plan_id, *, writing, extra_project_ids=()):
     initial = db.get(TestPlan, plan_id)
     if not initial:
         raise HTTPException(404, "测试计划不存在")
@@ -140,7 +148,7 @@ def locked_plan(db, user, plan_id, *, writing):
     )
     target_id = initial.project_id
     try:
-        sources = lock_run_sources(db, plan_id)
+        sources = lock_run_sources(db, plan_id, extra_project_ids=extra_project_ids)
     except ValueError as exc:
         logger.exception("规划脑图来源锁定失败：计划={}", plan_id)
         raise HTTPException(409, str(exc)) from exc
@@ -203,8 +211,13 @@ def load(db, user, plan_id):
     return result
 
 
-def save(db, user, plan_id, data):
-    plan, user, snapshot = locked_plan(db, user, plan_id, writing=True)
+def save(db, user, plan_id, data, *, preview=False, extra_project_ids=()):
+    sources = {a.projectId for a in data.associations if a.projectId} | set(
+        extra_project_ids
+    )
+    plan, user, snapshot = locked_plan(
+        db, user, plan_id, writing=True, extra_project_ids=sources
+    )
     if snapshot["workspace"] and snapshot["workspace"].archived:
         raise HTTPException(409, "归档计划不可修改测试规划")
     if snapshot["fingerprint"] != data.expectedFingerprint:
@@ -452,6 +465,12 @@ def save(db, user, plan_id, data):
             plan_id=plan.id, scope=f"default:{category}"
         ).delete(synchronize_session="fetch")
     db.flush()
+    # 在同一事务内先建立临时测试集，再解析候选、来源权限和同步目标；不调用提交。
+    from services.plan_case_workspace import associate
+
+    for association in data.associations:
+        associate(db, plan, user, association)
+        db.flush()
     from services.plan_execution_config import save as save_config
 
     for scope, config in data.configurations.items():
@@ -480,12 +499,48 @@ def save(db, user, plan_id, data):
             )
     db.flush()
     logger.info(
-        "已原子保存测试规划：计划={}，新增集={}，删除节点={}，取消直接关联={}，默认集转换={}，配置数={}",
+        "测试规划事务已校验：计划={}，预览={}，新增集={}，删除节点={}，取消直接关联={}，默认集转换={}，配置数={}，关联批数={}",
         plan.id,
+        preview,
         len(set(wanted) - set(originals)),
         len(removed_nodes),
         len(removed_relations),
         len(materialized),
         len(data.configurations),
+        len(data.associations),
     )
     return workspace_data(db, plan, state(db, plan))
+
+
+def preview_candidates(db, user, plan_id, data):
+    """保存点内复用完整校验，始终回滚；临时集和此前关联均可参与范围预览。"""
+    from services.plan_candidate_selection import preview as candidate_preview
+    from services.plan_candidate_project import source_scope
+
+    transaction = db.begin_nested()
+    try:
+        save(
+            db,
+            user,
+            plan_id,
+            data.draft,
+            preview=True,
+            extra_project_ids=(
+                [data.selection.projectId] if data.selection.projectId else []
+            ),
+        )
+        plan = db.get(TestPlan, plan_id)
+        # 来源项目锁等待期间撤权后，不能沿旧的可重复读快照泄露候选或计数。
+        source_scope(db, user, plan, data.selection.projectId, writing=True)
+        result = candidate_preview(db, plan, user, data.selection)
+        logger.info(
+            "脑图关联预览完成，撤销全部模拟改动：计划={}，候选数={}",
+            plan_id,
+            result["count"],
+        )
+        return result
+    except Exception:
+        logger.exception("脑图关联预览失败，撤销全部模拟改动：计划={}", plan_id)
+        raise
+    finally:
+        transaction.rollback()

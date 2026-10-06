@@ -46,7 +46,7 @@ def require_case_sources(db, user_id, cases, *, current_read=False):
         require_project_access(db, user, identifier, 'test_case:read', current_read=current_read)
 
 
-def lock_run_sources(db, plan_id):
+def lock_run_sources(db, plan_id, *, extra_project_ids=()):
     """执行与关联都先锁项目再锁计划，避免跨项目双向操作反序等待。"""
     from models import TestPlan, TestCase, TestSuite, PlanCaseRelation
     from models.plan_workspace import PlanNode
@@ -56,7 +56,7 @@ def lock_run_sources(db, plan_id):
     identifiers = {r.case_id for r in db.query(PlanCaseRelation).filter_by(plan_id=plan_id)}
     identifiers.update(n.case_id for n in db.query(PlanNode).filter_by(plan_id=plan_id) if n.case_id)
     identifiers.update(cid for suite in db.query(TestSuite).filter_by(plan_id=plan_id) for cid in suite.case_ids or [])
-    sources = {c.project_id for c in db.query(TestCase).filter(TestCase.id.in_(identifiers))} | {plan.project_id}
+    sources = {c.project_id for c in db.query(TestCase).filter(TestCase.id.in_(identifiers))} | {plan.project_id} | set(extra_project_ids)
     for identifier in sorted(sources):
         if not db.query(Project).filter_by(id=identifier).populate_existing().with_for_update().one_or_none():
             raise ValueError('计划来源项目已不存在')

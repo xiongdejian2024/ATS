@@ -126,6 +126,12 @@ export interface CandidateSelectionPreview {
   compatibleSuiteIds: string[];
   canAssociate: boolean;
 }
+export interface PlanAssociation extends CandidateSelection {
+  collectionId?: string | null;
+  suiteId?: string | null;
+  syncApiSuiteId?: string | null;
+  syncScenarioSuiteId?: string | null;
+}
 export interface NativeWorkspaceCondition {
   tree_type?: "COLLECTION" | "MODULE";
   folder?: string;
@@ -269,15 +275,8 @@ export const planCaseWorkspaceApi = {
   ) => apiClient.post(base(id) + "/execute", data),
   execution: (id: string, params: Record<string, unknown>) =>
     apiClient.get<PlanCaseExecutionDetail>(base(id) + "/execution", { params }),
-  associate: (
-    id: string,
-    data: CandidateSelection & {
-      collectionId?: string | null;
-      suiteId?: string | null;
-      syncApiSuiteId?: string | null;
-      syncScenarioSuiteId?: string | null;
-    },
-  ) => apiClient.post(base(id) + "/associate", data),
+  associate: (id: string, data: PlanAssociation) =>
+    apiClient.post(base(id) + "/associate", data),
 };
 
 export interface PlanCaseExecutionRecord {
