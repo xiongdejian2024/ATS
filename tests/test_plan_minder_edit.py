@@ -215,6 +215,95 @@ async def test_delete_collection_unlinks_instead_of_moving_default_and_preserves
 
 
 @pytest.mark.asyncio
+async def test_batch_delete_parent_subtree_and_default_stale_rejected_preserves_other_instances(
+    workspace_http,
+):
+    db, app, _ = workspace_http
+    plan = db.get(Plan, "plan")
+    db.get(Case, "case-0").type = "api"
+    db.get(Case, "case-1").type = "scenario"
+    parent = save_node(db, plan, dict(name="批量父集"))
+    child = save_node(
+        db, plan, dict(name="批量旧子集", category="api", parentId=parent.id)
+    )
+    keep = save_node(db, plan, dict(name="保留重复实例集"))
+    target = db.query(PlanCaseRelation).filter_by(case_id="case-0").one()
+    target.collection_id = child.id
+    db.add_all(
+        [
+            PlanCaseRelation(
+                id="keep-repeat",
+                plan_id="plan",
+                case_id="case-0",
+                collection_id=keep.id,
+            ),
+            PlanCaseRelation(
+                id="keep-master",
+                plan_id="plan",
+                case_id="case-2",
+                collection_id=keep.id,
+            ),
+        ]
+    )
+    for scope in [f"node:api:{child.id}", "default:scenario"]:
+        save_config(
+            db,
+            plan,
+            scope,
+            ConfigSave(
+                config=ExecutionConfig(extended=False, retryOnFailure=True),
+                expectedRevision=0,
+            ),
+        )
+    frozen = {"冻结": True, "cases": [{"associationId": target.id, "caseId": "case-0"}]}
+    db.add(
+        PlanRun(
+            id="batch-history",
+            plan_id="plan",
+            executor_id="owner",
+            status="completed",
+            plan_name="原计划",
+            config_snapshot={},
+            case_snapshot=frozen["cases"],
+            report=frozen,
+        )
+    )
+    db.commit()
+    parent_id, child_id, keep_id, removed_id = parent.id, child.id, keep.id, target.id
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        initial = await snapshot(client)
+        db.add(PlanCaseRelation(id="other-page", plan_id="plan", case_id="case-2"))
+        db.commit()
+        body = payload(initial, deleteDefaults=["scenario"])
+        body["points"] = [p for p in body["points"] if p["id"] == keep_id]
+        assert (await client.put(BASE, json=body)).status_code == 409
+        assert db.get(PlanNode, parent_id) and db.get(PlanNode, child_id)
+        assert db.query(PlanCaseRelation).count() == 5
+        current = await snapshot(client)
+        body["expectedFingerprint"] = current["fingerprint"]
+        saved = await client.put(BASE, json=body)
+        assert saved.status_code == 200, saved.text
+        assert (
+            db.get(PlanNode, parent_id) is None and db.get(PlanNode, child_id) is None
+        )
+        assert db.get(PlanCaseRelation, removed_id) is None
+        assert {r.id for r in db.query(PlanCaseRelation)} == {
+            "keep-repeat",
+            "keep-master",
+            "other-page",
+        }
+        assert db.get(Suite, "suite-0").case_ids == ["case-0"]
+        assert db.get(Suite, "suite-1").case_ids == []
+        assert db.get(PlanExecutionConfig, ("plan", f"node:api:{child_id}")) is None
+        assert db.get(PlanExecutionConfig, ("plan", "default:scenario")) is None
+        assert db.query(Case).count() == 3
+        assert db.get(PlanRun, "batch-history").report == frozen
+        assert db.query(TaskQueue).count() == 0
+
+
+@pytest.mark.asyncio
 async def test_default_delete_only_requested_category_and_tree_remains_tree(
     workspace_http,
 ):

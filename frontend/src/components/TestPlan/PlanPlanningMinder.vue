@@ -62,7 +62,8 @@
           ref="viewport"
           class="minder-viewport"
           tabindex="0"
-          aria-label="脑图画布，按斜线展开收起，Tab 添加分类下测试集，Enter 添加同级测试集，Backspace 删除"
+          aria-label="脑图画布，按斜线展开收起，Tab 添加分类下测试集，Enter 添加同级测试集，Ctrl/⌘ 点击多选，空白处拖动框选，Backspace 删除"
+          @pointerdown="marquee.start"
         >
           <div
             class="minder-sizing"
@@ -80,9 +81,16 @@
                 v-if="!failed"
                 :node="tree"
                 :points="nodes"
-                :selected-id="selected?.id"
+                :selected-ids="selectedIds"
                 :collapsed="collapsed"
-                :can-edit="canEdit && !saving && !dirty && !editingId"
+                :can-edit="
+                  canEdit &&
+                  !saving &&
+                  !dirty &&
+                  !editingId &&
+                  selectedIds.size <= 1 &&
+                  !marquee.active.value
+                "
                 :editing-id="editingId"
                 :edit-name="editName"
                 @edit="beginNameEdit"
@@ -111,7 +119,19 @@
               ></PlanningMinderBranch>
             </div>
           </div>
+          <div
+            v-if="marquee.style.value"
+            class="minder-marquee"
+            :style="marquee.style.value"
+            aria-hidden="true"
+          />
         </div>
+        <PlanningMinderBatchMenu
+          v-if="selectedIds.size > 1 && deletionTargets"
+          :count="selectedIds.size"
+          :disabled="saving || loading || !!editingId || dirty"
+          @delete="removePoint"
+        />
         <aside v-if="selected && configVisible" class="node-configuration">
           <h3>{{ selected.name }}</h3>
           <p>关联用例 {{ selected.count }} 条</p>
@@ -257,6 +277,9 @@ import { PlanMinderDraft } from "./planMinderDraft";
 import PlanningMinderBranch from "./PlanningMinderBranch.vue";
 import PlanningMinderMenu from "./PlanningMinderMenu.vue";
 import PlanningMinderTagMenu from "./PlanningMinderTagMenu.vue";
+import PlanningMinderBatchMenu from "./PlanningMinderBatchMenu.vue";
+import { minderDeletionTargets } from "./planMinderSelection";
+import { useMinderMarquee } from "./useMinderMarquee";
 import { planMinderTag } from "./planMinderTag";
 import { planMinderActions, type MinderAction } from "./planMinderActions";
 import {
@@ -314,6 +337,43 @@ const flatNodes = computed(() => {
   }
   walk(tree.value);
   return result;
+});
+const selectedIds = ref<ReadonlySet<string>>(new Set());
+const selectedNodes = computed(() =>
+  flatNodes.value.filter((node) => selectedIds.value.has(node.id)),
+);
+const deletionTargets = computed(() =>
+  minderDeletionTargets(selectedNodes.value, nodes.value, props.canEdit),
+);
+function canSelectNodes() {
+  return !saving.value && !loading.value && !editingId.value && !dirty.value;
+}
+function setSelection(ids: string[]) {
+  if (!canSelectNodes()) return;
+  const wanted = new Set(ids);
+  selectedIds.value = new Set(
+    flatNodes.value.filter((n) => wanted.has(n.id)).map((n) => n.id),
+  );
+  selected.value = flatNodes.value.find(
+    (n) => n.id === [...selectedIds.value].at(-1),
+  );
+  tagOpen.value = false;
+  if (selectedIds.value.size !== 1) configVisible.value = false;
+  resetPoint();
+}
+const marquee = useMinderMarquee(viewport, canSelectNodes, setSelection);
+watch(
+  () => selected.value?.id,
+  (id) => {
+    if (!id || !selectedIds.value.has(id))
+      selectedIds.value = new Set(id ? [id] : []);
+  },
+);
+watch(flatNodes, (current) => {
+  const available = new Set(current.map((n) => n.id));
+  selectedIds.value = new Set(
+    [...selectedIds.value].filter((id) => available.has(id)),
+  );
 });
 const nodeOptions = computed(() =>
   flatNodes.value
@@ -644,6 +704,7 @@ function selectById(id: string) {
     return;
   }
   selected.value = flatNodes.value.find((node) => node.id === id);
+  selectedIds.value = new Set(selected.value ? [id] : []);
   tagOpen.value = false;
   if (
     selected.value?.kind === "root" ||
@@ -653,10 +714,17 @@ function selectById(id: string) {
     configVisible.value = false;
   resetPoint();
 }
-function selectCanvasNode(id: string) {
+function selectCanvasNode(id: string, event: MouseEvent) {
   if (saving.value || loading.value || editingId.value) return;
   if (dirty.value) {
     message.warning("请先保存或取消当前节点的修改");
+    return;
+  }
+  if (event.ctrlKey || event.metaKey) {
+    const ids = new Set(selectedIds.value);
+    ids.has(id) ? ids.delete(id) : ids.add(id);
+    setSelection([...ids]);
+    viewport.value?.focus({ preventScroll: true });
     return;
   }
   selectById(id);
@@ -736,6 +804,23 @@ function collapseAll() {
   );
 }
 function handleShortcut(event: KeyboardEvent) {
+  const textTarget = (event.target as HTMLElement)?.closest(
+    "input, textarea, select, [contenteditable=true]",
+  );
+  if (!textTarget && !event.isComposing && !event.repeat && canSelectNodes()) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
+      event.preventDefault();
+      setSelection(flatNodes.value.map((node) => node.id));
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      marquee.cancel();
+      setSelection([]);
+      return;
+    }
+  }
+
   if (
     (event.ctrlKey || event.metaKey) &&
     event.key.toLowerCase() === "s" &&
@@ -773,6 +858,13 @@ function handleShortcut(event: KeyboardEvent) {
     )
   )
     return;
+  if (selectedIds.value.size > 1) {
+    if (event.key === "Backspace" && deletionTargets.value) {
+      event.preventDefault();
+      removePoint();
+    }
+    return;
+  }
   if (event.key === "/" && node.children?.length) {
     event.preventDefault();
     toggleSelected();
@@ -946,33 +1038,38 @@ async function changed() {
   emit("changed");
 }
 function removePoint() {
-  const node = selected.value;
-  if (
-    !props.canEdit ||
-    !canRename.value ||
-    !node?.category ||
-    dirty.value ||
-    saving.value
-  ) {
+  const targets = deletionTargets.value;
+  if (!targets?.length || !canSelectNodes()) {
     if (dirty.value) message.warning("请先保存或取消当前节点的修改");
     return;
   }
+  const count = selectedIds.value.size;
   Modal.confirm({
-    title: "删除此测试集及子测试集？",
+    title:
+      count > 1
+        ? `删除选中的${count}个测试集及子测试集？`
+        : "删除此测试集及子测试集？",
     content: "保存规划后取消其中的用例关联，原用例和历史执行记录保留。",
     okType: "danger",
     onOk() {
-      if (node.nodeId) draft.remove(node.nodeId);
-      else draft.removeDefault(node.category!);
-      selected.value = flatNodes.value.find(
-        (n) => n.id === `category:${node.category}`,
-      );
-      resetPoint();
-      console.info("测试集删除已暂存", {
-        计划: props.plan.id,
-        分类: node.category,
-      });
-      message.success("删除已加入草稿，请保存规划");
+      if (!props.canEdit || !canSelectNodes()) return;
+      try {
+        draft.removeMany(targets);
+        selectedIds.value = new Set();
+        selected.value = undefined;
+        tagOpen.value = false;
+        configVisible.value = false;
+        resetPoint();
+        console.info("测试集批量删除已暂存", {
+          计划: props.plan.id,
+          选中数: count,
+          删除根数: targets.length,
+        });
+        message.success("删除已加入草稿，请保存规划");
+      } catch (error) {
+        console.error("测试集批量删除失败，原草稿保留", error);
+        message.error(error instanceof Error ? error.message : "删除失败");
+      }
     },
   });
 }
@@ -980,6 +1077,8 @@ watch(
   () => props.plan.id,
   () => {
     sequence++;
+    marquee.cancel();
+    selectedIds.value = new Set();
     draft.clear();
     zoom.value = 1;
     collapsed.value = new Set();
@@ -1013,11 +1112,13 @@ watch(
   width: 240px;
 }
 .minder-layout {
+  position: relative;
   display: flex;
   min-width: 0;
   border: 1px solid var(--ms-border);
 }
 .minder-viewport {
+  position: relative;
   min-width: 0;
   flex: 1;
   overflow: auto;
@@ -1025,6 +1126,13 @@ watch(
 .minder-viewport {
   padding: 40px;
   height: clamp(420px, calc(100vh - 320px), 700px);
+}
+.minder-marquee {
+  position: absolute;
+  z-index: 40;
+  pointer-events: none;
+  border: 1px solid #811fa3;
+  background: #811fa31a;
 }
 .minder-sizing {
   position: relative;

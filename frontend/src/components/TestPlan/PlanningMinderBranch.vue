@@ -6,11 +6,15 @@
         type="button"
         class="minder-node"
         :class="{
-          selected: selectedId === node.id,
+          selected: selectedIds.has(node.id),
           root: node.kind === 'root',
         }"
         :aria-label="node.name"
-        @click="emit('select', node.id)"
+        :aria-pressed="selectedIds.has(node.id)"
+        @pointerdown="
+          ($event.ctrlKey || $event.metaKey) && $event.stopPropagation()
+        "
+        @click="emit('select', node.id, $event)"
         @dblclick="emit('edit', node.id)"
       >
         <span v-if="node.executionMode">{{
@@ -44,7 +48,11 @@
         {{ collapsed.has(node.id) ? "+" : "−" }}
       </button>
       <slot
-        v-if="selectedId === node.id && editingId !== node.id"
+        v-if="
+          selectedIds.size === 1 &&
+          selectedIds.has(node.id) &&
+          editingId !== node.id
+        "
         name="menu"
         :node="node"
       />
@@ -55,7 +63,7 @@
         :key="child.id"
         :node="child"
         :points="points"
-        :selected-id="selectedId"
+        :selected-ids="selectedIds"
         :collapsed="collapsed"
         :can-edit="canEdit"
         :editing-id="editingId"
@@ -64,7 +72,7 @@
         @edit-name="(name) => emit('editName', name)"
         @rename="emit('rename')"
         @cancel-edit="emit('cancelEdit')"
-        @select="(id) => emit('select', id)"
+        @select="(id, event) => emit('select', id, event)"
         @toggle="(id) => emit('toggle', id)"
         @reorder="(parent, ordered) => emit('reorder', parent, ordered)"
         ><template #menu="scope"><slot name="menu" v-bind="scope" /></template
@@ -89,7 +97,7 @@
           class="sortable-collection"
           :node="child"
           :points="points"
-          :selected-id="selectedId"
+          :selected-ids="selectedIds"
           :collapsed="collapsed"
           :can-edit="canEdit"
           :editing-id="editingId"
@@ -98,7 +106,7 @@
           @edit-name="(name) => emit('editName', name)"
           @rename="emit('rename')"
           @cancel-edit="emit('cancelEdit')"
-          @select="(id) => emit('select', id)"
+          @select="(id, event) => emit('select', id, event)"
           @toggle="(id) => emit('toggle', id)"
           @reorder="(parent, ordered) => emit('reorder', parent, ordered)"
           ><template #menu="scope"><slot name="menu" v-bind="scope" /></template
@@ -116,14 +124,14 @@ defineSlots<{ menu(props: { node: PlanMinderNode }): unknown }>();
 const props = defineProps<{
   node: PlanMinderNode;
   points: PlanNode[];
-  selectedId?: string;
+  selectedIds: ReadonlySet<string>;
   collapsed: ReadonlySet<string>;
   canEdit: boolean;
   editingId?: string;
   editName?: string;
 }>();
 const emit = defineEmits<{
-  select: [id: string];
+  select: [id: string, event: MouseEvent];
   toggle: [id: string];
   reorder: [parent: PlanMinderNode, ordered: PlanMinderNode[]];
   edit: [id: string];

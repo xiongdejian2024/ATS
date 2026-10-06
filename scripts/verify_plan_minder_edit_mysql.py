@@ -10,7 +10,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 logging.basicConfig(
-    filename=ROOT / "logs/第59部分MySQL验收.log",
+    filename=ROOT / "logs/第60部分MySQL验收.log",
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
@@ -239,16 +239,85 @@ def main():
             assert current["policy"]["executionMode"] == "parallel"
             db.commit()
             try:
-                save(db, db.get(User, "owner"), "plan", MinderSave(
-                    expectedFingerprint=current["fingerprint"], executionMode="serial",
-                    points=[dict(id=identifier, name="默认测试集", category="functional", position=0)],
-                ))
+                save(
+                    db,
+                    db.get(User, "owner"),
+                    "plan",
+                    MinderSave(
+                        expectedFingerprint=current["fingerprint"],
+                        executionMode="serial",
+                        points=[
+                            dict(
+                                id=identifier,
+                                name="默认测试集",
+                                category="functional",
+                                position=0,
+                            )
+                        ],
+                    ),
+                )
                 raise AssertionError("虚拟默认集重名不应保存成功")
             except HTTPException as exc:
                 log.exception("预期的默认集重名校验，根方式及名称整体回滚")
                 assert exc.status_code == 422
                 db.rollback()
-            assert load(db, db.get(User, "owner"), "plan")["fingerprint"] == current["fingerprint"]
+            assert (
+                load(db, db.get(User, "owner"), "plan")["fingerprint"]
+                == current["fingerprint"]
+            )
+            db.commit()
+            # 同一次整图请求删除跨分类实体集及默认集，先验证旧指纹整批回滚。
+            db.add_all(
+                [
+                    PlanNode(
+                        id="batch-api",
+                        plan_id="plan",
+                        name="批量接口集",
+                        node_type="point",
+                        category="api",
+                        position=0,
+                        config={},
+                    ),
+                    PlanNode(
+                        id="batch-scene",
+                        plan_id="plan",
+                        name="批量场景集",
+                        node_type="point",
+                        category="scenario",
+                        position=0,
+                        config={},
+                    ),
+                ]
+            )
+            db.flush()
+            for case_id, category, collection_id in [
+                ("case-0", "api", "batch-api"),
+                ("case-1", "scenario", "batch-scene"),
+            ]:
+                db.get(TestCase, case_id).type = category
+                db.query(PlanCaseRelation).filter_by(
+                    case_id=case_id
+                ).one().collection_id = collection_id
+            db.commit()
+            try:
+                save(
+                    db,
+                    db.get(User, "owner"),
+                    "plan",
+                    MinderSave(
+                        expectedFingerprint=current["fingerprint"],
+                        points=[],
+                        deleteDefaults=["functional"],
+                    ),
+                )
+                raise AssertionError("旧批量删除指纹不应通过")
+            except HTTPException as exc:
+                log.exception("预期的跨分类批量删除冲突，所有集及关联保持")
+                assert exc.status_code == 409
+                db.rollback()
+            assert db.get(PlanNode, "batch-api") and db.get(PlanNode, "batch-scene")
+            assert db.query(PlanCaseRelation).count() == 3
+            current = load(db, db.get(User, "owner"), "plan")
             db.commit()
             save(
                 db,
@@ -270,6 +339,14 @@ def main():
             db.commit()
             assert db.query(PlanCaseRelation).count() == 0
             assert db.query(TestCase).count() == 3
+            assert (
+                db.get(PlanNode, "batch-api") is None
+                and db.get(PlanNode, "batch-scene") is None
+            )
+            assert db.get(PlanNode, identifier).name == "默认集实体"
+            log.info(
+                "跨分类实体集与默认集批量删除同事务完成，保留集名称、三主用例及根策略；陈旧批量请求整批409，无任务"
+            )
         log.info(
             "真实项目锁等待后读取最新关联并拒绝旧指纹；删除默认集仅取消关联，主用例保留，无任何队列任务"
         )

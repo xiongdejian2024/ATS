@@ -1,4 +1,5 @@
 import { cloneDeep } from "lodash-es";
+import type { MinderDeletionTarget } from "./planMinderSelection";
 import type {
   MinderCategory,
   MinderSave,
@@ -234,6 +235,30 @@ export class PlanMinderDraft {
     }
     this.recalculate();
     return point;
+  }
+  removeMany(targets: MinderDeletionTarget[]) {
+    if (!this.workspace) throw new Error("测试规划尚未加载");
+    // 先验证整个范围，任何过期或旧公共集投影都不部分删除。
+    for (const target of targets) {
+      if (target.nodeId) {
+        const point = this.workspace.nodes.find((n) => n.id === target.nodeId);
+        if (
+          !point ||
+          point.nodeType !== "point" ||
+          point.category !== target.category
+        )
+          throw new Error("选中的测试集已变化，请重新选择");
+      }
+    }
+    for (const target of targets) {
+      if (
+        target.nodeId &&
+        this.workspace.nodes.some((n) => n.id === target.nodeId)
+      )
+        this.remove(target.nodeId);
+      else if (!target.nodeId) this.removeDefault(target.category);
+    }
+    this.recalculate();
   }
   remove(id: string) {
     if (!this.workspace) return;

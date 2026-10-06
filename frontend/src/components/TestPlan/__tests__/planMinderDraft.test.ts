@@ -61,6 +61,79 @@ function fixture(): MinderWorkspace {
   };
 }
 describe("规划整体草稿", () => {
+  it("整批删除默认与父子集保留其他关联，取消完整还原配置、顺序和指纹", () => {
+    const source = fixture();
+    source.nodes = [
+      {
+        id: "parent",
+        name: "父集",
+        nodeType: "point",
+        category: "api",
+        parentId: null,
+        position: 0,
+      },
+      {
+        id: "child",
+        name: "子集",
+        nodeType: "point",
+        category: "api",
+        parentId: "parent",
+        position: 0,
+      },
+      {
+        id: "keep",
+        name: "保留集",
+        nodeType: "point",
+        category: "scenario",
+        parentId: null,
+        position: 0,
+      },
+    ] as PlanNode[];
+    source.entries.api.push({
+      associationId: "child-original",
+      caseId: "master-child",
+      collectionId: "child",
+    } as PlanCaseEntry);
+    source.entries.scenario.push({
+      associationId: "keep-original",
+      caseId: "master-keep",
+      collectionId: "keep",
+    } as PlanCaseEntry);
+    const draft = new PlanMinderDraft();
+    draft.load(source);
+    draft.configure("default:api", {
+      ...source.executionCatalog.configurations["default:api"].config,
+      extended: false,
+    });
+    draft.removeMany([
+      { category: "api" },
+      { nodeId: "parent", category: "api" },
+      { nodeId: "child", category: "api" },
+    ]);
+    expect(draft.payload.points.map((n) => n.id)).toEqual(["keep"]);
+    expect(draft.payload.deleteDefaults).toEqual(["api"]);
+    expect(draft.workspace!.entries.api).toEqual([]);
+    expect(draft.workspace!.entries.scenario[0].associationId).toBe(
+      "keep-original",
+    );
+    expect(draft.payload.configurations).toEqual({});
+    expect(draft.payload.expectedFingerprint).toBe(source.fingerprint);
+    draft.reset();
+    expect(draft.workspace).toEqual(source);
+    expect(draft.dirty).toBe(false);
+  });
+  it("范围中一个节点过期或分类不符时，不部分删除前面合法集", () => {
+    const draft = new PlanMinderDraft();
+    draft.load(fixture());
+    expect(() =>
+      draft.removeMany([
+        { category: "api" },
+        { category: "api", nodeId: "missing" },
+      ]),
+    ).toThrow("重新选择");
+    expect(draft.workspace!.entries.api).toHaveLength(1);
+    expect(draft.dirty).toBe(false);
+  });
   it("直接插入可暂存默认重名文本，退出编辑及保存前须改名，原关联保留", () => {
     const draft = new PlanMinderDraft();
     draft.load(fixture());
