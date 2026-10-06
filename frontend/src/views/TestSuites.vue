@@ -328,32 +328,7 @@
       </template>
       <div class="log-container">
         <a-spin :spinning="executionLogLoading">
-          <div class="log-content" ref="logContentRef">
-            <div v-if="suiteLogs.length > 0">
-              <div
-                v-for="(log, index) in suiteLogs"
-                :key="index"
-                class="log-entry"
-              >
-                <div class="log-header">
-                  <span class="log-time">{{ formatLogTime(log.timestamp) }}</span>
-                </div>
-                <div class="log-message">
-                  <div
-                    v-for="(line, lineIndex) in log.message.split('\n')"
-                    :key="lineIndex"
-                    class="log-line"
-                  >
-                    <span v-if="line.trim()">{{ line }}</span>
-                    <span v-else class="log-empty-line">&nbsp;</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-if="suiteLogs.length === 0 && !executionLogLoading" class="log-empty">
-              暂无日志
-            </div>
-          </div>
+          <BoundedLogViewer :records="suiteLogs" />
         </a-spin>
       </div>
     </a-modal>
@@ -365,12 +340,14 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined, ReloadOutlined, GithubOutlined, GitlabOutlined, CodeOutlined, PlayCircleOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined } from '@ant-design/icons-vue';
-import { testSuiteApi, type TestSuite, type TestSuiteExecution } from '@/api/testSuite';
+import { testSuiteApi, type TestSuite } from '@/api/testSuite';
 import { testPlanApi } from '@/api/testPlan';
 import { environmentApi } from '@/api/environment';
 import { useProjectStore } from '@/stores/project';
 import TestSuiteEdit from '@/components/TestPlan/TestSuiteEdit.vue'
 import { logWebSocketManager, type LogMessage } from '@/utils/logWebSocket';
+import BoundedLogViewer from '@/components/ExecutionLogs/BoundedLogViewer.vue';
+import { useBoundedLogs } from '@/components/ExecutionLogs/useBoundedLogs';
 import type { TestPlan, Project } from '@/types';
 import dayjs from 'dayjs'
 import { useIntervalFn } from '@vueuse/core'
@@ -491,9 +468,8 @@ const executionHistory = ref<any[]>([])
 
 const executionLogModalVisible = ref(false)
 const currentLogSuite = ref<TestSuite | null>(null)
-const suiteLogs = ref<Array<{ message: string; timestamp: string; execution_id?: string }>>([])
-const logContentRef = ref<HTMLElement | null>(null)
-const autoScroll = ref(true)
+const { records: suiteLogs, append: appendLog, replace: replaceLogs, clear: clearLogBuffer } = useBoundedLogs()
+let logRequest = 0
 const currentLogHandler = ref<((message: LogMessage) => void) | null>(null)
 const executionSearchValue = ref<string>('')
 const executionResultFilter = ref<string>()
@@ -771,7 +747,7 @@ const executeSuite = async (suite: TestSuite) => {
         
         // 如果日志对话框已打开且是当前测试套，清空日志准备接收新日志
         if (executionLogModalVisible.value && currentLogSuite.value?.id === suite.id) {
-          suiteLogs.value = []
+          clearLogBuffer()
           // 确保WebSocket连接已建立
           if (!logWebSocketManager.isConnected() || logWebSocketManager.getCurrentSuiteId() !== suite.id) {
             await logWebSocketManager.connect(suite.id)
@@ -809,146 +785,33 @@ const cancelSuite = async (suite: TestSuite) => {
 
 
 const viewSuiteLogs = async (suite: TestSuite) => {
-  // 如果之前有处理器，先移除
-  if (currentLogHandler.value) {
-    logWebSocketManager.off(currentLogHandler.value)
-    currentLogHandler.value = null
-  }
-  
+  closeLogModal()
   currentLogSuite.value = suite
-  suiteLogs.value = []
+  clearLogBuffer()
   executionLogModalVisible.value = true
-  
-  // 加载历史日志
-  await loadSuiteLogs(suite.id)
-  
-  // 连接日志WebSocket
-  await logWebSocketManager.connect(suite.id)
-  
-  // 注册日志消息处理器
-  const logHandler = (message: LogMessage) => {
-    if (message.type === 'test_suite_log' && message.suite_id === suite.id && message.data) {
-      // 查找是否已存在相同execution_id的日志记录
-      const executionId = message.data.execution_id
-      if (executionId) {
-        const existingIndex = suiteLogs.value.findIndex(log => log.execution_id === executionId)
-        if (existingIndex >= 0) {
-          // 如果已存在，追加新的日志消息（换行分隔）
-          suiteLogs.value[existingIndex].message += '\n' + message.data.message
-          suiteLogs.value[existingIndex].timestamp = message.data.timestamp
-        } else {
-          // 如果不存在，创建新记录
-          suiteLogs.value.push({
-            message: message.data.message,
-            timestamp: message.data.timestamp,
-            execution_id: executionId
-          })
-        }
-      } else {
-        // 如果没有execution_id，追加到最后一条记录或创建新记录
-        if (suiteLogs.value.length > 0) {
-          const lastLog = suiteLogs.value[suiteLogs.value.length - 1]
-          if (!lastLog.execution_id) {
-            // 如果最后一条记录也没有execution_id，追加到它
-            lastLog.message += '\n' + message.data.message
-            lastLog.timestamp = message.data.timestamp
-          } else {
-            // 否则创建新记录
-            suiteLogs.value.push({
-              message: message.data.message,
-              timestamp: message.data.timestamp
-            })
-          }
-        } else {
-          // 如果没有记录，创建新记录
-          suiteLogs.value.push({
-            message: message.data.message,
-            timestamp: message.data.timestamp
-          })
-        }
-      }
-      
-      // 自动滚动到底部
-      if (autoScroll.value && logContentRef.value) {
-        setTimeout(() => {
-          if (logContentRef.value) {
-            logContentRef.value.scrollTop = logContentRef.value.scrollHeight
-          }
-        }, 10)
-      }
-    }
+  const logHandler = (event: LogMessage) => {
+    if (executionLogModalVisible.value && currentLogSuite.value?.id === suite.id
+      && event.type === 'test_suite_log' && event.suite_id === suite.id && event.data) appendLog(event.data)
   }
-  
   logWebSocketManager.on(logHandler)
   currentLogHandler.value = logHandler
+  const connected = await logWebSocketManager.connect(suite.id)
+  if (currentLogSuite.value?.id !== suite.id || !executionLogModalVisible.value) return
+  if (!connected) message.warning('实时日志连接失败，可刷新查看服务器日志')
+  await loadSuiteLogs(suite.id)
 }
 
 const loadSuiteLogs = async (suiteId: string) => {
+  const request = ++logRequest
   executionLogLoading.value = true
   try {
-    // 从API获取历史日志
-    // 增加limit值以避免日志记录被截断，如果日志很多可以后续实现分页加载
-    const response = await testSuiteApi.getSuiteLogs(suiteId, {
-      skip: 0,
-      limit: 10000  // 增加到10000，避免日志记录被截断
-    })
-    
-    const logs = response.items || []
-    suiteLogs.value = logs.map((log: any) => ({
-      message: log.message || '',
-      timestamp: log.timestamp || log.createdAt,
-      execution_id: log.execution_id
-    }))
-    
-    // 滚动到底部
-    if (logContentRef.value) {
-      setTimeout(() => {
-        if (logContentRef.value) {
-          logContentRef.value.scrollTop = logContentRef.value.scrollHeight
-        }
-      }, 100)
-    }
+    const response = await testSuiteApi.getSuiteLogs(suiteId, { skip: 0, limit: 20 })
+    if (request === logRequest && currentLogSuite.value?.id === suiteId && executionLogModalVisible.value) replaceLogs(response.items || [])
   } catch (error) {
-    console.error('Failed to load suite logs:', error)
-    // 如果API不存在，尝试从执行记录获取（兼容旧版本）
-    try {
-      const response = await testSuiteApi.getSuiteExecutions(suiteId, {
-        skip: 0,
-        limit: 100
-      })
-      
-      const executions = response.items || []
-      if (executions.length === 0) {
-        suiteLogs.value = []
-        return
-      }
-      
-      const latestExecutionTime = executions
-        .map((e: TestSuiteExecution) => e.executedAt)
-        .sort()
-        .reverse()[0]
-      
-      // 从执行记录中获取日志（如果有logOutput字段）
-      // 注意：现在日志应该从TestSuiteLog表获取，这里作为fallback
-      const logs: Array<{ message: string; timestamp: string; execution_id?: string }> = []
-      const latestExecutions = executions.filter((e: TestSuiteExecution) => e.executedAt === latestExecutionTime)
-      
-      for (const execution of latestExecutions) {
-        if (execution.logOutput) {
-          // 将logOutput作为一条完整的日志记录
-          logs.push({
-            message: execution.logOutput,
-            timestamp: execution.executedAt
-          })
-        }
-      }
-      
-      suiteLogs.value = logs
-    } catch (fallbackError) {
-      console.error('Failed to load suite logs from executions:', fallbackError)
-    }
+    console.error('加载测试套日志失败:', error)
+    if (request === logRequest) message.error('加载日志失败')
   } finally {
-    executionLogLoading.value = false
+    if (request === logRequest) executionLogLoading.value = false
   }
 }
 
@@ -959,10 +822,15 @@ const refreshLogs = () => {
 }
 
 const clearLogs = () => {
-  suiteLogs.value = []
+  logRequest++
+  executionLogLoading.value = false
+  clearLogBuffer()
 }
 
 const closeLogModal = () => {
+  logRequest++
+  executionLogLoading.value = false
+  clearLogBuffer()
   executionLogModalVisible.value = false
   currentLogSuite.value = null
   
@@ -974,14 +842,7 @@ const closeLogModal = () => {
   logWebSocketManager.disconnect()
 }
 
-const formatLogTime = (timestamp: string | undefined): string => {
-  if (!timestamp) return ''
-  try {
-    return dayjs(timestamp).format('HH:mm:ss')
-  } catch {
-    return ''
-  }
-}
+
 
 const handleMoreMenuClick = (key: string, record: TestSuite) => {
   switch (key) {

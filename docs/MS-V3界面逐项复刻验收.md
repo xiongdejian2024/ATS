@@ -1005,3 +1005,17 @@
 - 第70部分精确提交 `4155ba5cc51749a382f77b6a445b1ccb04a6649c` 软件CI `37424409188`（533后端、173前端）及框架CI `37424409179` 均最终成功。本部分远程CI按最终提交核验，整体目标仍继续：环境变量持久化/初始变量、全局前后置、脚本/SQL/Mock、Java表达式方言、完整文件库/二进制文档提取、大文件捕获与高级报告、脑图/评审/全局资源等尚未全部对齐，不声明整个平台100%完成。
 
 本部分官方依据：[变量断言表](https://github.com/metersphere/metersphere/blob/cf7a649a71f4db27c42547d7aa62816826d645ff/frontend/src/components/business/ms-assertion/comp/VariableTab.vue)、[十九条件](https://github.com/metersphere/metersphere/blob/cf7a649a71f4db27c42547d7aa62816826d645ff/frontend/src/components/pure/ms-advance-filter/index.ts)、[变量协议](https://github.com/metersphere/metersphere/blob/cf7a649a71f4db27c42547d7aa62816826d645ff/backend/services/project-management/src/main/java/io/metersphere/project/api/assertion/MsVariableAssertion.java)、[实际Groovy比较](https://github.com/metersphere/metersphere/blob/cf7a649a71f4db27c42547d7aa62816826d645ff/backend/services/api-test/src/main/java/io/metersphere/api/parser/jmeter/processor/assertion/VariableAssertionConverter.java)。
+
+
+## 第72部分：功能执行实时日志、有界视窗与完整存储（2026-10-06）
+
+- 按用户最新要求，开发重点恢复为功能测试、测试用例和测试计划。接口高级变量、复杂语法不再作为下一阶段重点；整体MS功能与UI逐项复刻仍未100%完成。
+- 调度职责按[Jenkins官方Controller/Agent说明](https://www.jenkins.io/doc/book/using/using-agents/)核对：中心负责排队、选择节点和监控，Agent负责本地执行。已有队列、节点并发、冻结范围、取消/心跳与可靠结果ACK保留。本部分修复这条链路的浏览器日志显示，没有宣称整个调度架构验收完成。
+- 日志独立页与测试套弹窗复用ExecutionLogs组件，最近20条记录、2000行、512 Ki字符、单行8192字符四层限制；待刷新队列同样有界，100毫秒批量更新，复用现有VueUse虚拟列表。用户滚动暂停跟随，开关/跳到最新恢复；清空、关闭、切换和卸载取消刷新，历史请求编号防止过期响应恢复已关闭内容。
+- 历史请求最多20条，默认每条只取32768个Unicode字符的尾部，SQL直接投影substr与长度，不加载ORM完整正文。最近查询采用稳定时间/主键倒序分页后恢复正序；旧完整读取接口保留。API camelCase执行ID与实时snake_case ID统一；实时消息位置标记用于快照与增量重叠合并，中文/emoji按Unicode字符去重，缺口明确提示省略。
+- WebSocket注册先于建立连接，连接超时、重连计时器和旧socket关闭均有生命周期保护；重连保留接收器。服务器每个增量只推送最近32768字符，完整正文保持。MySQL实测原TEXT在大日志写入时失败，因此模型改为MySQL LONGTEXT，并提供scripts/upgrade_functional_log_storage.py显式幂等扩容；保留已有排序规则和列注释，SQLite无须迁移。原失败及排序规则检查失败均记录完整堆栈，没有截断服务器日志伪装成功。
+- 后端全量585项通过，251.73秒、19条既有提示；新增专项4项，覆盖十万字符级正文的尾部投影/原文保持、最新顺序与筛选、权限/非法边界、真实中心增量及实际SATRunner运行pytest时完成前收到输出。前端185项/41文件通过，新增10项覆盖十万行、持续20000增量、Unicode/刷新重放/断线缺口/销毁/重连；类型和构建通过，最终构建12.96秒。原框架与硬件边界保持。
+- 临时MySQL验证旧TEXT升级两次幂等、原中文emoji/排序规则/注释保持，25条大日志只取最近20条尾部，完整正文保持。复用夹具的原当前读与并发单胜/幂等检查仍通过；最后临时库ats_native_run_83ccaf5b4373497f已回收；证据logs/第72部分MySQL排序规则修复最终.log。
+- 浏览器空间30、13313/18813隔离项目准备十万行历史；实际样本节点WebSocket连续推送两次一万行，零执行任务。修复Ant Spin外层柔性高度后，真实新增一万行视窗固定2000行、DOM45、735px；390px页面DOM36、视窗513px、底部812/外框828，整页宽390。测试套弹窗DOM38、视窗560px，末行019999保持；实际滚动暂停跟随、跳到最新、历史刷新保持末行。前期错误布局/过期截图与选择器歧义保留，交付只以最终布局与真实流证据为准；没有用DOM数量宣称浏览器全堆内存恒定。
+- 正式API及LONGTEXT容量已更新，原76表业务计数保持，仅日志正文列容量扩大且排序规则/注释保留；100用例/7计划/0活动任务/1在线Agent。Agent和worker进程身份保持，无台架执行。隔离样本项目/计划/套/节点及日志按主键精确回收，完整76表恢复基线、原31用例保持；浏览器原计划URL、登录200、1440px恢复。
+- 本部分没有解决服务器聚合日志持续重写的成本、慢订阅者背压、所有静态历史日志入口或无限归档策略；这些与功能用例/计划UI、Controller/Agent节点能力和并发验收进入后续清单，不把两处实时视窗的完成写成系统100%完成。证据：logs/第72部分真实流浏览器最终.json、浏览器布局最终.json、套日志弹窗.json、正式最终核验输出.log、清理输出.log、浏览器恢复.json。

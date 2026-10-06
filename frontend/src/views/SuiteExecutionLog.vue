@@ -17,45 +17,21 @@
 
     <div class="log-container">
       <a-spin :spinning="loading" class="log-spin">
-        <div class="log-content" ref="logContentRef">
-          <div v-if="suiteLogs.length > 0">
-            <div
-              v-for="(log, index) in suiteLogs"
-              :key="index"
-              class="log-entry"
-            >
-              <div class="log-header">
-                <span class="log-time">{{ formatLogTime(log.timestamp) }}</span>
-              </div>
-              <div class="log-message">
-                <div
-                  v-for="(line, lineIndex) in log.message.split('\n')"
-                  :key="lineIndex"
-                  class="log-line"
-                >
-                  <span v-if="line.trim()">{{ line }}</span>
-                  <span v-else class="log-empty-line">&nbsp;</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div v-if="suiteLogs.length === 0 && !loading" class="log-empty">
-            暂无日志
-          </div>
-        </div>
+        <BoundedLogViewer :records="suiteLogs" height="100%" />
       </a-spin>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { ReloadOutlined } from '@ant-design/icons-vue';
 import { testSuiteApi } from '@/api/testSuite';
 import { logWebSocketManager, type LogMessage } from '@/utils/logWebSocket';
-import dayjs from 'dayjs'
+import BoundedLogViewer from '@/components/ExecutionLogs/BoundedLogViewer.vue'
+import { useBoundedLogs } from '@/components/ExecutionLogs/useBoundedLogs'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,19 +43,20 @@ const executionId = ref<string | undefined>(undefined)
 const isRunning = ref<boolean>(false)
 
 const loading = ref(false)
-const suiteLogs = ref<Array<{ message: string; timestamp: string; execution_id?: string }>>([])
-const logContentRef = ref<HTMLElement | null>(null)
-const autoScroll = ref(true)
+const { records: suiteLogs, append: appendLog, replace: replaceLogs, clear: clearLogBuffer } = useBoundedLogs()
+let active = true
+let logRequest = 0
 const currentLogHandler = ref<((message: LogMessage) => void) | null>(null)
 
 const loadSuiteLogs = async () => {
   if (!suiteId.value) return
 
   loading.value = true
+  const request = ++logRequest
   try {
     const params: any = {
       skip: 0,
-      limit: 1000
+      limit: 20
     }
 
     if (logId.value) {
@@ -90,27 +67,12 @@ const loadSuiteLogs = async () => {
 
     const response = await testSuiteApi.getSuiteLogs(suiteId.value, params)
 
-    const logs = response.items || []
-    suiteLogs.value = logs.map((log: any) => ({
-      message: log.message || '',
-      timestamp: log.timestamp || log.createdAt,
-      execution_id: log.execution_id || executionId.value
-    }))
-
-    // 滚动到底部
-    await nextTick()
-    if (logContentRef.value) {
-      setTimeout(() => {
-        if (logContentRef.value) {
-          logContentRef.value.scrollTop = logContentRef.value.scrollHeight
-        }
-      }, 100)
-    }
+    if (active && request === logRequest) replaceLogs(response.items || [])
   } catch (error) {
-    console.error('Failed to load suite logs:', error)
+    console.error('加载测试套日志失败:', error)
     message.error('加载日志失败')
   } finally {
-    loading.value = false
+    if (request === logRequest) loading.value = false
   }
 }
 
@@ -119,16 +81,9 @@ const refreshLogs = () => {
 }
 
 const clearLogs = () => {
-  suiteLogs.value = []
-}
-
-const formatLogTime = (timestamp: string | undefined): string => {
-  if (!timestamp) return ''
-  try {
-    return dayjs(timestamp).format('HH:mm:ss')
-  } catch {
-    return ''
-  }
+  logRequest++
+  loading.value = false
+  clearLogBuffer()
 }
 
 const handleBack = () => {
@@ -154,16 +109,11 @@ onMounted(async () => {
     const suite = await testSuiteApi.getTestSuite(suiteId.value)
     suiteName.value = suite.name
   } catch (error) {
-    console.error('Failed to load suite:', error)
+    console.error('加载测试套失败:', error)
   }
 
-  // 加载历史日志
-  await loadSuiteLogs()
-
-  // 如果是执行中状态，连接WebSocket
-  if (isRunning.value) {
-    await connectWebSocket()
-  }
+  if (isRunning.value && active) await connectWebSocket()
+  if (active) await loadSuiteLogs()
 })
 
 // 连接WebSocket
@@ -176,69 +126,21 @@ const connectWebSocket = async () => {
     currentLogHandler.value = null
   }
 
-  // 连接日志WebSocket
-  await logWebSocketManager.connect(suiteId.value)
-
-  // 注册日志消息处理器
-  const logHandler = (message: LogMessage) => {
-    if (message.type === 'test_suite_log' && message.suite_id === suiteId.value && message.data) {
-      // 查找是否已存在相同execution_id的日志记录
-      const msgExecutionId = message.data.execution_id
-      if (msgExecutionId) {
-        const existingIndex = suiteLogs.value.findIndex(log => log.execution_id === msgExecutionId)
-        if (existingIndex >= 0) {
-          // 如果已存在，追加新的日志消息（换行分隔）
-          suiteLogs.value[existingIndex].message += '\n' + message.data.message
-          suiteLogs.value[existingIndex].timestamp = message.data.timestamp
-        } else {
-          // 如果不存在，创建新记录
-          suiteLogs.value.push({
-            message: message.data.message,
-            timestamp: message.data.timestamp,
-            execution_id: msgExecutionId
-          })
-        }
-      } else {
-        // 如果没有execution_id，追加到最后一条记录或创建新记录
-        if (suiteLogs.value.length > 0) {
-          const lastLog = suiteLogs.value[suiteLogs.value.length - 1]
-          if (!lastLog.execution_id) {
-            // 如果最后一条记录也没有execution_id，追加到它
-            lastLog.message += '\n' + message.data.message
-            lastLog.timestamp = message.data.timestamp
-          } else {
-            // 否则创建新记录
-            suiteLogs.value.push({
-              message: message.data.message,
-              timestamp: message.data.timestamp
-            })
-          }
-        } else {
-          // 如果没有记录，创建新记录
-          suiteLogs.value.push({
-            message: message.data.message,
-            timestamp: message.data.timestamp
-          })
-        }
-      }
-
-      // 自动滚动到底部
-      if (autoScroll.value && logContentRef.value) {
-        nextTick(() => {
-          if (logContentRef.value) {
-            logContentRef.value.scrollTop = logContentRef.value.scrollHeight
-          }
-        })
-      }
-    }
+  const logHandler = (event: LogMessage) => {
+    if (active && event.type === 'test_suite_log' && event.suite_id === suiteId.value && event.data
+      && (!executionId.value || event.data.execution_id === executionId.value)
+      && (!logId.value || event.data.id === logId.value)) appendLog(event.data)
   }
 
   logWebSocketManager.on(logHandler)
   currentLogHandler.value = logHandler
+  if (!await logWebSocketManager.connect(suiteId.value) && active) message.warning('实时日志连接失败，可刷新查看服务器日志')
 }
 
 // 组件卸载时清理
 onUnmounted(() => {
+  active = false
+  logRequest++
   // 断开WebSocket连接
   if (currentLogHandler.value) {
     logWebSocketManager.off(currentLogHandler.value)
@@ -265,6 +167,7 @@ onUnmounted(() => {
 }
 
 .log-container {
+  min-height: 0;
   flex: 1;
   padding: 16px;
   display: flex;
@@ -273,14 +176,16 @@ onUnmounted(() => {
   position: relative;
 }
 
-.log-spin {
+.log-container :deep(.ant-spin-nested-loading) {
+  min-height: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.log-spin :deep(.ant-spin-container) {
+.log-container :deep(.ant-spin-container) {
+  min-height: 0;
   flex: 1;
   display: flex;
   flex-direction: column;

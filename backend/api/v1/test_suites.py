@@ -564,15 +564,16 @@ async def get_suite_logs(
     suite_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = 0,
-    limit: int = 1000,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(1000, ge=1, le=10000),
     execution_id: Optional[str] = Query(None, alias="executionId"),
-    log_id: Optional[str] = Query(None, alias="logId")
+    log_id: Optional[str] = Query(None, alias="logId"),
+    tail_chars: Optional[int] = Query(None, alias="tailChars", ge=1, le=32768),
+    latest: bool = Query(False)
 ):
     """获取测试套日志"""
     require_suite_access(db, current_user, suite_id, "read")
     from models.test_suite import TestSuiteLog
-    from utils.serializer import serialize_model
     from core.logger import logger
     
     logger.info(f"[API] 获取测试套日志: suite_id={suite_id}, log_id={log_id}, execution_id={execution_id}, skip={skip}, limit={limit}")
@@ -591,21 +592,12 @@ async def get_suite_logs(
             # 如果没有指定log_id或execution_id，查询所有日志
             logger.info(f"[API] 查询所有日志（未指定log_id或execution_id）")
         
-        total = query.count()
-        logger.info(f"[API] 查询到 {total} 条日志记录")
-        items = query.order_by(TestSuiteLog.timestamp.asc()).offset(skip).limit(limit).all()
-        logger.info(f"[API] 返回 {len(items)} 条日志记录")
-        return APIResponse(
-            status=ResponseStatus.SUCCESS,
-            message="获取成功",
-            data={
-                "items": [serialize_model(item, camel_case=True) for item in items],
-                "total": total,
-                "skip": skip,
-                "limit": limit
-            }
-        )
+        from services.bounded_logs import log_window
+        data = log_window(query, skip, limit, tail_chars, latest)
+        logger.info("获取日志视窗完成: suite_id={} 条数={} 尾部字符数={}", suite_id, len(data['items']), tail_chars)
+        return APIResponse(status=ResponseStatus.SUCCESS, message="获取成功", data=data)
     except Exception as e:
+        logger.exception("获取测试套日志失败: suite_id={}", suite_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"获取日志失败: {str(e)}"

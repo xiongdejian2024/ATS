@@ -110,10 +110,11 @@ export const testSuiteApi = {
   },
 
   // 获取测试套日志
-  getSuiteLogs: async (suiteId: string, params?: { skip?: number; limit?: number; executionId?: string; logId?: string }): Promise<PaginationResponse<{ id: string; level?: string; message: string; timestamp: string; createdAt: string; execution_id?: string }>> => {
+  getSuiteLogs: async (suiteId: string, params?: { skip?: number; limit?: number; executionId?: string; logId?: string }): Promise<PaginationResponse<{ id: string; level?: string; message: string; timestamp: string; createdAt: string; execution_id?: string; executionId?: string; totalChars?: number; truncated?: boolean }>> => {
     const queryParams = new URLSearchParams()
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
+    const boundedParams = { ...params, limit: Math.min(20, Math.max(1, params?.limit || 20)), tailChars: 32768, latest: true }
+    if (boundedParams) {
+      Object.entries(boundedParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           queryParams.append(key, String(value))
         }

@@ -3,154 +3,84 @@ import { useUserStore } from '@/stores/user'
 export interface LogMessage {
   type: 'test_suite_log' | 'connected' | 'ping' | 'pong'
   suite_id?: string
-  data?: {
-    id: string
-    message: string
-    timestamp: string
-    execution_id?: string
-  }
+  data?: { id: string; message: string; timestamp: string; execution_id?: string; endOffset?: number; truncated?: boolean }
   message?: string
 }
-
 export type LogMessageHandler = (message: LogMessage) => void
 
-class LogWebSocketManager {
+export class LogWebSocketManager {
   private ws: WebSocket | null = null
   private suiteId: string | null = null
-  private handlers: Set<LogMessageHandler> = new Set()
-  private reconnectAttempts: number = 0
-  private maxReconnectAttempts: number = 5
-  private reconnectDelay: number = 3000
-  private shouldReconnect: boolean = true
+  private handlers = new Set<LogMessageHandler>()
+  private reconnectAttempts = 0
+  private reconnectTimer: ReturnType<typeof setTimeout> | undefined
+  private pending: Promise<boolean> | undefined
+  private generation = 0
 
-  /**
-   * 连接到日志WebSocket
-   */
   async connect(suiteId: string): Promise<boolean> {
-    if (this.ws?.readyState === WebSocket.OPEN && this.suiteId === suiteId) {
-      return true
-    }
-
-    // 如果已连接但suiteId不同，先断开
-    if (this.ws) {
-      this.disconnect()
-    }
-
+    if (this.suiteId === suiteId && this.ws?.readyState === WebSocket.OPEN) return true
+    if (this.suiteId === suiteId && this.ws?.readyState === WebSocket.CONNECTING && this.pending) return this.pending
+    this.closeSocket()
     this.suiteId = suiteId
-    this.shouldReconnect = true
-    const userStore = useUserStore()
-    const token = userStore.accessToken
-
-    if (!token) {
-      console.error('[Log WebSocket] 连接失败: 缺少Token')
-      return false
-    }
-
+    const generation = this.generation
+    const token = useUserStore().accessToken
+    if (!token) { console.error('日志连接失败：缺少登录凭据'); return false }
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.host
-    const wsUrl = `${protocol}//${host}/ws/client?token=${encodeURIComponent(token)}&suite_id=${suiteId}`
-
-    return new Promise((resolve) => {
+    const url = `${protocol}//${window.location.host}/ws/client?token=${encodeURIComponent(token)}&suite_id=${encodeURIComponent(suiteId)}`
+    this.pending = new Promise(resolve => {
       try {
-        this.ws = new WebSocket(wsUrl)
-
-        this.ws.onopen = () => {
-          console.log(`[Log WebSocket] 已连接到测试套 ${suiteId} 的日志流`)
+        const socket = new WebSocket(url)
+        this.ws = socket
+        const current = () => generation === this.generation && socket === this.ws
+        const timeout = setTimeout(() => { if (current() && socket.readyState === WebSocket.CONNECTING) socket.close(); resolve(false) }, 10000)
+        socket.onopen = () => {
+          clearTimeout(timeout)
+          if (!current()) { resolve(false); return }
           this.reconnectAttempts = 0
+          console.info('实时日志连接成功', suiteId)
           resolve(true)
         }
-
-        this.ws.onmessage = (event) => {
+        socket.onmessage = event => {
+          if (!current()) return
           try {
-            const message: LogMessage = JSON.parse(event.data)
-            this.handleMessage(message)
-          } catch (error) {
-            console.error('[Log WebSocket] 消息解析失败:', error)
-          }
+            // 服务端单条最多32768字符；异常大帧拒绝解析，避免额外JSON内存分配。
+            if (typeof event.data !== 'string' || event.data.length > 256 * 1024) throw new Error('日志帧超过视窗传输上限')
+            const message = JSON.parse(event.data) as LogMessage
+            this.handlers.forEach(handler => {
+              try { handler(message) } catch (error) { console.error('处理实时日志失败:', error) }
+            })
+          } catch (error) { console.error('解析实时日志失败:', error) }
         }
-
-        this.ws.onerror = (error) => {
-          console.error('[Log WebSocket] 连接错误:', error)
-          resolve(false)
-        }
-
-        this.ws.onclose = () => {
-          console.log('[Log WebSocket] 连接已关闭')
-          this.ws = null
-          
-          // 自动重连
-          if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts && this.suiteId) {
+        socket.onerror = error => { clearTimeout(timeout); console.error('实时日志连接错误:', error); resolve(false) }
+        socket.onclose = () => {
+          clearTimeout(timeout); resolve(false)
+          if (!current()) return
+          this.ws = null; this.pending = undefined
+          if (this.suiteId && this.reconnectAttempts < 5) {
             this.reconnectAttempts++
-            console.log(`[Log WebSocket] 尝试重连 (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`)
-            setTimeout(() => {
-              if (this.suiteId) {
-                this.connect(this.suiteId)
-              }
-            }, this.reconnectDelay)
+            console.info('实时日志重连', this.reconnectAttempts)
+            this.reconnectTimer = setTimeout(() => {
+              this.reconnectTimer = undefined
+              if (generation === this.generation && this.suiteId) void this.connect(this.suiteId)
+            }, 3000)
           }
         }
-      } catch (error) {
-        console.error('[Log WebSocket] 连接失败:', error)
-        resolve(false)
-      }
+      } catch (error) { console.error('建立实时日志连接失败:', error); resolve(false) }
     })
+    return this.pending
   }
-
-  /**
-   * 断开连接
-   */
-  disconnect() {
-    this.shouldReconnect = false
-    if (this.ws) {
-      this.ws.close()
-      this.ws = null
-    }
-    this.suiteId = null
-    this.handlers.clear()
+  private closeSocket() {
+    this.generation++
+    if (this.reconnectTimer !== undefined) clearTimeout(this.reconnectTimer)
+    this.reconnectTimer = undefined
+    const previous = this.ws
+    this.ws = null; this.pending = undefined
+    previous?.close()
   }
-
-  /**
-   * 注册消息处理器
-   */
-  on(handler: LogMessageHandler) {
-    this.handlers.add(handler)
-  }
-
-  /**
-   * 取消注册消息处理器
-   */
-  off(handler: LogMessageHandler) {
-    this.handlers.delete(handler)
-  }
-
-  /**
-   * 处理消息
-   */
-  private handleMessage(message: LogMessage) {
-    this.handlers.forEach(handler => {
-      try {
-        handler(message)
-      } catch (error) {
-        console.error('[Log WebSocket] 处理消息时出错:', error)
-      }
-    })
-  }
-
-  /**
-   * 检查连接状态
-   */
-  isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN
-  }
-
-  /**
-   * 获取当前连接的suiteId
-   */
-  getCurrentSuiteId(): string | null {
-    return this.suiteId
-  }
+  disconnect() { this.closeSocket(); this.suiteId = null; this.reconnectAttempts = 0; this.handlers.clear() }
+  on(handler: LogMessageHandler) { this.handlers.add(handler) }
+  off(handler: LogMessageHandler) { this.handlers.delete(handler) }
+  isConnected(): boolean { return this.ws?.readyState === WebSocket.OPEN }
+  getCurrentSuiteId(): string | null { return this.suiteId }
 }
-
-// 单例
 export const logWebSocketManager = new LogWebSocketManager()
-

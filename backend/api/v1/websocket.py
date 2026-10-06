@@ -576,8 +576,8 @@ async def handle_test_suite_log(db: Session, environment_id: str, message: dict)
                     log_timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
                 else:
                     log_timestamp = datetime.fromisoformat(timestamp)
-            except Exception as e:
-                logger.warning(f"[WebSocket] 解析时间戳失败: {e}, 使用当前时间")
+            except Exception:
+                logger.opt(exception=True).warning("解析日志时间戳失败，使用当前时间")
                 log_timestamp = beijing_now()
         
         # 查找或创建日志记录（每个execution_id只创建一条记录）
@@ -628,12 +628,8 @@ async def handle_test_suite_log(db: Session, environment_id: str, message: dict)
         db.refresh(log_entry)
         
         # 构建日志数据（用于实时推送）
-        log_data = {
-            "id": log_entry.id,
-            "message": log_message,  # 只推送新的日志消息
-            "timestamp": log_entry.timestamp.isoformat(),
-            "execution_id": execution_id
-        }
+        from services.bounded_logs import live_log_window
+        log_data = live_log_window(log_entry, log_message)
         
         # 推送给所有订阅该测试套日志的前端
         await frontend_manager.broadcast_log(suite_id, log_data)
@@ -658,6 +654,7 @@ async def handle_test_suite_log(db: Session, environment_id: str, message: dict)
                         last_ts = datetime.strptime(last_ts_str, "%Y-%m-%d %H:%M:%S.%f")
                         duration_seconds = (last_ts - first_ts).total_seconds()
                     except (ValueError, AttributeError):
+                        logger.opt(exception=True).warning("解析执行耗时失败，使用记录时间")
                         # 如果解析失败，使用created_at和timestamp的差值作为备选
                         if log_entry.created_at and log_entry.timestamp:
                             duration_seconds = (log_entry.timestamp - log_entry.created_at).total_seconds()
