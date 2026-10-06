@@ -30,7 +30,7 @@
           :class="{ active: group.id === activeId }"
           role="button"
           tabindex="0"
-          :aria-label="`选择${group.name}断言`"
+          :aria-label="`选择${assertionLabel(group.name)}`"
           @click="activeId = group.id"
           @keydown.enter="activeId = group.id"
           @keydown.space.prevent="activeId = group.id"
@@ -43,13 +43,13 @@
             ><HolderOutlined
               v-if="!disabled"
               class="assertion-drag"
-              :aria-label="`拖动${group.name}断言`" /><a-dropdown
+              :aria-label="`拖动${assertionLabel(group.name)}`" /><a-dropdown
               v-if="!disabled"
               :trigger="['click']"
               ><a-button
                 type="text"
                 size="small"
-                :aria-label="`${group.name}断言更多`"
+                :aria-label="`${assertionLabel(group.name)}更多`"
                 @click.stop
                 ><MoreOutlined /></a-button
               ><template #overlay
@@ -61,7 +61,7 @@
               v-model:checked="group.enable"
               :disabled="disabled"
               size="small"
-              :aria-label="`启用${group.name}断言`"
+              :aria-label="`启用${assertionLabel(group.name)}`"
               @click.stop
               @change="publish"
           /></span>
@@ -93,6 +93,13 @@
           v-else-if="active.assertionType === 'RESPONSE_HEADER'"
           v-model="active.assertions!"
           mode="HEADER"
+          :disabled="disabled"
+          @update:modelValue="publish"
+        />
+        <NativeAssertionRuleTable
+          v-else-if="active.assertionType === 'VARIABLE'"
+          v-model="active.variableAssertionItems!"
+          mode="VARIABLE"
           :disabled="disabled"
           @update:modelValue="publish"
         />
@@ -184,6 +191,8 @@ const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 const groups = ref<ResponseGroup[]>([]),
   activeId = ref(""),
   error = ref("");
+const assertionLabel = (name: string) =>
+  name.endsWith("断言") ? name : `${name}断言`;
 let output = "";
 const active = computed(
   () => groups.value.find((g) => g.id === activeId.value) || groups.value[0],

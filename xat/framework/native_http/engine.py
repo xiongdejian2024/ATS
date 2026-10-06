@@ -151,6 +151,7 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                             response,
                             elapsed_ms,
                             actual["assertions"],
+                            variables,
                         )
                     )
                     # 未指定有效断言时采用真实HTTP状态；显式断言沿已有预期错误状态语义。

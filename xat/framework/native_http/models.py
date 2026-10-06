@@ -113,7 +113,7 @@ class RequestSpec(NativeModel):
     followRedirects: StrictBool = False
     assertions: list[Assertion] = Field(default_factory=list, max_length=100)
     responseAssertions: list[ResponseAssertion] = Field(
-        default_factory=list, max_length=4
+        default_factory=list, max_length=5
     )
     headerParams: list[RequestParam] | None = Field(None, max_length=200)
     queryParams: list[RequestParam] | None = Field(None, max_length=200)

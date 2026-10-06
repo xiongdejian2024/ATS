@@ -4,8 +4,25 @@
       <thead>
         <tr>
           <th aria-label="排序"></th>
-          <th aria-label="启用"></th>
-          <th>{{ mode === "HEADER" ? "响应头" : "表达式" }}</th>
+          <th aria-label="启用">
+            <a-checkbox
+              v-if="mode === 'VARIABLE'"
+              :checked="allEnabled"
+              :indeterminate="partEnabled"
+              :disabled="disabled || !rows.some(filled)"
+              aria-label="变量断言启用全部"
+              @change="toggleAll($event.target.checked)"
+            />
+          </th>
+          <th>
+            {{
+              mode === "VARIABLE"
+                ? "变量名"
+                : mode === "HEADER"
+                  ? "响应头"
+                  : "表达式"
+            }}
+          </th>
           <th v-if="matching">匹配条件</th>
           <th v-if="matching">匹配值</th>
           <th></th>
@@ -43,6 +60,14 @@
               :disabled="disabled"
               style="width: 100%"
               :aria-label="`响应头断言名称${index + 1}`"
+              @change="publish"
+            /><a-input
+              v-else-if="mode === 'VARIABLE'"
+              v-model:value="row.variableName"
+              :disabled="disabled"
+              :maxlength="255"
+              placeholder="请输入变量名"
+              :aria-label="`变量断言名称${index + 1}`"
               @change="publish"
             /><a-input
               v-else
@@ -122,13 +147,23 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ "update:modelValue": [value: AssertionRule[]] }>();
 const matching = computed(
-  () => props.mode === "HEADER" || props.mode === "JSON_PATH",
+  () =>
+    props.mode === "HEADER" ||
+    props.mode === "JSON_PATH" ||
+    props.mode === "VARIABLE",
 );
 const headerConditions = matchConditions.map(
   (value) => conditions.find((c) => c.value === value)!,
 );
 type Row = AssertionRule & { uid: number };
 const rows = ref<Row[]>([]);
+const allEnabled = computed(() => {
+  const current = rows.value.filter(filled);
+  return current.length > 0 && current.every((r) => r.enable);
+});
+const partEnabled = computed(
+  () => !allEnabled.value && rows.value.some((r) => filled(r) && r.enable),
+);
 let identity = 0,
   output = "",
   outputMode = props.mode;
@@ -144,7 +179,7 @@ watch(
   { immediate: true },
 );
 function filled(r: AssertionRule) {
-  return !!(r.header || r.expression || r.expectedValue);
+  return !!(r.variableName || r.header || r.expression || r.expectedValue);
 }
 function publish() {
   if (props.disabled) return;
@@ -157,6 +192,11 @@ function publish() {
 function changeCondition(r: AssertionRule) {
   if (["UNCHECK", "EMPTY", "NOT_EMPTY"].includes(r.condition || ""))
     r.expectedValue = "";
+  publish();
+}
+function toggleAll(enabled: boolean) {
+  if (props.disabled) return;
+  rows.value.filter(filled).forEach((r) => (r.enable = enabled));
   publish();
 }
 function remove(index: number) {

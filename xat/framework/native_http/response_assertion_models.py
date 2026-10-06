@@ -1,4 +1,4 @@
-"""四类响应断言独立契约；保留各正文方式草稿及启停，不接受脚本。"""
+"""响应与变量断言独立契约；保留各正文方式草稿及启停，不接受脚本。"""
 
 from typing import Literal, Annotated
 from pydantic import (
@@ -7,6 +7,7 @@ from pydantic import (
     Field,
     StrictBool,
     StrictInt,
+    field_validator,
 )
 
 Condition = Literal[
@@ -99,7 +100,26 @@ class TimeAssertion(Group):
     expectedValue: StrictInt = Field(default=200, ge=0, le=2147483647)
 
 
+class VariableRule(Model):
+    variableName: str = Field(min_length=1, max_length=255)
+    condition: Condition = "EQUALS"
+    expectedValue: str = Field(default="", max_length=20000)
+    enable: StrictBool = True
+
+    @field_validator("variableName")
+    @classmethod
+    def valid_name(cls, value):
+        if not value.strip() or any(c in value for c in "\r\n\0"):
+            raise ValueError("变量断言名称不能为空或包含控制字符")
+        return value
+
+
+class VariableAssertion(Group):
+    assertionType: Literal["VARIABLE"]
+    variableAssertionItems: list[VariableRule] = Field(default_factory=list, max_length=100)
+
+
 ResponseAssertion = Annotated[
-    CodeAssertion | HeaderAssertion | BodyAssertion | TimeAssertion,
+    CodeAssertion | HeaderAssertion | BodyAssertion | TimeAssertion | VariableAssertion,
     Field(discriminator="assertionType"),
 ]

@@ -12,6 +12,7 @@ from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Slice, Descendants, Union, Fields, Index
 from jsonpath_ng.ext.filter import Filter
 from .result_details import assertion_detail
+from .variable_assertions import compare_variable
 
 logger = logging.getLogger("XAT响应断言")
 COMPARISONS = {
@@ -181,8 +182,9 @@ def xpath_value(expression, response, response_format):
     return bool(value)
 
 
-def evaluate(groups, response, elapsed_ms, detail_sink=None):
+def evaluate(groups, response, elapsed_ms, detail_sink=None, variables=None):
     results = []
+    variables = variables if variables is not None else {}
 
     def record(
         group,
@@ -234,7 +236,19 @@ def evaluate(groups, response, elapsed_ms, detail_sink=None):
         if not group.enable:
             continue
         kind = group.assertionType
-        if kind == "RESPONSE_CODE":
+        if kind == "VARIABLE":
+            for index, rule in enumerate(group.variableAssertionItems):
+                if rule.enable and rule.condition != "UNCHECK":
+                    record(
+                        group, index, rule.condition, None,
+                        value=lambda: variables.get(rule.variableName),
+                        presence=lambda: rule.variableName in variables,
+                        predicate=lambda actual: compare_variable(actual, rule.condition, rule.expectedValue),
+                        expected=rule.expectedValue,
+                        name=rule.variableName,
+                        expression=rule.variableName,
+                    )
+        elif kind == "RESPONSE_CODE":
             if group.condition != "UNCHECK":
                 record(
                     group,

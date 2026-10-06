@@ -59,4 +59,59 @@ describe("响应断言的定义及草稿", () => {
       rules([{ ...rule, condition: "UNKNOWN" }], "JSON_PATH"),
     ).toThrow();
   });
+  it("变量断言第五类保存启停、条件、顺序和复制行", () => {
+    const variable = newResponseGroup("VARIABLE");
+    const rule = {
+      ...blankRule("VARIABLE"),
+      variableName: "中文变量",
+      condition: "LENGTH_GT",
+      expectedValue: "2.5",
+    };
+    variable.variableAssertionItems = [
+      rule,
+      { ...rule, enable: false },
+      { ...rule, condition: "EMPTY", expectedValue: "" },
+    ];
+    const all = [
+      newResponseGroup("RESPONSE_CODE"),
+      newResponseGroup("RESPONSE_HEADER"),
+      newResponseGroup("RESPONSE_BODY"),
+      newResponseGroup("RESPONSE_TIME"),
+      variable,
+    ];
+    expect(readResponseAssertions(JSON.stringify(all))).toEqual(all);
+    expect(rules([rule, blankRule("VARIABLE")], "VARIABLE")).toEqual([rule]);
+    expect(() =>
+      readResponseAssertions(
+        JSON.stringify([variable, { ...variable, id: "另一标识" }]),
+      ),
+    ).toThrow();
+  });
+  it("变量断言非法半行、未知字段及非字符串值不覆盖草稿", () => {
+    const variable = newResponseGroup("VARIABLE");
+    for (const invalid of [
+      { variableName: " " },
+      { variableName: "bad\nname" },
+      { condition: "UNKNOWN" },
+      { expectedValue: null },
+      { enable: 1 },
+      { expression: "错误字段" },
+    ]) {
+      variable.variableAssertionItems = [
+        { ...blankRule("VARIABLE"), variableName: "token", ...invalid } as any,
+      ];
+      expect(() =>
+        readResponseAssertions(JSON.stringify([variable])),
+      ).toThrow();
+    }
+    expect(() =>
+      rules(
+        [{ ...blankRule("VARIABLE"), expectedValue: "未命名" }],
+        "VARIABLE",
+      ),
+    ).toThrow();
+    expect(() =>
+      readResponseAssertions(JSON.stringify([{ ...variable, extra: "错误" }])),
+    ).toThrow();
+  });
 });
