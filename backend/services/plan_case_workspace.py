@@ -300,21 +300,29 @@ def associate(db,plan,user,data):
     return result
 
 
-def candidates(db, plan, category, search, folder, priority, page, size, *, filters=None, mine=False, user_id=None, source=None, resource_type="CASE"):
+def candidates(db, plan, category, search, folder, priority, page, size, *, filters=None, mine=False, user_id=None, source=None, resource_type="CASE", condition=None, sort=None, direction="asc"):
     """数据库分页取可关联用例，目录计数不受当前页或目录范围影响。"""
-    from services.case_candidates import candidates as shared_candidates
     source = source or plan
+    from schemas.plan_candidate_selection import CandidateCondition
+    from services.plan_candidate_basic import validate, options, case_candidates
+    condition = condition or CandidateCondition()
+    validate(category, resource_type, condition)
     if resource_type == "API":
         from services.plan_definition_candidates import candidates as definition_candidates
-        result = definition_candidates(db, source, search, folder, priority, page, size, filters, mine, user_id)
+        result = definition_candidates(db, source, search, folder, priority, page, size, filters, mine, user_id, condition, sort, direction)
     elif filters is not None or mine:
         from services.plan_candidate_filter import advanced_candidates
-        result = advanced_candidates(db, source, category, filters, mine, user_id, page, size)
+        result = advanced_candidates(db, source, category, filters, mine, user_id, page, size, sort, direction)
     else:
-        result = shared_candidates(db, source.project_id, category, search, folder, priority, page, size)
+        result = case_candidates(db, source, category, search, folder, priority, page, size, condition, sort, direction)
     associated, points, _, uses = entries(db, plan, category)
     linked = {item['caseId'] for item in associated}
     items = [dict(item, alreadyLinked=item['id'] in linked) for item in result['items']]
+    if resource_type == "CASE":
+        creators = dict(db.query(User.id, User.username).filter(
+            User.id.in_({item.get('createdBy') for item in items if item.get('createdBy')})
+        ).all())
+        items = [dict(item, createdByName=creators.get(item.get('createdBy'))) for item in items]
     suites = [dict(id=row.id, name=row.name, caseIds=row.case_ids or []) for row in db.query(TestSuite).filter_by(plan_id=plan.id)]
     if category != 'functional' and resource_type == "CASE" and filters is None and not mine:
         from services.native_candidate_context import NativeCandidateContext
@@ -323,7 +331,7 @@ def candidates(db, plan, category, search, folder, priority, page, size, *, filt
         items = [dict(item, **native.values(cases[item['id']])) for item in items]
     project = db.get(Project, source.project_id)
     plans = [dict(id=p.id, name=p.name) for p in db.query(TestPlan).filter_by(project_id=source.project_id)]
-    return dict(**{key:value for key,value in result.items() if key != "items"}, items=items, usesTree=uses,
+    return dict(**{key:value for key,value in result.items() if key != "items"}, items=items, basicOptions=options(db, source.project_id) if category == "api" else None, usesTree=uses,
                 projectId=source.project_id, projectName=project.name, plans=plans,
                 collections=[dict(id=row.id, name=row.name, parentId=row.parent_id, count=0) for row in points], suites=suites,
                 syncCollections={kind: [dict(id='default', name='默认测试集', count=0)] + [dict(id=row.id, name=row.name, parentId=row.parent_id, count=0) for row in points if row.category == kind] for kind in ('api', 'scenario')})

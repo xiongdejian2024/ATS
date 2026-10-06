@@ -17,7 +17,7 @@ logging.basicConfig(
 log = logging.getLogger("接口双模式数据库验收")
 
 
-def main():
+def main(verify_basic=None):
     import pymysql
     from sqlalchemy import create_engine
     from sqlalchemy.engine import URL
@@ -58,7 +58,9 @@ def main():
         cursor.execute("SELECT CURRENT_USER()")
         account, host = cursor.fetchone()[0].rsplit("@", 1)
     connection.close()
-    name = "ats_definition_" + uuid.uuid4().hex[:16]
+    name = ("ats_candidate_" if verify_basic else "ats_definition_") + uuid.uuid4().hex[
+        :16
+    ]
     quote = lambda value: "'" + pymysql.converters.escape_string(value) + "'"
     created = granted = False
     engine = None
@@ -219,6 +221,8 @@ def main():
                 )
             db.commit()
             user = db.get(User, "owner")
+            if verify_basic:
+                verify_basic(db, user)
             from api.v1.plan_case_workspace import candidate_view_scope
             from services import plan_case_view as views
             from schemas.plan_candidate_view import CandidateViewCreate

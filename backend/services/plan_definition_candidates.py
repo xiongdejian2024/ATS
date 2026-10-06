@@ -54,9 +54,7 @@ def parse_definition_filters(raw):
 
 
 def read(query, current_read):
-    return (
-        query.populate_existing().with_for_update() if current_read else query
-    ).all()
+    return (query.populate_existing().with_for_update() if current_read else query).all()
 
 
 def children(db, project_id, ids, *, current_read=False):
@@ -106,9 +104,7 @@ def query(db, project_id, category, search, folder, priority, *, current_read=Fa
     elif folder != "all":
         if folder not in {m.id for m in modules}:
             raise HTTPException(404, "接口模块不属于当前来源项目")
-        records = records.filter(
-            ApiDefinition.module_id.in_(descendants(modules, folder))
-        )
+        records = records.filter(ApiDefinition.module_id.in_(descendants(modules, folder)))
     if current_read:
         records = records.populate_existing().with_for_update()
     return records, modules, [], {}
@@ -139,18 +135,14 @@ def values(definition, case_total, names=None):
 
 def filtered(db, project_id, raw, mine, user_id, *, current_read=False):
     conditions, logic = parse_definition_filters(raw)
-    context = CaseFilterContext(
-        db, project_id, conditions, user_id, current_read=current_read
-    )
+    context = CaseFilterContext(db, project_id, conditions, user_id, current_read=current_read)
     definitions = read(
         db.query(ApiDefinition)
         .filter_by(project_id=project_id)
         .order_by(ApiDefinition.created_at.desc(), ApiDefinition.id),
         current_read,
     )
-    child_rows = children(
-        db, project_id, [d.id for d in definitions], current_read=current_read
-    )
+    child_rows = children(db, project_id, [d.id for d in definitions], current_read=current_read)
     totals = Counter(identifier for _, identifier in child_rows)
     membership = {}
     if any(c["field"] == "planIds" for c in conditions):
@@ -172,15 +164,12 @@ def filtered(db, project_id, raw, mine, user_id, *, current_read=False):
             def module(value):
                 return (
                     None
-                    if isinstance(value, str)
-                    and value in {"null", "unplanned", "__unassigned__"}
+                    if isinstance(value, str) and value in {"null", "unplanned", "__unassigned__"}
                     else value
                 )
 
             expected = (
-                [module(v) for v in expected]
-                if isinstance(expected, list)
-                else module(expected)
+                [module(v) for v in expected] if isinstance(expected, list) else module(expected)
             )
         return matches(
             values(definition, totals[definition.id]).get(field),
@@ -197,8 +186,31 @@ def filtered(db, project_id, raw, mine, user_id, *, current_read=False):
 
 
 def candidates(
-    db, source, search, folder, priority, page, size, filters, mine, user_id
+    db,
+    source,
+    search,
+    folder,
+    priority,
+    page,
+    size,
+    filters,
+    mine,
+    user_id,
+    condition=None,
+    sort=None,
+    direction="asc",
 ):
+    from services.plan_candidate_basic import query_factory
+    from schemas.plan_candidate_selection import CandidateCondition
+
+    condition = condition or CandidateCondition()
+    basic_query = query_factory(condition, "API")
+    column = {
+        "id": ApiDefinition.id,
+        "name": ApiDefinition.name,
+        "createdAt": ApiDefinition.created_at,
+    }.get(sort, ApiDefinition.created_at)
+    descending = direction == "desc" if sort else True
     if filters is not None or mine:
         definitions = filtered(db, source.project_id, filters, mine, user_id)
         modules = read(
@@ -209,43 +221,44 @@ def candidates(
         )
         counts = Counter(d.module_id for d in definitions)
         total = len(definitions)
+        definitions.sort(
+            key=lambda d: (
+                getattr(
+                    d,
+                    {"id": "id", "name": "name", "createdAt": "created_at"}.get(sort, "created_at"),
+                ),
+                d.id,
+            ),
+            reverse=descending,
+        )
         page_rows = definitions[(page - 1) * size : page * size]
     else:
-        records, modules, _, _ = query(
-            db, source.project_id, "api", search, "all", priority
-        )
+        records, modules, _, _ = basic_query(db, source.project_id, "api", search, "all", priority)
         from sqlalchemy import func
 
         counts = Counter(
             dict(
-                records.with_entities(
-                    ApiDefinition.module_id, func.count(ApiDefinition.id)
-                )
+                records.with_entities(ApiDefinition.module_id, func.count(ApiDefinition.id))
                 .group_by(ApiDefinition.module_id)
                 .all()
             )
         )
         if folder != "all":
-            records, _, _, _ = query(
-                db, source.project_id, "api", search, folder, priority
-            )
+            records, _, _, _ = basic_query(db, source.project_id, "api", search, folder, priority)
         total = records.count()
         page_rows = (
-            records.order_by(ApiDefinition.created_at.desc(), ApiDefinition.id)
+            records.order_by(column.desc() if descending else column.asc(), ApiDefinition.id)
             .offset((page - 1) * size)
             .limit(size)
             .all()
         )
     totals = Counter(
-        identifier
-        for _, identifier in children(db, source.project_id, [d.id for d in page_rows])
+        identifier for _, identifier in children(db, source.project_id, [d.id for d in page_rows])
     )
     names = dict(
         db.query(User.id, User.username)
         .filter(
-            User.id.in_(
-                {uid for d in page_rows for uid in (d.created_by, d.updated_by) if uid}
-            )
+            User.id.in_({uid for d in page_rows for uid in (d.created_by, d.updated_by) if uid})
         )
         .all()
     )
@@ -272,9 +285,7 @@ def candidates(
         ],
         counts=dict(
             all=sum(counts.values()),
-            unassigned=sum(
-                count for key, count in counts.items() if key not in module_names
-            ),
+            unassigned=sum(count for key, count in counts.items() if key not in module_names),
         ),
     )
 
@@ -285,6 +296,9 @@ def resolve_definitions(
     from services.plan_candidate_selection import LIMIT
 
     condition, excluded, summary = selection.condition, 0, {}
+    from services.plan_candidate_basic import query_factory, definition_filters
+
+    basic_query = query_factory(condition, "API")
     if selection.moduleMaps is not None:
         from services.plan_candidate_modules import resolve_modules
 
@@ -296,7 +310,6 @@ def resolve_definitions(
             uses_tree,
             current_read=current_read,
             resource_model=ApiDefinition,
-            query_factory=query,
         )
     elif selection.selectAll:
         if condition.filters is not None or condition.mine:
@@ -309,7 +322,7 @@ def resolve_definitions(
                 current_read=current_read,
             )
         else:
-            records, _, _, _ = query(
+            records, _, _, _ = basic_query(
                 db,
                 source.project_id,
                 "api",
@@ -328,7 +341,7 @@ def resolve_definitions(
         definitions = [d for d in definitions if d.id not in excluded_ids]
     else:
         definitions = read(
-            db.query(ApiDefinition)
+            definition_filters(db.query(ApiDefinition), condition)
             .filter(
                 ApiDefinition.id.in_(selection.definitionIds),
                 ApiDefinition.project_id == source.project_id,

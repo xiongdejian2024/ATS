@@ -89,6 +89,19 @@ export function useCandidateModules(
     }
     maps.value = next;
   }
+  function currentModule(key: string, checked: boolean) {
+    const next = cloneDeep(maps.value);
+    if (checked || next.all)
+      next[key] = { selectAll: checked, selectIds: [], excludeIds: [] };
+    else delete next[key];
+    maps.value = next;
+  }
+  function currentChecked(key: string) {
+    const count = summary.value?.moduleCounts?.[key];
+    if (count?.total) return count.selected === count.total;
+    const entry = entryFor(key);
+    return !!entry?.selectAll && !entry.excludeIds.length;
+  }
   function current() {
     // 当前页加入选择；其他页的已选项和排除项保持，符合模块表格联动契约。
     keysChanged(context.rows.value.map((row) => row.id));
@@ -126,6 +139,8 @@ export function useCandidateModules(
     hasSelection,
     pageSelected,
     check,
+    currentModule,
+    currentChecked,
     current,
     keysChanged,
     checked,

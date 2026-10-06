@@ -12,6 +12,42 @@ vi.mock("@/api/planCaseWorkspace", () => ({
   planCaseWorkspaceApi: { previewCandidates: vi.fn() },
 }));
 const scopes: EffectScope[] = [];
+it("协议及列条件进入显式选择和模块范围，协议切换清旧选择", async () => {
+  const scope = effectScope();
+  scopes.push(scope);
+  const query = ref<CandidateCondition>({
+    protocols: ["HTTP"],
+    methods: ["POST"],
+  });
+  const s = scope.run(() =>
+    usePlanCandidateSelection(
+      ref("plan"),
+      ref("api"),
+      query,
+      ref(["definition"]),
+      undefined,
+      undefined,
+      ref({ resourceType: "API" }),
+    ),
+  )!;
+  vi.mocked(planCaseWorkspaceApi.previewCandidates).mockResolvedValue({
+    ...response(2),
+    selectedDefinitionCount: 1,
+  });
+  s.current();
+  await flush();
+  expect(s.request.value?.condition).toEqual({
+    protocols: ["HTTP"],
+    methods: ["POST"],
+  });
+  expect(s.request.value?.definitionIds).toEqual(["definition"]);
+  query.value = { protocols: [] };
+  expect(s.hasSelection.value).toBe(false);
+  expect(s.summary.value).toBeUndefined();
+  s.all();
+  await flush();
+  expect(s.request.value?.condition?.protocols).toEqual([]);
+});
 it("接口显式选择与范围排除保持资源身份，切换用例模式清理旧响应", async () => {
   const extras = ref<Pick<CandidateSelection, "resourceType">>({
     resourceType: "API",

@@ -68,7 +68,13 @@
             >全部{{ definitionMode ? "接口" : "用例" }} ({{
               data?.counts.all || 0
             }})</a-button
-          ><a-button
+          ><PlanCandidateProtocols
+            v-if="activeCategory === 'api'"
+            :model-value="protocols"
+            :options="data?.basicOptions?.protocols || []"
+            :disabled="locked || loading"
+            @update:model-value="changeProtocols"
+          /><a-button
             :disabled="locked"
             aria-label="展开或收起关联模块"
             type="text"
@@ -100,7 +106,27 @@
           "
           ><template #title="node"
             ><span>{{ node.name }}</span
-            ><span class="module-count">{{ node.count }}</span></template
+            ><span class="module-count"
+              >{{ selection.modules?.counts(node.key).selected || 0 }}/{{
+                node.count
+              }}</span
+            ><a-button
+              v-if="data?.modules.some((m) => m.parentId === node.key)"
+              type="text"
+              size="small"
+              :disabled="moduleSelectionDisabled"
+              @click.stop="
+                selection.modules?.currentModule(
+                  node.key,
+                  !selection.modules?.currentChecked(node.key),
+                )
+              "
+              >{{
+                selection.modules?.currentChecked(node.key)
+                  ? "取消当前"
+                  : "选择当前"
+              }}</a-button
+            ></template
           ></a-tree
         >
         <div class="folder-unassigned">
@@ -133,7 +159,7 @@
             allow-clear
             @search="resetPage"
           /><a-select
-            v-if="!advanced && !definitionMode"
+            v-if="!advanced && activeCategory !== 'api'"
             :disabled="locked"
             v-model:value="priority"
             allow-clear
@@ -161,10 +187,27 @@
             @apply="applyAdvanced"
             @saving="(value) => (filterSaving = value)"
           />
+          <a-button
+            v-if="activeCategory === 'api'"
+            type="text"
+            aria-label="关联表格设置"
+            :disabled="locked || loading"
+            @click="settingsOpen = true"
+            ><SettingOutlined
+          /></a-button>
           <a-button :disabled="locked" :loading="loading" @click="load"
             >刷新</a-button
           >
         </div>
+        <a-alert
+          v-if="
+            !advanced && activeCategory === 'api' && protocols?.length === 0
+          "
+          type="info"
+          show-icon
+          message="未选择协议，请选择需要显示的协议"
+          class="selection-feedback"
+        />
         <a-alert
           v-if="failed"
           type="error"
@@ -193,9 +236,16 @@
           size="small"
           :loading="loading"
           :pagination="pagination"
-          :scroll="{ x: 780, y: 390 }"
+          :scroll="{
+            x: Math.max(
+              780,
+              columns.reduce((n, c) => n + c.width, 56),
+            ),
+            y: 390,
+          }"
           :row-selection="rowSelection"
           @change="tableChange"
+          @resize-column="resizeColumn"
         >
           <template #bodyCell="{ column, record }"
             ><template v-if="column.key === 'name'"
@@ -211,6 +261,14 @@
               ><a-tag v-if="record.alreadyLinked" color="green"
                 >已关联</a-tag
               ></template
+            ><a-tag
+              v-else-if="column.key === 'method'"
+              :style="{
+                color: methodColor(record.method),
+                borderColor: methodColor(record.method),
+                backgroundColor: 'white',
+              }"
+              >{{ record.method || "—" }}</a-tag
             ><template v-else-if="column.key === 'nativeState'">{{
               nativeStateOptions(activeCategory).find(
                 (o) => o.value === record.nativeState,
@@ -316,6 +374,17 @@
         />
       </main>
     </div>
+    <TableDisplaySettings
+      :open="settingsOpen"
+      :definitions="candidateDefinitions"
+      :columns="display.columns"
+      :page-size="display.pageSize"
+      :include-descendants="true"
+      :show-descendants="false"
+      :error="settingsError"
+      @close="saveColumns"
+      @page-size-change="changePageSize"
+    />
     <NativeCaseConfigDrawer
       v-if="project"
       :open="!!nativeCaseId"
@@ -439,6 +508,28 @@ import { planMinderApi, type MinderSave } from "@/api/planMinder";
 import { caseFolderTree } from "./planCaseFolders";
 import { usePlanCandidateSelection } from "./planCandidateSelection";
 import ReviewSelectionHeader from "@/components/CaseReview/ReviewSelectionHeader.vue";
+import { SettingOutlined } from "@ant-design/icons-vue";
+import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
+import {
+  normalizeDisplay,
+  readDisplay,
+  displayStorageKey,
+  resizableColumn,
+  type TableDisplay,
+  type ColumnVisibility,
+} from "@/components/Table/tableDisplay";
+import { useTableColumnResize } from "@/components/Table/useTableColumnResize";
+import { planCandidateColumns } from "./planCandidateColumns";
+import PlanCandidateProtocols from "./PlanCandidateProtocols.vue";
+import {
+  requestMethods,
+  methodColor,
+  readProtocols,
+  writeProtocols,
+  protocolStorageKey,
+} from "./planCandidateBasic";
+import { useUserStore } from "@/stores/user";
+const userStore = useUserStore();
 const props = defineProps<{
     open: boolean;
     planId: string;
@@ -465,6 +556,7 @@ const activeCategory = ref<"functional" | "api" | "scenario">(
   filterSaving = ref(false),
   loading = ref(false),
   saving = ref(false),
+  settingsOpen = ref(false),
   failed = ref(false),
   search = ref(""),
   moduleSearch = ref(""),
@@ -475,6 +567,14 @@ const activeCategory = ref<"functional" | "api" | "scenario">(
   expanded = ref<string[]>([]),
   collectionId = ref<string>(),
   suiteId = ref<string>();
+const protocols = ref<string[]>(),
+  methods = ref<string[]>([]),
+  creators = ref<string[]>([]);
+const sort = ref<"id" | "name" | "createdAt">(),
+  direction = ref<"asc" | "desc">("asc");
+const protocolKey = computed(() =>
+  protocolStorageKey(userStore.user?.id || "anonymous"),
+);
 const resourceType = ref<"API" | "CASE">("API");
 const definitionMode = computed(
   () => activeCategory.value === "api" && resourceType.value === "API",
@@ -520,7 +620,11 @@ watch(syncCase, (value) => {
   }
 });
 const locked = computed(
-  () => saving.value || filterSaving.value || nativeSaving.value,
+  () =>
+    saving.value ||
+    filterSaving.value ||
+    nativeSaving.value ||
+    settingsOpen.value,
 );
 const advanced = computed(() => filterScope.value !== undefined);
 const appliedCondition = ref<CandidateCondition>({});
@@ -579,6 +683,8 @@ function applyAdvanced(
   viewId.value = id;
   search.value = "";
   priority.value = undefined;
+  protocols.value = undefined;
+  methods.value = creators.value = [];
   folder.value = "all";
   resetPage();
 }
@@ -599,36 +705,115 @@ const baseColumns = [
   { title: "标签", key: "tags", width: 150 },
   { title: "所属模块", dataIndex: "moduleName", width: 190 },
 ];
+const candidateColumnDefinitions = computed(() =>
+  planCandidateColumns(definitionMode.value ? "API" : "CASE"),
+);
+const candidateDefinitions = computed(() =>
+  candidateColumnDefinitions.value.map((c) => ({
+    key: c.key,
+    title: c.title,
+    required: c.required,
+    defaultVisible: c.defaultVisible,
+  })),
+);
+const displayKey = computed(() =>
+  displayStorageKey(
+    userStore.user?.id || "",
+    sourceProjectId.value || "",
+    `associate-api-${definitionMode.value ? "definition" : "case"}`,
+  ),
+);
+const display = ref(
+    readDisplay(localStorage, displayKey.value, candidateDefinitions.value),
+  ),
+  settingsError = ref("");
+function persistDisplay(next: TableDisplay) {
+  try {
+    const value = normalizeDisplay(next, candidateDefinitions.value);
+    localStorage.setItem(displayKey.value, JSON.stringify(value));
+    display.value = value;
+    settingsError.value = "";
+    console.info("关联窗口表格显示设置已保存", { 表格: displayKey.value });
+    return true;
+  } catch (exception) {
+    console.error("保存关联窗口表格设置失败，保留草稿", exception);
+    settingsError.value = "表格设置保存失败，请重试";
+    return false;
+  }
+}
+const resizeColumn = useTableColumnResize(display, displayKey, persistDisplay);
+function saveColumns(columns: ColumnVisibility[]) {
+  if (persistDisplay({ ...display.value, columns })) settingsOpen.value = false;
+}
+function changePageSize(pageSize: number) {
+  if (saving.value || nativeSaving.value || filterSaving.value) return;
+  if (persistDisplay({ ...display.value, pageSize })) {
+    size.value = pageSize;
+    resetPage();
+  }
+}
+watch(displayKey, () => {
+  display.value = readDisplay(
+    localStorage,
+    displayKey.value,
+    candidateDefinitions.value,
+  );
+  size.value = display.value.pageSize;
+  settingsOpen.value = false;
+});
 const columns = computed(() =>
-  definitionMode.value
-    ? [
-        { title: "ID", dataIndex: "id", width: 160, ellipsis: true },
-        { title: "接口名称", key: "name", width: 220 },
-        { title: "请求方式", dataIndex: "method", width: 100 },
-        { title: "路径", dataIndex: "path", width: 220 },
-        { title: "标签", key: "tags", width: 150 },
-        { title: "用例数", dataIndex: "caseTotal", width: 80 },
-        { title: "创建人", dataIndex: "createdByName", width: 100 },
-        { title: "创建时间", dataIndex: "createdAt", width: 180 },
-      ]
+  activeCategory.value === "api"
+    ? display.value.columns
+        .filter((c) => c.visible)
+        .map((c) => {
+          const column = candidateColumnDefinitions.value.find(
+            (d) => d.key === c.key,
+          )!;
+          const sortKey = c.key === "caseCode" ? "id" : c.key;
+          return {
+            ...resizableColumn(column, c),
+            ellipsis: true,
+            filters: advanced.value
+              ? undefined
+              : c.key === "method"
+                ? requestMethods.map((value) => ({ text: value, value }))
+                : c.key === "createdByName"
+                  ? data.value?.basicOptions?.creators || []
+                  : c.key === "priority"
+                    ? ["P0", "P1", "P2", "P3"].map((value) => ({
+                        text: value,
+                        value,
+                      }))
+                    : undefined,
+            filterMultiple: c.key !== "priority",
+            filteredValue:
+              c.key === "method"
+                ? methods.value
+                : c.key === "createdByName"
+                  ? creators.value
+                  : c.key === "priority" && priority.value
+                    ? [priority.value]
+                    : undefined,
+            sortOrder:
+              column.sorter && sortKey === sort.value
+                ? direction.value === "asc"
+                  ? ("ascend" as const)
+                  : ("descend" as const)
+                : null,
+          };
+        })
     : activeCategory.value === "functional"
       ? baseColumns
       : [
           ...baseColumns.filter((c) => c.key !== "tags"),
           {
-            title: activeCategory.value === "api" ? "用例状态" : "场景状态",
+            title: "场景状态",
             key: "nativeState",
             width: 100,
           },
           { title: "最近执行结果", key: "lastReportStatus", width: 110 },
           { title: "环境", dataIndex: "environmentLabel", width: 150 },
-          ...(activeCategory.value === "api"
-            ? [
-                { title: "协议", dataIndex: "protocol", width: 100 },
-                { title: "请求路径", dataIndex: "path", width: 200 },
-                { title: "接口参数变更", key: "apiChange", width: 120 },
-              ]
-            : [{ title: "步骤数", dataIndex: "stepTotal", width: 80 }]),
+          { title: "步骤数", dataIndex: "stepTotal", width: 80 },
         ],
 );
 const automatedCount = computed(
@@ -711,7 +896,7 @@ function selectRows(keys: (string | number)[]) {
   selection.keysChanged(keys.map(String));
 }
 let sequence = 0;
-async function load() {
+async function load(useProtocolPreference = true) {
   if (!props.open) return;
   const request = ++sequence;
   loading.value = true;
@@ -723,6 +908,15 @@ async function load() {
     priority: priority.value,
     filters: filterScope.value,
     mine: viewId.value === "system:my",
+    ...(advanced.value
+      ? {}
+      : {
+          ...(protocols.value === undefined
+            ? {}
+            : { protocols: protocols.value }),
+          ...(methods.value.length ? { methods: methods.value } : {}),
+          ...(creators.value.length ? { createdBy: creators.value } : {}),
+        }),
   });
   try {
     if (!sourceProjects.value.length) {
@@ -734,11 +928,16 @@ async function load() {
       sourceProjects.value = projects;
       projectsLoading.value = false;
     }
-    const result = await planCaseWorkspaceApi.candidates(props.planId, {
+    let result = await planCaseWorkspaceApi.candidates(props.planId, {
       category: activeCategory.value,
       resourceType: definitionMode.value ? "API" : "CASE",
       projectId: sourceId,
       ...condition,
+      protocols: condition.protocols?.join(","),
+      methods: condition.methods?.join(","),
+      createdBy: condition.createdBy?.join(","),
+      sort: sort.value,
+      direction: direction.value,
       page: page.value,
       size: size.value,
       filters:
@@ -746,6 +945,68 @@ async function load() {
           ? undefined
           : JSON.stringify(condition.filters),
     });
+    if (
+      request === sequence &&
+      activeCategory.value === "api" &&
+      !advanced.value &&
+      protocols.value === undefined &&
+      useProtocolPreference
+    ) {
+      const saved = readProtocols(
+        localStorage,
+        protocolKey.value,
+        result.basicOptions?.protocols || [],
+      );
+      if (saved !== undefined) {
+        protocols.value = saved;
+        condition.protocols = saved;
+        result = await planCaseWorkspaceApi.candidates(props.planId, {
+          category: activeCategory.value,
+          resourceType: definitionMode.value ? "API" : "CASE",
+          projectId: sourceId,
+          ...condition,
+          protocols: saved.join(","),
+          methods: condition.methods?.join(","),
+          createdBy: condition.createdBy?.join(","),
+          sort: sort.value,
+          direction: direction.value,
+          page: page.value,
+          size: size.value,
+        });
+      }
+    }
+    if (request === sequence && activeCategory.value === "api") {
+      const key = displayStorageKey(
+        userStore.user?.id || "",
+        result.projectId,
+        `associate-api-${definitionMode.value ? "definition" : "case"}`,
+      );
+      const preferred = readDisplay(
+        localStorage,
+        key,
+        candidateDefinitions.value,
+      ).pageSize;
+      if (preferred !== result.size) {
+        size.value = preferred;
+        result = await planCaseWorkspaceApi.candidates(props.planId, {
+          category: activeCategory.value,
+          resourceType: definitionMode.value ? "API" : "CASE",
+          projectId: result.projectId,
+          ...condition,
+          protocols: condition.protocols?.join(","),
+          methods: condition.methods?.join(","),
+          createdBy: condition.createdBy?.join(","),
+          filters:
+            condition.filters === undefined
+              ? undefined
+              : JSON.stringify(condition.filters),
+          sort: sort.value,
+          direction: direction.value,
+          page: page.value,
+          size: preferred,
+        });
+      }
+    }
     if (request === sequence) {
       sourceProjectId.value = result.projectId;
       data.value = props.minderDraft
@@ -802,9 +1063,54 @@ function selectFolder(id: string) {
   folder.value = id;
   resetPage();
 }
-function tableChange(p: { current: number; pageSize: number }) {
+function changeProtocols(value: string[] | undefined) {
+  protocols.value = value;
+  writeProtocols(
+    localStorage,
+    protocolKey.value,
+    data.value?.basicOptions?.protocols || [],
+    value,
+  );
+  selection.clear();
+  folder.value = "all";
+  resetPage();
+}
+function tableChange(
+  p: { current: number; pageSize: number },
+  filters: Record<string, (string | number)[] | null>,
+  sorter: { columnKey?: string; order?: string },
+) {
   if (locked.value) return;
-  page.value = p.current;
+  if (activeCategory.value !== "api") {
+    page.value = p.current;
+    size.value = p.pageSize;
+    void load();
+    return;
+  }
+  const nextMethods = (filters.method || []).map(String),
+    nextCreators = (filters.createdByName || []).map(String);
+  const nextPriority = filters.priority?.[0]
+    ? String(filters.priority[0])
+    : undefined;
+  const changed =
+    JSON.stringify([methods.value, creators.value, priority.value]) !==
+    JSON.stringify([nextMethods, nextCreators, nextPriority]);
+  methods.value = nextMethods;
+  creators.value = nextCreators;
+  if (activeCategory.value === "api") priority.value = nextPriority;
+  if (changed) selection.clear();
+  sort.value =
+    sorter.order &&
+    ["id", "name", "createdAt"].includes(
+      (sorter.columnKey === "caseCode" ? "id" : sorter.columnKey) || "",
+    )
+      ? ((sorter.columnKey === "caseCode" ? "id" : sorter.columnKey) as
+          | "id"
+          | "name"
+          | "createdAt")
+      : undefined;
+  direction.value = sorter.order === "descend" ? "desc" : "asc";
+  page.value = changed ? 1 : p.current;
   size.value = p.pageSize;
   void load();
 }
@@ -826,6 +1132,9 @@ function switchProject() {
   });
 }
 function resetCategory() {
+  protocols.value = undefined;
+  methods.value = creators.value = [];
+  sort.value = undefined;
   resetSync();
   definitionId.value = "";
   nativeCaseId.value = "";
@@ -910,6 +1219,9 @@ watch(
     page.value = 1;
     expanded.value = [];
     activeCategory.value = props.category || "functional";
+    protocols.value = undefined;
+    methods.value = creators.value = [];
+    sort.value = undefined;
     resourceType.value = props.initialAssociation
       ? props.initialAssociation.resourceType || "CASE"
       : "API";
@@ -924,11 +1236,14 @@ async function restoreAndLoad() {
     sourceProjectId.value = initial.projectId;
     search.value = initial.condition?.search || "";
     priority.value = initial.condition?.priority;
+    protocols.value = initial.condition?.protocols;
+    methods.value = initial.condition?.methods || [];
+    creators.value = initial.condition?.createdBy || [];
     folder.value = initial.condition?.folder || "all";
     filterScope.value = initial.condition?.filters;
     viewId.value = initial.condition?.mine ? "system:my" : undefined;
   }
-  await load();
+  await load(!initial);
   if (!initial || !props.open || failed.value || request !== sequence) return;
   await nextTick();
   if (!props.open || request !== sequence) return;
@@ -953,6 +1268,9 @@ onBeforeRouteLeave(allowNavigation);
 onBeforeRouteUpdate(allowNavigation);
 </script>
 <style scoped>
+.associate-layout :deep(.ant-table-filter-column) {
+  padding-right: 16px;
+}
 .source-project {
   display: flex;
   align-items: center;

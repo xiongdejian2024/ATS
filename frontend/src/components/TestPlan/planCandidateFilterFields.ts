@@ -5,6 +5,7 @@ import {
 } from "@/api/nativeCase";
 import type { CaseTemplate } from "@/api/caseFeatures";
 import type { FilterField } from "@/components/TestCase/advancedFilter";
+import { requestMethods } from "./planCandidateBasic";
 import { planCaseFilterFields } from "./planCaseFilterFields";
 
 /** 关联候选使用主用例结果与所属计划，不混入计划实例结果或执行人。 */
@@ -129,17 +130,7 @@ export function planCandidateFilterFields(
         key: "method",
         label: "请求方式",
         type: "select",
-        options: [
-          "GET",
-          "POST",
-          "PUT",
-          "PATCH",
-          "DELETE",
-          "HEAD",
-          "OPTIONS",
-          "TRACE",
-          "CONNECT",
-        ].map((value) => ({ value, label: value })),
+        options: requestMethods.map((value) => ({ value, label: value })),
       });
       fieldMap.set("caseTotal", {
         key: "caseTotal",

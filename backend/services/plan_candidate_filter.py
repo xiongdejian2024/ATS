@@ -73,12 +73,15 @@ def filter_cases(db, plan, category, raw, user_id, mine, *, current_read=False):
     return [case for case in cases if not context.conditions or combine(check(case, c) for c in context.conditions)], statuses, native
 
 
-def advanced_candidates(db, plan, category, filters, mine, user_id, page, size):
+def advanced_candidates(db, plan, category, filters, mine, user_id, page, size, sort=None, direction="asc"):
     from models import Module
     from services.case_candidates import descendants
     from utils.serializer import serialize_model
 
     cases, statuses, native = filter_cases(db, plan, category, filters, user_id, mine)
+    if sort:
+        field = {"id": "case_code", "name": "name", "createdAt": "created_at"}[sort]
+        cases.sort(key=lambda case: (getattr(case, field) or "", case.id), reverse=direction == "desc")
     modules = db.query(Module).filter_by(project_id=plan.project_id).order_by(Module.sort_order, Module.created_at).all()
     counts = defaultdict(int)
     for case in cases:

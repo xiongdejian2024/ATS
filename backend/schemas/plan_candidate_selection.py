@@ -12,6 +12,16 @@ class CandidateCondition(ScopeRequest):
     priority: Literal['P0', 'P1', 'P2', 'P3'] | None = None
     filters: dict[str, Any] | None = None
     mine: StrictBool = False
+    protocols: list[str] | None = Field(None, max_length=100)
+    methods: list[str] = Field(default_factory=list, max_length=100)
+    createdBy: list[str] = Field(default_factory=list, max_length=100)
+
+    @field_validator('protocols', 'methods', 'createdBy')
+    @classmethod
+    def basic_values(cls, values):
+        if values is not None and (len(values) != len(set(values)) or any(not value.strip() or value != value.strip() or len(value) > 50 for value in values)):
+            raise ValueError('基础筛选项须为不重复的1到50字符文本')
+        return values
 
 
 class CandidateModuleSelection(ScopeRequest):
@@ -65,6 +75,13 @@ class CandidateSelection(ScopeRequest):
         if self.resourceType == 'CASE' and self.definitionIds:
             raise ValueError('用例模式不能提交接口ID')
         selected_ids = self.definitionIds if self.resourceType == 'API' else self.caseIds
+        basic = self.condition.protocols is not None or bool(self.condition.methods) or bool(self.condition.createdBy)
+        if basic and self.category != 'api':
+            raise ValueError('协议与接口列筛选只适用于API分类')
+        if self.condition.methods and self.resourceType != 'API':
+            raise ValueError('请求方式列筛选只适用于接口模式')
+        if basic and (self.condition.filters is not None or self.condition.mine):
+            raise ValueError('高级视图不能混用接口基础筛选')
         if self.syncCase and self.category != 'functional':
             raise ValueError('只有功能用例支持同步关联用例')
         if not self.syncCase and (self.apiCaseCollectionId or self.apiScenarioCollectionId):
@@ -98,7 +115,7 @@ class CandidateSelection(ScopeRequest):
                 from core.logger import logger
                 logger.exception('计划关联范围高级筛选校验失败')
                 raise ValueError(exc.detail) from exc
-        elif not selected_ids or self.excludeIds or self.condition.model_fields_set:
+        elif not selected_ids or self.excludeIds or self.condition.model_fields_set - {'protocols', 'methods', 'createdBy'}:
             raise ValueError('逐条选择必须指定ID，不能混用筛选条件或排除项')
         return self
 

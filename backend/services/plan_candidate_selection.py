@@ -49,13 +49,19 @@ def resolve(db, plan, user, selection, *, writing=False):
             from services.plan_candidate_filter import filter_cases
             cases, _, _ = filter_cases(db, source, selection.category, condition.filters, str(user.id), condition.mine, current_read=writing)
         else:
-            from services.case_candidates import candidate_query
+            from services.plan_candidate_basic import query_factory
+            candidate_query = query_factory(condition, selection.resourceType)
             query, _, _, _ = candidate_query(db, source.project_id, selection.category, condition.search, condition.folder, condition.priority, current_read=writing)
             if not uses_tree:
                 query = query.filter(TestCase.id.notin_([r.case_id for r in relations]))
             cases = query.order_by(TestCase.created_at.desc(), TestCase.id).limit(LIMIT + len(selection.excludeIds) + 1).all()
     else:
         query = db.query(TestCase).filter(TestCase.id.in_(selection.caseIds), TestCase.project_id == source.project_id, TestCase.deleted_at.is_(None)).order_by(TestCase.created_at.desc(), TestCase.id)
+        if selection.condition.protocols is not None or selection.condition.createdBy:
+            from services.plan_candidate_basic import query_factory
+            candidate_query = query_factory(selection.condition, "CASE")
+            scoped, _, _, _ = candidate_query(db, source.project_id, selection.category, '', 'all', None, current_read=writing)
+            query = query.filter(TestCase.id.in_(scoped.with_entities(TestCase.id)))
         cases = (query.populate_existing().with_for_update() if writing else query).all()
         if len(cases) != len(selection.caseIds):
             raise HTTPException(404, '用例不存在、已回收或不属于当前项目')

@@ -78,6 +78,10 @@ export type PlanCandidateRow = Pick<TestCase, "id" | "name"> &
     createdByName?: string | null;
   };
 export interface PlanAssociateListing {
+  basicOptions?: {
+    protocols: string[];
+    creators: { value: string; text: string }[];
+  };
   syncCollections: { api: CaseFolder[]; scenario: CaseFolder[] };
   projectId: string;
   projectName: string;
@@ -93,6 +97,9 @@ export interface PlanAssociateListing {
   suites: { id: string; name: string; caseIds: string[] }[];
 }
 export interface CandidateCondition {
+  protocols?: string[];
+  methods?: string[];
+  createdBy?: string[];
   search?: string;
   folder?: string;
   priority?: string;

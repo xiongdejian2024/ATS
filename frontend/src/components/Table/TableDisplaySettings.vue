@@ -31,7 +31,7 @@
         size
       }}</a-radio-button>
     </a-radio-group>
-    <div class="subdirectory-setting">
+    <div v-if="showDescendants !== false" class="subdirectory-setting">
       <a-switch
         :checked="includeDescendants"
         size="small"
@@ -113,6 +113,7 @@ const props = defineProps<{
   includeDescendants: boolean;
   error?: string;
   showMode?: boolean;
+  showDescendants?: boolean;
 }>();
 const emit = defineEmits<{
   close: [columns: ColumnVisibility[]];

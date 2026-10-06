@@ -2,12 +2,13 @@
 from fastapi import HTTPException
 from sqlalchemy import and_, or_, func
 from models import TestCase
-from services.case_candidates import candidate_query
 
 
-def resolve_modules(db, plan, selection, relations, uses_tree, *, current_read=False, resource_model=TestCase, query_factory=candidate_query):
+def resolve_modules(db, plan, selection, relations, uses_tree, *, current_read=False, resource_model=TestCase):
     from services.plan_candidate_selection import LIMIT
     condition = selection.condition
+    from services.plan_candidate_basic import query_factory as basic_factory
+    query_factory = basic_factory(selection.condition, selection.resourceType)
     query, modules, _, _ = query_factory(db, plan.project_id, selection.category,
         condition.search, 'all', condition.priority, current_read=current_read)
     known = {row.id for row in modules}
@@ -31,6 +32,10 @@ def resolve_modules(db, plan, selection, relations, uses_tree, *, current_read=F
         rows = (rows_query.populate_existing().with_for_update() if current_read else rows_query).all()
         if len(rows) != len(explicit):
             raise HTTPException(404, '模块选择用例不存在、已回收或不属于当前项目')
+        if condition.protocols is not None or condition.methods or condition.createdBy:
+            allowed = {r.id for r in query.filter(resource_model.id.in_(explicit)).all()}
+            if allowed != set(explicit):
+                raise HTTPException(409, '已选接口或用例的基础筛选字段已改变，请刷新后重新选择')
         for row in rows:
             actual = row.module_id if row.module_id in known else 'unassigned'
             invalid_category = resource_model is TestCase and ((row.type if row.type in ('api', 'scenario') else 'functional') != selection.category or selection.category != 'functional' and not row.is_automated)

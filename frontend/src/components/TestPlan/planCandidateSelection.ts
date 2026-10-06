@@ -3,6 +3,7 @@ import {
   type CandidateModulesContext,
 } from "./planCandidateModules";
 import { computed, ref, watch, type Ref } from "vue";
+import { basicCondition } from "./planCandidateBasic";
 import { cloneDeep } from "lodash-es";
 import {
   planCaseWorkspaceApi,
@@ -66,6 +67,7 @@ export function usePlanCandidateSelection(
             ? {
                 moduleMaps: cloneDeep(modules.maps.value),
                 condition: {
+                  ...basicCondition(query.value),
                   search: query.value.search,
                   priority: query.value.priority,
                   folder: "all",
@@ -78,8 +80,18 @@ export function usePlanCandidateSelection(
                   condition: cloneDeep(condition.value),
                 }
               : extras?.value.resourceType === "API"
-                ? { definitionIds: [...selected.value] }
-                : { caseIds: [...selected.value] }),
+                ? {
+                    definitionIds: [...selected.value],
+                    ...(Object.keys(basicCondition(query.value)).length
+                      ? { condition: basicCondition(query.value) }
+                      : {}),
+                  }
+                : {
+                    caseIds: [...selected.value],
+                    ...(Object.keys(basicCondition(query.value)).length
+                      ? { condition: basicCondition(query.value) }
+                      : {}),
+                  }),
         },
   );
   const pageSelected = computed(() =>
@@ -209,6 +221,9 @@ export function usePlanCandidateSelection(
           ? {
               search: query.value.search,
               priority: query.value.priority,
+              protocols: query.value.protocols,
+              methods: query.value.methods,
+              createdBy: query.value.createdBy,
               filters: query.value.filters,
               mine: query.value.mine,
             }
@@ -220,6 +235,9 @@ export function usePlanCandidateSelection(
     { flush: "sync" },
   );
   watch(moduleMode, clear, { flush: "sync" });
+  watch(() => JSON.stringify(basicCondition(query.value)), clear, {
+    flush: "sync",
+  });
   watch(
     () => JSON.stringify(request.value),
     () => {

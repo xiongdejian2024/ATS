@@ -65,13 +65,23 @@ def candidate_projects(plan_id: str, db: Session = Depends(get_db), user=Depends
 
 @router.get('/plans/{plan_id}/case-workspace/candidates')
 def candidates(plan_id:str,category:Category='functional',resourceType:ResourceType='CASE',search:str=Query('',max_length=255),
-               folder:str='all',priority:str|None=None,page:int=Query(1,ge=1),size:int=Query(20,ge=1,le=100),
+               folder:str='all',priority:str|None=None,protocols:str|None=Query(None,max_length=5000),methods:str|None=Query(None,max_length=5000),createdBy:str|None=Query(None,max_length=5000),sort:Literal['id','name','createdAt']|None=None,direction:Literal['asc','desc']='asc',page:int=Query(1,ge=1),size:int=Query(20,ge=1,le=100),
                filters:str|None=Query(None,max_length=30000),mine:bool=False,projectId:str|None=Query(None,min_length=1,max_length=36),db:Session=Depends(get_db),user=Depends(get_current_user)):
     plan=plan_access(db,user,plan_id)
     require_project_access(db,user,plan.project_id,'test_case:read')
     candidate_view_scope(category, resourceType)
     source, _ = source_scope(db, user, plan, projectId)
-    return ok(service.candidates(db,plan,category,search,folder,priority,page,size,filters=filters,mine=mine,user_id=str(user.id), source=source, resource_type=resourceType))
+    import json
+    from schemas.plan_candidate_selection import CandidateCondition
+    from fastapi import HTTPException
+    from pydantic import ValidationError
+    try:
+        condition = CandidateCondition(protocols=None if protocols is None else protocols.split(',') if protocols else [], methods=methods.split(',') if methods else [], createdBy=createdBy.split(',') if createdBy else [], filters=None if filters is None else json.loads(filters), mine=mine)
+    except (ValidationError, ValueError) as exception:
+        from core.logger import logger
+        logger.exception('关联窗口基础筛选参数无效')
+        raise HTTPException(422, '关联窗口筛选参数无效') from exception
+    return ok(service.candidates(db,plan,category,search,folder,priority,page,size,filters=filters,mine=mine,user_id=str(user.id), source=source, resource_type=resourceType, condition=condition, sort=sort, direction=direction))
 
 @router.get('/plans/{plan_id}/case-workspace')
 def listing(plan_id:str,category:Category='functional',tree_type:Literal['COLLECTION','MODULE']='COLLECTION',folder:str|None=None,
