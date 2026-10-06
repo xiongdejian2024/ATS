@@ -2,6 +2,7 @@
   <div class="minder-branch" :data-node-id="node.id">
     <div class="branch-label">
       <button
+        v-if="editingId !== node.id"
         type="button"
         class="minder-node"
         :class="{
@@ -10,12 +11,27 @@
         }"
         :aria-label="node.name"
         @click="emit('select', node.id)"
+        @dblclick="emit('edit', node.id)"
       >
         <span v-if="node.executionMode">{{
           node.executionMode === "parallel" ? "并行 · " : "串行 · "
         }}</span
         >{{ node.name }}
       </button>
+      <input
+        v-else
+        v-focus-name
+        class="minder-name-editor"
+        aria-label="编辑测试集名称"
+        :value="editName"
+        maxlength="255"
+        @input="emit('editName', ($event.target as HTMLInputElement).value)"
+        @pointerdown.stop
+        @keydown.stop
+        @keydown.enter.prevent="emit('rename')"
+        @keydown.esc.prevent="emit('cancelEdit')"
+        @blur="emit('rename')"
+      />
       <button
         v-if="hasChildren"
         type="button"
@@ -27,6 +43,11 @@
       >
         {{ collapsed.has(node.id) ? "+" : "−" }}
       </button>
+      <slot
+        v-if="selectedId === node.id && editingId !== node.id"
+        name="menu"
+        :node="node"
+      />
     </div>
     <div v-if="hasChildren && !collapsed.has(node.id)" class="branch-children">
       <PlanningMinderBranch
@@ -37,10 +58,17 @@
         :selected-id="selectedId"
         :collapsed="collapsed"
         :can-edit="canEdit"
+        :editing-id="editingId"
+        :edit-name="editName"
+        @edit="(id) => emit('edit', id)"
+        @edit-name="(name) => emit('editName', name)"
+        @rename="emit('rename')"
+        @cancel-edit="emit('cancelEdit')"
         @select="(id) => emit('select', id)"
         @toggle="(id) => emit('toggle', id)"
         @reorder="(parent, ordered) => emit('reorder', parent, ordered)"
-      />
+        ><template #menu="scope"><slot name="menu" v-bind="scope" /></template
+      ></PlanningMinderBranch>
       <VueDraggable
         v-if="collections.length"
         class="collection-children"
@@ -64,10 +92,17 @@
           :selected-id="selectedId"
           :collapsed="collapsed"
           :can-edit="canEdit"
+          :editing-id="editingId"
+          :edit-name="editName"
+          @edit="(id) => emit('edit', id)"
+          @edit-name="(name) => emit('editName', name)"
+          @rename="emit('rename')"
+          @cancel-edit="emit('cancelEdit')"
           @select="(id) => emit('select', id)"
           @toggle="(id) => emit('toggle', id)"
           @reorder="(parent, ordered) => emit('reorder', parent, ordered)"
-        />
+          ><template #menu="scope"><slot name="menu" v-bind="scope" /></template
+        ></PlanningMinderBranch>
       </VueDraggable>
     </div>
   </div>
@@ -77,18 +112,31 @@ import { computed } from "vue";
 import { VueDraggable } from "vue-draggable-plus";
 import type { PlanMinderNode } from "./planMinderTree";
 import type { PlanNode } from "@/api/planTree";
+defineSlots<{ menu(props: { node: PlanMinderNode }): unknown }>();
 const props = defineProps<{
   node: PlanMinderNode;
   points: PlanNode[];
   selectedId?: string;
   collapsed: ReadonlySet<string>;
   canEdit: boolean;
+  editingId?: string;
+  editName?: string;
 }>();
 const emit = defineEmits<{
   select: [id: string];
   toggle: [id: string];
   reorder: [parent: PlanMinderNode, ordered: PlanMinderNode[]];
+  edit: [id: string];
+  editName: [name: string];
+  rename: [];
+  cancelEdit: [];
 }>();
+const vFocusName = {
+  mounted(element: HTMLInputElement) {
+    element.focus();
+    element.select();
+  },
+};
 const fixedChildren = computed(() =>
   (props.node.children || []).filter((child) => child.kind !== "collection"),
 );
@@ -130,6 +178,14 @@ function sortable(node: PlanMinderNode) {
 }
 .minder-node.selected {
   outline: 2px solid #811fa3;
+}
+.minder-name-editor {
+  box-sizing: border-box;
+  width: 200px;
+  padding: 8px 12px;
+  border: 2px solid #811fa3;
+  border-radius: 4px;
+  font-size: 12px;
 }
 .minder-node.root {
   color: white;

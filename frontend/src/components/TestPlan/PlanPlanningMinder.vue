@@ -1,5 +1,10 @@
 <template>
-  <section class="planning-minder" aria-label="测试规划脑图" tabindex="0">
+  <section
+    class="planning-minder"
+    aria-label="测试规划脑图"
+    tabindex="0"
+    @keydown="handleShortcut"
+  >
     <a-alert
       message="通过测试集组织用例；新增、改名、排序和删除在保存规划后生效。"
       type="info"
@@ -58,7 +63,6 @@
           class="minder-viewport"
           tabindex="0"
           aria-label="脑图画布，按斜线展开收起，Tab 添加分类下测试集，Enter 添加同级测试集，Backspace 删除"
-          @keydown="handleShortcut"
         >
           <div
             class="minder-sizing"
@@ -78,15 +82,28 @@
                 :points="nodes"
                 :selected-id="selected?.id"
                 :collapsed="collapsed"
-                :can-edit="canEdit && !saving && !dirty"
+                :can-edit="canEdit && !saving && !dirty && !editingId"
+                :editing-id="editingId"
+                :edit-name="editName"
+                @edit="beginNameEdit"
+                @edit-name="(name) => (editName = name)"
+                @rename="commitNameEdit"
+                @cancel-edit="cancelNameEdit"
                 @select="selectCanvasNode"
                 @toggle="toggleById"
                 @reorder="reorderPoints"
-              />
+                ><template #menu="{ node }"
+                  ><PlanningMinderMenu
+                    :node="node"
+                    :actions="nodeActions(node)"
+                    :disabled="saving || loading"
+                    :zoom="zoom"
+                    @action="handleNodeAction" /></template
+              ></PlanningMinderBranch>
             </div>
           </div>
         </div>
-        <aside v-if="selected" class="node-configuration">
+        <aside v-if="selected && configVisible" class="node-configuration">
           <h3>{{ selected.name }}</h3>
           <p>关联用例 {{ selected.count }} 条</p>
           <a-button
@@ -107,7 +124,9 @@
             <a-space wrap
               ><a-button v-if="canEdit && canAdd" @click="openCreate"
                 >添加测试集</a-button
-              ><a-button v-if="canEdit" @click="openAssociation"
+              ><a-button
+                v-if="canEdit && selected.kind === 'collection'"
+                @click="openAssociation"
                 >关联用例</a-button
               ><a-button :disabled="!selected.count" @click="viewCases"
                 >查看用例</a-button
@@ -241,6 +260,8 @@ import { environmentApi } from "@/api/environment";
 import { planMinderApi, type MinderWorkspace } from "@/api/planMinder";
 import { PlanMinderDraft } from "./planMinderDraft";
 import PlanningMinderBranch from "./PlanningMinderBranch.vue";
+import PlanningMinderMenu from "./PlanningMinderMenu.vue";
+import { planMinderActions, type MinderAction } from "./planMinderActions";
 import {
   buildPlanMinder,
   planCategoryNames,
@@ -273,6 +294,9 @@ const nodes = computed(() => draft.workspace?.nodes || []),
   collapsed = ref(new Set<string>()),
   stage = ref<HTMLElement>(),
   zoom = ref(1);
+const configVisible = ref(false),
+  editingId = ref<string>(),
+  editName = ref("");
 const { width: stageWidth, height: stageHeight } = useElementSize(stage);
 const tree = computed(() =>
   buildPlanMinder(props.plan.name, nodes.value, entries.value, {
@@ -281,6 +305,7 @@ const tree = computed(() =>
     ),
     defaultEnvironmentId: props.plan.environmentId,
     executionCatalog: executionCatalog.value,
+    executionMode: draft.workspace?.policy.executionMode,
   }),
 );
 const flatNodes = computed(() => {
@@ -370,7 +395,111 @@ function resetPoint() {
   baseline.value = draftState();
 }
 const dirty = computed(() => draftState() !== baseline.value);
-const hasChanges = computed(() => dirty.value || draft.dirty);
+const hasChanges = computed(
+  () => dirty.value || draft.dirty || !!editingId.value,
+);
+function nodeActions(node: PlanMinderNode) {
+  const inherited = node.configurationScope
+    ? executionCatalog.value?.configurations[node.configurationScope]?.config
+        .extended
+    : node.category
+      ? executionCatalog.value?.configurations[
+          node.nodeId
+            ? `node:${node.category}:${node.nodeId}`
+            : `default:${node.category}`
+        ]?.config.extended
+      : false;
+  return planMinderActions(node, props.canEdit, !!inherited).filter(
+    (action) => action !== "add" || canAdd.value,
+  );
+}
+function beginNameEdit(id: string) {
+  if (!props.canEdit || saving.value || loading.value || editingId.value)
+    return;
+  const node = flatNodes.value.find((n) => n.id === id);
+  if (node?.kind !== "collection") return;
+  selectById(id);
+  if (selected.value?.id !== id || dirty.value || !canRename.value) return;
+  editName.value = node.name;
+  editingId.value = id;
+}
+function cancelNameEdit() {
+  editingId.value = undefined;
+  editName.value = "";
+}
+function commitNameEdit(): boolean {
+  if (!editingId.value) return true;
+  const node = flatNodes.value.find((n) => n.id === editingId.value);
+  if (!node?.category || node.kind !== "collection") return false;
+  try {
+    if (editName.value.trim() !== node.name) {
+      const point = node.nodeId
+        ? nodes.value.find((n) => n.id === node.nodeId)
+        : draft.materializeDefault(node.category, editName.value);
+      if (!point) throw new Error("测试集已不存在，请取消编辑并刷新");
+      draft.rename(point.id, editName.value);
+      selected.value = flatNodes.value.find(
+        (n) => n.nodeId === point.id && n.category === node.category,
+      );
+      console.info("测试集行内改名已暂存", {
+        计划: props.plan.id,
+        分类: node.category,
+      });
+    }
+    cancelNameEdit();
+    resetPoint();
+    return true;
+  } catch (error) {
+    console.error("测试集行内改名失败，文本保留", error);
+    message.error(
+      error instanceof Error ? error.message : "改名失败，文本已保留",
+    );
+    void nextTick(() =>
+      viewport.value
+        ?.querySelector<HTMLInputElement>(".minder-name-editor")
+        ?.focus(),
+    );
+    return false;
+  }
+}
+function handleNodeAction(action: MinderAction) {
+  if (
+    !selected.value ||
+    !nodeActions(selected.value).includes(action) ||
+    saving.value
+  )
+    return;
+  if (action === "add") openCreate();
+  else if (action === "associate") openAssociation();
+  else if (action === "delete") removePoint();
+  else if (action === "configure") {
+    if (dirty.value) {
+      message.warning("请先保存或取消当前节点的修改");
+      return;
+    }
+    configVisible.value = !configVisible.value;
+  } else {
+    if (dirty.value) {
+      message.warning("请先保存或取消当前节点的修改");
+      return;
+    }
+    const node = selected.value,
+      mode = node.executionMode === "parallel" ? "serial" : "parallel";
+    if (node.kind === "root") draft.setExecutionMode(mode);
+    else if (selectedScope.value && executionDraft.value)
+      draft.configure(selectedScope.value, {
+        ...executionDraft.value,
+        executionMode: mode,
+      });
+    selected.value = flatNodes.value.find((n) => n.id === node.id);
+    resetPoint();
+    console.info("脑图执行方式已暂存", {
+      计划: props.plan.id,
+      节点: node.id,
+      方式: mode,
+    });
+  }
+}
 const canRename = computed(
   () =>
     selected.value?.kind === "collection" &&
@@ -479,11 +608,18 @@ async function loadEnvironments() {
   }
 }
 function selectById(id: string) {
+  if (editingId.value) return;
   if (dirty.value) {
     message.warning("请先保存或取消当前节点的修改");
     return;
   }
   selected.value = flatNodes.value.find((node) => node.id === id);
+  if (
+    selected.value?.kind === "root" ||
+    (selected.value?.kind === "category" &&
+      selected.value.category === "functional")
+  )
+    configVisible.value = false;
   resetPoint();
 }
 function selectCanvasNode(id: string) {
@@ -495,10 +631,16 @@ function selectCanvasNode(id: string) {
   const node = selected.value;
   viewport.value?.focus({ preventScroll: true });
   if (node?.kind === "count" && props.canEdit) openAssociation();
-  if (node && ["environment", "resource"].includes(node.kind) && props.canEdit)
+  if (
+    node &&
+    ["environment", "resource"].includes(node.kind) &&
+    props.canEdit
+  ) {
+    configVisible.value = true;
     void nextTick(() =>
       executionEditor.value?.focus(node.kind as "environment" | "resource"),
     );
+  }
 }
 function toggleById(id: string) {
   const next = new Set(collapsed.value);
@@ -506,7 +648,14 @@ function toggleById(id: string) {
   collapsed.value = next;
 }
 function reorderPoints(parent: PlanMinderNode, ordered: PlanMinderNode[]) {
-  if (!props.canEdit || dirty.value || saving.value || !parent.category) return;
+  if (
+    !props.canEdit ||
+    dirty.value ||
+    editingId.value ||
+    saving.value ||
+    !parent.category
+  )
+    return;
   try {
     const category = parent.category;
     const ids = ordered
@@ -525,6 +674,7 @@ function reorderPoints(parent: PlanMinderNode, ordered: PlanMinderNode[]) {
   }
 }
 function cancelDraft() {
+  cancelNameEdit();
   draft.reset();
   selected.value =
     flatNodes.value.find((n) => n.id === selected.value?.id) || tree.value;
@@ -558,6 +708,19 @@ function collapseAll() {
 }
 function handleShortcut(event: KeyboardEvent) {
   if (
+    (event.ctrlKey || event.metaKey) &&
+    event.key.toLowerCase() === "s" &&
+    !event.isComposing &&
+    !event.repeat &&
+    !(event.target as HTMLElement)?.closest(
+      "input, textarea, [contenteditable=true]",
+    )
+  ) {
+    event.preventDefault();
+    void savePoint();
+    return;
+  }
+  if (
     event.isComposing ||
     event.repeat ||
     event.ctrlKey ||
@@ -572,7 +735,8 @@ function handleShortcut(event: KeyboardEvent) {
     saving.value ||
     createOpen.value ||
     associateOpen.value ||
-    advancedOpen.value
+    advancedOpen.value ||
+    editingId.value
   )
     return;
   if (
@@ -585,7 +749,10 @@ function handleShortcut(event: KeyboardEvent) {
     event.preventDefault();
     toggleSelected();
   } else if (props.canEdit) {
-    if (
+    if (event.code === "Space" && node.kind === "collection") {
+      event.preventDefault();
+      beginNameEdit(node.id);
+    } else if (
       (event.key === "Tab" && node.kind === "category") ||
       (event.key === "Enter" && node.kind === "collection")
     ) {
@@ -692,6 +859,7 @@ function acceptWorkspace(result: MinderWorkspace) {
 }
 async function savePoint() {
   if (!props.canEdit || saving.value || !hasChanges.value) return;
+  if (!commitNameEdit()) return;
   saving.value = true;
   try {
     let node = selectedPoint.value;
@@ -781,6 +949,8 @@ watch(
     zoom.value = 1;
     collapsed.value = new Set();
     selected.value = undefined;
+    configVisible.value = false;
+    cancelNameEdit();
     createOpen.value = false;
     associateOpen.value = false;
     advancedOpen.value = false;

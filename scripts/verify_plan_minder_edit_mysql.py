@@ -10,7 +10,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 logging.basicConfig(
-    filename=ROOT / "logs/第57部分MySQL验收.log",
+    filename=ROOT / "logs/第58部分MySQL验收.log",
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
@@ -139,6 +139,7 @@ def main():
         identifier = str(uuid.uuid4())
         body = MinderSave(
             expectedFingerprint=initial["fingerprint"],
+            executionMode="parallel",
             points=[
                 dict(id=identifier, name="并发新增", category="functional", position=0)
             ],
@@ -158,11 +159,14 @@ def main():
         with ThreadPoolExecutor(max_workers=2) as executor:
             results = sorted(executor.map(lambda unused: attempt(), range(2)))
         assert results == [200, 409], results
-        log.info("相同旧指纹并发保存分别200/409，只有一个测试集落库")
+        log.info(
+            "相同旧指纹并发保存分别200/409，只有一个测试集与计划根并行方式原子落库"
+        )
         with Sessions() as stale:
             # 先建立旧普通读快照，再让另一事务持有项目锁并增关联。
             user = stale.get(User, "owner")
             old = load(stale, user, "plan")
+            assert old["policy"]["executionMode"] == "parallel"
             stale.commit()
             stale.get(TestPlan, "plan")
             with Sessions() as holder, ThreadPoolExecutor(max_workers=1) as executor:
@@ -170,6 +174,7 @@ def main():
                 entered = threading.Event()
                 updated = MinderSave(
                     expectedFingerprint=old["fingerprint"],
+                    executionMode="serial",
                     points=[
                         dict(
                             id=identifier,
@@ -231,6 +236,7 @@ def main():
             assert db.query(PlanCaseRelation).count() == 3
             assert db.query(TaskQueue).count() == 0
             current = load(db, db.get(User, "owner"), "plan")
+            assert current["policy"]["executionMode"] == "parallel"
             db.commit()
             save(
                 db,

@@ -34,6 +34,7 @@ export function buildPlanMinder(
     environmentNames?: Record<string, string>;
     defaultEnvironmentId?: string | null;
     executionCatalog?: ExecutionCatalog;
+    executionMode?: "serial" | "parallel";
   } = {},
 ): PlanMinderNode {
   function configurationNodes(
@@ -206,6 +207,7 @@ export function buildPlanMinder(
     id: "root",
     name,
     kind: "root",
+    executionMode: options.executionMode,
     count: categories.reduce((sum, node) => sum + node.count, 0),
     children: categories,
   };

@@ -11,7 +11,7 @@ from core.project_access import require_project_access
 from models import TestPlan, TestCase, TestSuite, PlanCaseRelation, User
 from models.plan_workspace import PlanNode, PlanWorkspace
 from models.plan_execution_config import PlanExecutionConfig
-from models.plan_orchestration import PlanRun
+from models.plan_orchestration import PlanRun, PlanSettings
 from services.plan_candidate_project import lock_run_sources, require_case_sources
 from services.plan_execution_config import ConfigSave, ExecutionConfig
 from services.plan_orchestration import ACTIVE, get_policy
@@ -33,6 +33,7 @@ class CollectionDraft(BaseModel):
 class MinderSave(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     expectedFingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
+    executionMode: Literal["serial", "parallel"] | None = None
     points: list[CollectionDraft] = Field(max_length=10000)
     deleteDefaults: list[Category] = Field(default_factory=list, max_length=3)
     configurations: dict[str, ConfigSave] = Field(
@@ -181,6 +182,7 @@ def workspace_data(db, plan, snapshot):
     rows = snapshot["nodes"]
     return dict(
         fingerprint=snapshot["fingerprint"],
+        policy=get_policy(db, plan.id),
         nodes=[plan_tree.node_data(db, n) for n in rows],
         entries={
             category: entries(db, plan, category, current_read=True)[0]
@@ -221,6 +223,16 @@ def save(db, user, plan_id, data):
         db, user, plan.project_id, "test_case:read", current_read=True
     )
     require_case_sources(db, user.id, snapshot["cases"], current_read=True)
+    if data.executionMode is not None:
+        settings = db.get(PlanSettings, plan.id) or PlanSettings(plan_id=plan.id)
+        settings.execution_mode = data.executionMode
+        db.add(settings)
+        db.flush()
+        logger.info(
+            "计划根执行方式已进入规划事务：计划={}，方式={}",
+            plan.id,
+            data.executionMode,
+        )
     originals = {n.id: n for n in snapshot["nodes"] if n.node_type == "point"}
     wanted = {p.id: p for p in data.points}
     if len(wanted) != len(data.points) or len(set(data.deleteDefaults)) != len(

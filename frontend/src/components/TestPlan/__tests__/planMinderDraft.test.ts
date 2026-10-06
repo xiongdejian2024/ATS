@@ -17,6 +17,13 @@ function fixture(): MinderWorkspace {
   };
   return {
     fingerprint: "a".repeat(64),
+    policy: {
+      groupId: null,
+      executionMode: "serial",
+      stopOnFailure: false,
+      passThreshold: 100,
+      suiteOrder: [],
+    },
     nodes: [],
     entries: {
       functional: [],
@@ -54,6 +61,44 @@ function fixture(): MinderWorkspace {
   };
 }
 describe("规划整体草稿", () => {
+  it("计划根方式只更新未持久化分类默认，保留显式配置与策略，取消可还原", () => {
+    const source = fixture();
+    source.executionCatalog.configurations["root:api"].revision = 0;
+    source.policy.passThreshold = 88;
+    const draft = new PlanMinderDraft();
+    draft.load(source);
+    draft.setExecutionMode("parallel");
+    expect(draft.payload.executionMode).toBe("parallel");
+    expect(draft.workspace!.policy.passThreshold).toBe(88);
+    expect(
+      draft.workspace!.executionCatalog.configurations["default:api"]
+        .effectiveConfig.executionMode,
+    ).toBe("parallel");
+    expect(
+      draft.workspace!.executionCatalog.configurations["root:scenario"]
+        .effectiveConfig.executionMode,
+    ).toBe("serial");
+    expect(source.policy.executionMode).toBe("serial");
+    draft.reset();
+    expect(draft.dirty).toBe(false);
+    expect(draft.payload.executionMode).toBeUndefined();
+  });
+  it("计划根切换不覆盖同一草稿显式编辑的分类执行方式", () => {
+    const source = fixture();
+    source.executionCatalog.configurations["root:api"].revision = 0;
+    const draft = new PlanMinderDraft();
+    draft.load(source);
+    draft.configure("root:api", {
+      ...source.executionCatalog.configurations["root:api"].config,
+      executionMode: "serial",
+    });
+    draft.setExecutionMode("parallel");
+    expect(
+      draft.workspace!.executionCatalog.configurations["root:api"]
+        .effectiveConfig.executionMode,
+    ).toBe("serial");
+    expect(draft.payload.configurations["root:api"].expectedRevision).toBe(0);
+  });
   it("新增、改名和取消不修改原快照；保存失败仍保留完整待提交内容", () => {
     const source = fixture(),
       draft = new PlanMinderDraft();

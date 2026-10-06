@@ -34,6 +34,10 @@ export class PlanMinderDraft {
   get payload(): MinderSave {
     return {
       expectedFingerprint: this.original?.fingerprint || "",
+      ...(this.workspace?.policy.executionMode !==
+      this.original?.policy.executionMode
+        ? { executionMode: this.workspace?.policy.executionMode }
+        : {}),
       points: (this.workspace?.nodes || [])
         .filter((n) => n.nodeType === "point")
         .map((n) => ({
@@ -67,8 +71,22 @@ export class PlanMinderDraft {
       JSON.stringify(ordered(this.payload.points)) !==
         JSON.stringify(ordered(originalPoints)) ||
       this.deleteDefaults.length > 0 ||
+      this.workspace?.policy.executionMode !==
+        this.original.policy.executionMode ||
       Object.keys(this.configurations).length > 0
     );
+  }
+  setExecutionMode(mode: "serial" | "parallel") {
+    if (!this.workspace) return;
+    this.workspace.policy.executionMode = mode;
+    for (const category of ["api", "scenario"] as const) {
+      const scope = `root:${category}`;
+      const entry = this.workspace.executionCatalog.configurations[scope];
+      if (entry && entry.revision === 0 && !this.configurations[scope]) {
+        entry.config.executionMode = mode;
+      }
+    }
+    this.recalculate();
   }
   private nameAvailable(
     name: string,

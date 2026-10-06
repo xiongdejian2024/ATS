@@ -395,3 +395,113 @@ async def test_actual_api_execution_follows_saved_collection_order_and_history_f
         assert (await client.put(BASE, json=body)).status_code == 200
         assert run.report["counts"]["passed"] == 2 and db.query(Case).count() == 3
         assert db.query(PlanCaseRelation).count() == 0
+
+
+@pytest.mark.asyncio
+async def test_plan_root_mode_atomic_preserves_policy_and_rejects_stale(workspace_http):
+    from models.plan_orchestration import PlanSettings
+
+    db, app, _ = workspace_http
+    db.add(
+        PlanSettings(
+            plan_id="plan",
+            execution_mode="serial",
+            stop_on_failure=True,
+            pass_threshold=88,
+            suite_order=[],
+        )
+    )
+    db.commit()
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        old = await snapshot(client)
+        body = payload(old, executionMode="parallel")
+        body["points"] = [point("根方式原子新增集", "api")]
+        result = await client.put(BASE, json=body)
+        assert result.status_code == 200, result.text
+        saved = result.json()["data"]
+        assert saved["policy"]["executionMode"] == "parallel"
+        assert (
+            saved["policy"]["stopOnFailure"] and saved["policy"]["passThreshold"] == 88
+        )
+        assert (
+            saved["executionCatalog"]["configurations"]["root:api"]["effectiveConfig"][
+                "executionMode"
+            ]
+            == "parallel"
+        )
+        assert (
+            saved["executionCatalog"]["configurations"]["root:scenario"][
+                "effectiveConfig"
+            ]["executionMode"]
+            == "parallel"
+        )
+        assert (
+            await client.put(BASE, json=payload(old, executionMode="serial"))
+        ).status_code == 409
+        assert (await snapshot(client))["policy"] == saved["policy"]
+
+
+@pytest.mark.asyncio
+async def test_plan_root_mode_rolls_back_with_invalid_configuration(workspace_http):
+    db, app, _ = workspace_http
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        old = await snapshot(client)
+        body = payload(
+            old,
+            executionMode="parallel",
+            configurations={
+                "missing:api": dict(
+                    config=ExecutionConfig().model_dump(), expectedRevision=0
+                )
+            },
+        )
+        result = await client.put(BASE, json=body)
+        assert result.status_code == 404, result.text
+        saved = await snapshot(client)
+        assert saved["fingerprint"] == old["fingerprint"]
+        assert saved["policy"] == old["policy"]
+        assert (
+            await client.put(BASE, json=payload(old, executionMode="wrong"))
+        ).status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_minder_root_parallel_drives_actual_queue_and_frozen_policy(plan_lab):
+    from models import User
+    from services.plan_minder_edit import load, save, MinderSave
+
+    db, sent = plan_lab
+    user = db.get(User, "owner")
+    current = load(db, user, "plan")
+    saved = save(
+        db,
+        user,
+        "plan",
+        MinderSave(
+            expectedFingerprint=current["fingerprint"],
+            points=[],
+            executionMode="parallel",
+        ),
+    )
+    db.commit()
+    assert saved["policy"]["executionMode"] == "parallel"
+    run = await start_plan_run(db, "plan", "owner")
+    assert run.config_snapshot["executionMode"] == "parallel"
+    assert db.query(TaskQueue).filter_by(status="pending").count() == 2
+    assert not sent
+    await advance_plan_runs(db)
+    items = (
+        db.query(PlanRunItem)
+        .filter_by(run_id=run.id)
+        .order_by(PlanRunItem.sequence)
+        .all()
+    )
+    assert len(sent) == 2 and all(item.status == "running" for item in items)
+    for item in items:
+        finish(db, item)
+    await advance_plan_runs(db)
+    assert run.status == "completed" and run.report["counts"]["passed"] == 2

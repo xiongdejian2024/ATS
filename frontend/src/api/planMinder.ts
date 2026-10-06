@@ -2,9 +2,11 @@ import { apiClient } from "@/utils/api";
 import type { PlanNode } from "./planTree";
 import type { PlanCaseEntry } from "./planCaseWorkspace";
 import type { ExecutionCatalog, ExecutionConfig } from "./planExecutionConfig";
+import type { PlanPolicy } from "./planOrchestration";
 export type MinderCategory = PlanNode["category"];
 export interface MinderWorkspace {
   fingerprint: string;
+  policy: PlanPolicy;
   nodes: PlanNode[];
   entries: Record<MinderCategory, PlanCaseEntry[]>;
   executionCatalog: ExecutionCatalog;
@@ -12,6 +14,7 @@ export interface MinderWorkspace {
 }
 export interface MinderSave {
   expectedFingerprint: string;
+  executionMode?: "serial" | "parallel";
   points: {
     id: string;
     name: string;
