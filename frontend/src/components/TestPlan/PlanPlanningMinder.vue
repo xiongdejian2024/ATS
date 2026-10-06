@@ -1,7 +1,7 @@
 <template>
   <section class="planning-minder" aria-label="测试规划脑图" tabindex="0">
     <a-alert
-      message="通过测试集组织用例；执行批次保留创建时的用例和配置。"
+      message="通过测试集组织用例；新增、改名、排序和删除在保存规划后生效。"
       type="info"
       show-icon
     />
@@ -16,9 +16,33 @@
       /><a-space wrap
         ><a-button @click="expandAll">展开全部</a-button
         ><a-button @click="collapseAll">收起全部</a-button
-        ><a-button @click="fit">重置视图</a-button
+        ><a-button @click="fit">重置视图</a-button>
+        <a-button
+          aria-label="缩小脑图"
+          @click="zoom = Math.max(0.25, zoom - 0.1)"
+          >−</a-button
+        >
+        <span class="zoom-value">{{ Math.round(zoom * 100) }}%</span>
+        <a-button aria-label="放大脑图" @click="zoom = Math.min(2, zoom + 0.1)"
+          >+</a-button
+        >
+        <a-button @click="fitCanvas">适应画布</a-button
         ><a-button :loading="loading" @click="load">刷新</a-button
-        ><a-button @click="openAdvanced">用例和场景配置</a-button></a-space
+        ><a-button @click="openAdvanced">用例和场景配置</a-button>
+        <a-button
+          v-if="canEdit"
+          type="primary"
+          :loading="saving"
+          :disabled="!hasChanges || loading || failed"
+          @click="savePoint"
+          >保存规划</a-button
+        >
+        <a-button
+          v-if="canEdit"
+          :disabled="!hasChanges || saving"
+          @click="cancelDraft"
+          >取消修改</a-button
+        ></a-space
       >
     </div>
     <a-alert
@@ -36,14 +60,31 @@
           aria-label="脑图画布，按斜线展开收起，Tab 添加分类下测试集，Enter 添加同级测试集，Backspace 删除"
           @keydown="handleShortcut"
         >
-          <v-chart
-            ref="chart"
-            :option="option"
-            class="plan-chart"
-            :style="{ minWidth: `${chartWidth}px` }"
-            autoresize
-            @click="selectNode"
-          />
+          <div
+            class="minder-sizing"
+            :style="{
+              width: `${stageWidth * zoom}px`,
+              height: `${stageHeight * zoom}px`,
+            }"
+          >
+            <div
+              ref="stage"
+              class="minder-stage"
+              :style="{ transform: `scale(${zoom})` }"
+            >
+              <PlanningMinderBranch
+                v-if="!failed"
+                :node="tree"
+                :points="nodes"
+                :selected-id="selected?.id"
+                :collapsed="collapsed"
+                :can-edit="canEdit && !saving && !dirty"
+                @select="selectCanvasNode"
+                @toggle="toggleById"
+                @reorder="reorderPoints"
+              />
+            </div>
+          </div>
         </div>
         <aside v-if="selected" class="node-configuration">
           <h3>{{ selected.name }}</h3>
@@ -73,7 +114,7 @@
               ></a-space
             >
             <a-form
-              v-if="selectedPoint"
+              v-if="canRename"
               layout="vertical"
               class="point-form"
               :disabled="!canEdit"
@@ -98,12 +139,12 @@
               @manage-pool="openPool"
             />
           </a-form>
-          <a-space v-if="canEdit && (selectedPoint || selectedScope)" wrap
+          <a-space v-if="canEdit && (canRename || selectedScope)" wrap
             ><a-button type="primary" :loading="saving" @click="savePoint"
               >保存</a-button
             ><a-button :disabled="saving" @click="resetPoint">取消修改</a-button
             ><a-button
-              v-if="selectedPoint"
+              v-if="canRename"
               danger
               :disabled="saving"
               @click="removePoint"
@@ -187,6 +228,7 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, reactive, watch, nextTick } from "vue";
+import { useElementSize } from "@vueuse/core";
 import {
   useRouter,
   useRoute,
@@ -194,23 +236,14 @@ import {
   onBeforeRouteUpdate,
 } from "vue-router";
 import { message, Modal } from "ant-design-vue";
-import { use } from "echarts/core";
-import { TreeChart } from "echarts/charts";
-import { TooltipComponent } from "echarts/components";
-import { CanvasRenderer } from "echarts/renderers";
-import VChart from "vue-echarts";
 import type { TestPlan, Environment } from "@/types";
 import { environmentApi } from "@/api/environment";
-import { planTreeApi, type PlanNode } from "@/api/planTree";
-import {
-  planCaseWorkspaceApi,
-  type PlanCaseEntry,
-} from "@/api/planCaseWorkspace";
+import { planMinderApi, type MinderWorkspace } from "@/api/planMinder";
+import { PlanMinderDraft } from "./planMinderDraft";
+import PlanningMinderBranch from "./PlanningMinderBranch.vue";
 import {
   buildPlanMinder,
-  presentPlanMinder,
   planCategoryNames,
-  type PlanCategory,
   type PlanMinderNode,
 } from "./planMinderTree";
 import PlanCaseAssociateDrawer from "./PlanCaseAssociateDrawer.vue";
@@ -219,28 +252,28 @@ import ExecutionConfiguration from "./ExecutionConfiguration.vue";
 import {
   planExecutionApi,
   type ExecutionConfig,
-  type ExecutionCatalog,
 } from "@/api/planExecutionConfig";
-use([TreeChart, TooltipComponent, CanvasRenderer]);
+
 const props = defineProps<{ plan: TestPlan; canEdit: boolean }>(),
   emit = defineEmits<{ changed: []; configurePlan: [] }>(),
   router = useRouter(),
   route = useRoute();
-const nodes = ref<PlanNode[]>([]),
-  entries = ref<Record<PlanCategory, PlanCaseEntry[]>>({
-    functional: [],
-    api: [],
-    scenario: [],
-  }),
+const draft = reactive(new PlanMinderDraft());
+const nodes = computed(() => draft.workspace?.nodes || []),
+  entries = computed(
+    () => draft.workspace?.entries || { functional: [], api: [], scenario: [] },
+  ),
+  executionCatalog = computed(() => draft.workspace?.executionCatalog),
   environments = ref<Environment[]>([]),
-  usesTree = ref(false),
   loading = ref(false),
   failed = ref(false),
   saving = ref(false),
   selected = ref<PlanMinderNode>(),
-  chart = ref<InstanceType<typeof VChart>>(),
   viewport = ref<HTMLElement>(),
-  collapsed = ref(new Set<string>());
+  collapsed = ref(new Set<string>()),
+  stage = ref<HTMLElement>(),
+  zoom = ref(1);
+const { width: stageWidth, height: stageHeight } = useElementSize(stage);
 const tree = computed(() =>
   buildPlanMinder(props.plan.name, nodes.value, entries.value, {
     environmentNames: Object.fromEntries(
@@ -287,8 +320,7 @@ const selectedPoint = computed(() =>
     ? nodes.value.find((node) => node.id === selected.value?.nodeId)
     : undefined,
 );
-const executionCatalog = ref<ExecutionCatalog>(),
-  executionDraft = ref<ExecutionConfig>(),
+const executionDraft = ref<ExecutionConfig>(),
   executionEditor = ref<InstanceType<typeof ExecutionConfiguration>>(),
   baseline = ref("");
 const pointForm = reactive({ name: "" });
@@ -326,7 +358,9 @@ function draftState() {
   });
 }
 function resetPoint() {
-  pointForm.name = selectedPoint.value?.name || "";
+  pointForm.name =
+    selectedPoint.value?.name ||
+    (selected.value?.kind === "collection" ? selected.value.name : "");
   const entry = selectedScope.value
     ? executionCatalog.value?.configurations[selectedScope.value]
     : undefined;
@@ -336,6 +370,13 @@ function resetPoint() {
   baseline.value = draftState();
 }
 const dirty = computed(() => draftState() !== baseline.value);
+const hasChanges = computed(() => dirty.value || draft.dirty);
+const canRename = computed(
+  () =>
+    selected.value?.kind === "collection" &&
+    (!selectedPoint.value ||
+      selectedPoint.value.category === selected.value.category),
+);
 const poolOpen = ref(false),
   poolSelection = ref("new"),
   poolDraft = reactive({ name: "", environmentIds: [] as string[] });
@@ -364,7 +405,7 @@ async function savePool() {
     const pool = executionCatalog.value?.pools.find(
       (item) => item.id === poolSelection.value,
     );
-    executionCatalog.value = await planExecutionApi.savePool(
+    const catalog = await planExecutionApi.savePool(
       props.plan.id,
       {
         name: poolDraft.name.trim(),
@@ -373,6 +414,11 @@ async function savePool() {
       },
       pool?.id,
     );
+    if (draft.workspace) {
+      draft.workspace.executionCatalog.pools = catalog.pools;
+      draft.workspace.executionCatalog.resources = catalog.resources;
+      draft.recalculate();
+    }
     poolOpen.value = false;
     message.success("资源池已保存");
   } catch (error) {
@@ -382,94 +428,26 @@ async function savePool() {
     saving.value = false;
   }
 }
-const presentedTree = computed(() =>
-  presentPlanMinder(tree.value, collapsed.value),
-);
-const chartWidth = computed(() => {
-  function depth(node: PlanMinderNode): number {
-    return 1 + Math.max(0, ...(node.children || []).map(depth));
-  }
-  return Math.max(950, 400 + (depth(presentedTree.value) - 1) * 210);
-});
 function allowNavigation() {
-  if (!dirty.value) return true;
-  message.warning("请先保存或取消当前节点的修改");
+  if (!hasChanges.value && !saving.value) return true;
+  message.warning("请先保存或取消测试规划草稿");
   return false;
 }
 onBeforeRouteLeave(allowNavigation);
 onBeforeRouteUpdate(allowNavigation);
-const option = computed(() => ({
-  tooltip: {
-    trigger: "item",
-    renderMode: "richText",
-    formatter: (item: any) => item.data.name,
-  },
-  series: [
-    {
-      type: "tree",
-      data: [presentedTree.value],
-      orient: "LR",
-      roam: true,
-      expandAndCollapse: false,
-      initialTreeDepth: -1,
-      top: 40,
-      bottom: 40,
-      left: 180,
-      right: 220,
-      symbolSize: 9,
-      label: {
-        formatter: (item: any) =>
-          `${item.data.executionMode ? (item.data.executionMode === "parallel" ? "并行 · " : "串行 · ") : ""}${item.data.name}`,
-        position: "left",
-        align: "right",
-        fontSize: 12,
-        width: 150,
-        overflow: "truncate",
-        backgroundColor: "#f7f8fa",
-        padding: [7, 10],
-        borderRadius: 3,
-      },
-      leaves: { label: { position: "right", align: "left", width: 110 } },
-      lineStyle: { color: "#c5b1d0", curveness: 0.4 },
-      itemStyle: { color: "#811fa3" },
-      emphasis: { focus: "descendant" },
-      animationDuration: 180,
-    },
-  ],
-}));
 let sequence = 0;
 async function load() {
-  if (dirty.value) {
-    message.warning("请先保存或取消当前节点的修改");
+  if (hasChanges.value) {
+    message.warning("请先保存或取消测试规划草稿");
     return;
   }
   const request = ++sequence;
   loading.value = true;
   failed.value = false;
   try {
-    const [catalog, points, functional, api, scenario] = await Promise.all([
-      planExecutionApi.catalog(props.plan.id),
-      planTreeApi.list(props.plan.id),
-      ...(["functional", "api", "scenario"] as PlanCategory[]).map((category) =>
-        planCaseWorkspaceApi.list(props.plan.id, {
-          category,
-          view: "mind",
-          tree_type: "COLLECTION",
-          folder: "all",
-          page: 1,
-          size: 100,
-        }),
-      ),
-    ]);
+    const result = await planMinderApi.load(props.plan.id);
     if (request === sequence) {
-      executionCatalog.value = catalog;
-      nodes.value = points;
-      entries.value = {
-        functional: functional.items,
-        api: api.items,
-        scenario: scenario.items,
-      };
-      usesTree.value = functional.usesTree;
+      draft.load(result);
       const activeId = selected.value?.id || "root";
       selected.value =
         flatNodes.value.find((node) => node.id === activeId) || tree.value;
@@ -478,8 +456,6 @@ async function load() {
   } catch (error) {
     console.error("加载测试规划脑图失败", error);
     if (request === sequence) {
-      nodes.value = [];
-      entries.value = { functional: [], api: [], scenario: [] };
       selected.value = undefined;
       failed.value = true;
     }
@@ -510,28 +486,58 @@ function selectById(id: string) {
   selected.value = flatNodes.value.find((node) => node.id === id);
   resetPoint();
 }
-function selectNode(event: unknown) {
-  if (!event || typeof event !== "object" || !("data" in event)) return;
-  const data = event.data;
-  if (!data || typeof data !== "object" || !("id" in data)) return;
-  const node = flatNodes.value.find((item) => item.id === data.id);
-  if (!node) return;
-  selectById(node.id);
-  if (dirty.value) return;
+function selectCanvasNode(id: string) {
+  if (dirty.value) {
+    message.warning("请先保存或取消当前节点的修改");
+    return;
+  }
+  selectById(id);
+  const node = selected.value;
   viewport.value?.focus({ preventScroll: true });
-  if (node.kind === "count" && props.canEdit && !dirty.value)
-    associateOpen.value = true;
-  if (["environment", "resource"].includes(node.kind) && props.canEdit) {
+  if (node?.kind === "count" && props.canEdit) openAssociation();
+  if (node && ["environment", "resource"].includes(node.kind) && props.canEdit)
     void nextTick(() =>
       executionEditor.value?.focus(node.kind as "environment" | "resource"),
     );
+}
+function toggleById(id: string) {
+  const next = new Set(collapsed.value);
+  next.has(id) ? next.delete(id) : next.add(id);
+  collapsed.value = next;
+}
+function reorderPoints(parent: PlanMinderNode, ordered: PlanMinderNode[]) {
+  if (!props.canEdit || dirty.value || saving.value || !parent.category) return;
+  try {
+    const category = parent.category;
+    const ids = ordered
+      .filter((n) => n.kind === "collection")
+      .map((n) => n.nodeId || draft.materializeDefault(category).id);
+    const parentId = parent.kind === "category" ? null : parent.nodeId || null;
+    draft.reorder(category, parentId, ids);
+    console.info("测试规划同级排序已暂存", {
+      计划: props.plan.id,
+      分类: category,
+      数量: ids.length,
+    });
+  } catch (error) {
+    console.error("暂存测试集排序失败", error);
+    message.error(error instanceof Error ? error.message : "排序失败");
   }
+}
+function cancelDraft() {
+  draft.reset();
+  selected.value =
+    flatNodes.value.find((n) => n.id === selected.value?.id) || tree.value;
+  resetPoint();
 }
 
 const canAdd = computed(
   () =>
     selected.value?.kind === "category" ||
-    (selected.value?.kind === "collection" && !!selected.value.nodeId),
+    (selected.value?.kind === "collection" &&
+      (!selectedPoint.value || !selectedPoint.value.parentId) &&
+      (!selectedPoint.value ||
+        selectedPoint.value.category === selected.value.category)),
 );
 function toggleSelected() {
   const node = selected.value;
@@ -581,15 +587,11 @@ function handleShortcut(event: KeyboardEvent) {
   } else if (props.canEdit) {
     if (
       (event.key === "Tab" && node.kind === "category") ||
-      (event.key === "Enter" && node.kind === "collection" && node.nodeId)
+      (event.key === "Enter" && node.kind === "collection")
     ) {
       event.preventDefault();
       openCreate();
-    } else if (
-      event.key === "Backspace" &&
-      node.kind === "collection" &&
-      node.nodeId
-    ) {
+    } else if (event.key === "Backspace" && node.kind === "collection") {
       event.preventDefault();
       removePoint();
     }
@@ -597,8 +599,21 @@ function handleShortcut(event: KeyboardEvent) {
 }
 
 function fit() {
-  chart.value?.clear();
-  chart.value?.setOption(option.value);
+  zoom.value = 1;
+  viewport.value?.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+}
+function fitCanvas() {
+  const element = viewport.value;
+  if (!element || !stageWidth.value || !stageHeight.value) return;
+  zoom.value = Math.max(
+    0.25,
+    Math.min(
+      1,
+      (element.clientWidth - 80) / stageWidth.value,
+      (element.clientHeight - 80) / stageHeight.value,
+    ),
+  );
+  element.scrollTo({ top: 0, left: 0 });
 }
 function viewCases() {
   const node = selected.value;
@@ -623,14 +638,14 @@ const createOpen = ref(false),
   newName = ref("");
 function openAssociation() {
   if (!props.canEdit) return;
-  if (dirty.value) {
-    message.warning("请先保存或取消当前节点的修改");
+  if (hasChanges.value) {
+    message.warning("请先保存测试规划，再关联用例");
     return;
   }
   associateOpen.value = true;
 }
 function openAdvanced() {
-  if (dirty.value) {
+  if (hasChanges.value) {
     message.warning("请先保存或取消当前节点的修改");
     return;
   }
@@ -645,85 +660,80 @@ function openCreate() {
   newName.value = "默认测试集";
   createOpen.value = true;
 }
-async function createPoint() {
-  if (!props.canEdit) return;
-  if (!newName.value.trim()) {
-    message.warning("请填写测试集名称");
-    return;
-  }
-  saving.value = true;
+function createPoint() {
+  if (!props.canEdit || !selected.value?.category) return;
   try {
-    const parent = selectedPoint.value?.parentId;
-    const row = await planTreeApi.create(props.plan.id, {
-      name: newName.value.trim(),
-      nodeType: "point",
-      category: selected.value?.category || "functional",
-      parentId: parent || null,
-      position:
-        Math.max(
-          -1,
-          ...nodes.value
-            .filter((node) => (node.parentId || null) === (parent || null))
-            .map((node) => node.position),
-        ) + 1,
-      config: {},
-    });
+    const point = draft.add(
+      selected.value.category,
+      newName.value,
+      selectedPoint.value?.id ||
+        (selected.value.kind === "collection" ? "default" : undefined),
+    );
     createOpen.value = false;
-    selected.value = {
-      id: `${row.category}:${row.id}`,
-      name: row.name,
-      nodeId: row.id,
-      kind: "collection",
-      category: row.category,
-      count: 0,
-    };
-    await changed();
-    message.success("测试集已添加");
+    selected.value = flatNodes.value.find(
+      (n) => n.nodeId === point.id && n.category === point.category,
+    );
+    resetPoint();
+    console.info("测试集新增草稿已暂存", {
+      计划: props.plan.id,
+      分类: point.category,
+    });
+    message.success("测试集已加入草稿，请保存规划");
   } catch (error) {
-    console.error("添加测试集失败", error);
-    message.error("添加失败，请检查名称和分类");
-  } finally {
-    saving.value = false;
+    console.error("暂存新增测试集失败", error);
+    message.error(error instanceof Error ? error.message : "新增失败");
   }
 }
+function acceptWorkspace(result: MinderWorkspace) {
+  const id = selected.value?.id;
+  draft.load(result);
+  selected.value = flatNodes.value.find((n) => n.id === id) || tree.value;
+  resetPoint();
+}
 async function savePoint() {
-  const node = selectedPoint.value,
-    scope = selectedScope.value;
-  if (!props.canEdit || (!node && !scope)) return;
-  if (node && !pointForm.name.trim()) {
-    message.warning("请填写测试集名称");
-    return;
-  }
+  if (!props.canEdit || saving.value || !hasChanges.value) return;
   saving.value = true;
   try {
-    if (scope && executionDraft.value && executionCatalog.value) {
-      executionCatalog.value = await planExecutionApi.save(
-        props.plan.id,
-        scope,
-        {
-          config: executionDraft.value,
-          expectedRevision:
-            executionCatalog.value.configurations[scope]?.revision || 0,
-          ...(node
-            ? { name: pointForm.name.trim(), expectedName: node.name }
-            : {}),
-        },
-      );
-      if (node) node.name = pointForm.name.trim();
-    } else if (node) {
-      const updated = await planTreeApi.update(node.id, {
-        name: pointForm.name.trim(),
-      });
-      nodes.value = nodes.value.map((item) =>
-        item.id === node.id ? updated : item,
-      );
+    let node = selectedPoint.value;
+    const scope = selectedScope.value;
+    if (dirty.value) {
+      if (canRename.value && selected.value?.category) {
+        if (!node && pointForm.name.trim() !== selected.value.name) {
+          node = draft.materializeDefault(
+            selected.value.category,
+            pointForm.name.trim(),
+          );
+          selected.value = flatNodes.value.find(
+            (n) => n.nodeId === node!.id && n.category === node!.category,
+          );
+        }
+        if (node) draft.rename(node.id, pointForm.name);
+      }
+      const currentScope =
+        node && scope?.startsWith("default:")
+          ? `node:${node.category}:${node.id}`
+          : scope;
+      if (currentScope && executionDraft.value)
+        draft.configure(currentScope, executionDraft.value);
+      selected.value =
+        flatNodes.value.find((n) => n.id === selected.value?.id) || tree.value;
+      resetPoint();
     }
-    resetPoint();
-    await changed();
-    message.success("节点配置已保存");
-  } catch (error) {
-    console.error("保存脑图执行配置失败", error);
-    message.error("保存失败，请核对配置或刷新版本；当前修改已保留");
+    const result = await planMinderApi.save(props.plan.id, draft.payload);
+    acceptWorkspace(result);
+    emit("changed");
+    message.success("测试规划已保存");
+  } catch (error: any) {
+    console.error("保存完整测试规划失败", error);
+    message.error(
+      typeof error.response?.data?.detail === "string"
+        ? error.response.data.detail
+        : error.isAxiosError
+          ? "保存失败，当前规划草稿已保留，请重试"
+          : error instanceof Error
+            ? error.message
+            : "保存失败，当前规划草稿已保留",
+    );
   } finally {
     saving.value = false;
   }
@@ -733,25 +743,33 @@ async function changed() {
   emit("changed");
 }
 function removePoint() {
-  const node = selectedPoint.value;
-  if (!props.canEdit || !node) return;
+  const node = selected.value;
+  if (
+    !props.canEdit ||
+    !canRename.value ||
+    !node?.category ||
+    dirty.value ||
+    saving.value
+  ) {
+    if (dirty.value) message.warning("请先保存或取消当前节点的修改");
+    return;
+  }
   Modal.confirm({
     title: "删除此测试集及子测试集？",
-    content: usesTree.value
-      ? "其中的用例关联会取消，原用例和历史执行记录保留。"
-      : "其中的用例移至默认测试集，原用例和历史执行记录保留。",
+    content: "保存规划后取消其中的用例关联，原用例和历史执行记录保留。",
     okType: "danger",
-    async onOk() {
-      try {
-        await planTreeApi.remove(node.id);
-        selected.value = undefined;
-        await changed();
-        message.success("测试集已删除");
-      } catch (error) {
-        console.error("删除脑图测试集失败", error);
-        message.error("删除失败");
-        throw error;
-      }
+    onOk() {
+      if (node.nodeId) draft.remove(node.nodeId);
+      else draft.removeDefault(node.category!);
+      selected.value = flatNodes.value.find(
+        (n) => n.id === `category:${node.category}`,
+      );
+      resetPoint();
+      console.info("测试集删除已暂存", {
+        计划: props.plan.id,
+        分类: node.category,
+      });
+      message.success("删除已加入草稿，请保存规划");
     },
   });
 }
@@ -759,6 +777,8 @@ watch(
   () => props.plan.id,
   () => {
     sequence++;
+    draft.clear();
+    zoom.value = 1;
     collapsed.value = new Set();
     selected.value = undefined;
     createOpen.value = false;
@@ -797,10 +817,21 @@ watch(
   flex: 1;
   overflow: auto;
 }
-.plan-chart {
+.minder-viewport {
+  padding: 40px;
   height: clamp(420px, calc(100vh - 320px), 700px);
-  min-width: 950px;
-  width: 100%;
+}
+.minder-sizing {
+  position: relative;
+}
+.minder-stage {
+  position: absolute;
+  width: max-content;
+  transform-origin: 0 0;
+}
+.zoom-value {
+  min-width: 42px;
+  text-align: center;
 }
 .node-configuration {
   width: 320px;

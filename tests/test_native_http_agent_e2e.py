@@ -475,3 +475,56 @@ async def test_real_retry_delay_is_cancellable(native_lab):
     await finished(run_id)
     assert len(value["hits"]) == 1 and not value["agent"].native_http_runner.runs
     print("重试等待取消验收通过：首个真实请求失败后取消30秒等待，没有继续重发请求。")
+
+
+@pytest.mark.asyncio
+async def test_minder_saved_order_drives_real_http_and_delete_keeps_frozen_report(native_lab):
+    from database import SessionLocal
+    from models import PlanCaseRelation, TestCase
+    from models.plan_orchestration import PlanRun, PlanRunItem
+    value = native_lab
+    project = value["api"]["projectId"]
+    second = await value["post"]("/test-cases", {"project_id": project, "case_code": "OWN_SECOND", "name": "第二真实请求", "type": "api", "is_automated": False})
+    await value["config"](second, {"request": dict(value["request"], headers={"X-Frozen": "second"})})
+    plan_id = value["native_plan"]["id"]
+    with SessionLocal() as db:
+        db.query(PlanCaseRelation).filter_by(plan_id=plan_id, case_id=value["scene"]["id"]).delete()
+        db.add(PlanCaseRelation(plan_id=plan_id, case_id=second["id"], execution_order=1))
+        db.commit()
+    base = f"/api/v1/plan-orchestration/plans/{plan_id}"
+    points = []
+    for name in ("原第一集", "原第二集"):
+        result = await value["client"].post(base + "/nodes", json={"name": name, "category": "api"})
+        assert result.status_code == 200, result.text
+        points.append(result.json()["data"])
+    with SessionLocal() as db:
+        db.query(PlanCaseRelation).filter_by(plan_id=plan_id, case_id=value["api"]["id"]).one().collection_id = points[0]["id"]
+        db.query(PlanCaseRelation).filter_by(plan_id=plan_id, case_id=second["id"]).one().collection_id = points[1]["id"]
+        db.commit()
+    result = await value["client"].get(base + "/minder-workspace")
+    assert result.status_code == 200, result.text
+    snapshot = result.json()["data"]
+    body = dict(expectedFingerprint=snapshot["fingerprint"], points=[dict(id=p["id"], name=p["name"], category="api", parentId=None, position=1-index) for index,p in enumerate(points)])
+    result = await value["client"].put(base + "/minder-workspace", json=body)
+    assert result.status_code == 200, result.text
+    run = await value["post"](f"/test-plans/{plan_id}/execute", {})
+    run_id = run["id"]
+    await dispatch(run_id)
+    with SessionLocal() as db:
+        first = db.query(PlanRunItem).filter_by(run_id=run_id, sequence=0).one()
+        suite_id = first.suite_id
+        assert first.suite_snapshot["caseIds"] == [second["id"]]
+    await until(lambda: bool(queue_states(suite_id)) and set(queue_states(suite_id).values()) == {"completed"})
+    await dispatch(run_id)
+    await finished(run_id)
+    assert [h["header"] for h in value["hits"]] == ["second", "original"]
+    result = await value["client"].get(base + "/minder-workspace")
+    saved = result.json()["data"]
+    result = await value["client"].put(base + "/minder-workspace", json=dict(expectedFingerprint=saved["fingerprint"], points=[]))
+    assert result.status_code == 200, result.text
+    with SessionLocal() as db:
+        report = db.get(PlanRun, run_id).report
+        assert report["total"] == report["counts"]["passed"] == 2
+        assert db.get(TestCase, second["id"]) and db.get(TestCase, value["api"]["id"])
+        assert not db.query(PlanCaseRelation).filter_by(plan_id=plan_id).count()
+    print("规划真实执行验收通过：整体保存倒序后，实际HTTP请求依次second/original；删除集合取消关联，两条主用例与真实冻结报告保留。")

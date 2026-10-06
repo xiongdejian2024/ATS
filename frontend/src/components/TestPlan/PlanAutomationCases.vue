@@ -39,12 +39,7 @@
             @click="toggleExpanded"
             ><FolderOpenOutlined
           /></a-button>
-          <a-button
-            v-if="canEdit && treeType === 'COLLECTION'"
-            type="text"
-            aria-label="新建测试集"
-            @click="newCollection"
-            ><PlusOutlined /></a-button
+
         ></a-space>
       </div>
       <a-tree
@@ -338,24 +333,6 @@
       show-icon
     />
   </a-modal>
-  <a-modal
-    v-model:open="collectionOpen"
-    title="新建测试集"
-    :confirm-loading="mutating"
-    :closable="!mutating"
-    :mask-closable="!mutating"
-    :cancel-button-props="{ disabled: mutating }"
-    @ok="createCollection"
-    ><a-alert
-      v-if="mutationError"
-      :message="mutationError"
-      type="error"
-      show-icon /><a-form layout="vertical"
-      ><a-form-item label="名称" required
-        ><a-input
-          v-model:value="collectionName"
-          :maxlength="255" /></a-form-item></a-form
-  ></a-modal>
   <a-drawer
     :open="!!detail"
     :title="detail?.name"
@@ -401,7 +378,6 @@ import { useMediaQuery } from "@vueuse/core";
 import { message } from "ant-design-vue";
 import {
   FolderOpenOutlined,
-  PlusOutlined,
   SettingOutlined,
   ReloadOutlined,
 } from "@ant-design/icons-vue";
@@ -415,7 +391,6 @@ import {
   type PlanCaseListing,
   type NativeWorkspaceCondition,
 } from "@/api/planCaseWorkspace";
-import { planTreeApi } from "@/api/planTree";
 import { nativeStateOptions } from "@/api/nativeCase";
 import type {
   FilterCondition,
@@ -787,9 +762,7 @@ function applyAdvanced(
 const associateOpen = ref(false),
   moveOpen = ref(false),
   unlinkOpen = ref(false),
-  moveTarget = ref<string>(),
-  collectionOpen = ref(false),
-  collectionName = ref("");
+  moveTarget = ref<string>();
 const detail = ref<PlanCaseEntry>(),
   defectCase = ref<PlanCaseEntry>(),
   reportId = ref("");
@@ -912,43 +885,6 @@ async function move() {
 }
 async function unlinkRange() {
   if (await batchRange("unlink")) unlinkOpen.value = false;
-}
-function newCollection() {
-  if (mutating.value) return;
-  collectionName.value = "";
-  mutationError.value = "";
-  collectionOpen.value = true;
-}
-async function createCollection() {
-  if (mutating.value) return;
-  const name = collectionName.value.trim();
-  if (!name) {
-    mutationError.value = "请输入测试集名称";
-    return;
-  }
-  mutating.value = true;
-  try {
-    await planTreeApi.create(props.plan.id, {
-      name,
-      nodeType: "point",
-      category: props.category,
-      parentId: selectableCollections.value.some((c) => c.id === folder.value)
-        ? folder.value
-        : null,
-    });
-    collectionOpen.value = false;
-    console.info("计划原生测试集已创建", {
-      计划: props.plan.id,
-      分类: props.category,
-      名称: name,
-    });
-    await changed();
-  } catch (error) {
-    console.error("创建计划原生测试集失败", error);
-    mutationError.value = "创建失败，请重试";
-  } finally {
-    mutating.value = selection.working.value = false;
-  }
 }
 const navigationGuard = () => {
   if (mutating.value || filterSaving.value) {

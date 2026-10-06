@@ -1,6 +1,7 @@
 """计划模块、关注和批量管理接口。"""
 from fastapi import APIRouter, Depends, HTTPException
 from services.plan_execution_config import ConfigSave, PoolSave
+from services.plan_minder_edit import MinderSave
 from sqlalchemy.orm import Session
 from database import get_db
 from api.deps import get_current_user
@@ -182,6 +183,20 @@ def list_nodes(plan_id: str, db: Session = Depends(get_db), user=Depends(get_cur
     from services.plan_tree import nodes, node_data
     plan_access(db, user, plan_id)
     return ok([node_data(db, row) for row in nodes(db, plan_id)])
+
+
+@router.get("/plans/{plan_id}/minder-workspace")
+def read_minder_workspace(plan_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_minder_edit import load
+    from api.v1.case_governance import transact
+    return ok(transact(db, lambda: load(db, user, plan_id)))
+
+
+@router.put("/plans/{plan_id}/minder-workspace")
+def save_minder_workspace(plan_id: str, data: MinderSave, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_minder_edit import save
+    from api.v1.case_governance import transact
+    return ok(transact(db, lambda: save(db, user, plan_id, data)))
 
 
 @router.get("/plans/{plan_id}/execution-configurations")
