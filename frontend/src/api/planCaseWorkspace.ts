@@ -331,6 +331,8 @@ export interface PlanCaseExecutionRecord {
   stepResults: { index: number; result: string; actual: string }[];
 }
 export interface PlanCaseExecutionDetail {
+  canReadCase: boolean;
+  canEditCase: boolean;
   entry?: PlanCaseEntry;
   detached: boolean;
   canExecute: boolean;

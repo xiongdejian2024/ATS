@@ -1,7 +1,7 @@
 <template>
   <div class="test-case-edit">
     <!-- 固定顶部区域 -->
-    <div class="edit-header">
+    <div v-if="!embedded" class="edit-header">
       <div class="header-title">
         <span class="title-text">{{ initialDraft ? '复制用例' : isNewCase ? '新建用例' : '编辑用例' }}</span>
         <span v-if="testCase.caseCode" class="sub-title">{{ testCase.caseCode }}</span>
@@ -140,7 +140,7 @@
     </div>
 
     <!-- 固定底部区域 -->
-    <div class="edit-footer">
+    <div v-if="!embedded" class="edit-footer">
       <a-space>
         <a-button :disabled="loading" @click="handleCancel">取消</a-button>
         <a-button v-if="allowContinue && isNewCase" :loading="saving" :disabled="loading || loadError" @click="handleSave(true)">保存并继续</a-button>
@@ -239,6 +239,7 @@ import {caseFeaturesApi,type CaseTemplate} from '@/api/caseFeatures'
 import { caseGovernanceApi } from '@/api/caseGovernance'
 
 interface Props {
+  embedded?: boolean
   caseId?: string
   copySourceId?: string
   projectId: string
@@ -815,6 +816,7 @@ watch(
 defineExpose({
   save: handleSave,
   isSaving: () => saving.value,
+  canSave: () => !loading.value && !loadError.value,
   resetForm: () => {
     if (formRef.value) {
       formRef.value.resetFields()

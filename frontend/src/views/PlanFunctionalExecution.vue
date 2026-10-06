@@ -91,8 +91,17 @@
                         "pending"
                     ]
                   }}</a-tag
-                ><a @click="openMainCase">{{ currentCase.caseCode }}</a>
+                ><a v-if="detail.canReadCase" @click="openMainCase">{{
+                  currentCase.caseCode
+                }}</a>
+                <span v-else>{{ currentCase.caseCode }}</span>
                 <h3>{{ currentCase.name }}</h3>
+                <a-button
+                  v-if="detail.canEditCase"
+                  :disabled="saving || mediaUploading || detailLoading"
+                  @click="openCaseEditor"
+                  >编辑</a-button
+                >
               </div>
               <a-alert
                 v-if="detail.detached"
@@ -106,7 +115,7 @@
               />
               <a-tabs v-model:active-key="tab">
                 <a-tab-pane
-                  :disabled="mediaUploading || saving"
+                  :disabled="mediaUploading || saving || detailLoading"
                   key="basic"
                   tab="基本信息"
                   ><a-descriptions bordered :column="1"
@@ -132,7 +141,7 @@
                   ></a-tab-pane
                 >
                 <a-tab-pane
-                  :disabled="mediaUploading || saving"
+                  :disabled="mediaUploading || saving || detailLoading"
                   key="details"
                   tab="用例详情"
                 >
@@ -178,11 +187,11 @@
                       class="step-result"
                       ><a-select
                         v-model:value="steps[index].result"
-                        :disabled="saving"
+                        :disabled="saving || detailLoading"
                         :options="resultOptions"
                         @change="deriveResult" /><a-textarea
                         v-model:value="steps[index].actual"
-                        :disabled="saving"
+                        :disabled="saving || detailLoading"
                         :maxlength="10000"
                         placeholder="实际结果"
                     /></a-space>
@@ -196,13 +205,13 @@
                   <CaseAttachments
                     v-if="!detail.detached && !detail.entry?.recycled"
                     :key="selectedKey"
-                    :project-id="projectId"
+                    :project-id="currentCase.projectId || projectId"
                     :case-id="caseId"
                     read-only
                   />
                 </a-tab-pane>
                 <a-tab-pane
-                  :disabled="mediaUploading || saving"
+                  :disabled="mediaUploading || saving || detailLoading"
                   key="defects"
                   tab="缺陷"
                   ><PlanDefects
@@ -216,7 +225,7 @@
                     "
                 /></a-tab-pane>
                 <a-tab-pane
-                  :disabled="mediaUploading || saving"
+                  :disabled="mediaUploading || saving || detailLoading"
                   key="history"
                   :tab="`执行历史 (${detail.total})`"
                   ><a-empty
@@ -263,7 +272,7 @@
                 <PlanCaseExecutionSubmit
                   v-model:result="result"
                   v-model:description="description"
-                  :disabled="saving"
+                  :disabled="saving || detailLoading"
                   :plan-id="planId"
                   v-model:uploading="mediaUploading"
                   v-model:dialog-dirty="dialogDirty"
@@ -283,6 +292,29 @@
         </main>
       </div>
     </a-spin>
+    <FunctionalCaseEditDrawer
+      v-if="detail?.entry"
+      ref="caseEditDrawer"
+      v-model:open="caseEditOpen"
+      :case-id="caseId"
+      :project-id="detail.entry.projectId"
+      @dirty="caseEditDirty = $event"
+      @busy="caseEditSaving = $event"
+    />
+    <a-drawer
+      :open="mainCaseOpen"
+      title="用例详情"
+      width="min(1200px, 100vw)"
+      destroy-on-close
+      @close="mainCaseOpen = false"
+    >
+      <TestCaseDetail
+        v-if="mainCaseOpen && detail?.entry"
+        :case-id="caseId"
+        :project-id="detail.entry.projectId"
+        read-only
+      />
+    </a-drawer>
   </section>
 </template>
 <script setup lang="ts">
@@ -305,6 +337,8 @@ import {
 } from "@/api/planCaseWorkspace";
 import { useProjectStore } from "@/stores/project";
 import type { TestPlan } from "@/types";
+import FunctionalCaseEditDrawer from "@/components/TestPlan/FunctionalCaseEditDrawer.vue";
+import TestCaseDetail from "@/components/TestCase/TestCaseDetail.vue";
 import CaseAttachments from "@/components/TestCase/CaseAttachments.vue";
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
 import { ExecutionMediaDraft } from "@/components/TestPlan/executionMediaDraft";
@@ -331,6 +365,12 @@ const selectedKey = computed(
 const plan = ref<TestPlan>(),
   listing = ref<PlanCaseListing>(),
   detail = ref<PlanCaseExecutionDetail>();
+const caseEditOpen = ref(false),
+  caseEditDirty = ref(false),
+  caseEditSaving = ref(false),
+  mainCaseOpen = ref(false);
+const caseEditDrawer = ref<InstanceType<typeof FunctionalCaseEditDrawer>>();
+let active = true;
 const currentCase = computed(
   () => detail.value?.entry || detail.value?.history[0]?.caseSnapshot,
 );
@@ -354,6 +394,10 @@ const search = ref(initialListing.search),
   tab = ref("details");
 const mediaDraft = new ExecutionMediaDraft(planCaseMediaApi.cleanup);
 onBeforeUnmount(() => {
+  active = false;
+  ++contextSequence;
+  ++listSequence;
+  ++detailSequence;
   void mediaDraft.cleanup();
 });
 const result = ref("passed"),
@@ -371,9 +415,10 @@ const draft = () =>
     steps,
   });
 const baseline = ref(""),
-  dirty = computed(
+  executionDirty = computed(
     () => dialogDirty.value || (!!baseline.value && draft() !== baseline.value),
   );
+const dirty = computed(() => executionDirty.value || caseEditDirty.value);
 let contextSequence = 0,
   listSequence = 0,
   detailSequence = 0,
@@ -382,7 +427,12 @@ let contextSequence = 0,
 const formatTime = (value: string) =>
   dayjs(value).format("YYYY-MM-DD HH:mm:ss");
 useEventListener(window, "beforeunload", (event) => {
-  if (dirty.value || saving.value || mediaUploading.value) {
+  if (
+    dirty.value ||
+    saving.value ||
+    mediaUploading.value ||
+    caseEditSaving.value
+  ) {
     event.preventDefault();
     event.returnValue = "";
   }
@@ -395,17 +445,25 @@ function resultColor(value: string) {
     >
   )[value];
 }
-async function confirmLeave(): Promise<boolean> {
-  if (saving.value || mediaUploading.value) return Promise.resolve(false);
-  if (!dirty.value) {
+async function confirmExecutionDiscard(edit = false): Promise<boolean> {
+  if (
+    saving.value ||
+    mediaUploading.value ||
+    caseEditSaving.value ||
+    detailLoading.value
+  )
+    return false;
+  if (!executionDirty.value) {
     await mediaDraft.cleanup();
     return true;
   }
   return new Promise((resolve) =>
     Modal.confirm({
       title: "执行结果尚未提交",
-      content: "离开会丢弃当前执行描述和步骤结果。",
-      okText: "丢弃并离开",
+      content: edit
+        ? "编辑主用例前需清空本次执行描述和步骤结果；已提交的历史记录保留。"
+        : "离开会丢弃当前执行描述和步骤结果。",
+      okText: edit ? "清空草稿并编辑" : "丢弃并离开",
       cancelText: "继续编辑",
       async onOk() {
         baseline.value = "";
@@ -417,6 +475,12 @@ async function confirmLeave(): Promise<boolean> {
       },
     }),
   );
+}
+async function confirmLeave(): Promise<boolean> {
+  if (caseEditOpen.value && !(await caseEditDrawer.value?.confirmClose()))
+    return false;
+  if (caseRefresh) await caseRefresh;
+  return confirmExecutionDiscard();
 }
 onBeforeRouteLeave(confirmLeave);
 onBeforeRouteUpdate(async (to, from) => {
@@ -433,6 +497,8 @@ async function loadContext() {
   const request = ++contextSequence;
   ++listSequence;
   ++detailSequence;
+  caseEditOpen.value = false;
+  mainCaseOpen.value = false;
   plan.value = undefined;
   listing.value = undefined;
   detail.value = undefined;
@@ -486,12 +552,12 @@ async function loadList() {
     if (request === listSequence) listLoading.value = false;
   }
 }
-async function loadDetail(reset = true) {
+async function loadDetail(reset = true, preserveEntry = false) {
   if (!plan.value || !caseId.value) return;
   const request = ++detailSequence;
   detailLoading.value = true;
   detailFailed.value = false;
-  detail.value = undefined;
+  if (!preserveEntry) detail.value = undefined;
   try {
     const data = await planCaseWorkspaceApi.execution(planId.value, {
       source: route.query.source,
@@ -502,30 +568,31 @@ async function loadDetail(reset = true) {
     });
     if (request !== detailSequence) return;
     detail.value = data;
-    if (reset) {
-      result.value = "passed";
-      description.value = "";
-      steps.splice(
-        0,
-        steps.length,
-        ...(data.entry?.caseEditType === "TEXT"
-          ? []
-          : (data.entry?.steps || []).map((_, index) => ({
-              index,
-              result: "pending",
-              actual: "",
-            }))),
-      );
-      baseline.value = draft();
-      retryPayload = "";
-      retryId = "";
-    }
+    if (reset) resetExecutionDraft(data);
   } catch (error) {
     console.error("加载功能用例执行详情失败", error);
     if (request === detailSequence) detailFailed.value = true;
   } finally {
     if (request === detailSequence) detailLoading.value = false;
   }
+}
+function resetExecutionDraft(data: PlanCaseExecutionDetail) {
+  result.value = "passed";
+  description.value = "";
+  steps.splice(
+    0,
+    steps.length,
+    ...(data.entry?.caseEditType === "TEXT"
+      ? []
+      : (data.entry?.steps || []).map((_, index) => ({
+          index,
+          result: "pending",
+          actual: "",
+        }))),
+  );
+  baseline.value = draft();
+  retryPayload = "";
+  retryId = "";
 }
 function filterCases() {
   page.value = 1;
@@ -562,19 +629,42 @@ function back() {
   });
 }
 function openMainCase() {
-  void router.push({
-    name: "CaseEdit",
-    params: { caseId: caseId.value },
-    query: { projectId: projectId.value },
-  });
+  if (detail.value?.canReadCase && !detailLoading.value)
+    mainCaseOpen.value = true;
 }
+let editedKey = "";
+let caseRefresh: Promise<void> | undefined;
+async function openCaseEditor() {
+  if (!detail.value?.canEditCase || detailLoading.value || caseEditOpen.value)
+    return;
+  const key = selectedKey.value;
+  if (!(await confirmExecutionDiscard(true))) return;
+  if (!active || key !== selectedKey.value || !detail.value?.canEditCase)
+    return;
+  editedKey = key;
+  resetExecutionDraft(detail.value);
+  caseEditOpen.value = true;
+}
+async function refreshEditedCase() {
+  if (!active || !plan.value || editedKey !== selectedKey.value) return;
+  console.info("更新执行页主用例详情及列表，保留历史快照");
+  await Promise.all([loadList(), loadDetail(true, true)]);
+}
+watch(
+  caseEditOpen,
+  (open, wasOpen) => {
+    if (wasOpen && !open) caseRefresh = refreshEditedCase();
+  },
+  { flush: "sync" },
+);
 async function submit(): Promise<boolean> {
   const entry = detail.value?.entry;
   if (
     !entry ||
     !detail.value?.canExecute ||
     saving.value ||
-    mediaUploading.value
+    mediaUploading.value ||
+    detailLoading.value
   )
     return false;
   if (!functionalResults.some((option) => option.value === result.value)) {

@@ -105,7 +105,14 @@ def detail(db, user, plan, source, association_id, case_id, page, size):
     history = query.order_by(PlanCaseExecution.created_at.desc(), PlanCaseExecution.id.desc()).offset((page-1)*size).limit(size).all()
     if not current and not count:
         raise HTTPException(404, '当前计划没有此用例关联或执行历史')
-    return dict(entry=current, detached=current is None, canExecute=bool(current and not current['grouped'] and not current['recycled'] and can_execute(db,user,plan)),
+    source_project = db.get(Project, current['projectId']) if current and not current['recycled'] else None
+    can_read_case = bool(source_project and project_allows(db, user, source_project, 'test_case:read'))
+    workspace = db.get(PlanWorkspace, plan.id)
+    can_edit_case = bool(can_read_case and not (workspace and workspace.archived)
+                         and project_allows(db, user, source_project, 'test_case:update'))
+    return dict(entry=current, detached=current is None,
+        canReadCase=can_read_case, canEditCase=can_edit_case,
+        canExecute=bool(current and not current['grouped'] and not current['recycled'] and can_execute(db,user,plan)),
         history=[serialize_model(row, camel_case=True) for row in history], total=count, page=page, size=size)
 
 
