@@ -34,6 +34,17 @@
       ><a-radio-button value="api">API 用例</a-radio-button
       ><a-radio-button value="scenario">API 场景</a-radio-button>
     </a-radio-group>
+    <a-radio-group
+      v-if="activeCategory === 'api'"
+      v-model:value="resourceType"
+      :disabled="locked"
+      class="category-switch"
+      aria-label="接口关联模式"
+      @change="resetCategory"
+    >
+      <a-radio-button value="API">关联接口</a-radio-button>
+      <a-radio-button value="CASE">关联接口用例</a-radio-button>
+    </a-radio-group>
     <div class="associate-layout">
       <aside v-if="!advanced">
         <a-input
@@ -54,7 +65,9 @@
             "
           />
           <a-button :disabled="locked" type="text" @click="selectFolder('all')"
-            >全部用例 ({{ data?.counts.all || 0 }})</a-button
+            >全部{{ definitionMode ? "接口" : "用例" }} ({{
+              data?.counts.all || 0
+            }})</a-button
           ><a-button
             :disabled="locked"
             aria-label="展开或收起关联模块"
@@ -120,7 +133,7 @@
             allow-clear
             @search="resetPage"
           /><a-select
-            v-if="!advanced"
+            v-if="!advanced && !definitionMode"
             :disabled="locked"
             v-model:value="priority"
             allow-clear
@@ -131,12 +144,13 @@
             @change="resetPage"
           /><PlanCaseFilters
             v-if="project"
-            :key="`${planId}:${activeCategory}:${sourceProjectId}`"
+            :key="`${planId}:${activeCategory}:${sourceProjectId}:${resourceType}`"
             mode="association"
             :plan-id="planId"
             :project-id="project.id"
             :project-name="project.name"
             :category="activeCategory"
+            :resource-type="definitionMode ? 'API' : 'CASE'"
             :plans="planOptions"
             :collections="[]"
             :modules="filterModules"
@@ -172,6 +186,7 @@
         </a-alert>
         <a-table
           v-if="!failed"
+          :key="`${activeCategory}:${resourceType}:${sourceProjectId}`"
           :data-source="data?.items || []"
           :columns="columns"
           row-key="id"
@@ -186,7 +201,11 @@
             ><template v-if="column.key === 'name'"
               ><a
                 v-if="activeCategory !== 'functional'"
-                @click="nativeCaseId = record.id"
+                @click="
+                  definitionMode
+                    ? (definitionId = record.id)
+                    : (nativeCaseId = record.id)
+                "
                 >{{ record.name }}</a
               ><template v-else>{{ record.name }}</template
               ><a-tag v-if="record.alreadyLinked" color="green"
@@ -214,6 +233,11 @@
             ><a-tag v-else-if="column.key === 'priority'">{{
               record.priority
             }}</a-tag
+            ><template v-else-if="column.dataIndex === 'createdAt'">{{
+              record.createdAt
+                ? dayjs(record.createdAt).format("YYYY-MM-DD HH:mm:ss")
+                : "—"
+            }}</template
             ><a-space v-else-if="column.key === 'tags'" wrap
               ><a-tag v-for="tag in record.tags" :key="tag">{{
                 tag
@@ -306,6 +330,16 @@
       @saving="(value) => (nativeSaving = value)"
       @saved="load"
     />
+    <NativeDefinitionDrawer
+      v-if="definitionId && sourceProjectId"
+      :open="!!definitionId"
+      :project-id="sourceProjectId"
+      :definition-id="definitionId"
+      :modules="data?.modules || []"
+      @update:open="definitionId = ''"
+      @saving="nativeSaving = $event"
+      @saved="load"
+    />
     <template #footer
       ><div class="associate-footer">
         <div v-if="activeCategory === 'functional'" class="sync-controls">
@@ -346,8 +380,11 @@
         <span v-if="selection.loading.value">正在核对选择范围…</span>
         <span v-else-if="selection.error.value">选择范围待核对</span>
         <span v-else
-          >已选择 {{ selection.summary.value?.count || 0 }} 个用例<span
-            v-if="selection.selectAll.value"
+          >已选择 {{ selectedResourceCount }} 个{{
+            definitionMode ? "接口" : "用例"
+          }}<span v-if="definitionMode"
+            >，将关联 {{ selection.summary.value?.count || 0 }} 个接口用例</span
+          ><span v-if="selection.selectAll.value"
             >（全选所有页，排除
             {{
               selection.summary.value?.excludedCount ??
@@ -375,6 +412,8 @@
   </a-drawer>
 </template>
 <script setup lang="ts">
+import NativeDefinitionDrawer from "@/components/TestCase/NativeDefinitionDrawer.vue";
+import dayjs from "dayjs";
 import NativeCaseConfigDrawer from "@/components/TestCase/NativeCaseConfigDrawer.vue";
 import { nativeStateOptions, nativeReportOptions } from "@/api/nativeCase";
 import { computed, h, ref, watch, toRef, reactive, nextTick } from "vue";
@@ -388,7 +427,7 @@ import type {
 import type { CaseFolder } from "@/api/planCaseWorkspace";
 import { message } from "ant-design-vue";
 import { FolderOpenOutlined } from "@ant-design/icons-vue";
-import type { TestCase } from "@/types";
+import type { PlanCandidateRow } from "@/api/planCaseWorkspace";
 import {
   planCaseWorkspaceApi,
   type PlanAssociateListing,
@@ -436,6 +475,16 @@ const activeCategory = ref<"functional" | "api" | "scenario">(
   expanded = ref<string[]>([]),
   collectionId = ref<string>(),
   suiteId = ref<string>();
+const resourceType = ref<"API" | "CASE">("API");
+const definitionMode = computed(
+  () => activeCategory.value === "api" && resourceType.value === "API",
+);
+const selectedResourceCount = computed(() =>
+  definitionMode.value
+    ? selection.summary.value?.selectedDefinitionCount || 0
+    : selection.summary.value?.count || 0,
+);
+const definitionId = ref("");
 const sourceProjectId = ref<string>(),
   sourceProjects = ref<{ id: string; name: string }[]>([]),
   projectsLoading = ref(false);
@@ -446,13 +495,15 @@ const syncCase = ref(false),
   apiScenarioCollectionId = ref<string>();
 const syncSuites = reactive<{ api?: string; scenario?: string }>({});
 const syncRequest = computed(() =>
-  activeCategory.value === "functional" && syncCase.value
-    ? {
-        syncCase: true,
-        apiCaseCollectionId: apiCaseCollectionId.value,
-        apiScenarioCollectionId: apiScenarioCollectionId.value,
-      }
-    : {},
+  definitionMode.value
+    ? { resourceType: "API" as const }
+    : activeCategory.value === "functional" && syncCase.value
+      ? {
+          syncCase: true,
+          apiCaseCollectionId: apiCaseCollectionId.value,
+          apiScenarioCollectionId: apiScenarioCollectionId.value,
+        }
+      : {},
 );
 function resetSync() {
   syncCase.value = false;
@@ -475,7 +526,10 @@ const advanced = computed(() => filterScope.value !== undefined);
 const appliedCondition = ref<CandidateCondition>({});
 const selectablePageIds = computed(() =>
   (data.value?.items || [])
-    .filter((row) => data.value?.usesTree || !row.alreadyLinked)
+    .filter(
+      (row) =>
+        definitionMode.value || data.value?.usesTree || !row.alreadyLinked,
+    )
     .map((row) => row.id),
 );
 const selection = usePlanCandidateSelection(
@@ -488,7 +542,8 @@ const selection = usePlanCandidateSelection(
     modules: computed(() => data.value?.modules || []),
     rows: computed(() =>
       (data.value?.items || []).filter(
-        (row) => data.value?.usesTree || !row.alreadyLinked,
+        (row) =>
+          definitionMode.value || data.value?.usesTree || !row.alreadyLinked,
       ),
     ),
   },
@@ -545,25 +600,36 @@ const baseColumns = [
   { title: "所属模块", dataIndex: "moduleName", width: 190 },
 ];
 const columns = computed(() =>
-  activeCategory.value === "functional"
-    ? baseColumns
-    : [
-        ...baseColumns.filter((c) => c.key !== "tags"),
-        {
-          title: activeCategory.value === "api" ? "用例状态" : "场景状态",
-          key: "nativeState",
-          width: 100,
-        },
-        { title: "最近执行结果", key: "lastReportStatus", width: 110 },
-        { title: "环境", dataIndex: "environmentLabel", width: 150 },
-        ...(activeCategory.value === "api"
-          ? [
-              { title: "协议", dataIndex: "protocol", width: 100 },
-              { title: "请求路径", dataIndex: "path", width: 200 },
-              { title: "接口参数变更", key: "apiChange", width: 120 },
-            ]
-          : [{ title: "步骤数", dataIndex: "stepTotal", width: 80 }]),
-      ],
+  definitionMode.value
+    ? [
+        { title: "ID", dataIndex: "id", width: 160, ellipsis: true },
+        { title: "接口名称", key: "name", width: 220 },
+        { title: "请求方式", dataIndex: "method", width: 100 },
+        { title: "路径", dataIndex: "path", width: 220 },
+        { title: "标签", key: "tags", width: 150 },
+        { title: "用例数", dataIndex: "caseTotal", width: 80 },
+        { title: "创建人", dataIndex: "createdByName", width: 100 },
+        { title: "创建时间", dataIndex: "createdAt", width: 180 },
+      ]
+    : activeCategory.value === "functional"
+      ? baseColumns
+      : [
+          ...baseColumns.filter((c) => c.key !== "tags"),
+          {
+            title: activeCategory.value === "api" ? "用例状态" : "场景状态",
+            key: "nativeState",
+            width: 100,
+          },
+          { title: "最近执行结果", key: "lastReportStatus", width: 110 },
+          { title: "环境", dataIndex: "environmentLabel", width: 150 },
+          ...(activeCategory.value === "api"
+            ? [
+                { title: "协议", dataIndex: "protocol", width: 100 },
+                { title: "请求路径", dataIndex: "path", width: 200 },
+                { title: "接口参数变更", key: "apiChange", width: 120 },
+              ]
+            : [{ title: "步骤数", dataIndex: "stepTotal", width: 80 }]),
+        ],
 );
 const automatedCount = computed(
     () =>
@@ -600,13 +666,14 @@ function syncCompatibleSuites(kind: "api" | "scenario") {
   );
 }
 const rowSelection = computed(() => ({
+  fixed: true,
   selectedRowKeys: selection.pageSelected.value,
   columnWidth: 56,
   columnTitle: () =>
     h(ReviewSelectionHeader, {
       count: selection.moduleMode.value
         ? selection.pageSelected.value.length
-        : selection.summary.value?.count || 0,
+        : selectedResourceCount.value,
       total: selection.moduleMode.value
         ? selectablePageIds.value.length
         : data.value?.total || 0,
@@ -627,12 +694,12 @@ const rowSelection = computed(() => ({
     }),
   preserveSelectedRowKeys: true,
   onChange: selectRows,
-  getCheckboxProps: (row: TestCase & { alreadyLinked: boolean }) => ({
+  getCheckboxProps: (row: PlanCandidateRow) => ({
     disabled:
       locked.value ||
       loading.value ||
       !props.canEdit ||
-      (!data.value?.usesTree && row.alreadyLinked),
+      (!definitionMode.value && !data.value?.usesTree && row.alreadyLinked),
   }),
 }));
 function selectRows(keys: (string | number)[]) {
@@ -669,6 +736,7 @@ async function load() {
     }
     const result = await planCaseWorkspaceApi.candidates(props.planId, {
       category: activeCategory.value,
+      resourceType: definitionMode.value ? "API" : "CASE",
       projectId: sourceId,
       ...condition,
       page: page.value,
@@ -742,6 +810,7 @@ function tableChange(p: { current: number; pageSize: number }) {
 }
 function switchProject() {
   ++sequence;
+  definitionId.value = "";
   nativeCaseId.value = "";
   data.value = undefined;
   project.value = undefined;
@@ -758,6 +827,7 @@ function switchProject() {
 }
 function resetCategory() {
   resetSync();
+  definitionId.value = "";
   nativeCaseId.value = "";
   filterScope.value = undefined;
   viewId.value = undefined;
@@ -821,6 +891,7 @@ watch(
     sourceProjectId.value = undefined;
     resetSync();
     sourceProjects.value = [];
+    definitionId.value = "";
     nativeCaseId.value = "";
     data.value = undefined;
     project.value = undefined;
@@ -839,6 +910,9 @@ watch(
     page.value = 1;
     expanded.value = [];
     activeCategory.value = props.category || "functional";
+    resourceType.value = props.initialAssociation
+      ? props.initialAssociation.resourceType || "CASE"
+      : "API";
     if (props.open) void restoreAndLoad();
   },
   { immediate: true },

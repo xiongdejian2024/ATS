@@ -300,11 +300,14 @@ def associate(db,plan,user,data):
     return result
 
 
-def candidates(db, plan, category, search, folder, priority, page, size, *, filters=None, mine=False, user_id=None, source=None):
+def candidates(db, plan, category, search, folder, priority, page, size, *, filters=None, mine=False, user_id=None, source=None, resource_type="CASE"):
     """数据库分页取可关联用例，目录计数不受当前页或目录范围影响。"""
     from services.case_candidates import candidates as shared_candidates
     source = source or plan
-    if filters is not None or mine:
+    if resource_type == "API":
+        from services.plan_definition_candidates import candidates as definition_candidates
+        result = definition_candidates(db, source, search, folder, priority, page, size, filters, mine, user_id)
+    elif filters is not None or mine:
         from services.plan_candidate_filter import advanced_candidates
         result = advanced_candidates(db, source, category, filters, mine, user_id, page, size)
     else:
@@ -313,7 +316,7 @@ def candidates(db, plan, category, search, folder, priority, page, size, *, filt
     linked = {item['caseId'] for item in associated}
     items = [dict(item, alreadyLinked=item['id'] in linked) for item in result['items']]
     suites = [dict(id=row.id, name=row.name, caseIds=row.case_ids or []) for row in db.query(TestSuite).filter_by(plan_id=plan.id)]
-    if category != 'functional' and filters is None and not mine:
+    if category != 'functional' and resource_type == "CASE" and filters is None and not mine:
         from services.native_candidate_context import NativeCandidateContext
         native = NativeCandidateContext(db, source.project_id)
         cases = {row.id: row for row in db.query(TestCase).filter(TestCase.id.in_([item['id'] for item in items]))}

@@ -1,5 +1,9 @@
 import { apiClient } from "@/utils/api";
 export interface NativeDefinition {
+  module_id?: string | null;
+  state?: string | null;
+  tags?: string[] | null;
+  created_by?: string | null;
   id: string;
   name: string;
   protocol: string;

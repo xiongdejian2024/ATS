@@ -37,7 +37,10 @@ def resolve(db, plan, user, selection, *, writing=False):
         raise HTTPException(409, '归档计划不可修改关联')
     excluded_count = 0
     module_summary = {}
-    if selection.moduleMaps is not None:
+    if selection.resourceType == 'API':
+        from services.plan_definition_candidates import resolve_definitions
+        cases, excluded_count, module_summary = resolve_definitions(db, source, selection, relations, uses_tree, str(user.id), current_read=writing)
+    elif selection.moduleMaps is not None:
         from services.plan_candidate_modules import resolve_modules
         cases, excluded_count, module_summary = resolve_modules(db, source, selection, relations, uses_tree, current_read=writing)
     elif selection.selectAll:
@@ -63,13 +66,13 @@ def resolve(db, plan, user, selection, *, writing=False):
     if not uses_tree:
         linked = {r.case_id for r in relations}
         cases = [c for c in cases if c.id not in linked]
-    if selection.selectAll:
+    if selection.selectAll and selection.resourceType == 'CASE':
         excluded = set(selection.excludeIds)
         excluded_count = sum(c.id in excluded for c in cases)
         cases = [c for c in cases if c.id not in excluded]
     if len(cases) > LIMIT:
         raise HTTPException(422, '每批最多关联10000条用例，请缩小筛选范围')
-    if writing and (selection.selectAll or selection.moduleMaps is not None) and not cases:
+    if writing and (selection.selectAll or selection.moduleMaps is not None) and not cases and not module_summary.get('selectedDefinitionCount'):
         raise HTTPException(409, '当前范围已无可关联用例，请刷新后重新选择')
     automated = [c for c in cases if c.is_automated]
     from services.native_http_execution import configured

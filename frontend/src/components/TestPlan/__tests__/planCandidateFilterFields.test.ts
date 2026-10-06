@@ -1,5 +1,34 @@
 import { it, expect } from "vitest";
 import { planCandidateFilterFields } from "../planCandidateFilterFields";
+
+it("接口模式使用定义字段，用例等级、变更和用例环境不混入", () => {
+  const fields = planCandidateFilterFields(
+    { id: "来源", name: "来源" },
+    [],
+    [],
+    [],
+    "api",
+    undefined,
+    "API",
+  );
+  expect(fields.map((f) => f.key)).toEqual([
+    "id",
+    "name",
+    "moduleId",
+    "protocol",
+    "method",
+    "path",
+    "nativeState",
+    "tags",
+    "caseTotal",
+    "planIds",
+    "createdBy",
+    "createdAt",
+    "updatedBy",
+    "updatedAt",
+  ]);
+  expect(fields.find((f) => f.key === "name")?.label).toBe("接口名称");
+});
 import {
   operatorsFor,
   initialConditions,

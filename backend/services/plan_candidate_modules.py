@@ -5,52 +5,53 @@ from models import TestCase
 from services.case_candidates import candidate_query
 
 
-def resolve_modules(db, plan, selection, relations, uses_tree, *, current_read=False):
+def resolve_modules(db, plan, selection, relations, uses_tree, *, current_read=False, resource_model=TestCase, query_factory=candidate_query):
     from services.plan_candidate_selection import LIMIT
     condition = selection.condition
-    query, modules, _, _ = candidate_query(db, plan.project_id, selection.category,
+    query, modules, _, _ = query_factory(db, plan.project_id, selection.category,
         condition.search, 'all', condition.priority, current_read=current_read)
     known = {row.id for row in modules}
     maps = selection.moduleMaps
     if set(maps) - known - {'all', 'unassigned'}:
         raise HTTPException(404, '关联选择模块已删除或不属于当前项目')
-    if not uses_tree:
-        query = query.filter(TestCase.id.notin_([row.case_id for row in relations]))
+    if not uses_tree and resource_model is TestCase:
+        query = query.filter(resource_model.id.notin_([row.case_id for row in relations]))
 
     def module_filter(key):
         if key == 'unassigned':
-            return or_(TestCase.module_id.is_(None), TestCase.module_id.notin_(known))
-        return TestCase.module_id == key
+            return or_(resource_model.module_id.is_(None), resource_model.module_id.notin_(known))
+        return resource_model.module_id == key
 
     # 逐条ID在当前读中核对模块归属；移动、回收、分类变化时整批拒绝。
     explicit = {cid: key for key, value in maps.items() for cid in value.selectIds}
     if explicit:
-        rows_query = db.query(TestCase).filter(TestCase.id.in_(explicit), TestCase.project_id == plan.project_id,
-            TestCase.deleted_at.is_(None))
+        rows_query = db.query(resource_model).filter(resource_model.id.in_(explicit), resource_model.project_id == plan.project_id)
+        if resource_model is TestCase:
+            rows_query = rows_query.filter(TestCase.deleted_at.is_(None))
         rows = (rows_query.populate_existing().with_for_update() if current_read else rows_query).all()
         if len(rows) != len(explicit):
             raise HTTPException(404, '模块选择用例不存在、已回收或不属于当前项目')
         for row in rows:
             actual = row.module_id if row.module_id in known else 'unassigned'
-            category = row.type if row.type in ('api', 'scenario') else 'functional'
-            if actual != explicit[row.id] or category != selection.category or category != 'functional' and not row.is_automated:
+            invalid_category = resource_model is TestCase and ((row.type if row.type in ('api', 'scenario') else 'functional') != selection.category or selection.category != 'functional' and not row.is_automated)
+            if actual != explicit[row.id] or invalid_category:
                 raise HTTPException(409, '已选用例的模块或分类已改变，请刷新后重新选择')
 
     clauses, exclusion_clauses = [], []
     base = maps.get('all')
     if base:
-        remaining = TestCase.module_id.in_(known - set(maps)) if 'unassigned' in maps else or_(TestCase.module_id.is_(None), TestCase.module_id.notin_(set(maps) - {'all'}))
-        clauses.append(and_(remaining, TestCase.id.notin_(base.excludeIds)))
-        exclusion_clauses.append(and_(remaining, TestCase.id.in_(base.excludeIds)))
+        remaining = resource_model.module_id.in_(known - set(maps)) if 'unassigned' in maps else or_(resource_model.module_id.is_(None), resource_model.module_id.notin_(set(maps) - {'all'}))
+        clauses.append(and_(remaining, resource_model.id.notin_(base.excludeIds)))
+        exclusion_clauses.append(and_(remaining, resource_model.id.in_(base.excludeIds)))
     for key, entry in maps.items():
         if key == 'all':
             continue
         scope = module_filter(key)
-        clauses.append(and_(scope, TestCase.id.notin_(entry.excludeIds) if entry.selectAll else TestCase.id.in_(entry.selectIds)))
+        clauses.append(and_(scope, resource_model.id.notin_(entry.excludeIds) if entry.selectAll else resource_model.id.in_(entry.selectIds)))
         if entry.selectAll:
-            exclusion_clauses.append(and_(scope, TestCase.id.in_(entry.excludeIds)))
+            exclusion_clauses.append(and_(scope, resource_model.id.in_(entry.excludeIds)))
     selected_query = query.filter(or_(*clauses))
-    cases = selected_query.order_by(TestCase.created_at.desc(), TestCase.id).limit(LIMIT + 1).all()
+    cases = selected_query.order_by(resource_model.created_at.desc(), resource_model.id).limit(LIMIT + 1).all()
     if len(cases) > LIMIT:
         raise HTTPException(422, '每批最多关联10000条用例，请缩小模块范围')
     excluded_query = query.filter(or_(*exclusion_clauses)) if exclusion_clauses else None
@@ -59,7 +60,7 @@ def resolve_modules(db, plan, selection, relations, uses_tree, *, current_read=F
         return cases, excluded_count, {}
     # 返回精确模块计数，前端按完整树汇总；父子模块从不重复计算。
     def totals(source):
-        result = dict(source.with_entities(TestCase.module_id, func.count(TestCase.id)).group_by(TestCase.module_id).all())
+        result = dict(source.with_entities(resource_model.module_id, func.count(resource_model.id)).group_by(resource_model.module_id).all())
         return {**{key: result.get(key, 0) for key in known},
             'unassigned': sum(value for key, value in result.items() if key not in known)}
     total, selected = totals(query), totals(selected_query)

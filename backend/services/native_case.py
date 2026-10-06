@@ -30,7 +30,7 @@ def catalog(db, user, project_id):
     def rows(model, fields):
         return [dict(id=r.id, revision=r.revision, **{f: getattr(r, f) for f in fields})
                 for r in db.query(model).filter_by(project_id=project_id).order_by(model.created_at, model.id)]
-    definitions = rows(ApiDefinition, ['name', 'protocol', 'path', 'parameters'])
+    definitions = rows(ApiDefinition, ['name', 'protocol', 'path', 'parameters', 'module_id', 'state', 'tags', 'created_by'])
     from models import TestCase
     return dict(definitions=definitions, environments=rows(ApiTestEnvironment, ['name', 'address']),
                 apiCases=[dict(id=c.id, name=c.name) for c in db.query(TestCase).filter_by(project_id=project_id, type='api').filter(TestCase.deleted_at.is_(None)).order_by(TestCase.created_at, TestCase.id)],
@@ -47,7 +47,17 @@ def save_entity(db, user, project_id, model, body, identity=None):
         raise HTTPException(409, '配置已经被修改，请刷新后重试；当前草稿可保留')
     if model is ApiDefinition and 'request' in body.parameters:
         validate_parameters(db, project_id, 'api', body.parameters, body.protocol)
-    for field, value in body.model_dump(exclude={'expectedRevision'}).items():
+    if model is ApiDefinition and body.module_id:
+        from models import Module
+        entity(db, Module, project_id, body.module_id, lock=True)
+    # 旧客户端没有提交元数据时保留原值；不能用默认空值覆盖新客户端已保存的模块。
+    values = body.model_dump(exclude={'expectedRevision'})
+    if model is ApiDefinition:
+        for field in {'module_id', 'state', 'tags'} - body.model_fields_set:
+            values.pop(field, None)
+        if not identity:
+            row.created_by = str(user.id)
+    for field, value in values.items():
         setattr(row, field, deepcopy(value))
     if model is ApiDefinition:
         flag_modified(row, "parameters")

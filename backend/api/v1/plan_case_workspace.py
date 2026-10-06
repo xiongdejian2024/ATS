@@ -21,6 +21,26 @@ from services.plan_candidate_project import source_scope, projects
 from schemas.plan_native_selection import NativeWorkspaceSelection, NativeWorkspaceBatch, NativeWorkspaceRun
 router=APIRouter()
 Category=Literal['functional','api','scenario']
+ResourceType=Literal['CASE','API']
+
+
+def candidate_view_scope(category, resource_type):
+    if resource_type == 'API':
+        if category != 'api':
+            from fastapi import HTTPException
+            raise HTTPException(422, '接口模式只适用于API分类')
+        return 'api-definition'
+    return category + '-drawer'
+
+
+def candidate_view_filters(filters, category, resource_type):
+    candidate_view_scope(category, resource_type)
+    if resource_type == 'API':
+        from services.plan_definition_candidates import parse_definition_filters
+        return parse_definition_filters(filters)
+    from services.plan_candidate_filter import parse_candidate_filters
+    return parse_candidate_filters(filters, category)
+
 class Selection(BaseModel):
     source:Literal['legacy','node']
     id:str=Field(min_length=1,max_length=36)
@@ -44,13 +64,14 @@ def candidate_projects(plan_id: str, db: Session = Depends(get_db), user=Depends
 
 
 @router.get('/plans/{plan_id}/case-workspace/candidates')
-def candidates(plan_id:str,category:Category='functional',search:str=Query('',max_length=255),
+def candidates(plan_id:str,category:Category='functional',resourceType:ResourceType='CASE',search:str=Query('',max_length=255),
                folder:str='all',priority:str|None=None,page:int=Query(1,ge=1),size:int=Query(20,ge=1,le=100),
                filters:str|None=Query(None,max_length=30000),mine:bool=False,projectId:str|None=Query(None,min_length=1,max_length=36),db:Session=Depends(get_db),user=Depends(get_current_user)):
     plan=plan_access(db,user,plan_id)
     require_project_access(db,user,plan.project_id,'test_case:read')
+    candidate_view_scope(category, resourceType)
     source, _ = source_scope(db, user, plan, projectId)
-    return ok(service.candidates(db,plan,category,search,folder,priority,page,size,filters=filters,mine=mine,user_id=str(user.id), source=source))
+    return ok(service.candidates(db,plan,category,search,folder,priority,page,size,filters=filters,mine=mine,user_id=str(user.id), source=source, resource_type=resourceType))
 
 @router.get('/plans/{plan_id}/case-workspace')
 def listing(plan_id:str,category:Category='functional',tree_type:Literal['COLLECTION','MODULE']='COLLECTION',folder:str|None=None,
@@ -77,37 +98,35 @@ def view_access(db, user, plan_id):
 
 
 @router.get('/plans/{plan_id}/case-workspace/candidates/views')
-def candidate_views(plan_id: str, category: Category = 'functional', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def candidate_views(plan_id: str, category: Category = 'functional', resourceType: ResourceType = 'CASE', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
     plan, _ = source_scope(db, user, plan, projectId)
-    rows = views_service.scope(db, user, plan, category + '-drawer').order_by(views_service.PlanCaseSavedView.created_at.desc()).all()
+    rows = views_service.scope(db, user, plan, candidate_view_scope(category, resourceType)).order_by(views_service.PlanCaseSavedView.created_at.desc()).all()
     return ok([views_service.data(row) for row in rows])
 
 
 @router.post('/plans/{plan_id}/case-workspace/candidates/views')
-def create_candidate_view(plan_id: str, body: CandidateViewCreate, category: Category = 'functional', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def create_candidate_view(plan_id: str, body: CandidateViewCreate, category: Category = 'functional', resourceType: ResourceType = 'CASE', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
     plan, _ = source_scope(db, user, plan, projectId)
-    from services.plan_candidate_filter import parse_candidate_filters
-    parse_candidate_filters(dict(conditions=body.filters.get('filterConditions', []), logic=body.filters.get('filterLogic', 'and')), category)
-    return ok(transact(db, lambda: views_service.save(db, user, plan, category + '-drawer', body)))
+    candidate_view_filters(dict(conditions=body.filters.get('filterConditions', []), logic=body.filters.get('filterLogic', 'and')), category, resourceType)
+    return ok(transact(db, lambda: views_service.save(db, user, plan, candidate_view_scope(category, resourceType), body)))
 
 
 @router.put('/plans/{plan_id}/case-workspace/candidates/views/{view_id}')
-def update_candidate_view(plan_id: str, view_id: str, body: CandidateViewUpdate, category: Category = 'functional', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_candidate_view(plan_id: str, view_id: str, body: CandidateViewUpdate, category: Category = 'functional', resourceType: ResourceType = 'CASE', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
     plan, _ = source_scope(db, user, plan, projectId)
-    from services.plan_candidate_filter import parse_candidate_filters
     if body.filters is not None:
-        parse_candidate_filters(dict(conditions=body.filters.get('filterConditions', []), logic=body.filters.get('filterLogic', 'and')), category)
-    return ok(transact(db, lambda: views_service.save(db, user, plan, category + '-drawer', body, view_id)))
+        candidate_view_filters(dict(conditions=body.filters.get('filterConditions', []), logic=body.filters.get('filterLogic', 'and')), category, resourceType)
+    return ok(transact(db, lambda: views_service.save(db, user, plan, candidate_view_scope(category, resourceType), body, view_id)))
 
 
 @router.delete('/plans/{plan_id}/case-workspace/candidates/views/{view_id}')
-def delete_candidate_view(plan_id: str, view_id: str, category: Category = 'functional', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def delete_candidate_view(plan_id: str, view_id: str, category: Category = 'functional', resourceType: ResourceType = 'CASE', projectId: str | None = Query(None, min_length=1, max_length=36), db: Session = Depends(get_db), user=Depends(get_current_user)):
     plan = view_access(db, user, plan_id)
     plan, _ = source_scope(db, user, plan, projectId)
-    transact(db, lambda: views_service.remove(db, user, plan, category + '-drawer', view_id))
+    transact(db, lambda: views_service.remove(db, user, plan, candidate_view_scope(category, resourceType), view_id))
     return ok()
 
 

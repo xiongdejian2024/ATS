@@ -15,6 +15,7 @@ export function planCandidateFilterFields(
   members: { id: string; name: string }[],
   category: string,
   native?: NativeFilterCatalog,
+  resourceType: "CASE" | "API" = "CASE",
 ): FilterField[] {
   const excluded = new Set([
     "collectionId",
@@ -122,6 +123,48 @@ export function planCandidateFilterFields(
     const fieldMap = new Map(
       [...common, ...extra].map((field) => [field.key, field]),
     );
+    if (resourceType === "API") {
+      fieldMap.get("name")!.label = "接口名称";
+      fieldMap.set("method", {
+        key: "method",
+        label: "请求方式",
+        type: "select",
+        options: [
+          "GET",
+          "POST",
+          "PUT",
+          "PATCH",
+          "DELETE",
+          "HEAD",
+          "OPTIONS",
+          "TRACE",
+          "CONNECT",
+        ].map((value) => ({ value, label: value })),
+      });
+      fieldMap.set("caseTotal", {
+        key: "caseTotal",
+        label: "用例数",
+        type: "number",
+        min: 0,
+        precision: 0,
+      });
+      return [
+        "id",
+        "name",
+        "moduleId",
+        "protocol",
+        "method",
+        "path",
+        "nativeState",
+        "tags",
+        "caseTotal",
+        "planIds",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+      ].map((key) => fieldMap.get(key)!);
+    }
     const priority = fieldMap.get("priority")!;
     priority.label = category === "api" ? "用例等级" : "场景等级";
     if (category === "scenario") fieldMap.get("name")!.label = "场景名称";

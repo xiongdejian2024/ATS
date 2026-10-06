@@ -69,12 +69,20 @@ export interface PlanCaseListing {
   canExecute: boolean;
   projects?: { id: string; name: string }[];
 }
+export type PlanCandidateRow = Pick<TestCase, "id" | "name"> &
+  Partial<TestCase> & {
+    moduleName: string;
+    alreadyLinked: boolean;
+    method?: string | null;
+    caseTotal?: number;
+    createdByName?: string | null;
+  };
 export interface PlanAssociateListing {
   syncCollections: { api: CaseFolder[]; scenario: CaseFolder[] };
   projectId: string;
   projectName: string;
   plans: { id: string; name: string }[];
-  items: (TestCase & { moduleName: string; alreadyLinked: boolean })[];
+  items: PlanCandidateRow[];
   total: number;
   page: number;
   size: number;
@@ -100,6 +108,8 @@ export interface CandidateModuleSelection {
   excludeIds: string[];
 }
 export interface CandidateSelection {
+  resourceType?: "CASE" | "API";
+  definitionIds?: string[];
   syncCase?: boolean;
   apiCaseCollectionId?: string;
   apiScenarioCollectionId?: string;
@@ -112,6 +122,7 @@ export interface CandidateSelection {
   moduleMaps?: Record<string, CandidateModuleSelection>;
 }
 export interface CandidateSelectionPreview {
+  selectedDefinitionCount?: number;
   sync?: Record<
     "api" | "scenario",
     { count: number; compatibleSuiteIds: string[] }
@@ -177,9 +188,15 @@ export const planCaseWorkspaceApi = {
     category = "functional",
     mode: PlanFilterMode = "workspace",
     projectId?: string,
+    resourceType: "CASE" | "API" = "CASE",
   ) =>
     apiClient.get<PlanCaseSavedView[]>(viewBase(id, mode), {
-      params: { category, ...(mode === "association" ? { projectId } : {}) },
+      params: {
+        category,
+        ...(mode === "association"
+          ? { projectId, ...(resourceType === "API" ? { resourceType } : {}) }
+          : {}),
+      },
     }),
   saveView: (
     id: string,
@@ -188,12 +205,18 @@ export const planCaseWorkspaceApi = {
     category = "functional",
     mode: PlanFilterMode = "workspace",
     projectId?: string,
+    resourceType: "CASE" | "API" = "CASE",
   ) =>
     apiClient.post<PlanCaseSavedView>(
       viewBase(id, mode),
       { name, filters },
       {
-        params: { category, ...(mode === "association" ? { projectId } : {}) },
+        params: {
+          category,
+          ...(mode === "association"
+            ? { projectId, ...(resourceType === "API" ? { resourceType } : {}) }
+            : {}),
+        },
       },
     ),
   updateView: (
@@ -204,6 +227,7 @@ export const planCaseWorkspaceApi = {
     category = "functional",
     mode: PlanFilterMode = "workspace",
     projectId?: string,
+    resourceType: "CASE" | "API" = "CASE",
   ) =>
     apiClient.put<PlanCaseSavedView>(
       viewBase(id, mode) + "/" + view,
@@ -212,7 +236,12 @@ export const planCaseWorkspaceApi = {
         ...(filters === undefined ? {} : { filters }),
       },
       {
-        params: { category, ...(mode === "association" ? { projectId } : {}) },
+        params: {
+          category,
+          ...(mode === "association"
+            ? { projectId, ...(resourceType === "API" ? { resourceType } : {}) }
+            : {}),
+        },
       },
     ),
   deleteView: (
@@ -221,9 +250,15 @@ export const planCaseWorkspaceApi = {
     category = "functional",
     mode: PlanFilterMode = "workspace",
     projectId?: string,
+    resourceType: "CASE" | "API" = "CASE",
   ) =>
     apiClient.delete(viewBase(id, mode) + "/" + view, {
-      params: { category, ...(mode === "association" ? { projectId } : {}) },
+      params: {
+        category,
+        ...(mode === "association"
+          ? { projectId, ...(resourceType === "API" ? { resourceType } : {}) }
+          : {}),
+      },
     }),
   batch: (
     id: string,

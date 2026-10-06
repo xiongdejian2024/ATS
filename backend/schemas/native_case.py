@@ -1,5 +1,6 @@
 """原生配置校验；参数变更由定义结构比较，客户端不得直接指定。"""
 import json
+from typing import Literal
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
@@ -13,6 +14,16 @@ class DefinitionInput(NativeBody):
     protocol: str = Field(min_length=1, max_length=50, pattern=r'^[A-Z0-9_-]+$')
     path: str = Field(min_length=1, max_length=500)
     parameters: dict = Field(default_factory=dict)
+    module_id: str | None = Field(None, min_length=1, max_length=36)
+    state: Literal['PROCESSING', 'DEPRECATED', 'DONE'] | None = None
+    tags: list[str] = Field(default_factory=list, max_length=100)
+
+    @field_validator('tags')
+    @classmethod
+    def valid_tags(cls, values):
+        if any(not v.strip() or len(v) > 100 for v in values) or len(values) != len(set(values)):
+            raise ValueError('接口标签须为不重复的1到100字符文本')
+        return values
 
     @field_validator('parameters')
     @classmethod

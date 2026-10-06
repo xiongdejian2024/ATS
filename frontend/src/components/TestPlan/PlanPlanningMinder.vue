@@ -212,7 +212,7 @@
             v-if="pendingAssociation"
             type="info"
             show-icon
-            :message="`待关联 ${pendingAssociation.summary.count} 条用例${pendingAssociation.summary.sync ? `，同步接口 ${pendingAssociation.summary.sync.api.count} 条、场景 ${pendingAssociation.summary.sync.scenario.count} 条` : ''}，保存规划后生效`"
+            :message="`${pendingAssociation.request.resourceType === 'API' ? `已选 ${pendingAssociation.summary.selectedDefinitionCount || 0} 个接口，` : ''}待关联 ${pendingAssociation.summary.count} 条用例${pendingAssociation.summary.sync ? `，同步接口 ${pendingAssociation.summary.sync.api.count} 条、场景 ${pendingAssociation.summary.sync.scenario.count} 条` : ''}，保存规划后生效`"
           />
           <a-button
             v-if="selected.children?.length"

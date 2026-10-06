@@ -4,7 +4,6 @@ import json
 from fastapi import HTTPException
 from pydantic import field_validator
 from schemas.case_governance import SavedViewRename
-from services.plan_candidate_filter import parse_candidate_filters
 from core.logger import logger
 
 
@@ -14,7 +13,11 @@ def validate_filters(values):
     if len(json.dumps(values, ensure_ascii=False)) > 20000:
         raise ValueError('关联视图条件过大')
     try:
-        parse_candidate_filters(dict(conditions=values.get('filterConditions', []), logic=values.get('filterLogic', 'and')))
+        from services.case_query import parse_filters
+        from services.plan_definition_candidates import FIELDS
+        from services.native_candidate_context import NATIVE_FIELDS
+        # 这里只验证结构；接口/用例字段范围在带资源模式的路由中再次校验。
+        parse_filters(dict(conditions=values.get('filterConditions', []), logic=values.get('filterLogic', 'and')), extra_fields=FIELDS | NATIVE_FIELDS)
     except HTTPException as exc:
         logger.exception("计划关联视图条件校验失败")
         raise ValueError(exc.detail) from exc

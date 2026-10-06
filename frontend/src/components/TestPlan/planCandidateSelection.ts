@@ -26,7 +26,10 @@ export function usePlanCandidateSelection(
   extras?: Ref<
     Pick<
       CandidateSelection,
-      "syncCase" | "apiCaseCollectionId" | "apiScenarioCollectionId"
+      | "syncCase"
+      | "apiCaseCollectionId"
+      | "apiScenarioCollectionId"
+      | "resourceType"
     >
   >,
   previewRequest?: (
@@ -74,7 +77,9 @@ export function usePlanCandidateSelection(
                   excludeIds: [...excluded.value],
                   condition: cloneDeep(condition.value),
                 }
-              : { caseIds: [...selected.value] }),
+              : extras?.value.resourceType === "API"
+                ? { definitionIds: [...selected.value] }
+                : { caseIds: [...selected.value] }),
         },
   );
   const pageSelected = computed(() =>
@@ -86,7 +91,7 @@ export function usePlanCandidateSelection(
   );
   const ready = computed(
     () =>
-      !!summary.value?.count &&
+      !!(summary.value?.selectedDefinitionCount ?? summary.value?.count) &&
       summary.value.canAssociate &&
       !loading.value &&
       !error.value &&
@@ -149,7 +154,11 @@ export function usePlanCandidateSelection(
     if (body.moduleMaps && modules)
       modules.maps.value = cloneDeep(body.moduleMaps);
     else {
-      selected.value = [...(body.caseIds || [])];
+      selected.value = [
+        ...(body.resourceType === "API"
+          ? body.definitionIds || []
+          : body.caseIds || []),
+      ];
       selectAll.value = !!body.selectAll;
       excluded.value = [...(body.excludeIds || [])];
       condition.value = cloneDeep(body.condition || {});
@@ -181,7 +190,13 @@ export function usePlanCandidateSelection(
     }
   }
   watch(
-    () => JSON.stringify([plan.value, category.value, project?.value]),
+    () =>
+      JSON.stringify([
+        plan.value,
+        category.value,
+        project?.value,
+        extras?.value.resourceType,
+      ]),
     clear,
     {
       flush: "sync",

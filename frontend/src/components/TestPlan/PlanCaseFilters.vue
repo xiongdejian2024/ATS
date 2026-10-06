@@ -159,6 +159,7 @@ const props = withDefaults(
   defineProps<{
     mode?: import("@/api/planCaseWorkspace").PlanFilterMode;
     category?: "functional" | "api" | "scenario";
+    resourceType?: "CASE" | "API";
     plans?: { id: string; name: string }[];
     planId: string;
     projectId: string;
@@ -172,7 +173,12 @@ const props = withDefaults(
     viewId?: string;
     busy: boolean;
   }>(),
-  { mode: "workspace", category: "functional", plans: () => [] },
+  {
+    mode: "workspace",
+    category: "functional",
+    resourceType: "CASE",
+    plans: () => [],
+  },
 );
 const emit = defineEmits<{
   apply: [
@@ -210,6 +216,7 @@ const fields = computed(() =>
         members.value,
         props.category,
         nativeCatalog.value,
+        props.resourceType,
       )
     : props.category !== "functional"
       ? planNativeWorkspaceFields(
@@ -258,6 +265,7 @@ async function loadViews() {
       props.category,
       props.mode,
       props.projectId,
+      props.resourceType,
     );
     if (sequence !== viewSequence || plan !== props.planId) return;
     views.value = rows;
@@ -272,7 +280,8 @@ async function loadViews() {
 }
 async function loadMetadata() {
   const project = props.projectId,
-    sequence = ++metadataSequence;
+    sequence = ++metadataSequence,
+    resourceType = props.resourceType;
   metadataLoading.value = true;
   const results = await Promise.allSettled([
     caseFeaturesApi.templates(project),
@@ -281,7 +290,12 @@ async function loadMetadata() {
       ? nativeCaseApi.catalog(project)
       : Promise.resolve(undefined),
   ]);
-  if (sequence !== metadataSequence || project !== props.projectId) return;
+  if (
+    sequence !== metadataSequence ||
+    project !== props.projectId ||
+    resourceType !== props.resourceType
+  )
+    return;
   const errors: string[] = [];
   if (results[0].status === "fulfilled") templates.value = results[0].value;
   else {
@@ -347,7 +361,7 @@ async function saveView(
   mode: ViewSaveMode,
 ) {
   const plan = props.planId,
-    context = `${props.projectId}:${props.category}:${props.mode}`,
+    context = `${props.projectId}:${props.category}:${props.mode}:${props.resourceType}`,
     selected = props.viewId;
   const filters = { filterConditions: conditions, filterLogic: logic };
   const row =
@@ -360,6 +374,7 @@ async function saveView(
           props.category,
           props.mode,
           props.projectId,
+          props.resourceType,
         )
       : await api.saveView(
           plan,
@@ -368,10 +383,12 @@ async function saveView(
           props.category,
           props.mode,
           props.projectId,
+          props.resourceType,
         );
   if (
     plan !== props.planId ||
-    context !== `${props.projectId}:${props.category}:${props.mode}` ||
+    context !==
+      `${props.projectId}:${props.category}:${props.mode}:${props.resourceType}` ||
     selected !== props.viewId
   )
     throw new Error("计划或视图已切换，请重新打开筛选");
@@ -395,7 +412,8 @@ async function saveName() {
     plan = props.planId,
     category = props.category,
     mode = props.mode,
-    project = props.projectId;
+    project = props.projectId,
+    resourceType = props.resourceType;
   if (
     !name ||
     viewNames.value.some(
@@ -418,12 +436,14 @@ async function saveName() {
       category,
       mode,
       project,
+      resourceType,
     );
     if (
       plan !== props.planId ||
       category !== props.category ||
       mode !== props.mode ||
-      project !== props.projectId
+      project !== props.projectId ||
+      resourceType !== props.resourceType
     )
       return;
     views.value = views.value.map((v) => (v.id === row.id ? row : v));
@@ -440,7 +460,8 @@ function remove(view: PlanCaseSavedView) {
   const plan = props.planId,
     category = props.category,
     mode = props.mode,
-    project = props.projectId;
+    project = props.projectId,
+    resourceType = props.resourceType;
   const confirmation = Modal.confirm({
     title: `删除视图“${view.name}”？`,
     content: "删除后不可恢复。",
@@ -453,15 +474,24 @@ function remove(view: PlanCaseSavedView) {
           plan !== props.planId ||
           category !== props.category ||
           mode !== props.mode ||
-          project !== props.projectId
+          project !== props.projectId ||
+          resourceType !== props.resourceType
         )
           throw new Error("计划或分类已切换");
-        await api.deleteView(plan, view.id, category, mode, project);
+        await api.deleteView(
+          plan,
+          view.id,
+          category,
+          mode,
+          project,
+          resourceType,
+        );
         if (
           plan !== props.planId ||
           category !== props.category ||
           mode !== props.mode ||
-          project !== props.projectId
+          project !== props.projectId ||
+          resourceType !== props.resourceType
         )
           return;
         views.value = views.value.filter((v) => v.id !== view.id);
@@ -480,7 +510,13 @@ function remove(view: PlanCaseSavedView) {
   });
 }
 watch(
-  () => [props.planId, props.projectId, props.category, props.mode],
+  () => [
+    props.planId,
+    props.projectId,
+    props.category,
+    props.mode,
+    props.resourceType,
+  ],
   () => {
     ++viewSequence;
     ++metadataSequence;

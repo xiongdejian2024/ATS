@@ -38,8 +38,10 @@ class CandidateModuleSelection(ScopeRequest):
 class CandidateSelection(ScopeRequest):
     projectId: str | None = Field(None, min_length=1, max_length=36)
     category: Category = 'functional'
+    resourceType: Literal['CASE', 'API'] = 'CASE'
     selectAll: StrictBool = False
     caseIds: list[str] = Field(default_factory=list, max_length=10000)
+    definitionIds: list[str] = Field(default_factory=list, max_length=10000)
     excludeIds: list[str] = Field(default_factory=list, max_length=10000)
     condition: CandidateCondition = Field(default_factory=CandidateCondition)
     moduleMaps: dict[str, CandidateModuleSelection] | None = None
@@ -47,7 +49,7 @@ class CandidateSelection(ScopeRequest):
     apiCaseCollectionId: str | None = Field(None, min_length=1, max_length=36)
     apiScenarioCollectionId: str | None = Field(None, min_length=1, max_length=36)
 
-    @field_validator('caseIds', 'excludeIds')
+    @field_validator('caseIds', 'definitionIds', 'excludeIds')
     @classmethod
     def unique_ids(cls, values):
         if any(not value.strip() or value != value.strip() or len(value) > 36 for value in values):
@@ -58,6 +60,11 @@ class CandidateSelection(ScopeRequest):
 
     @model_validator(mode='after')
     def selection_mode(self):
+        if self.resourceType == 'API' and (self.category != 'api' or self.caseIds):
+            raise ValueError('接口模式仅用于API分类，须提交接口ID而非用例ID')
+        if self.resourceType == 'CASE' and self.definitionIds:
+            raise ValueError('用例模式不能提交接口ID')
+        selected_ids = self.definitionIds if self.resourceType == 'API' else self.caseIds
         if self.syncCase and self.category != 'functional':
             raise ValueError('只有功能用例支持同步关联用例')
         if not self.syncCase and (self.apiCaseCollectionId or self.apiScenarioCollectionId):
@@ -65,7 +72,7 @@ class CandidateSelection(ScopeRequest):
         if self.moduleMaps is not None:
             if not self.moduleMaps or len(self.moduleMaps) > 10000:
                 raise ValueError('请选择1到10000个模块范围')
-            if self.selectAll or self.caseIds or self.excludeIds:
+            if self.selectAll or selected_ids or self.excludeIds:
                 raise ValueError('模块选择不能混用旧选择范围')
             if self.condition.folder != 'all' or self.condition.filters is not None or self.condition.mine:
                 raise ValueError('模块组合仅支持全目录基础筛选')
@@ -77,17 +84,21 @@ class CandidateSelection(ScopeRequest):
             if len(ids) > 10000 or len(set(ids)) != len(ids):
                 raise ValueError('模块用例ID不能重复且总数不能超过10000')
         elif self.selectAll:
-            if self.caseIds:
+            if selected_ids:
                 raise ValueError('范围全选不能混用逐条用例ID')
             from fastapi import HTTPException
             from services.plan_candidate_filter import parse_candidate_filters
             try:
-                parse_candidate_filters(self.condition.filters, self.category)
+                if self.resourceType == 'API':
+                    from services.plan_definition_candidates import parse_definition_filters
+                    parse_definition_filters(self.condition.filters)
+                else:
+                    parse_candidate_filters(self.condition.filters, self.category)
             except HTTPException as exc:
                 from core.logger import logger
                 logger.exception('计划关联范围高级筛选校验失败')
                 raise ValueError(exc.detail) from exc
-        elif not self.caseIds or self.excludeIds or self.condition.model_fields_set:
+        elif not selected_ids or self.excludeIds or self.condition.model_fields_set:
             raise ValueError('逐条选择必须指定ID，不能混用筛选条件或排除项')
         return self
 

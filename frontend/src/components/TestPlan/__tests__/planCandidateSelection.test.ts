@@ -12,6 +12,53 @@ vi.mock("@/api/planCaseWorkspace", () => ({
   planCaseWorkspaceApi: { previewCandidates: vi.fn() },
 }));
 const scopes: EffectScope[] = [];
+it("接口显式选择与范围排除保持资源身份，切换用例模式清理旧响应", async () => {
+  const extras = ref<Pick<CandidateSelection, "resourceType">>({
+    resourceType: "API",
+  });
+  const scope = effectScope();
+  scopes.push(scope);
+  const selection = scope.run(() =>
+    usePlanCandidateSelection(
+      ref("plan"),
+      ref("api"),
+      ref({}),
+      ref(["definition"]),
+      undefined,
+      ref("source"),
+      extras,
+    ),
+  )!;
+  vi.mocked(planCaseWorkspaceApi.previewCandidates).mockResolvedValue({
+    ...response(2),
+    selectedDefinitionCount: 1,
+  });
+  selection.keysChanged(["definition"]);
+  await flush();
+  expect(selection.request.value).toEqual({
+    category: "api",
+    projectId: "source",
+    resourceType: "API",
+    definitionIds: ["definition"],
+  });
+  expect(selection.summary.value?.count).toBe(2);
+  let finish!: (value: CandidateSelectionPreview) => void;
+  vi.mocked(planCaseWorkspaceApi.previewCandidates).mockReturnValueOnce(
+    new Promise((resolve) => (finish = resolve)),
+  );
+  selection.all();
+  await flush();
+  extras.value = { resourceType: "CASE" };
+  await flush();
+  finish({ ...response(999), selectedDefinitionCount: 999 });
+  await flush();
+  expect(selection.request.value).toBeUndefined();
+  expect(selection.summary.value).toBeUndefined();
+  selection.restore({ category: "api", caseIds: ["case"] });
+  await flush();
+  expect(selection.request.value?.caseIds).toEqual(["case"]);
+  expect(selection.request.value?.definitionIds).toBeUndefined();
+});
 it("同步目标变化保留原选择和排除，旧同步预览不能覆盖新目标", async () => {
   const extras = ref<
     Pick<
