@@ -64,6 +64,7 @@
             aria-label="接口定义标签"
         /></a-form-item>
         <NativeExecutionEditor
+          :project-id="projectId"
           v-if="['HTTP', 'HTTPS'].includes(protocol)"
           :key="definition.id"
           v-model="parameters"

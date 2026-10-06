@@ -7,6 +7,7 @@ export interface ExecutionEditorProps {
   category: string;
   apiCases: { id: string; name: string }[];
   disabled?: boolean;
+  projectId?: string;
 }
 export function useNativeExecutionDraft(
   props: ExecutionEditorProps,
@@ -38,19 +39,40 @@ export function useNativeExecutionDraft(
   const connectTimeout = ref<number | null>(),
     responseTimeout = ref<number | null>();
   const methods = requestMethods.map((value) => ({ value, label: value }));
-  const bodyTypes = ["none", "json", "text", "form"].map((value) => ({
+  const bodyTypes = [
+    "none",
+    "multipart",
+    "form",
+    "json",
+    "xml",
+    "text",
+    "binary",
+  ].map((value) => ({
     value,
     label: (
       {
         none: "none",
+        multipart: "form-data",
         json: "json",
         text: "raw",
         form: "x-www-form-urlencoded",
+        xml: "xml",
+        binary: "binary",
       } as Record<string, string>
     )[value],
   }));
   let adopting = false,
     output = "";
+  let previousBodyType = "none",
+    bodyDrafts: Record<string, string> = {};
+  const emptyBody = (type: string) =>
+    type === "form" || type === "multipart"
+      ? "[]"
+      : type === "binary"
+        ? JSON.stringify({ file: null, description: "" })
+        : type === "xml" || type === "text"
+          ? ""
+          : "null";
   function object(raw: string): Record<string, any> {
     const result = JSON.parse(raw);
     if (!result || typeof result !== "object" || Array.isArray(result))
@@ -61,6 +83,7 @@ export function useNativeExecutionDraft(
     () => props.modelValue,
     (value) => {
       if (value === output) return;
+      output = value;
       adopting = true;
       try {
         const root = object(value),
@@ -88,10 +111,40 @@ export function useNativeExecutionDraft(
         connectTimeout.value = data?.connectTimeoutMs;
         responseTimeout.value = data?.responseTimeoutMs;
         bodyType.value = data?.bodyType ?? "none";
+        previousBodyType = bodyType.value;
+        bodyDrafts = { ...(data?.bodyDrafts || {}) };
         body.value =
-          bodyType.value === "text"
+          bodyType.value === "text" || bodyType.value === "xml"
             ? (data?.body ?? "")
-            : JSON.stringify(data?.formParams ?? data?.body ?? null, null, 2);
+            : bodyType.value === "multipart"
+              ? JSON.stringify(data?.multipartParams ?? [], null, 2)
+              : bodyType.value === "binary"
+                ? JSON.stringify(
+                    data?.binaryBody ?? { file: null, description: "" },
+                    null,
+                    2,
+                  )
+                : JSON.stringify(
+                    data?.formParams ?? data?.body ?? null,
+                    null,
+                    2,
+                  );
+        const cached = bodyDrafts[bodyType.value];
+        if (
+          cached !== undefined &&
+          !["text", "xml", "none"].includes(bodyType.value)
+        ) {
+          try {
+            // 当前执行字段为准；只恢复与它一致的原始排版，避免旧缓存覆盖高级配置修改。
+            if (
+              JSON.stringify(JSON.parse(cached)) ===
+              JSON.stringify(JSON.parse(body.value))
+            )
+              body.value = cached;
+          } catch (exception) {
+            console.info("当前正文缓存未完成，使用已保存的有效正文", exception);
+          }
+        }
         assertions.value = JSON.stringify(data?.assertions ?? [], null, 2);
         responseAssertions.value = JSON.stringify(
           data?.responseAssertions ?? [],
@@ -114,6 +167,7 @@ export function useNativeExecutionDraft(
   );
   function publish() {
     if (adopting) return;
+    bodyDrafts[bodyType.value] = body.value;
     events.draft(
       JSON.stringify([
         enabled.value,
@@ -124,6 +178,7 @@ export function useNativeExecutionDraft(
         headers.value,
         bodyType.value,
         body.value,
+        bodyDrafts,
         assertions.value,
         responseAssertions.value,
         stop.value,
@@ -163,17 +218,27 @@ export function useNativeExecutionDraft(
           query: q.value,
           headers: h.value,
           bodyType: bodyType.value,
-          body:
-            bodyType.value === "none"
-              ? null
-              : form
-                ? form.value
-                : bodyType.value === "text"
-                  ? body.value
-                  : JSON.parse(body.value),
+          body: ["none", "multipart", "binary"].includes(bodyType.value)
+            ? null
+            : form
+              ? form.value
+              : bodyType.value === "text" || bodyType.value === "xml"
+                ? body.value
+                : JSON.parse(body.value),
           assertions: JSON.parse(assertions.value),
           responseAssertions: readResponseAssertions(responseAssertions.value),
+          bodyDrafts: { ...bodyDrafts },
         };
+        if (bodyType.value === "multipart")
+          root.request.multipartParams = validParams(
+            readParams(body.value),
+            false,
+            true,
+          );
+        else delete root.request.multipartParams;
+        if (bodyType.value === "binary")
+          root.request.binaryBody = object(body.value);
+        else delete root.request.binaryBody;
         for (const [key, rows] of [
           ["queryParams", q.rows],
           ["headerParams", h.rows],
@@ -232,7 +297,6 @@ export function useNativeExecutionDraft(
       redirects,
       query,
       headers,
-      bodyType,
       body,
       assertions,
       responseAssertions,
@@ -250,6 +314,19 @@ export function useNativeExecutionDraft(
     publish,
     { deep: true, flush: "sync" },
   );
+  watch(
+    bodyType,
+    (value) => {
+      if (adopting || value === previousBodyType) return;
+      adopting = true;
+      bodyDrafts[previousBodyType] = body.value;
+      previousBodyType = value;
+      body.value = bodyDrafts[value] ?? emptyBody(value);
+      adopting = false;
+      publish();
+    },
+    { flush: "sync" },
+  );
   function toggle(value: boolean | string | number) {
     enabled.value = value === true;
   }
@@ -258,14 +335,7 @@ export function useNativeExecutionDraft(
     steps.value.splice(index + direction, 0, step);
   }
   function changeBodyType(value: string) {
-    if (value === "form") {
-      try {
-        readParams(body.value);
-      } catch (exception) {
-        console.info("切换表单正文，原内容不能转换为键值表", exception);
-        body.value = "{}";
-      }
-    }
+    bodyType.value = value;
   }
 
   return {

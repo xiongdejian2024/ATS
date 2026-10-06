@@ -25,6 +25,102 @@ function setup(category = "api", parameters: Record<string, unknown> = {}) {
   return { props, state, errors, drafts };
 }
 describe("原生执行草稿与实际配置范围", () => {
+  it("重开恢复当前JSON草稿排版，过期缓存不能覆盖实际字段", () => {
+    const raw = '{ "old" : "原值" }';
+    const { props, state } = setup("api", {
+      request: {
+        bodyType: "json",
+        body: { old: "原值" },
+        bodyDrafts: { json: raw },
+      },
+    });
+    expect(state.body.value).toBe(raw);
+    props.modelValue = JSON.stringify({
+      request: {
+        bodyType: "json",
+        body: { new: 2 },
+        bodyDrafts: { json: raw },
+      },
+    });
+    expect(JSON.parse(state.body.value)).toEqual({ new: 2 });
+  });
+  it("七种正文保持独立草稿，多文件与binary往返，重载不混其他用例", () => {
+    const { props, state } = setup("api", {
+      request: { bodyType: "json", body: { old: "原值" } },
+    });
+    expect(state.bodyTypes.map((row) => row.label)).toEqual([
+      "none",
+      "form-data",
+      "x-www-form-urlencoded",
+      "json",
+      "xml",
+      "raw",
+      "binary",
+    ]);
+    state.changeBodyType("multipart");
+    state.body.value = JSON.stringify([
+      {
+        key: "files",
+        value: "",
+        paramType: "file",
+        files: [{ fileId: "one", fileAlias: "别名.bin" }, { fileId: "two" }],
+      },
+    ]);
+    const multipart = state.body.value;
+    state.changeBodyType("xml");
+    state.body.value = "<请求>中文</请求>";
+    state.changeBodyType("binary");
+    state.body.value = JSON.stringify({
+      file: { fileId: "one" },
+      description: "二进制说明",
+    });
+    state.changeBodyType("multipart");
+    expect(state.body.value).toBe(multipart);
+    let request = JSON.parse(props.modelValue).request;
+    expect(request.multipartParams[0].files).toHaveLength(2);
+    expect(request.binaryBody).toBeUndefined();
+    expect(request.body).toBeNull();
+    state.changeBodyType("binary");
+    request = JSON.parse(props.modelValue).request;
+    expect(request.binaryBody).toEqual({
+      file: { fileId: "one" },
+      description: "二进制说明",
+    });
+    expect(request.multipartParams).toBeUndefined();
+    state.changeBodyType("xml");
+    expect(state.body.value).toBe("<请求>中文</请求>");
+    state.changeBodyType("json");
+    expect(JSON.parse(state.body.value)).toEqual({ old: "原值" });
+    const saved = props.modelValue;
+    props.modelValue = "{}";
+    props.modelValue = saved;
+    state.changeBodyType("multipart");
+    expect(state.body.value).toBe(multipart);
+    props.modelValue = JSON.stringify({
+      request: { bodyType: "text", body: "其他用例" },
+    });
+    state.changeBodyType("multipart");
+    expect(state.body.value).toBe("[]");
+  });
+  it("非法JSON切换后原草稿仍保留，inactive文件缓存不变成实际引用", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { props, state, errors } = setup("api", {
+      request: { bodyType: "json", body: { value: 1 } },
+    });
+    const valid = props.modelValue;
+    state.body.value = "{未完成";
+    expect(props.modelValue).toBe(valid);
+    state.changeBodyType("text");
+    state.body.value = "实际文本";
+    expect(JSON.parse(props.modelValue).request.bodyDrafts.json).toBe(
+      "{未完成",
+    );
+    state.changeBodyType("json");
+    expect(state.body.value).toBe("{未完成");
+    expect(errors.at(-1)).toBeTruthy();
+    state.body.value = '{"value":2}';
+    expect(JSON.parse(props.modelValue).request.body).toEqual({ value: 2 });
+  });
   it("响应分类与旧断言共存，非法时间只保留编辑草稿，外部载入不混旧配置", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const original = {

@@ -13,9 +13,10 @@ from .legacy_assertions import equal, check
 from .response_assertions import evaluate
 from .result_details import exchange, bounded_detail, request_detail
 from .parameters import arguments as request_arguments, request_url
+from .request_bodies import load_files, arguments as body_arguments
 
 
-async def execute(case: FrozenCase, *, transport=None):
+async def execute(case: FrozenCase, *, transport=None, file_loader=None):
     started = time.monotonic()
     rows = []
     details = []
@@ -62,9 +63,25 @@ async def execute(case: FrozenCase, *, transport=None):
                 actual = dict(attempt=attempt + 1, assertions=[], console=[])
                 try:
                     arguments = request_arguments(request)
+                    arguments.update(
+                        body_arguments(request, await load_files(request, file_loader))
+                    )
+                    if request.bodyType in {"xml", "binary"} and not any(
+                        k.casefold() == "content-type" for k in arguments["headers"]
+                    ):
+                        arguments["headers"] = dict(
+                            arguments["headers"],
+                            **{
+                                "Content-Type": (
+                                    "application/xml"
+                                    if request.bodyType == "xml"
+                                    else "application/octet-stream"
+                                )
+                            },
+                        )
                     if request.bodyType == "json":
                         arguments["json"] = deepcopy(request.body)
-                    elif request.bodyType == "text":
+                    elif request.bodyType in {"text", "xml"}:
                         if not isinstance(request.body, str):
                             raise ValueError("文本请求体须为字符串")
                         arguments["content"] = request.body
@@ -83,6 +100,7 @@ async def execute(case: FrozenCase, *, transport=None):
                     actual["console"].append(
                         f"原生HTTP请求开始：步骤={index + 1}，方法={request.method}，尝试={attempt + 1}"
                     )
+                    network_started = time.monotonic()
                     response = await asyncio.wait_for(
                         client.request(
                             request.method, request_url(request), **arguments
@@ -95,7 +113,7 @@ async def execute(case: FrozenCase, *, transport=None):
                         ),
                     )
                     row["statusCode"] = response.status_code
-                    elapsed_ms = (time.monotonic() - before) * 1000
+                    elapsed_ms = (time.monotonic() - network_started) * 1000
                     actual.update(exchange(response, elapsed_ms))
                     actual["redirects"] = [exchange(r, None) for r in response.history]
                     row["assertions"] = [

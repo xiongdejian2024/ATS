@@ -87,6 +87,7 @@
         >
       </template>
       <NativeExecutionEditor
+        :project-id="projectId"
         v-if="
           category === 'scenario' ||
           ['HTTP', 'HTTPS'].includes(definition?.protocol || '')
@@ -170,6 +171,7 @@
               aria-label="接口请求路径"
               :maxlength="500" /></a-form-item
           ><NativeExecutionEditor
+            :project-id="projectId"
             v-if="entityOpen && ['HTTP', 'HTTPS'].includes(protocol)"
             :key="entityEditorSequence"
             v-model="definitionParameters"

@@ -115,7 +115,14 @@ def _request(db, case, config, override_environment):
         url = urljoin(target.address.rstrip("/") + "/", path)
     else:
         url = path
-    return FrozenRequest(**request.model_dump(), name=case.name, url=url)
+    from services.native_request_files import frozen_files
+
+    return FrozenRequest(
+        **request.model_dump(exclude={"bodyDrafts"}),
+        files=frozen_files(db, case.project_id, request),
+        name=case.name,
+        url=url,
+    )
 
 
 def managed_suite(db, plan, case, node_id, actor_id):

@@ -3,7 +3,15 @@ export interface RequestParam {
   key: string;
   value: string;
   enable: boolean;
-  paramType: "string" | "integer" | "number" | "boolean" | "array";
+  paramType:
+    | "string"
+    | "integer"
+    | "number"
+    | "boolean"
+    | "array"
+    | "json"
+    | "file";
+  files?: import("@/api/nativeRequestFiles").FileReference[];
   required: boolean;
   encode: boolean;
   description: string;
@@ -45,14 +53,46 @@ export function readParams(raw: string): RequestParam[] {
 }
 export function filledParams<T extends RequestParam>(rows: T[]): T[] {
   return rows.filter(
-    (row) => row.key !== "" || row.value !== "" || row.description !== "",
+    (row) =>
+      row.key !== "" ||
+      row.value !== "" ||
+      row.description !== "" ||
+      !!row.files?.length,
   );
 }
-export function validParams(rows: RequestParam[], headers = false) {
+export function validParams(
+  rows: RequestParam[],
+  headers = false,
+  multipart = false,
+) {
   const filled = filledParams(rows);
   if (filled.length > 200) throw new Error("参数最多200项");
   const keys = new Set<string>();
   for (const row of filled) {
+    if (
+      ![...paramTypes, ...(multipart ? ["json", "file"] : [])].includes(
+        row.paramType,
+      )
+    )
+      throw new Error("参数类型无效");
+    if (!multipart && ["json", "file"].includes(row.paramType))
+      throw new Error("此参数表不支持文件或JSON类型");
+    if (multipart && row.paramType === "json" && row.enable && row.value)
+      JSON.parse(row.value);
+    if (row.files?.length && row.paramType !== "file")
+      throw new Error("只有文件参数可以关联文件");
+    if ((row.files?.length || 0) > 20) throw new Error("每个参数最多20个文件");
+    if (
+      new Set((row.files || []).map((file) => file.fileId)).size !==
+      (row.files?.length || 0)
+    )
+      throw new Error("同一参数不能重复选择相同文件");
+    for (const file of row.files || [])
+      if (
+        !/^[a-zA-Z0-9_-]{1,36}$/.test(file.fileId) ||
+        /[\x00\r\n/\\]/.test(file.fileAlias || "")
+      )
+        throw new Error("请求文件引用或别名无效");
     if (!row.key.trim() || row.key.length > 255 || row.value.length > 20000)
       throw new Error("请填写参数名称，名称最多255字符，值最多20000字符");
     if (row.enable) {

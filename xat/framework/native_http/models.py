@@ -2,6 +2,7 @@
 
 from typing import Literal
 from .response_assertion_models import ResponseAssertion
+from .body_models import FileReference, BinaryBody, FrozenFile
 from urllib.parse import urlsplit
 from pydantic import (
     BaseModel,
@@ -42,6 +43,25 @@ class AuthCredentials(NativeModel):
     password: str = Field(default="", max_length=20000, repr=False)
 
 
+class MultipartParam(RequestParam):
+    paramType: Literal[
+        "string", "integer", "number", "boolean", "array", "json", "file"
+    ] = "string"
+    files: list[FileReference] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def valid_files(self):
+        if self.paramType != "file" and self.files:
+            raise ValueError("只有文件参数可以关联文件")
+        if len({f.fileId for f in self.files}) != len(self.files):
+            raise ValueError("同一参数不能重复关联相同文件")
+        if self.paramType == "json" and self.enable and self.value:
+            import json
+
+            json.loads(self.value)
+        return self
+
+
 class RequestAuth(NativeModel):
     authType: Literal["NONE", "BASIC", "DIGEST"] = "NONE"
     basicAuth: AuthCredentials = Field(default_factory=AuthCredentials)
@@ -77,7 +97,14 @@ class RequestSpec(NativeModel):
     headers: dict[str, str] = Field(default_factory=dict)
     query: dict[str, str] = Field(default_factory=dict)
     body: JsonValue = None
-    bodyType: Literal["none", "json", "text", "form"] = "none"
+    bodyType: Literal["none", "multipart", "form", "json", "xml", "text", "binary"] = (
+        "none"
+    )
+    multipartParams: list[MultipartParam] = Field(default_factory=list, max_length=200)
+    binaryBody: BinaryBody = Field(default_factory=BinaryBody)
+    bodyDrafts: dict[
+        Literal["none", "multipart", "form", "json", "xml", "text", "binary"], str
+    ] = Field(default_factory=dict)
     timeoutMs: StrictInt = Field(10000, ge=1, le=300000)
     followRedirects: StrictBool = False
     assertions: list[Assertion] = Field(default_factory=list, max_length=100)
@@ -118,15 +145,22 @@ class RequestSpec(NativeModel):
                 raise ValueError("启用的参数名称不能重复")
         if self.formParams is not None and self.bodyType != "form":
             raise ValueError("表单参数只用于表单请求体")
-        if self.bodyType == "none" and self.body is not None:
+        if self.bodyType in {"none", "multipart", "binary"} and self.body is not None:
             raise ValueError("无请求体时不能保存正文")
-        if self.bodyType == "text" and not isinstance(self.body, str):
+        if self.bodyType in {"text", "xml"} and not isinstance(self.body, str):
             raise ValueError("文本请求体须为字符串")
         if self.bodyType == "form" and (
             not isinstance(self.body, dict)
             or any(not isinstance(v, str) for v in self.body.values())
         ):
             raise ValueError("表单请求体须为字符串键值对象")
+        if self.bodyType != "multipart" and self.multipartParams:
+            raise ValueError("multipart参数只用于form-data请求体")
+        if self.bodyType != "binary" and self.binaryBody.file:
+            raise ValueError("二进制文件只用于binary请求体")
+        keys = [row.key for row in self.multipartParams if row.enable]
+        if len(keys) != len(set(keys)):
+            raise ValueError("启用的参数名称不能重复")
         return self
 
     @field_validator("headers", "query")
@@ -141,8 +175,30 @@ class RequestSpec(NativeModel):
 
 
 class FrozenRequest(RequestSpec):
+    files: list[FrozenFile] = Field(default_factory=list, max_length=4000)
     url: str = Field(min_length=1, max_length=2000)
     name: str = Field(min_length=1, max_length=255)
+
+    @model_validator(mode="after")
+    def valid_frozen_files(self):
+        references = (
+            [self.binaryBody.file]
+            if self.bodyType == "binary" and self.binaryBody.file
+            else (
+                [
+                    f
+                    for row in self.multipartParams
+                    if row.enable and row.paramType == "file"
+                    for f in row.files
+                ]
+                if self.bodyType == "multipart"
+                else []
+            )
+        )
+        ids = [f.fileId for f in self.files]
+        if len(ids) != len(set(ids)) or set(ids) != {f.fileId for f in references}:
+            raise ValueError("冻结文件元数据必须与启用的正文引用一致")
+        return self
 
     @field_validator("url")
     @classmethod

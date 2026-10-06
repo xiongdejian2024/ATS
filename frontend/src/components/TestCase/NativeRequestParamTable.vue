@@ -16,7 +16,7 @@
             <th v-if="typed">类型</th>
             <th>参数值</th>
             <th v-if="typed">长度范围</th>
-            <th v-if="typed">编码</th>
+            <th v-if="typed && !multipart">编码</th>
             <th>描述</th>
             <th></th>
           </tr>
@@ -65,10 +65,13 @@
                   v-model:value="row.paramType"
                   :disabled="disabled"
                   :options="
-                    paramTypes.map((value) => ({ value, label: value }))
+                    (multipart
+                      ? [...paramTypes, 'json', 'file']
+                      : paramTypes
+                    ).map((value) => ({ value, label: value }))
                   "
                   :aria-label="`${title}类型${index + 1}`"
-                  @change="publish"
+                  @change="changeType(index)"
                 /><a-tooltip title="必填"
                   ><a-checkbox
                     v-model:checked="row.required"
@@ -79,7 +82,20 @@
               </div>
             </td>
             <td>
+              <NativeRequestFilePicker
+                v-if="multipart && row.paramType === 'file'"
+                :model-value="row.files || []"
+                :project-id="projectId || ''"
+                :disabled="disabled"
+                multiple
+                show-alias
+                @update:model-value="
+                  row.files = $event;
+                  publish();
+                "
+              />
               <a-input
+                v-else
                 v-model:value="row.value"
                 :disabled="disabled"
                 :maxlength="20000"
@@ -110,7 +126,7 @@
                 />
               </div>
             </td>
-            <td v-if="typed">
+            <td v-if="typed && !multipart">
               <a-checkbox
                 v-model:checked="row.encode"
                 :disabled="disabled"
@@ -166,6 +182,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import NativeRequestFilePicker from "./NativeRequestFilePicker.vue";
 import { VueDraggable } from "vue-draggable-plus";
 import { HolderOutlined, DeleteOutlined } from "@ant-design/icons-vue";
 import {
@@ -175,12 +192,15 @@ import {
   batchParams,
   paramTypes,
   type RequestParam,
+  validParams,
 } from "./nativeRequestParams";
 const props = defineProps<{
   modelValue: string;
   title: string;
   typed?: boolean;
   disabled?: boolean;
+  multipart?: boolean;
+  projectId?: string;
 }>();
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 type Row = RequestParam & { uid: number };
@@ -191,7 +211,11 @@ const rows = ref<Row[]>([]),
   batchError = ref("");
 let identity = 0,
   output = "";
-const row = (param: RequestParam): Row => ({ ...param, uid: ++identity });
+const row = (param: RequestParam): Row => ({
+  ...param,
+  ...(props.multipart ? { files: param.files || [] } : {}),
+  uid: ++identity,
+});
 watch(
   () => props.modelValue,
   (raw) => {
@@ -209,7 +233,7 @@ watch(
 function publish() {
   if (props.disabled) return;
   const last = rows.value.at(-1);
-  if (!last || last.key || last.value || last.description)
+  if (!last || last.key || last.value || last.description || last.files?.length)
     rows.value.push(row(blankParam()));
   const data = filledParams(rows.value).map(({ uid, ...param }) => param);
   output = JSON.stringify(data);
@@ -217,6 +241,11 @@ function publish() {
 }
 function remove(index: number) {
   rows.value.splice(index, 1);
+  publish();
+}
+function changeType(index: number) {
+  if (props.multipart && rows.value[index].paramType !== "file")
+    rows.value[index].files = [];
   publish();
 }
 function setRange(index: number, key: number, value: number | string | null) {
@@ -229,7 +258,16 @@ function applyBatch() {
   if (props.disabled) return;
   try {
     rows.value = [
-      ...batchParams(batch.value, !props.typed).map(row),
+      ...validParams(
+        [
+          ...(props.multipart
+            ? rows.value.filter((r) => r.paramType === "file")
+            : []),
+          ...batchParams(batch.value, !props.typed),
+        ],
+        !props.typed,
+        !!props.multipart,
+      ).map(row),
       row(blankParam()),
     ];
     publish();

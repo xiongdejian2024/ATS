@@ -28,17 +28,32 @@
         /></a-tab-pane>
         <a-tab-pane key="body" :tab="bodyType === 'none' ? 'Body' : 'Body (1)'">
           <a-radio-group
-            v-model:value="bodyType"
+            :value="bodyType"
             :disabled="disabled"
             :options="bodyTypes"
             aria-label="HTTP请求体类型"
             @change="changeBodyType($event.target.value)"
           />
           <NativeRequestParamTable
-            v-if="bodyType === 'form'"
+            v-if="bodyType === 'multipart'"
+            v-model="body"
+            title="form-data"
+            typed
+            multipart
+            :project-id="projectId || ''"
+            :disabled="disabled"
+          />
+          <NativeRequestParamTable
+            v-else-if="bodyType === 'form'"
             v-model="body"
             title="x-www-form-urlencoded"
             typed
+            :disabled="disabled"
+          />
+          <NativeBinaryBodyEditor
+            v-else-if="bodyType === 'binary'"
+            v-model="body"
+            :project-id="projectId || ''"
             :disabled="disabled"
           />
           <a-textarea
@@ -47,7 +62,11 @@
             :disabled="disabled"
             :rows="8"
             :aria-label="
-              bodyType === 'text' ? 'HTTP文本请求体' : 'HTTP请求体JSON'
+              bodyType === 'xml'
+                ? 'HTTP请求体XML'
+                : bodyType === 'text'
+                  ? 'HTTP文本请求体'
+                  : 'HTTP请求体JSON'
             "
           />
           <a-empty v-else description="该请求没有请求体" />
@@ -208,6 +227,7 @@
 </template>
 <script setup lang="ts">
 import NativeRequestParamTable from "./NativeRequestParamTable.vue";
+import NativeBinaryBodyEditor from "./NativeBinaryBodyEditor.vue";
 import NativeResponseAssertionEditor from "./NativeResponseAssertionEditor.vue";
 import { paramCount } from "./nativeRequestParams";
 const tabTitle = (title: string, raw: string) => {

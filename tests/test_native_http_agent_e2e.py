@@ -20,11 +20,24 @@ async def native_lab(lab):
 
     target = FastAPI()
     hits = []
+    upload_hits = []
     entered = asyncio.Event()
     release = asyncio.Event()
     blocked = False
     response_statuses = []
     hit_times = []
+
+    @target.post("/upload")
+    async def upload_target(request: Request):
+        content = await request.body()
+        parts = []
+        if request.headers.get("content-type", "").startswith("multipart/"):
+            form = await request.form()
+            for name, part in form.multi_items():
+                parts.append((name, part.filename, await part.read(), part.content_type)
+                             if hasattr(part, "filename") else (name, None, part, None))
+        upload_hits.append(dict(content=content, parts=parts, content_type=request.headers.get("content-type")))
+        return JSONResponse({"accepted": True}, status_code=201, headers={"X-Lab":"owned-loopback"})
 
     @target.post("/echo")
     async def echo(request: Request):
@@ -206,6 +219,7 @@ async def native_lab(lab):
         "request": request,
         "config": config,
         "hits": hits,
+        "upload_hits": upload_hits,
         "entered": entered,
         "release": release,
         "block": block,

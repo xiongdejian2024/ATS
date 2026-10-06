@@ -36,14 +36,18 @@ class NativeHTTPRunner(SATRunner):
             / message["execution_id"]
         )
         if (directory / "native-run.json").exists():
-            logger.info("原生HTTP执行已结束，忽略重复派发：执行={}", message["execution_id"])
+            logger.info(
+                "原生HTTP执行已结束，忽略重复派发：执行={}", message["execution_id"]
+            )
             return
         super().start(message)
 
     async def execute(self, message):
         suite_id, execution_id = message["suite_id"], message["execution_id"]
         started, rows, status, error = time.monotonic(), [], "failed", None
-        directory = self.agent.work_dir / "suites" / suite_id / "executions" / execution_id
+        directory = (
+            self.agent.work_dir / "suites" / suite_id / "executions" / execution_id
+        )
         directory.mkdir(parents=True, exist_ok=True)
         try:
             # 与现有SAT适配器同样从工作区加载自有XAT，httpx/Pydantic均为XAT已有依赖。
@@ -52,8 +56,43 @@ class NativeHTTPRunner(SATRunner):
                 sys.path.insert(0, xat_path)
             from framework.native_http.models import FrozenCase
             from framework.native_http.engine import execute
+            import httpx
+            from urllib.parse import urlsplit, urlunsplit
 
-            cases = [FrozenCase.model_validate(value) for value in message.get("native_cases", [])]
+            async def load_file(meta):
+                address = urlsplit(self.agent.ws_client.server_url)
+                scheme = {"ws": "http", "wss": "https"}[address.scheme]
+                prefix = address.path.removesuffix("/ws/agent").rstrip("/")
+                url = urlunsplit(
+                    (
+                        scheme,
+                        address.netloc,
+                        prefix
+                        + "/api/v1/native-http/executions/"
+                        + execution_id
+                        + "/files/"
+                        + meta.fileId,
+                        "",
+                        "",
+                    )
+                )
+                async with httpx.AsyncClient(trust_env=False, timeout=60) as client:
+                    response = await client.get(
+                        url, headers={"X-Agent-Token": self.agent.ws_client.token}
+                    )
+                    response.raise_for_status()
+                logger.info(
+                    "冻结请求文件读取完成：执行={}，文件={}，字节={}",
+                    execution_id,
+                    meta.fileId,
+                    len(response.content),
+                )
+                return response.content
+
+            cases = [
+                FrozenCase.model_validate(value)
+                for value in message.get("native_cases", [])
+            ]
             if (
                 not cases
                 or [case.id for case in cases] != message["case_ids"]
@@ -62,7 +101,7 @@ class NativeHTTPRunner(SATRunner):
                 raise ValueError("冻结原生用例与本次选择范围不一致")
             await self.log(message, f"开始原生HTTP执行，实际用例数：{len(cases)}")
             for case in cases:
-                row = await execute(case)
+                row = await execute(case, file_loader=load_file)
                 rows.append(row)
                 await self.deliver(
                     dict(
@@ -78,7 +117,11 @@ class NativeHTTPRunner(SATRunner):
                         executor_id=message.get("executor_id", "system"),
                     )
                 )
-            status = "completed" if all(row["status"] == "passed" for row in rows) else "failed"
+            status = (
+                "completed"
+                if all(row["status"] == "passed" for row in rows)
+                else "failed"
+            )
         except asyncio.CancelledError:
             status, error = "cancelled", "原生HTTP执行已取消"
             logger.opt(exception=True).info("原生HTTP执行已取消：执行={}", execution_id)
@@ -104,7 +147,9 @@ class NativeHTTPRunner(SATRunner):
                                     executor_id=message.get("executor_id", "system"),
                                 )
                             )
-                record = dict(execution_id=execution_id, status=status, error=error, rows=rows)
+                record = dict(
+                    execution_id=execution_id, status=status, error=error, rows=rows
+                )
                 self.runs.pop(execution_id, None)
                 self.suites.pop(execution_id, None)
                 await self.deliver(

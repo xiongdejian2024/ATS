@@ -153,7 +153,9 @@ def validate_parameters(db, project_id, category, parameters, protocol=None):
         if category == 'api' and 'request' in parameters:
             from framework.native_http.models import RequestSpec
             if protocol not in {'HTTP', 'HTTPS'}: raise ValueError('请求配置仅用于HTTP/HTTPS接口')
-            RequestSpec.model_validate(parameters['request'])
+            request = RequestSpec.model_validate(parameters['request'])
+            from services.native_request_files import rows_for_request
+            rows_for_request(db, project_id, request)
             return True
         if category == 'scenario' and 'scenario' in parameters:
             from framework.native_http.models import ScenarioSpec

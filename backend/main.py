@@ -17,6 +17,7 @@ from models import User
 from api.v1 import ai_assistance
 from api.v1 import case_governance, plan_orchestration, task_center
 from api.v1 import native_case
+from api.v1 import native_request_files
 from api.v1 import case_features
 from api.v1 import plan_group_execution
 from contextlib import asynccontextmanager
@@ -165,6 +166,8 @@ app.include_router(ai_assistance.router, prefix=settings.API_V1_STR)
 app.include_router(case_governance.router, prefix=settings.API_V1_STR)
 app.include_router(case_features.router, prefix=settings.API_V1_STR)
 app.include_router(native_case.router, prefix=settings.API_V1_STR)
+app.include_router(native_request_files.router, prefix=settings.API_V1_STR)
+app.include_router(native_request_files.agent_router, prefix=settings.API_V1_STR)
 app.include_router(plan_group_execution.router, prefix=settings.API_V1_STR)
 app.include_router(plan_orchestration.router, prefix=f"{settings.API_V1_STR}/plan-orchestration", tags=["计划编排"])
 app.include_router(task_center.router, prefix=f"{settings.API_V1_STR}/task-center", tags=["任务中心"])
