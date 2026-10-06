@@ -528,3 +528,69 @@ async def test_minder_saved_order_drives_real_http_and_delete_keeps_frozen_repor
         assert db.get(TestCase, second["id"]) and db.get(TestCase, value["api"]["id"])
         assert not db.query(PlanCaseRelation).filter_by(plan_id=plan_id).count()
     print("规划真实执行验收通过：整体保存倒序后，实际HTTP请求依次second/original；删除集合取消关联，两条主用例与真实冻结报告保留。")
+
+
+@pytest.mark.asyncio
+async def test_minder_tag_configuration_drives_real_target_pool_and_frozen_request(
+    native_lab,
+):
+    from database import SessionLocal
+    from models.native_case import ApiTestEnvironment, NativeCaseConfig
+    from models.plan_execution_config import PlanResourcePool
+    from models.plan_orchestration import PlanRun
+
+    value = native_lab
+    plan_id, project_id = value["native_plan"]["id"], value["api"]["projectId"]
+    catalog = await value["post"](
+        f"/projects/{project_id}/native-cases/environments",
+        {"name": "不会连接的默认目标", "address": "http://127.0.0.1:1"},
+    )
+    wrong = next(
+        e for e in catalog["environments"] if e["name"] == "不会连接的默认目标"
+    )
+    with SessionLocal() as db:
+        db.get(NativeCaseConfig, value["api"]["id"]).environment_id = wrong["id"]
+        db.commit()
+    catalog = await value["post"](
+        f"/plan-orchestration/plans/{plan_id}/resource-pools",
+        {
+            "name": "脑图软件执行池",
+            "environmentIds": [value["environment"]["id"]],
+            "expectedRevision": 0,
+        },
+    )
+    pool_id = next(p["id"] for p in catalog["pools"] if p["name"] == "脑图软件执行池")
+    base = f"/api/v1/plan-orchestration/plans/{plan_id}/minder-workspace"
+    result = await value["client"].get(base)
+    assert result.status_code == 200, result.text
+    snapshot = result.json()["data"]
+    config = {
+        **snapshot["executionCatalog"]["configurations"]["root:api"]["effectiveConfig"],
+        "requestEnvironmentId": value["request_environment"]["id"],
+        "testResourcePoolId": pool_id,
+    }
+    result = await value["client"].put(
+        base,
+        json={
+            "expectedFingerprint": snapshot["fingerprint"],
+            "points": [],
+            "configurations": {"root:api": {"config": config, "expectedRevision": 0}},
+        },
+    )
+    assert result.status_code == 200, result.text
+    run_id = await scope(value, "api")
+    with SessionLocal() as db:
+        db.get(ApiTestEnvironment, value["request_environment"]["id"]).address = (
+            "http://127.0.0.1:1"
+        )
+        db.get(PlanResourcePool, pool_id).environment_ids = []
+        db.commit()
+    await dispatch(run_id)
+    await finished(run_id)
+    assert len(value["hits"]) == 1 and value["hits"][0]["header"] == "original"
+    with SessionLocal() as db:
+        run = db.get(PlanRun, run_id)
+        assert run.report["total"] == run.report["counts"]["passed"] == 1
+    print(
+        "脑图标签真实验收通过：整体保存目标环境与资源池覆盖不可用主用例默认目标；入队后修改环境地址和池成员仍按冻结配置发送一次真实HTTP并通过。"
+    )

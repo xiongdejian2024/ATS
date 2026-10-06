@@ -1,14 +1,10 @@
 <template>
-  <div
-    ref="menu"
+  <MinderPopupAnchor
     v-if="actions.length"
     class="node-float-menu"
     role="toolbar"
     :aria-label="`${node.name}节点菜单`"
-    :style="{
-      transform: `scale(${1 / zoom}) translateX(${shift}px)`,
-      transformOrigin: 'top left',
-    }"
+    :zoom="zoom"
     @pointerdown.stop
   >
     <a-tooltip v-for="action in actions" :key="action" :title="labels[action]">
@@ -31,11 +27,10 @@
         }}</span>
       </button>
     </a-tooltip>
-  </div>
+  </MinderPopupAnchor>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from "vue";
-import { useEventListener, useResizeObserver } from "@vueuse/core";
+import MinderPopupAnchor from "./MinderPopupAnchor.vue";
 import {
   FolderAddOutlined,
   PlusOutlined,
@@ -44,37 +39,12 @@ import {
 } from "@ant-design/icons-vue";
 import type { PlanMinderNode } from "./planMinderTree";
 import type { MinderAction } from "./planMinderActions";
-const props = defineProps<{
+defineProps<{
   node: PlanMinderNode;
   actions: MinderAction[];
   disabled: boolean;
   zoom: number;
 }>();
-const menu = ref<HTMLElement>(),
-  viewport = ref<HTMLElement>(),
-  shift = ref(0);
-function positionMenu() {
-  if (!menu.value || !viewport.value) return;
-  const box = menu.value.getBoundingClientRect(),
-    bounds = viewport.value.getBoundingClientRect();
-  const anchor = box.left - shift.value;
-  shift.value = Math.max(
-    bounds.left + 8 - anchor,
-    Math.min(0, bounds.right - 8 - anchor - box.width),
-  );
-}
-onMounted(() => {
-  viewport.value =
-    menu.value?.closest<HTMLElement>(".minder-viewport") || undefined;
-  positionMenu();
-});
-useEventListener(viewport, "scroll", positionMenu);
-useResizeObserver(viewport, positionMenu);
-watch(
-  () => [props.zoom, props.node],
-  () => void nextTick(positionMenu),
-  { flush: "post" },
-);
 const emit = defineEmits<{ action: [action: MinderAction] }>();
 const labels: Record<MinderAction, string> = {
   add: "添加测试集",
@@ -86,16 +56,9 @@ const labels: Record<MinderAction, string> = {
 </script>
 <style scoped>
 .node-float-menu {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 6px);
-  z-index: 30;
   display: flex;
   gap: 8px;
   padding: 4px 8px;
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 4px 10px -1px #64646626;
   white-space: nowrap;
 }
 button {

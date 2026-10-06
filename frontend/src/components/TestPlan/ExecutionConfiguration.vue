@@ -82,6 +82,10 @@
 </template>
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import {
+  executionPoolOptions,
+  executionEnvironmentOptions,
+} from "./planMinderTag";
 import type {
   ExecutionConfig,
   ExecutionCatalog,
@@ -100,17 +104,10 @@ const emit = defineEmits<{
 const controlsDisabled = computed(
   () => props.disabled || (!props.root && props.value.extended),
 );
-const poolOptions = computed(() => [
-  { value: "DEFAULT", label: "默认资源池" },
-  ...props.catalog.pools.map((item) => ({ value: item.id, label: item.name })),
-]);
-const environmentOptions = computed(() => [
-  { value: "NONE", label: "默认环境" },
-  ...props.catalog.requestEnvironments.map((item) => ({
-    value: item.id,
-    label: item.name,
-  })),
-]);
+const poolOptions = computed(() => executionPoolOptions(props.catalog));
+const environmentOptions = computed(() =>
+  executionEnvironmentOptions(props.catalog),
+);
 const resourceSelect = ref<{ focus: () => void }>(),
   environmentSelect = ref<{ focus: () => void }>();
 function set<K extends keyof ExecutionConfig>(

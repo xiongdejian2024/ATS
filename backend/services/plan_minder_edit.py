@@ -314,6 +314,31 @@ def save(db, user, plan_id, data):
     default_nodes = [
         n for n in snapshot["nodes"] if n.node_type != "point" and n.parent_id is None
     ]
+    default_categories = (
+        (
+            {n.category for n in default_nodes}
+            if uses
+            else {
+                category_of(r) for r in snapshot["relations"] if r.collection_id is None
+            }
+        )
+        - set(data.deleteDefaults)
+        - set(materialized)
+    )
+    for point in data.points:
+        original = originals.get(point.id)
+        if (
+            point.name.strip() == "默认测试集"
+            and point.category in default_categories
+            and (
+                not original
+                or (original.name, original.position)
+                != (point.name.strip(), point.position)
+            )
+        ):
+            raise HTTPException(
+                422, "同一分类已存在默认测试集，请改名或编辑原默认测试集"
+            )
     if uses:
         removed_nodes.update(
             n.id for n in default_nodes if n.category in data.deleteDefaults

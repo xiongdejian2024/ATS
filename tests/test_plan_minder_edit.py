@@ -505,3 +505,25 @@ async def test_minder_root_parallel_drives_actual_queue_and_frozen_policy(plan_l
         finish(db, item)
     await advance_plan_runs(db)
     assert run.status == "completed" and run.report["counts"]["passed"] == 2
+
+
+@pytest.mark.asyncio
+async def test_provisional_default_name_cannot_duplicate_virtual_default_and_rolls_back(
+    workspace_http,
+):
+    db, app, _ = workspace_http
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        old = await snapshot(client)
+        assert old["entries"]["functional"]
+        body = payload(old, executionMode="parallel")
+        temporary = point("默认测试集")
+        body["points"].append(temporary)
+        result = await client.put(BASE, json=body)
+        assert result.status_code == 422 and "默认测试集" in result.text
+        assert (await snapshot(client))["fingerprint"] == old["fingerprint"]
+        temporary["name"] = "直接插入后改名"
+        saved = await client.put(BASE, json=body)
+        assert saved.status_code == 200, saved.text
+        assert saved.json()["data"]["entries"] == old["entries"]

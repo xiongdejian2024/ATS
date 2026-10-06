@@ -61,6 +61,39 @@ function fixture(): MinderWorkspace {
   };
 }
 describe("规划整体草稿", () => {
+  it("直接插入可暂存默认重名文本，退出编辑及保存前须改名，原关联保留", () => {
+    const draft = new PlanMinderDraft();
+    draft.load(fixture());
+    const point = draft.insert("api");
+    expect(point.name).toBe("默认测试集");
+    expect(draft.isNew(point.id)).toBe(true);
+    expect(() => draft.validate()).toThrow("默认测试集");
+    draft.rename(point.id, "直接改名集");
+    expect(() => draft.validate()).not.toThrow();
+    expect(draft.workspace!.entries.api[0].collectionId).toBeNull();
+    draft.reset();
+    expect(draft.dirty).toBe(false);
+    expect(draft.workspace!.nodes).toEqual([]);
+  });
+  it("新集复制分类当前配置为独立初始值，同级插入顺序正确，父配置以后变化不覆盖", () => {
+    const draft = new PlanMinderDraft();
+    draft.load(fixture());
+    const a = draft.insert("api");
+    draft.rename(a.id, "第一集");
+    const b = draft.insert("api", a.id);
+    draft.rename(b.id, "第二集");
+    expect(draft.workspace!.nodes.map((n) => n.position)).toEqual([0, 1]);
+    const scope = `node:api:${b.id}`;
+    expect(draft.payload.configurations[scope].config.extended).toBe(false);
+    draft.configure("root:api", {
+      ...draft.workspace!.executionCatalog.configurations["root:api"].config,
+      executionMode: "parallel",
+    });
+    expect(
+      draft.workspace!.executionCatalog.configurations[scope].effectiveConfig
+        .executionMode,
+    ).toBe("serial");
+  });
   it("计划根方式只更新未持久化分类默认，保留显式配置与策略，取消可还原", () => {
     const source = fixture();
     source.executionCatalog.configurations["root:api"].revision = 0;

@@ -98,7 +98,16 @@
                     :actions="nodeActions(node)"
                     :disabled="saving || loading"
                     :zoom="zoom"
-                    @action="handleNodeAction" /></template
+                    @action="handleNodeAction" />
+                  <PlanningMinderTagMenu
+                    v-if="tagOpen && tagConfiguration"
+                    :zoom="zoom"
+                    :label="tagConfiguration.label"
+                    :value="tagConfiguration.value"
+                    :options="tagConfiguration.options"
+                    :disabled="saving || loading"
+                    @select="saveTag"
+                    @close="tagOpen = false" /></template
               ></PlanningMinderBranch>
             </div>
           </div>
@@ -136,7 +145,7 @@
               v-if="canRename"
               layout="vertical"
               class="point-form"
-              :disabled="!canEdit"
+              :disabled="!canEdit || saving || loading"
             >
               <a-form-item label="测试集名称" required
                 ><a-input v-model:value="pointForm.name" :maxlength="255"
@@ -154,7 +163,7 @@
               :inherited="inheritedConfiguration"
               :root="selectedScope.startsWith('root:')"
               :catalog="executionCatalog"
-              :disabled="!canEdit"
+              :disabled="!canEdit || saving || loading"
               @manage-pool="openPool"
             />
           </a-form>
@@ -173,20 +182,6 @@
         </aside>
       </div></a-spin
     >
-    <a-modal
-      v-model:open="createOpen"
-      title="添加测试集"
-      :confirm-loading="saving"
-      @ok="createPoint"
-      ><a-form layout="vertical"
-        ><a-form-item label="分类">{{
-          planCategoryNames[selected?.category || "functional"]
-        }}</a-form-item
-        ><a-form-item label="名称" required
-          ><a-input
-            v-model:value="newName"
-            :maxlength="255" /></a-form-item></a-form
-    ></a-modal>
     <a-modal
       v-model:open="poolOpen"
       title="配置资源池"
@@ -261,6 +256,8 @@ import { planMinderApi, type MinderWorkspace } from "@/api/planMinder";
 import { PlanMinderDraft } from "./planMinderDraft";
 import PlanningMinderBranch from "./PlanningMinderBranch.vue";
 import PlanningMinderMenu from "./PlanningMinderMenu.vue";
+import PlanningMinderTagMenu from "./PlanningMinderTagMenu.vue";
+import { planMinderTag } from "./planMinderTag";
 import { planMinderActions, type MinderAction } from "./planMinderActions";
 import {
   buildPlanMinder,
@@ -295,6 +292,7 @@ const nodes = computed(() => draft.workspace?.nodes || []),
   stage = ref<HTMLElement>(),
   zoom = ref(1);
 const configVisible = ref(false),
+  tagOpen = ref(false),
   editingId = ref<string>(),
   editName = ref("");
 const { width: stageWidth, height: stageHeight } = useElementSize(stage);
@@ -398,6 +396,35 @@ const dirty = computed(() => draftState() !== baseline.value);
 const hasChanges = computed(
   () => dirty.value || draft.dirty || !!editingId.value,
 );
+const tagConfiguration = computed(() =>
+  planMinderTag(selected.value, executionCatalog.value, props.canEdit),
+);
+async function saveTag(value: string) {
+  const tag = tagConfiguration.value;
+  if (!tag || saving.value || loading.value || value === tag.value) return;
+  if (dirty.value || editingId.value) {
+    message.warning("请先保存或取消当前节点的修改");
+    return;
+  }
+  if (!tag.options.some((option) => option.value === value)) return;
+  try {
+    const id = selected.value?.id;
+    draft.configure(tag.scope, { ...tag.config, [tag.field]: value });
+    selected.value = flatNodes.value.find((n) => n.id === id);
+    resetPoint();
+    console.info("脑图标签选择已进入整体保存", {
+      计划: props.plan.id,
+      作用域: tag.scope,
+      字段: tag.field,
+    });
+    await savePoint();
+  } catch (error) {
+    console.error("脑图标签选择失败，草稿保留", error);
+    message.error(
+      error instanceof Error ? error.message : "标签保存失败，草稿已保留",
+    );
+  }
+}
 function nodeActions(node: PlanMinderNode) {
   const inherited = node.configurationScope
     ? executionCatalog.value?.configurations[node.configurationScope]?.config
@@ -432,7 +459,10 @@ function commitNameEdit(): boolean {
   const node = flatNodes.value.find((n) => n.id === editingId.value);
   if (!node?.category || node.kind !== "collection") return false;
   try {
-    if (editName.value.trim() !== node.name) {
+    if (
+      editName.value.trim() !== node.name ||
+      (node.nodeId && draft.isNew(node.nodeId))
+    ) {
       const point = node.nodeId
         ? nodes.value.find((n) => n.id === node.nodeId)
         : draft.materializeDefault(node.category, editName.value);
@@ -608,12 +638,13 @@ async function loadEnvironments() {
   }
 }
 function selectById(id: string) {
-  if (editingId.value) return;
+  if (editingId.value || saving.value || loading.value) return;
   if (dirty.value) {
     message.warning("请先保存或取消当前节点的修改");
     return;
   }
   selected.value = flatNodes.value.find((node) => node.id === id);
+  tagOpen.value = false;
   if (
     selected.value?.kind === "root" ||
     (selected.value?.kind === "category" &&
@@ -623,6 +654,7 @@ function selectById(id: string) {
   resetPoint();
 }
 function selectCanvasNode(id: string) {
+  if (saving.value || loading.value || editingId.value) return;
   if (dirty.value) {
     message.warning("请先保存或取消当前节点的修改");
     return;
@@ -636,10 +668,7 @@ function selectCanvasNode(id: string) {
     ["environment", "resource"].includes(node.kind) &&
     props.canEdit
   ) {
-    configVisible.value = true;
-    void nextTick(() =>
-      executionEditor.value?.focus(node.kind as "environment" | "resource"),
-    );
+    tagOpen.value = !!tagConfiguration.value;
   }
 }
 function toggleById(id: string) {
@@ -733,7 +762,6 @@ function handleShortcut(event: KeyboardEvent) {
   if (
     !node ||
     saving.value ||
-    createOpen.value ||
     associateOpen.value ||
     advancedOpen.value ||
     editingId.value
@@ -799,12 +827,10 @@ function viewCases() {
     },
   });
 }
-const createOpen = ref(false),
-  associateOpen = ref(false),
-  advancedOpen = ref(false),
-  newName = ref("");
+const associateOpen = ref(false),
+  advancedOpen = ref(false);
 function openAssociation() {
-  if (!props.canEdit) return;
+  if (!props.canEdit || saving.value || loading.value) return;
   if (hasChanges.value) {
     message.warning("请先保存测试规划，再关联用例");
     return;
@@ -812,6 +838,7 @@ function openAssociation() {
   associateOpen.value = true;
 }
 function openAdvanced() {
+  if (saving.value || loading.value) return;
   if (hasChanges.value) {
     message.warning("请先保存或取消当前节点的修改");
     return;
@@ -819,28 +846,34 @@ function openAdvanced() {
   advancedOpen.value = true;
 }
 function openCreate() {
-  if (!props.canEdit || !canAdd.value) return;
+  if (
+    !props.canEdit ||
+    !canAdd.value ||
+    saving.value ||
+    loading.value ||
+    editingId.value
+  )
+    return;
   if (dirty.value) {
     message.warning("请先保存或取消当前节点的修改");
     return;
   }
-  newName.value = "默认测试集";
-  createOpen.value = true;
-}
-function createPoint() {
-  if (!props.canEdit || !selected.value?.category) return;
+  if (!selected.value?.category) return;
   try {
-    const point = draft.add(
+    const point = draft.insert(
       selected.value.category,
-      newName.value,
       selectedPoint.value?.id ||
         (selected.value.kind === "collection" ? "default" : undefined),
     );
-    createOpen.value = false;
     selected.value = flatNodes.value.find(
       (n) => n.nodeId === point.id && n.category === point.category,
     );
     resetPoint();
+    editingId.value = selected.value?.id;
+    editName.value = point.name;
+    collapsed.value = new Set(
+      [...collapsed.value].filter((id) => id !== `category:${point.category}`),
+    );
     console.info("测试集新增草稿已暂存", {
       计划: props.plan.id,
       分类: point.category,
@@ -852,6 +885,7 @@ function createPoint() {
   }
 }
 function acceptWorkspace(result: MinderWorkspace) {
+  tagOpen.value = false;
   const id = selected.value?.id;
   draft.load(result);
   selected.value = flatNodes.value.find((n) => n.id === id) || tree.value;
@@ -887,6 +921,7 @@ async function savePoint() {
         flatNodes.value.find((n) => n.id === selected.value?.id) || tree.value;
       resetPoint();
     }
+    draft.validate();
     const result = await planMinderApi.save(props.plan.id, draft.payload);
     acceptWorkspace(result);
     emit("changed");
@@ -951,7 +986,7 @@ watch(
     selected.value = undefined;
     configVisible.value = false;
     cancelNameEdit();
-    createOpen.value = false;
+    tagOpen.value = false;
     associateOpen.value = false;
     advancedOpen.value = false;
     resetPoint();

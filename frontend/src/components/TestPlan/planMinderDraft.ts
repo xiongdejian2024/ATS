@@ -121,6 +121,41 @@ export class PlanMinderDraft {
     this.nameAvailable(name, node.category, id);
     node.name = name.trim();
   }
+  isNew(id: string) {
+    return !this.original?.nodes.some((n) => n.id === id);
+  }
+  validate() {
+    for (const node of this.workspace?.nodes.filter(
+      (n) => n.nodeType === "point",
+    ) || []) {
+      const original = this.original?.nodes.find((n) => n.id === node.id);
+      if (
+        !original ||
+        original.name !== node.name ||
+        original.position !== node.position
+      )
+        this.nameAvailable(
+          node.name,
+          node.category,
+          node.id,
+          this.materialized[node.category] === node.id,
+        );
+    }
+  }
+  insert(category: MinderCategory, afterId?: string): PlanNode {
+    // 默认临时文本可以与既有集同名，退出编辑及整体保存时再校验。
+    const point = this.create(category, "默认测试集", afterId);
+    if (category !== "functional") {
+      const parent =
+        this.workspace!.executionCatalog.configurations[`root:${category}`];
+      if (parent)
+        this.configure(`node:${category}:${point.id}`, {
+          ...parent.effectiveConfig,
+          extended: parent.config.extended,
+        });
+    }
+    return point;
+  }
   add(
     category: MinderCategory,
     name: string,
@@ -129,6 +164,14 @@ export class PlanMinderDraft {
   ): PlanNode {
     if (!this.workspace) throw new Error("测试规划尚未加载");
     this.nameAvailable(name, category, undefined, materializing);
+    return this.create(category, name, afterId);
+  }
+  private create(
+    category: MinderCategory,
+    name: string,
+    afterId?: string,
+  ): PlanNode {
+    if (!this.workspace) throw new Error("测试规划尚未加载");
     const siblings = this.workspace.nodes
       .filter(
         (n) => n.nodeType === "point" && n.category === category && !n.parentId,

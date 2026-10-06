@@ -10,7 +10,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 logging.basicConfig(
-    filename=ROOT / "logs/第58部分MySQL验收.log",
+    filename=ROOT / "logs/第59部分MySQL验收.log",
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
@@ -237,6 +237,18 @@ def main():
             assert db.query(TaskQueue).count() == 0
             current = load(db, db.get(User, "owner"), "plan")
             assert current["policy"]["executionMode"] == "parallel"
+            db.commit()
+            try:
+                save(db, db.get(User, "owner"), "plan", MinderSave(
+                    expectedFingerprint=current["fingerprint"], executionMode="serial",
+                    points=[dict(id=identifier, name="默认测试集", category="functional", position=0)],
+                ))
+                raise AssertionError("虚拟默认集重名不应保存成功")
+            except HTTPException as exc:
+                log.exception("预期的默认集重名校验，根方式及名称整体回滚")
+                assert exc.status_code == 422
+                db.rollback()
+            assert load(db, db.get(User, "owner"), "plan")["fingerprint"] == current["fingerprint"]
             db.commit()
             save(
                 db,

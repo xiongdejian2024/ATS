@@ -801,3 +801,19 @@
 - 第57部分远程软件CI `37393242297` 已确认最终成功，证据 `logs/第57部分远程CI最终状态.json`。整体100%目标仍进行：脑图多选批量删除、标签上的直接下拉配置、直接行内插入及布局/导航器、临时测试集关联草稿和默认集精细投影尚待对齐；关联API定义/用例双模式、高级编辑器/单条报告、评审与报告、跨项目环境组和全局资源池等继续补齐。本部分不声明整个MS脑图或全平台完全复刻。
 
 本部分官方依据：[规划菜单与继承规则](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-minders/testPlanMinder/index.vue)、[浮动菜单展示](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-minder-editor/menu/nodeFloatMenu.vue)、[快捷编辑和保存](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-minder-editor/hooks/useShortCut.ts)、[根执行方式整图保存](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/test-plan/src/main/java/io/metersphere/plan/service/TestPlanCollectionMinderService.java)。
+
+## 第59部分：标签就地下拉配置与直接行内插入测试集（2026-10-06）
+
+- 官方固定版本确认：非继承父节点的环境/资源池标签直接显示目录下拉，选择后修改父节点相应字段并触发整图保存；继承节点不开放独立选择。新增集直接插入脑图并进入行内编辑；自动化新集复制所属分类根配置，包括根的 `extended=false`，因此初始配置独立，随后可手动开启继承。官方源码字节与SHA256取证见 `logs/第59部分准备.log`。
+- 新增 `planMinderTag.ts`、`PlanningMinderTagMenu.vue`，按真实作用域分别使用请求环境ID和执行资源池ID，包含默认选项、当前项高亮、单选和溢出提示。相同值不写入；只读和继承节点不提供写操作。复用已有VueUse和Ant组件，抽出 `MinderPopupAnchor.vue` 共用定位、滚动及缩放处理，没有新增依赖。
+- 标签选择沿用整个规划事务保存，配置其他字段、关联和根策略保持；未完成行内文本或侧栏表单先要求处理。失败保留完整图、选中值、指纹和修订号，可用顶部保存重试；请求在途禁用侧栏修改及结构/关联入口，防止响应覆盖后来修改。
+- 删除新增集弹窗，菜单添加、Tab子集和Enter同级共用直接插入流程，保留已有嵌套结构但不新增嵌套集。临时“默认测试集”文本可暂存；退出行内编辑和整体保存检查名称，同分类既有虚拟默认集也参与唯一校验。后端新增相同保护，重名请求的根策略及其他改动一并回滚；未修改的历史重复名继续兼容。
+- 后端专项 **23项通过**，全量 **401项通过／185.00秒／18条既有提示**；新增真实回环端到端验证脑图整体保存的环境与资源池覆盖不可用的用例默认目标。入队后修改环境地址和池成员，实际仍按冻结目标、原请求头和成员发送一次HTTP，201断言及报告通过。没有连接真实台架或模型。证据 `logs/第59部分后端专项.log`、`logs/第59部分后端全量.log`、`tests/test_native_http_agent_e2e.py`。
+- 前端 **121项／31文件通过**，类型检查及构建 **12.25秒** 通过，既有包体提示保留。新增目录/继承/只读/作用域规则与直接插入、根配置独立复制、默认名称校验及取消专项。证据 `logs/第59部分前端单元.log`、`logs/第59部分前端类型初检.log`、`logs/第59部分前端初检构建.log`。
+- 真实MySQL临时库继续验证同指纹并发200/409、真实项目锁等待及最新关联读取；追加默认名重名422及根策略原子回滚、原指纹保持。默认集删除仅取消关联，临时库和授权已回收，没有队列派发。证据 `logs/第59部分MySQL验收.log`、`logs/第59部分MySQL验收输出.log`。
+- 浏览器沿用空间30及13313/18813隔离环境：分类标签分别自动保存，继承集无下拉；关闭继承后独立环境恢复默认不改变根。Tab直接插入无弹窗，改名后保存前服务端仍只有原集；新集标签选择自动整体提交名称、结构及独立配置。Enter同级插入，Esc保留临时文本但默认重名保存阻止，取消还原；阻断 `minder-workspace` 后新标签/草稿保持、服务端旧池保持，解除后顶部保存重试落库。三主用例与三关联完整保持。证据 `logs/第59部分浏览器验收.log`、`logs/第59部分浏览器最终规划.json`。
+- 1440px桌面及390px窄屏截图已实际查看：窄屏整页390、画布342、下拉200、选项约34.85px高、右边355小于画布边363；27%缩放下仍保持菜单正常像素尺寸。截图 `/tmp/ats-ms59-tag-desktop.png`、`/tmp/ats-ms59-tag-mobile.png`。取消按钮选择和恢复时误等不存在API标签的工具超时完整保留；按现场按钮及原功能计划实际状态复核通过，没有把动作回执或超时当作成功。
+- 清理前实际数据库核验根配置修订3、两个独立集默认请求环境及复制资源池、三关联且无新任务；按本轮主键及外键后代精确回收，完整 **75表** 恢复基线、原31用例保留。浏览器原URL、空偏好集、1440视口及登录恢复。正式API已更新，Agent/worker保持原PID；75模型业务表原计数一致，100用例/7计划/28历史任务/0活动任务、在线节点1、健康与页面HTTP200。证据 `logs/第59部分清理计数.json`、`logs/第59部分浏览器恢复.json`、`logs/第59部分正式服务.log`、`logs/第59部分正式最终输出.log`。
+- 第58部分远程软件CI `37394628566` 已确认最终成功，证据 `logs/第58部分远程CI最终状态.json`。整体100%复刻目标继续：脑图多选批量删除、布局/导航器、临时测试集关联草稿及默认集精细投影；API定义/用例关联双模式、高级请求编辑器、单条报告、评审与报告、跨项目环境组和全局资源池等尚待对齐。本部分不声明整个MS脑图或全平台100%完成。
+
+本部分官方依据：[标签目录下拉](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-minder-editor/menu/nodeDropdown.vue)、[直接插入节点操作](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/pure/ms-minder-editor/hooks/useMinderOperation.ts)、[标签整图保存与插入配置复制](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/frontend/src/components/business/ms-minders/testPlanMinder/index.vue)、[新增集完整配置保存](https://github.com/metersphere/metersphere/blob/d694f3aa7842f2fc19dd73ccb67e6b0b3a1b7b51/backend/services/test-plan/src/main/java/io/metersphere/plan/service/TestPlanCollectionMinderService.java)。
