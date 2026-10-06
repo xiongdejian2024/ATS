@@ -13,6 +13,19 @@ from models.native_request_file import NativeRequestFile
 from core.logger import logger
 
 
+def same_column_type(actual, expected, dialect):
+    """模型未指定字符规则时接受数据库继承值，仍严格检查长度和BLOB类型。"""
+    reflected = actual.copy()
+    declared = expected.dialect_impl(dialect)
+    for setting in ("charset", "collation"):
+        if hasattr(reflected, setting) and getattr(declared, setting, None) is None:
+            setattr(reflected, setting, None)
+    return (
+        reflected.compile(dialect=dialect).lower()
+        == expected.compile(dialect=dialect).lower()
+    )
+
+
 def upgrade(apply=False, connection_engine=None):
     target = connection_engine or engine
     table = NativeRequestFile.__table__
@@ -23,8 +36,7 @@ def upgrade(apply=False, connection_engine=None):
             set(columns) != set(table.c.keys())
             or any(
                 columns[c.name]["nullable"] != c.nullable
-                or columns[c.name]["type"].compile(dialect=target.dialect).lower()
-                != c.type.compile(dialect=target.dialect).lower()
+                or not same_column_type(columns[c.name]["type"], c.type, target.dialect)
                 for c in table.c
             )
             or inspector.get_pk_constraint(table.name)["constrained_columns"]

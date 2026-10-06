@@ -409,3 +409,25 @@ def test_file_table_incremental_upgrade_preserves_legacy_and_is_idempotent():
     with pytest.raises(RuntimeError, match="结构不兼容"):
         module.upgrade(True, target)
     target.dispose()
+
+
+def test_mysql_inherited_collation_is_compatible_but_length_and_blob_stay_strict():
+    from sqlalchemy import String, LargeBinary
+    from sqlalchemy.dialects.mysql import VARCHAR, BLOB, LONGBLOB, dialect
+
+    path = (
+        Path(__file__).resolve().parents[1] / "scripts/upgrade_native_request_files.py"
+    )
+    spec = importlib.util.spec_from_file_location("file_type_upgrade_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    mysql = dialect()
+    assert module.same_column_type(
+        VARCHAR(255, collation="utf8mb4_unicode_ci"), String(255), mysql
+    )
+    assert not module.same_column_type(
+        VARCHAR(1, collation="utf8mb4_unicode_ci"), String(255), mysql
+    )
+    expected = LargeBinary().with_variant(LONGBLOB(), "mysql")
+    assert module.same_column_type(LONGBLOB(), expected, mysql)
+    assert not module.same_column_type(BLOB(), expected, mysql)
