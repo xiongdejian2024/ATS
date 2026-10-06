@@ -2,9 +2,9 @@
   <section class="functional-workspace">
     <aside v-if="!advanced" class="case-folders">
       <a-radio-group
-        v-model:value="treeType"
+        :value="treeType"
         class="folder-switch"
-        @change="resetFolder"
+        @change="changeTreeType"
         ><a-radio-button value="COLLECTION">测试集</a-radio-button
         ><a-radio-button value="MODULE">模块</a-radio-button></a-radio-group
       >
@@ -91,12 +91,16 @@
             :busy="loading"
             @apply="applyAdvanced"
             @saving="(value) => (filterSaving = value)" /><a-radio-group
-            v-model:value="showType"
+            :value="showType"
+            @change="changeShowType"
             ><a-radio-button value="list" aria-label="列表"
               ><UnorderedListOutlined /></a-radio-button
             ><a-radio-button value="mind" aria-label="脑图"
               ><ApartmentOutlined /></a-radio-button></a-radio-group
-          ><a-button :loading="loading" aria-label="刷新功能用例" @click="load"
+          ><a-button
+            :loading="loading"
+            aria-label="刷新功能用例"
+            @click="refreshWorkspace"
             ><ReloadOutlined /></a-button
         ></a-space>
       </div>
@@ -107,12 +111,20 @@
         show-icon
       />
       <template v-else>
-        <CaseMindMap
-          v-if="showType === 'mind'"
-          :cases="mindCases"
-          :modules="mindModules"
-          readonly
-          @select="selectMind"
+        <FunctionalCaseMinder
+          ref="minder"
+          v-if="showType === 'mind' && data"
+          :plan="plan"
+          :listing="data"
+          :tree-type="treeType"
+          :folder="folder"
+          :condition="minderCondition"
+          :can-edit="canEdit"
+          @open="openExecution"
+          @changed="
+            load();
+            emit('changed');
+          "
         />
         <a-table
           v-else
@@ -331,7 +343,7 @@ import {
   type TableDisplay,
   type ColumnVisibility,
 } from "@/components/Table/tableDisplay";
-import type { TestPlan, TestCase } from "@/types";
+import type { TestPlan } from "@/types";
 import {
   planCaseWorkspaceApi,
   type PlanCaseListing,
@@ -344,7 +356,7 @@ import type {
   FilterCondition,
   FilterLogic,
 } from "@/components/TestCase/advancedFilter";
-import CaseMindMap from "@/components/TestCase/CaseMindMap.vue";
+import FunctionalCaseMinder from "./FunctionalCaseMinder.vue";
 import PlanDefects from "./PlanDefects.vue";
 import { ExecutionMediaDraft } from "./executionMediaDraft";
 import { planCaseMediaApi } from "@/api/planCaseMedia";
@@ -357,6 +369,11 @@ const props = defineProps<{ plan: TestPlan; canEdit: boolean }>(),
   emit = defineEmits<{ changed: [] }>(),
   route = useRoute(),
   router = useRouter();
+const minder = ref<InstanceType<typeof FunctionalCaseMinder>>();
+async function changeShowType(event: { target: { value: string } }) {
+  if (showType.value === "mind" && !(await minder.value?.beforeClose())) return;
+  showType.value = event.target.value;
+}
 const initialListing = functionalListingState(route.query);
 const data = ref<PlanCaseListing>(),
   loading = ref(false),
@@ -414,6 +431,7 @@ async function applyAdvanced(
   logic: FilterLogic,
   id?: string,
 ) {
+  if (!(await canChangeScope())) return;
   advancedFilters.value =
     conditions === undefined
       ? undefined
@@ -641,35 +659,43 @@ watch(storageKey, () => {
 const selectedRows = computed(() =>
   (data.value?.items || []).filter((item) => selected.value.includes(item.id)),
 );
-const mindCases = computed(() =>
-  (data.value?.items || []).map(
-    (item) =>
-      ({
-        ...item,
-        steps: (item.steps || []).map((step, index) => ({
-          ...step,
-          step: index + 1,
-        })),
-        id: item.id,
-        moduleId:
-          treeType.value === "COLLECTION" ? item.collectionId : item.moduleId,
-        name: `[${resultLabels[item.result] || item.result}] ${item.name}`,
-      }) as Partial<TestCase>,
-  ),
-);
-const mindModules = computed(() =>
-  folders.value.map((item) => ({
-    id: item.id,
-    name: item.name,
-    parentId: item.parentId,
-  })),
-);
+const minderCondition =
+  ref<
+    import("@/api/planCaseWorkspace").FunctionalMinderSelection["condition"]
+  >();
+async function canChangeScope() {
+  return (
+    showType.value !== "mind" ||
+    !minder.value ||
+    (await minder.value.beforeClose())
+  );
+}
+async function refreshWorkspace() {
+  if (!(await canChangeScope())) return;
+  await load();
+  await minder.value?.refresh();
+}
+async function changeTreeType(event: {
+  target: { value: "COLLECTION" | "MODULE" };
+}) {
+  if (!(await canChangeScope())) return;
+  treeType.value = event.target.value;
+  resetFolder();
+}
 let sequence = 0;
 async function load() {
   const current = ++sequence;
   loading.value = true;
   failed.value = false;
   selected.value = [];
+  const requestedCondition = {
+    tree_type: treeType.value,
+    folder: folder.value,
+    search: search.value,
+    ...filters,
+    filters: filterScope.value,
+    mine: viewId.value === "system:my",
+  };
   try {
     const result = await planCaseWorkspaceApi.list(props.plan.id, {
       category: "functional",
@@ -684,9 +710,12 @@ async function load() {
       size: size.value,
       sort: sort.value,
       direction: direction.value,
-      view: showType.value,
+      view: "list",
     });
-    if (current === sequence) data.value = result;
+    if (current === sequence) {
+      minderCondition.value = requestedCondition;
+      data.value = result;
+    }
   } catch (error) {
     console.error("加载计划功能用例列表失败", error);
     if (current === sequence) {
@@ -705,6 +734,7 @@ async function loadExecutors() {
   }
 }
 async function chooseFolder(id: string) {
+  if (!(await canChangeScope())) return;
   folder.value = id;
   page.value = 1;
   await router.replace({
@@ -722,7 +752,8 @@ function toggleExpanded() {
     ? []
     : folders.value.map((item) => item.id);
 }
-function resetPage() {
+async function resetPage() {
+  if (!(await canChangeScope())) return;
   page.value = 1;
   void load();
 }
@@ -859,10 +890,6 @@ async function executeBatch() {
 function openDefects(row: PlanCaseEntry) {
   current.value = row;
   defectsOpen.value = true;
-}
-function selectMind(row: Partial<TestCase>) {
-  const item = data.value?.items.find((item) => item.id === row.id);
-  if (item) openExecution(item);
 }
 const batchOpen = ref(false),
   batchAction = ref<"assign" | "move">("assign"),

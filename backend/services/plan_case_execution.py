@@ -51,10 +51,10 @@ def current_selection(db, plan, selections):
     return selected
 
 
-def execute(db, user, plan, data):
+def execute(db, user, plan, data, *, resolved_rows=None, request_body=None):
     if not can_execute(db, user, plan):
         raise HTTPException(409, '归档计划不可提交执行结果')
-    rows = current_selection(db, plan, data.selections)
+    rows = current_selection(db, plan, data.selections) if resolved_rows is None else resolved_rows
     if db.query(PlanRun).filter(PlanRun.plan_id == plan.id, PlanRun.status.in_(ACTIVE)).first():
         raise HTTPException(409, '计划有活动执行批次，请在该批次回填或结束批次后提交')
     steps = [row.model_dump() for row in data.stepResults]
@@ -70,7 +70,7 @@ def execute(db, user, plan, data):
             raise HTTPException(422, '整体通过时已提交的步骤须全部通过')
     request = str(data.requestId)
     body = dict(selections=sorted(row['id'] for row in rows), result=data.result, description=data.description, steps=steps)
-    digest = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    digest = hashlib.sha256(json.dumps(request_body if request_body is not None else body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
     previous = db.query(PlanCaseExecution).filter_by(plan_id=plan.id, request_id=request).all()
     if previous:
         if {row.association_key for row in previous} != set(body['selections']) or any(row.payload_hash != digest for row in previous):

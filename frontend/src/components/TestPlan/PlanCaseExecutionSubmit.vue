@@ -61,6 +61,7 @@ const props = defineProps<{
   uploading: boolean;
   onSubmit: () => Promise<boolean>;
   dialogDirty?: boolean;
+  defaultActive?: boolean;
 }>();
 const emit = defineEmits<{
   "update:result": [value: string];
@@ -73,7 +74,7 @@ const emit = defineEmits<{
   ];
   discardImages: [];
 }>();
-const active = ref(!!props.description),
+const active = ref(!!props.description || !!props.defaultActive),
   expanded = ref(false),
   dialogResult = ref("passed"),
   dialogDescription = ref(""),

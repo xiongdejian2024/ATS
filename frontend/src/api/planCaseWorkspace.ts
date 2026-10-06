@@ -40,7 +40,7 @@ export interface PlanCaseEntry {
   executedBy?: string;
   executedAt?: string;
   precondition?: string;
-  steps: { action: string; expected: string }[];
+  steps: { step?: number; action: string; expected: string }[];
   caseEditType?: string;
   textDescription?: string;
   expectedResult?: string;
@@ -341,3 +341,46 @@ export interface PlanCaseExecutionDetail {
   page: number;
   size: number;
 }
+
+export interface FunctionalMinderSelection {
+  category?: "functional";
+  selectAll?: boolean;
+  selectIds?: string[];
+  excludeIds?: string[];
+  condition?: {
+    tree_type?: "COLLECTION" | "MODULE";
+    folder?: string;
+    include_descendants?: boolean;
+    search?: string;
+    priority?: string;
+    result?: string;
+    executor?: string;
+    tag?: string;
+    filters?: {
+      conditions: import("@/components/TestCase/advancedFilter").FilterCondition[];
+      logic: "and" | "or";
+    };
+    mine?: boolean;
+  };
+}
+export const functionalMinderApi = {
+  preview: (id: string, data: FunctionalMinderSelection) =>
+    apiClient.post<{
+      count: number;
+      eligibleCount: number;
+      excludedCount: number;
+      canExecute: boolean;
+    }>(base(id) + "/minder-preview", data),
+  execute: (
+    id: string,
+    data: FunctionalMinderSelection & {
+      requestId: string;
+      result: string;
+      description: string;
+    },
+  ) =>
+    apiClient.post<{ updated: number; replayed: boolean }>(
+      base(id) + "/minder-execute",
+      data,
+    ),
+};

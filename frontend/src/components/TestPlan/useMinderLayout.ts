@@ -6,7 +6,11 @@ import {
   watch,
   type Ref,
 } from "vue";
-import type { PlanMinderNode } from "./planMinderTree";
+export interface MinderLayoutNode {
+  id: string;
+  name: string;
+  children?: MinderLayoutNode[];
+}
 import type { MinderBox, MinderGeometry, MinderMode } from "./planMinderView";
 
 interface EngineNode {
@@ -45,7 +49,7 @@ async function loadEngine() {
 /** 只借用MS固定版本的布局和连接线算法，编辑、选中和保存仍由现有组件负责。 */
 export function useMinderLayout(
   stage: Ref<HTMLElement | undefined>,
-  tree: Ref<PlanMinderNode>,
+  tree: Ref<MinderLayoutNode>,
   collapsed: Ref<ReadonlySet<string>>,
   mode: Ref<MinderMode>,
   editingId: Ref<string | undefined>,
@@ -94,7 +98,7 @@ export function useMinderLayout(
             height: body.offsetHeight,
           });
       }
-      function serialize(node: PlanMinderNode): unknown {
+      function serialize(node: MinderLayoutNode): unknown {
         return {
           data: { id: node.id, text: node.name },
           children: collapsed.value.has(node.id)

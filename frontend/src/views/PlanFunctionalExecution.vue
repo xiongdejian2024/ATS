@@ -203,7 +203,7 @@
                     label="用例备注"
                   />
                   <CaseAttachments
-                    v-if="!detail.detached && !detail.entry?.recycled"
+                    v-if="detail.canReadCase && !detail.detached && !detail.entry?.recycled"
                     :key="selectedKey"
                     :project-id="currentCase.projectId || projectId"
                     :case-id="caseId"

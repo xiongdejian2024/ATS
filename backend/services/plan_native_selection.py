@@ -34,8 +34,8 @@ def resolve(db, plan, user, selection, *, writing=False, action="update"):
     require_project_access(db, user, plan.project_id, 'test_case:read', current_read=writing)
     project = require_project_access(db, user, plan.project_id, 'test_plan:' + action if writing else 'test_plan:read', current_read=writing)
     condition = selection.condition.model_dump() if selection.selectAll else {}
-    data = workspace.listing(db, plan, selection.category, dict(condition, view='mind', sort='caseCode', direction='asc', page=1, size=20, user_id=str(user.id)), current_read=writing)
-    eligible = {row['id']: row for row in data['items'] if not row['grouped']}
+    data = workspace.listing(db, plan, selection.category, dict(condition, view='mind', refine_folder=selection.category == 'functional', sort='caseCode', direction='asc', page=1, size=20, user_id=str(user.id)), current_read=writing)
+    eligible = {row['id']: row for row in data['items'] if not row['grouped'] and (selection.category != 'functional' or not row['recycled'])}
     if selection.selectAll:
         excluded = set(selection.excludeIds)
         selected = [row for key, row in eligible.items() if key not in excluded]

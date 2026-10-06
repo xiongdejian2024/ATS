@@ -181,7 +181,7 @@ def listing(db, plan, category, params, *, current_read=False):
                 projectId=identifier, nodeType='DEFAULT', count=sum(item['projectId'] == identifier and (not item['moduleId'] or item['moduleId'] not in {m.id for m in modules}) for item in filtered)))
     counts=dict(all=len(filtered),default=sum(not item['collectionId'] for item in filtered),unassigned=sum(not item['moduleId'] or item['moduleId'] not in {row.id for row in modules} for item in filtered))
     folder=params.get('folder')
-    if params.get('filters') is None and folder and folder != 'all':
+    if (params.get('filters') is None or params.get('refine_folder')) and folder and folder != 'all':
         field, rows = ('collectionId',points) if params['tree_type']=='COLLECTION' else ('moduleId',modules)
         if folder == 'default': filtered=[item for item in filtered if not item['collectionId']]
         elif folder == 'unassigned': filtered=[item for item in filtered if not item['moduleId'] or item['moduleId'] not in {row.id for row in modules}]
