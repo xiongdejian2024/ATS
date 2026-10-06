@@ -19,6 +19,8 @@ from schemas.plan_candidate_selection import Association, CandidateSelection
 from services import plan_case_view as views_service
 from services.plan_candidate_project import source_scope, projects
 from schemas.plan_native_selection import NativeWorkspaceSelection, NativeWorkspaceBatch, NativeWorkspaceRun
+from schemas.plan_functional_minder import FunctionalMinderBatch
+from schemas.plan_case_defect import PlanDefectCreate, PlanDefectAssociate
 router=APIRouter()
 Category=Literal['functional','api','scenario']
 ResourceType=Literal['CASE','API']
@@ -297,3 +299,73 @@ def minder_execute(plan_id: str, data: FunctionalMinderExecute, db: Session = De
     from services.plan_functional_minder import submit
     plan = plan_access(db, user, plan_id, 'execute')
     return ok(transact(db, lambda: submit(db, plan, user, data)))
+
+
+@router.post('/plans/{plan_id}/case-workspace/minder-batch')
+def functional_minder_batch(plan_id: str, data: FunctionalMinderBatch, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_native_selection import apply
+    plan = plan_access(db, user, plan_id, 'update')
+    return ok(transact(db, lambda: apply(db, plan, user, data)))
+
+
+@router.post('/plans/{plan_id}/case-workspace/defects/preview')
+def instance_defect_preview(plan_id: str, data: FunctionalMinderSelection, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_defect import preview
+    return ok(preview(db, plan_access(db, user, plan_id), user, data))
+
+
+@router.get('/plans/{plan_id}/case-workspace/defects')
+def instance_defects(plan_id: str, associationKey: str = Query(pattern=r'^(legacy|node):[^:\s]{1,36}:[^:\s]{1,36}$'),
+        page: int = Query(1, ge=1), size: int = Query(10, ge=1, le=100), search: str = Query('', max_length=255), db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_defect import listing
+    plan = view_access(db, user, plan_id)
+    return ok(listing(db, plan, user, associationKey, page, size, search))
+
+
+@router.get('/plans/{plan_id}/case-workspace/defects/candidates')
+def instance_defect_candidates(plan_id: str, page: int = Query(1, ge=1), size: int = Query(10, ge=1, le=100), search: str = Query('', max_length=255), db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_defect import candidates
+    return ok(candidates(db, view_access(db, user, plan_id), page, size, search))
+
+
+@router.post('/plans/{plan_id}/case-workspace/defects')
+def create_instance_defect(plan_id: str, data: PlanDefectCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_defect import create
+    plan = view_access(db, user, plan_id)
+    return ok(transact(db, lambda: create(db, plan, user, data)))
+
+
+@router.post('/plans/{plan_id}/case-workspace/defects/associate')
+def associate_instance_defect(plan_id: str, data: PlanDefectAssociate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_defect import associate
+    plan = view_access(db, user, plan_id)
+    return ok(transact(db, lambda: associate(db, plan, user, data)))
+
+
+@router.delete('/plans/{plan_id}/case-workspace/defects/{link_id}')
+def disassociate_instance_defect(plan_id: str, link_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_case_defect import disassociate
+    plan = view_access(db, user, plan_id)
+    return ok(transact(db, lambda: disassociate(db, plan, user, link_id)))
+
+
+@router.post('/plans/{plan_id}/case-workspace/minder-batch/preview')
+def functional_minder_batch_preview(plan_id: str, data: FunctionalMinderBatch, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_native_selection import resolve
+    from models.plan_workspace import PlanWorkspace
+    plan, _, _, summary = resolve(db, plan_access(db, user, plan_id), user, data, allow_recycled=data.action == 'unlink')
+    settings = db.get(PlanWorkspace, plan.id)
+    if settings and settings.archived: summary['canModify'] = False
+    return ok(summary)
+
+
+@router.get('/plans/{plan_id}/case-workspace/defects/aggregate')
+def aggregate_instance_defects(plan_id: str, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=100), search: str = Query('', max_length=255), db: Session = Depends(get_db), user=Depends(get_current_user)):
+    from services.plan_detail import defects
+    payload = defects(db, view_access(db, user, plan_id))
+    items = [item for item in payload['items'] if search.strip().casefold() in item['title'].casefold()]
+    items.sort(key=lambda item: (str(item.get('createdAt', '')), item['id']), reverse=True)
+    selected = []
+    for item in items[(page-1)*size:page*size]:
+        selected.append(dict(item, caseCount=len(item['cases']), cases=item['cases'][:20]))
+    return ok(dict(items=selected, total=len(items), page=page, size=size, canEdit=False, cases=[]))

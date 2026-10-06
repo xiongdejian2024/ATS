@@ -9,7 +9,7 @@ from services.plan_candidate_selection import state, LIMIT
 from services.plan_candidate_project import lock_run_sources
 
 
-def resolve(db, plan, user, selection, *, writing=False, action="update"):
+def resolve(db, plan, user, selection, *, writing=False, action="update", allow_recycled=False):
     target_id = plan.project_id
     if writing:
         try:
@@ -35,7 +35,7 @@ def resolve(db, plan, user, selection, *, writing=False, action="update"):
     project = require_project_access(db, user, plan.project_id, 'test_plan:' + action if writing else 'test_plan:read', current_read=writing)
     condition = selection.condition.model_dump() if selection.selectAll else {}
     data = workspace.listing(db, plan, selection.category, dict(condition, view='mind', refine_folder=selection.category == 'functional', sort='caseCode', direction='asc', page=1, size=20, user_id=str(user.id)), current_read=writing)
-    eligible = {row['id']: row for row in data['items'] if not row['grouped'] and (selection.category != 'functional' or not row['recycled'])}
+    eligible = {row['id']: row for row in data['items'] if not row['grouped'] and (selection.category != 'functional' or allow_recycled or not row['recycled'])}
     if selection.selectAll:
         excluded = set(selection.excludeIds)
         selected = [row for key, row in eligible.items() if key not in excluded]
@@ -64,7 +64,7 @@ def preview(db, plan, user, selection):
 
 
 def apply(db, plan, user, data):
-    plan, user, selected, _ = resolve(db, plan, user, data, writing=True)
+    plan, user, selected, _ = resolve(db, plan, user, data, writing=True, allow_recycled=data.action == 'unlink')
     if not selected:
         raise HTTPException(409, '当前选择范围已为空，请刷新后重新选择')
     # 已锁定当前关联，按实例处理，重复主用例不能合并为一个选择。

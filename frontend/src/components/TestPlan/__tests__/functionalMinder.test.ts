@@ -110,3 +110,52 @@ describe("功能脑图关联身份与步骤快照", () => {
     expect(flattenFunctionalMinder(root)).toHaveLength(3);
   });
 });
+
+import { functionalMinderScope } from "../functionalMinderScope";
+describe("脑图批量节点范围", () => {
+  const a = {
+    id: "a",
+    kind: "folder",
+    folderId: "a",
+    name: "父",
+    count: 101,
+  } as const;
+  const b = {
+    id: "b",
+    kind: "case",
+    entryId: "node:b:same",
+    name: "同名实例",
+    count: 1,
+  } as const;
+  it("目录与实例使用服务端并集，不以已加载节点数量替代全目录", () => {
+    expect(functionalMinderScope([a, b], { search: "中文" }, "MODULE")).toEqual(
+      {
+        selectAll: true,
+        condition: {
+          search: "中文",
+          tree_type: "MODULE",
+          include_descendants: true,
+          folder: "all",
+          folderIds: ["a"],
+          entryIds: ["node:b:same"],
+        },
+      },
+    );
+  });
+  it("目录根保留当前目录范围，纯实例去重且内容节点不能批量修改", () => {
+    expect(
+      functionalMinderScope(
+        [{ id: "root", kind: "root", name: "子目录", count: 101 }],
+        {},
+        "COLLECTION",
+        "child",
+      )?.condition?.folder,
+    ).toBe("child");
+    expect(functionalMinderScope([b, b], {}, "MODULE")).toEqual({
+      selectIds: ["node:b:same"],
+    });
+    expect(
+      functionalMinderScope([{ ...b, kind: "actual" }], {}, "MODULE"),
+    ).toBeUndefined();
+  });
+});

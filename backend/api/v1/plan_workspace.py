@@ -49,7 +49,8 @@ def plan_defects(plan_id: str, db: Session = Depends(get_db), user=Depends(get_c
     plan = plan_access(db, user, plan_id)
     project = require_project_access(db, user, plan.project_id, "test_case:read")
     payload = defects(db, plan)
-    payload["canEdit"] = project_allows(db, user, project, "test_plan:update") and project_allows(db, user, project, "test_case:update")
+    workspace = db.get(PlanWorkspace, plan_id)
+    payload["canEdit"] = not (workspace and workspace.archived) and project_allows(db, user, project, "test_plan:update") and project_allows(db, user, project, "test_case:update")
     return ok(payload)
 
 
@@ -62,6 +63,9 @@ def create_plan_defect(plan_id: str, data: PlanDefectWrite, db: Session = Depend
     from api.v1.case_governance import transact
     from core.logger import logger
     plan = plan_access(db, user, plan_id, "update")
+    workspace = db.get(PlanWorkspace, plan_id)
+    if workspace and workspace.archived:
+        raise HTTPException(409, "归档计划不可新建缺陷")
     if data.caseId not in plan_case_ids(db, plan.id):
         raise HTTPException(422, "只能关联此计划中的用例")
     if not data.title.strip():

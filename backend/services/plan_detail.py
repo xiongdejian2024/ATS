@@ -40,4 +40,11 @@ def defects(db, plan):
     for issue, link in rows:
         item = items.setdefault(issue.id, dict(**serialize_model(issue, camel_case=True), cases=[]))
         item["cases"].append(dict(id=link.case_id, name=names[link.case_id], linkId=link.id))
+    # 旧主用例绑定只作为历史记录呈现；新绑定明确携带计划实例身份。
+    for item in items.values():
+        item['bindingScope'] = 'case'
+    from services.plan_case_defect import query
+    for link, issue in query(db, plan):
+        item = items.setdefault(issue.id, dict(**serialize_model(issue, camel_case=True), cases=[], bindingScope='instance'))
+        item['cases'].append(dict(id=link.case_id, name=link.case_snapshot.get('name', ''), linkId=link.id, associationKey=link.association_key))
     return dict(items=list(items.values()), cases=[dict(id=row.id, name=row.name) for row in cases if not row.deleted_at])

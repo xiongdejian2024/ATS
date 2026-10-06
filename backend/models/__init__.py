@@ -58,3 +58,4 @@ from . import plan_case_view
 from . import native_case
 from . import native_request_file
 from . import plan_execution_config
+from . import plan_case_defect

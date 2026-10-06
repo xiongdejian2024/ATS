@@ -16,6 +16,9 @@ def request_body(data, user):
 
 def preview(db, plan, user, selection):
     plan, user, rows, summary = resolve(db, plan, user, selection)
+    from models.plan_workspace import PlanWorkspace
+    settings = db.get(PlanWorkspace, plan.id)
+    if settings and settings.archived: summary['canModify'] = False
     summary['canExecute'] = bool(rows and can_execute(db, user, plan)
         and not db.query(PlanRun.id).filter(PlanRun.plan_id == plan.id, PlanRun.status.in_(ACTIVE)).first())
     return summary

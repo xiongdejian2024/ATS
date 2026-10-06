@@ -299,14 +299,16 @@
       style="width: 100%"
   /></a-modal>
   <a-drawer
-    v-model:open="defectsOpen"
+    :open="defectsOpen"
+    @close="closeDefects"
     title="关联缺陷"
     width="min(800px,100vw)"
     destroy-on-close
     ><PlanDefects
+      ref="defectPanel"
       v-if="current && defectsOpen"
       :plan-id="plan.id"
-      :case-id="current.caseId"
+      :association-key="current.id"
       :editable="canEdit"
       @changed="load"
   /></a-drawer>
@@ -778,6 +780,11 @@ async function tableChange(p: any, _filters: any, sorter: any) {
   });
   void load();
 }
+const defectPanel = ref<InstanceType<typeof PlanDefects>>();
+async function closeDefects() {
+  if ((await defectPanel.value?.beforeClose()) ?? true)
+    defectsOpen.value = false;
+}
 const defectsOpen = ref(false),
   current = ref<PlanCaseEntry>();
 function openExecution(row: PlanCaseEntry) {
@@ -887,7 +894,8 @@ async function executeBatch() {
     executeSaving.value = false;
   }
 }
-function openDefects(row: PlanCaseEntry) {
+async function openDefects(row: PlanCaseEntry) {
+  if (!((await defectPanel.value?.beforeClose()) ?? true)) return;
   current.value = row;
   defectsOpen.value = true;
 }

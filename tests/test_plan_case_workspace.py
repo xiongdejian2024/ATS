@@ -27,7 +27,7 @@ async def test_legacy_columns_filters_tree_counts_move_assign_and_clone(workspac
         assert data['total']==2 and not data['usesTree']
         row=next(item for item in data['items'] if item['caseId']=='case-0')
         assert row['projectName']==db.get(Project,'project').name
-        assert row['moduleName']=='子模块' and row['bugCount']==1 and row['tags']==['回归'] and row['executorName']=='未分配'
+        assert row['moduleName']=='子模块' and row['bugCount']==0 and row['caseBugCount']==1 and row['tags']==['回归'] and row['executorName']=='未分配'
         assert next(module for module in data['modules'] if module['id']=='parent')['count']==1
         assert (await client.get(base,params={'tree_type':'MODULE','folder':'parent'})).json()['data']['total']==1
         assert (await client.get(base,params={'tree_type':'MODULE','folder':'parent','include_descendants':False})).json()['data']['total']==0

@@ -89,6 +89,10 @@ async def test_project_related_values_dates_custom_fields_and_recycled_rows_are_
     for identifier, kind, title in [('requirement', 'requirement', '诊断需求'), ('defect', 'defect', '真实缺陷')]:
         db.add(CaseIssue(id=identifier, project_id='project', kind=kind, title=title, created_by='owner', updated_by='owner'))
         db.flush(); db.add(CaseIssueLink(issue_id=identifier, case_id=case.id, created_by='owner'))
+    from models.plan_case_defect import PlanCaseDefect
+    from models import PlanCaseRelation
+    association = db.query(PlanCaseRelation).filter_by(plan_id='plan', case_id=case.id).one()
+    db.add(PlanCaseDefect(plan_id='plan', association_key=f'legacy:{association.id}:{case.id}', case_id=case.id, issue_id='defect', case_snapshot={'name':case.name}, created_by='owner', updated_by='owner'))
     db.get(Case, 'case-1').created_by = 'stranger'
     db.commit()
     versions = db.query(CaseVersion).count()

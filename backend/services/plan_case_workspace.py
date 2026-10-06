@@ -55,6 +55,11 @@ def entries(db, plan, category, *, current_read=False):
     bugs = {}
     for link, issue in read(db.query(CaseIssueLink,CaseIssue).join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id).filter(CaseIssueLink.case_id.in_(ids), CaseIssue.project_id.in_(source_ids), CaseIssue.kind == 'defect')):
         bugs.setdefault(link.case_id, set()).add(issue.id)
+    instance_bugs = {}
+    if category == 'functional':
+        from models.plan_case_defect import PlanCaseDefect
+        for link, issue in read(db.query(PlanCaseDefect, CaseIssue).join(CaseIssue, CaseIssue.id == PlanCaseDefect.issue_id).filter(PlanCaseDefect.plan_id == plan.id, PlanCaseDefect.active.is_(True), CaseIssue.project_id == plan.project_id, CaseIssue.kind == 'defect')):
+            instance_bugs.setdefault(link.association_key, set()).add(issue.id)
     legacy_instances = {cid: row.id for source, row, cid, _, _ in associations if source == 'legacy'}
     runs = read(db.query(PlanRun).filter_by(plan_id=plan.id).order_by(PlanRun.created_at.desc(), PlanRun.id.desc()))
     run = runs[0] if runs else None
@@ -108,8 +113,8 @@ def entries(db, plan, category, *, current_read=False):
             createdAt=case.created_at, updatedAt=case.updated_at, createdByName=users.get(case.created_by,'未知用户'),
             assignedTo=executor, executorName=users.get(executor,'未分配'), isAutomated=case.is_automated, recycled=bool(case.deleted_at),
             result=result['result'] if result else (RESULTS.get(association.execution_status,'pending') if source == 'legacy' and category == 'functional' else 'pending'),
-            bugCount=len(bugs.get(case.id,set())), runId=result_run.id if result and result_run else None,
-            grouped=grouped, precondition=case.precondition, steps=case.steps, caseEditType=case.case_edit_type,
+            bugCount=len(instance_bugs.get(f'{source}:{association.id}:{case_id}', set())) if category == 'functional' else len(bugs.get(case.id,set())), runId=result_run.id if result and result_run else None,
+            caseBugCount=len(bugs.get(case.id, set())), grouped=grouped, precondition=case.precondition, steps=case.steps, caseEditType=case.case_edit_type,
             textDescription=case.text_description, expectedResult=case.expected_result, description=case.description))
     from services.plan_case_execution import overlay
     items = overlay(db, plan.id, items, run) if category == 'functional' else items
@@ -132,6 +137,20 @@ def entries(db, plan, category, *, current_read=False):
                 visible_points.add(parent); parent = points[parent].parent_id
         points = {key: point for key, point in points.items() if key in visible_points}
     return items, list(points.values()), modules, uses
+
+
+def filter_folder(items, points, modules, source_ids, tree_type, folder, include_descendants):
+    if folder == 'all': return items
+    field, rows = ('collectionId', points) if tree_type == 'COLLECTION' else ('moduleId', modules)
+    if folder == 'default': return [item for item in items if not item['collectionId']]
+    if folder == 'unassigned': return [item for item in items if not item['moduleId'] or item['moduleId'] not in {row.id for row in modules}]
+    if tree_type == 'MODULE' and folder in source_ids:
+        return [item for item in items if item['projectId'] == folder]
+    if tree_type == 'MODULE' and folder.endswith('_default') and folder[:-8] in source_ids:
+        return [item for item in items if item['projectId'] == folder[:-8] and (not item['moduleId'] or item['moduleId'] not in {row.id for row in modules})]
+    if folder not in {row.id for row in rows}: raise HTTPException(404, '当前计划或项目中不存在此目录')
+    scope = descendants(rows, folder) if include_descendants else {folder}
+    return [item for item in items if item[field] in scope]
 
 
 def listing(db, plan, category, params, *, current_read=False):
@@ -182,17 +201,14 @@ def listing(db, plan, category, params, *, current_read=False):
     counts=dict(all=len(filtered),default=sum(not item['collectionId'] for item in filtered),unassigned=sum(not item['moduleId'] or item['moduleId'] not in {row.id for row in modules} for item in filtered))
     folder=params.get('folder')
     if (params.get('filters') is None or params.get('refine_folder')) and folder and folder != 'all':
-        field, rows = ('collectionId',points) if params['tree_type']=='COLLECTION' else ('moduleId',modules)
-        if folder == 'default': filtered=[item for item in filtered if not item['collectionId']]
-        elif folder == 'unassigned': filtered=[item for item in filtered if not item['moduleId'] or item['moduleId'] not in {row.id for row in modules}]
-        elif params['tree_type'] == 'MODULE' and grouped_modules and folder in source_ids:
-            filtered=[item for item in filtered if item['projectId'] == folder]
-        elif params['tree_type'] == 'MODULE' and grouped_modules and folder.endswith('_default') and folder[:-8] in source_ids:
-            filtered=[item for item in filtered if item['projectId'] == folder[:-8] and (not item['moduleId'] or item['moduleId'] not in {row.id for row in modules})]
-        else:
-            if folder not in {row.id for row in rows}: raise HTTPException(404,'当前计划或项目中不存在此目录')
-            scope=descendants(rows,folder) if params['include_descendants'] else {folder}
-            filtered=[item for item in filtered if item[field] in scope]
+        filtered = filter_folder(filtered, points, modules, source_ids if grouped_modules else set(), params['tree_type'], folder, params['include_descendants'])
+    if category == 'functional' and (params.get('folderIds') or params.get('entryIds')):
+        keys = set(params.get('entryIds') or [])
+        if not keys <= {item['id'] for item in items if not item['grouped']}:
+            raise HTTPException(404, '多节点范围中含不存在或不属于当前计划的关联实例')
+        for identifier in params.get('folderIds') or []:
+            keys.update(item['id'] for item in filter_folder(items, points, modules, source_ids if grouped_modules else set(), params['tree_type'], identifier, params['include_descendants']))
+        filtered = [item for item in filtered if item['id'] in keys]
     filtered.sort(key=lambda item:(str(item.get(params['sort']) or ''),item['id']),reverse=params['direction']=='desc')
     page,size=params['page'],params['size'];total=len(filtered)
     payload = dict(items=filtered if params.get("view")=="mind" else filtered[(page-1)*size:page*size],total=total,selectableTotal=sum(not item['grouped'] for item in filtered),page=page,size=size,collections=collections,modules=module_tree,counts=counts,usesTree=uses,projects=[dict(id=p.id, name=p.name) for p in project_rows.values()])

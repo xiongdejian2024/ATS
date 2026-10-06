@@ -350,6 +350,8 @@ export interface FunctionalMinderSelection {
   condition?: {
     tree_type?: "COLLECTION" | "MODULE";
     folder?: string;
+    folderIds?: string[];
+    entryIds?: string[];
     include_descendants?: boolean;
     search?: string;
     priority?: string;
@@ -384,3 +386,19 @@ export const functionalMinderApi = {
       data,
     ),
 };
+export const functionalMinderBatch = (
+  id: string,
+  data: FunctionalMinderSelection & {
+    action: "assign" | "unlink";
+    assignedTo?: string | null;
+  },
+) => apiClient.post<{ updated: number }>(base(id) + "/minder-batch", data);
+
+export const functionalMinderBatchPreview = (
+  id: string,
+  data: FunctionalMinderSelection & { action: "assign" | "unlink" },
+) =>
+  apiClient.post<{ count: number; canModify: boolean }>(
+    base(id) + "/minder-batch/preview",
+    data,
+  );

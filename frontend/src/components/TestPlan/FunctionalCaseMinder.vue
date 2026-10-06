@@ -34,6 +34,22 @@
       </a-space>
       <span class="shortcut-hint">选择用例后：S 通过 / E 失败 / B 阻塞</span>
     </div>
+    <FunctionalMinderOperations
+      ref="operations"
+      :plan-id="plan.id"
+      :selection="operationScope"
+      :show-menu="selected.size > 1"
+      :can-execute="listing.canExecute"
+      :can-modify="canEdit"
+      :before-action="prepareOperation"
+      @changed="operationsChanged"
+    />
+    <a-space v-if="selected.size > 1" class="multi-selection"
+      ><span>已选择 {{ selected.size }} 个节点</span
+      ><a-button size="small" @click="selected = new Set()"
+        >取消选择</a-button
+      ></a-space
+    >
     <a-alert v-if="error" type="error" :message="error" show-icon />
     <a-alert
       v-if="layoutFailed"
@@ -43,7 +59,17 @@
     <div class="minder-layout">
       <div class="canvas-host">
         <a-spin :spinning="loading">
-          <div ref="viewport" class="minder-viewport" tabindex="0">
+          <div
+            ref="viewport"
+            class="minder-viewport"
+            tabindex="0"
+            @pointerdown="startMarquee"
+          >
+            <div
+              v-if="marqueeStyle"
+              class="minder-marquee"
+              :style="marqueeStyle"
+            />
             <div
               class="minder-sizing"
               :style="{
@@ -128,6 +154,32 @@
                           >执行</a-button
                         >
                       </a-popover>
+                      <a-dropdown
+                        v-if="listing.canExecute && !isRecycled(node)"
+                        :trigger="['click']"
+                        ><a-button size="small" :disabled="operations?.isOpen"
+                          >缺陷 ▾</a-button
+                        ><template #overlay
+                          ><a-menu @click="operations?.defectAction($event)"
+                            ><a-menu-item key="create">新建缺陷</a-menu-item
+                            ><a-menu-item key="associate"
+                              >关联缺陷</a-menu-item
+                            ></a-menu
+                          ></template
+                        ></a-dropdown
+                      >
+                      <a-dropdown v-if="canEdit" :trigger="['click']"
+                        ><a-button size="small" :disabled="operations?.isOpen"
+                          >更多 ▾</a-button
+                        ><template #overlay
+                          ><a-menu @click="operations?.operation($event)"
+                            ><a-menu-item key="assign">更改执行人</a-menu-item
+                            ><a-menu-item key="unlink"
+                              >取消关联</a-menu-item
+                            ></a-menu
+                          ></template
+                        ></a-dropdown
+                      >
                       <a-button
                         v-if="node.kind === 'case'"
                         size="small"
@@ -145,10 +197,7 @@
       <aside v-if="selectedRow" class="minder-sidebar">
         <a-space
           ><strong>{{ selectedRow.caseCode }} {{ selectedRow.name }}</strong
-          ><a-button
-            type="text"
-            aria-label="关闭用例侧栏"
-            @click="selected = new Set()"
+          ><a-button type="text" aria-label="关闭用例侧栏" @click="closeSidebar"
             >×</a-button
           ></a-space
         >
@@ -178,16 +227,17 @@
                 v-if="detail?.canReadCase && !selectedRow.recycled"
                 :key="selectedRow.id"
                 :project-id="selectedRow.projectId"
-                :case-id="selectedRow.caseId"
+                :association-key="selectedRow.id"
                 read-only
               />
               <a-empty v-else description="当前无主用例附件访问权限" />
             </a-tab-pane>
             <a-tab-pane key="defect" tab="缺陷"
               ><PlanDefects
+                ref="defectPanel"
                 :key="selectedRow.id"
                 :plan-id="plan.id"
-                :case-id="selectedRow.caseId"
+                :association-key="selectedRow.id"
                 :editable="canEdit && !selectedRow.recycled"
             /></a-tab-pane>
             <a-tab-pane key="history" :tab="`执行历史 (${detail?.total || 0})`">
@@ -319,6 +369,9 @@ import {
 import { planCaseMediaApi } from "@/api/planCaseMedia";
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
 import CaseAttachments from "@/components/TestCase/CaseAttachments.vue";
+import FunctionalMinderOperations from "./FunctionalMinderOperations.vue";
+import { functionalMinderScope } from "./functionalMinderScope";
+import { useMinderMarquee } from "./useMinderMarquee";
 import PlanDefects from "./PlanDefects.vue";
 import PlanCaseExecutionSubmit from "./PlanCaseExecutionSubmit.vue";
 import FunctionalMinderBranch from "./FunctionalMinderBranch.vue";
@@ -531,7 +584,60 @@ async function toggleNode(node: FunctionalMinderNode) {
     );
   } else collapsed.value = new Set([...collapsed.value, node.id]);
 }
+const operations = ref<InstanceType<typeof FunctionalMinderOperations>>();
+const defectPanel = ref<InstanceType<typeof PlanDefects>>();
+const operationScope = computed(() =>
+  functionalMinderScope(
+    flattenFunctionalMinder(tree.value).filter((node) =>
+      selected.value.has(node.id),
+    ),
+    props.condition,
+    props.treeType,
+    props.folder,
+  ),
+);
+async function prepareOperation() {
+  if (!(await confirmExecutionDiscard())) return false;
+  await clearDraft();
+  return true;
+}
+async function operationsChanged() {
+  selected.value = new Set();
+  detail.value = undefined;
+  await refresh();
+  emit("changed");
+}
+const { start: startMarquee, style: marqueeStyle } = useMinderMarquee(
+  viewport,
+  () =>
+    !hand.value &&
+    !dirty.value &&
+    !saving.value &&
+    !uploading.value &&
+    !formOpen.value &&
+    !stepOpen.value &&
+    !operations.value?.isOpen,
+  (ids) => {
+    selected.value = new Set(
+      flattenFunctionalMinder(tree.value)
+        .filter(
+          (node) =>
+            ids.includes(node.id) &&
+            ["root", "folder", "case"].includes(node.kind),
+        )
+        .map((node) => node.id),
+    );
+  },
+);
 async function confirmDiscard() {
+  if (
+    !((await operations.value?.beforeClose()) ?? true) ||
+    !((await defectPanel.value?.beforeClose()) ?? true)
+  )
+    return false;
+  return confirmExecutionDiscard();
+}
+async function confirmExecutionDiscard() {
   if (saving.value || uploading.value) {
     message.warning("请等待执行提交或图片上传完成");
     return false;
@@ -572,6 +678,23 @@ async function selectNode(node: FunctionalMinderNode, event: MouseEvent) {
   if (next.has(node.id)) next.delete(node.id);
   else next.add(node.id);
   selected.value = next;
+  await nextTick();
+  const surface = viewport.value;
+  const label = surface?.querySelector<HTMLElement>(
+    `.minder-branch[data-node-id="${CSS.escape(node.id)}"] > .branch-label`,
+  );
+  if (surface && label && next.size === 1) {
+    const bounds = surface.getBoundingClientRect();
+    const box =
+      label.querySelector<HTMLElement>(".node-menu")?.getBoundingClientRect() ||
+      label.getBoundingClientRect();
+    if (box.right > bounds.right - 16)
+      surface.scrollLeft += box.right - bounds.right + 16;
+    if (box.left < bounds.left + 16)
+      surface.scrollLeft -= bounds.left + 16 - box.left;
+    if (box.bottom > bounds.bottom - 16)
+      surface.scrollTop += box.bottom - bounds.bottom + 16;
+  }
   if (next.size === 1 && node.entryId) {
     historyPage.value = 1;
     await loadDetail();
@@ -657,17 +780,12 @@ async function loadDetail() {
   }
 }
 function scopeFor(node: FunctionalMinderNode): FunctionalMinderSelection {
-  return node.entryId
-    ? { selectIds: [node.entryId] }
-    : {
-        selectAll: true,
-        condition: {
-          ...props.condition,
-          tree_type: props.treeType,
-          folder: node.folderId || "all",
-          include_descendants: true,
-        },
-      };
+  return functionalMinderScope(
+    [node],
+    props.condition,
+    props.treeType,
+    props.folder,
+  )!;
 }
 async function openForm(node: FunctionalMinderNode) {
   if (!(await confirmDiscard())) return;
@@ -786,6 +904,7 @@ function shortcut(event: KeyboardEvent) {
     (event.target as HTMLElement)?.closest(
       "input,textarea,select,[contenteditable=true],.ant-select",
     ) ||
+    operations.value?.isOpen ||
     formOpen.value ||
     stepOpen.value ||
     saving.value ||
@@ -847,6 +966,12 @@ watch(
   },
   { immediate: true },
 );
+async function closeSidebar() {
+  if (await confirmDiscard()) {
+    await clearDraft();
+    selected.value = new Set();
+  }
+}
 async function beforeClose() {
   if (!(await confirmDiscard())) return false;
   await clearDraft();
@@ -980,5 +1105,15 @@ onBeforeUnmount(() => {
   .shortcut-hint {
     display: none;
   }
+}
+.minder-marquee {
+  position: absolute;
+  pointer-events: none;
+  z-index: 20;
+  border: 1px solid #811fa3;
+  background: #811fa318;
+}
+.multi-selection {
+  margin: 8px 0;
 }
 </style>

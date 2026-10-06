@@ -203,7 +203,11 @@
                     label="用例备注"
                   />
                   <CaseAttachments
-                    v-if="detail.canReadCase && !detail.detached && !detail.entry?.recycled"
+                    v-if="
+                      detail.canReadCase &&
+                      !detail.detached &&
+                      !detail.entry?.recycled
+                    "
                     :key="selectedKey"
                     :project-id="currentCase.projectId || projectId"
                     :case-id="caseId"
@@ -215,9 +219,10 @@
                   key="defects"
                   tab="缺陷"
                   ><PlanDefects
+                    ref="defectPanel"
                     :key="selectedKey"
                     :plan-id="planId"
-                    :case-id="caseId"
+                    :association-key="selectedKey"
                     :editable="
                       !!plan.capabilities?.edit &&
                       !detail.detached &&
@@ -476,7 +481,9 @@ async function confirmExecutionDiscard(edit = false): Promise<boolean> {
     }),
   );
 }
+const defectPanel = ref<InstanceType<typeof PlanDefects>>();
 async function confirmLeave(): Promise<boolean> {
+  if (!((await defectPanel.value?.beforeClose()) ?? true)) return false;
   if (caseEditOpen.value && !(await caseEditDrawer.value?.confirmClose()))
     return false;
   if (caseRefresh) await caseRefresh;
