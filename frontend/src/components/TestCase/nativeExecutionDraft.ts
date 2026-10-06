@@ -1,5 +1,6 @@
 import { ref, watch } from "vue";
 import { readParams, validParams } from "./nativeRequestParams";
+import { readResponseAssertions } from "./nativeResponseAssertions";
 import { requestMethods } from "@/components/TestPlan/planCandidateBasic";
 export interface ExecutionEditorProps {
   modelValue: string;
@@ -25,6 +26,7 @@ export function useNativeExecutionDraft(
     bodyType = ref("none"),
     body = ref("null"),
     assertions = ref("[]"),
+    responseAssertions = ref("[]"),
     error = ref("");
   const steps = ref<{ apiCaseId: string; enabled: boolean }[]>([]);
   const rest = ref("[]"),
@@ -91,6 +93,10 @@ export function useNativeExecutionDraft(
             ? (data?.body ?? "")
             : JSON.stringify(data?.formParams ?? data?.body ?? null, null, 2);
         assertions.value = JSON.stringify(data?.assertions ?? [], null, 2);
+        responseAssertions.value = JSON.stringify(
+          data?.responseAssertions ?? [],
+        );
+        readResponseAssertions(responseAssertions.value);
         stop.value = data?.stopOnFailure ?? true;
         steps.value = structuredClone(data?.steps ?? []);
         error.value = "";
@@ -119,6 +125,7 @@ export function useNativeExecutionDraft(
         bodyType.value,
         body.value,
         assertions.value,
+        responseAssertions.value,
         stop.value,
         steps.value,
         rest.value,
@@ -165,6 +172,7 @@ export function useNativeExecutionDraft(
                   ? body.value
                   : JSON.parse(body.value),
           assertions: JSON.parse(assertions.value),
+          responseAssertions: readResponseAssertions(responseAssertions.value),
         };
         for (const [key, rows] of [
           ["queryParams", q.rows],
@@ -227,6 +235,7 @@ export function useNativeExecutionDraft(
       bodyType,
       body,
       assertions,
+      responseAssertions,
       stop,
       steps,
       rest,
@@ -270,6 +279,7 @@ export function useNativeExecutionDraft(
     bodyType,
     body,
     assertions,
+    responseAssertions,
     error,
     steps,
     methods,

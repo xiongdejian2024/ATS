@@ -1,6 +1,7 @@
 """声明式请求/断言模型；拒绝未知配置，不执行脚本或shell。"""
 
 from typing import Literal
+from .response_assertion_models import ResponseAssertion
 from urllib.parse import urlsplit
 from pydantic import (
     BaseModel,
@@ -80,6 +81,9 @@ class RequestSpec(NativeModel):
     timeoutMs: StrictInt = Field(10000, ge=1, le=300000)
     followRedirects: StrictBool = False
     assertions: list[Assertion] = Field(default_factory=list, max_length=100)
+    responseAssertions: list[ResponseAssertion] = Field(
+        default_factory=list, max_length=4
+    )
     headerParams: list[RequestParam] | None = Field(None, max_length=200)
     queryParams: list[RequestParam] | None = Field(None, max_length=200)
     restParams: list[RequestParam] = Field(default_factory=list, max_length=200)
@@ -90,6 +94,11 @@ class RequestSpec(NativeModel):
 
     @model_validator(mode="after")
     def valid_body(self):
+        groups = self.responseAssertions
+        if len({g.id for g in groups}) != len(groups) or len(
+            {g.assertionType for g in groups}
+        ) != len(groups):
+            raise ValueError("响应断言分类及ID不能重复")
         for rows, legacy, is_header in (
             (self.headerParams, self.headers, True),
             (self.queryParams, self.query, False),

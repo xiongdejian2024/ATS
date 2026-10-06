@@ -25,6 +25,53 @@ function setup(category = "api", parameters: Record<string, unknown> = {}) {
   return { props, state, errors, drafts };
 }
 describe("原生执行草稿与实际配置范围", () => {
+  it("响应分类与旧断言共存，非法时间只保留编辑草稿，外部载入不混旧配置", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const original = {
+      id: "code",
+      name: "状态码",
+      assertionType: "RESPONSE_CODE",
+      enable: true,
+      condition: "EQUALS",
+      expectedValue: "2..",
+    };
+    const { props, state, errors, drafts } = setup("api", {
+      request: {
+        assertions: [{ expected: 200 }],
+        responseAssertions: [original],
+      },
+    });
+    const time = {
+      id: "time",
+      name: "响应时间",
+      assertionType: "RESPONSE_TIME",
+      enable: true,
+      expectedValue: 500,
+    };
+    state.responseAssertions.value = JSON.stringify([time, original]);
+    expect(JSON.parse(props.modelValue).request).toMatchObject({
+      assertions: [{ expected: 200 }],
+      responseAssertions: [time, original],
+    });
+    const valid = props.modelValue;
+    state.responseAssertions.value = JSON.stringify([
+      { ...time, expectedValue: null },
+      original,
+    ]);
+    expect(props.modelValue).toBe(valid);
+    expect(errors.at(-1)).toBeTruthy();
+    expect(drafts.at(-1)).toContain("null");
+    state.responseAssertions.value = JSON.stringify([
+      { ...time, enable: false },
+      original,
+    ]);
+    expect(errors.at(-1)).toBe("");
+    props.modelValue = JSON.stringify({
+      request: { responseAssertions: [original] },
+    });
+    expect(JSON.parse(state.responseAssertions.value)).toEqual([original]);
+    expect(state.assertions.value).toBe("[]");
+  });
   it("参数表、REST及认证可往返；非法名称保留草稿而不覆盖有效配置", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const { props, state, errors } = setup("api", {

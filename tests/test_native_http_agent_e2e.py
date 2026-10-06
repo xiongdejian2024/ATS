@@ -63,6 +63,54 @@ async def native_lab(lab):
         "headers": {"X-Frozen": "original"},
         "bodyType": "json",
         "body": {"number": 7},
+        "responseAssertions": [
+            {
+                "id": "e2e-code",
+                "name": "状态码",
+                "assertionType": "RESPONSE_CODE",
+                "enable": True,
+                "condition": "EQUALS",
+                "expectedValue": "201",
+            },
+            {
+                "id": "e2e-header",
+                "name": "响应头",
+                "assertionType": "RESPONSE_HEADER",
+                "enable": True,
+                "assertions": [
+                    {
+                        "header": "x-lab",
+                        "condition": "EQUALS",
+                        "expectedValue": "owned-loopback",
+                        "enable": True,
+                    }
+                ],
+            },
+            {
+                "id": "e2e-body",
+                "name": "响应体",
+                "assertionType": "RESPONSE_BODY",
+                "enable": True,
+                "assertionBodyType": "JSON_PATH",
+                "jsonPathAssertion": {
+                    "assertions": [
+                        {
+                            "expression": "$.rows[0].value",
+                            "condition": "EQUALS",
+                            "expectedValue": "7",
+                            "enable": True,
+                        }
+                    ]
+                },
+            },
+            {
+                "id": "e2e-time",
+                "name": "响应时间",
+                "assertionType": "RESPONSE_TIME",
+                "enable": True,
+                "expectedValue": 5000,
+            },
+        ],
         "assertions": [
             {"expected": 201},
             {"source": "json", "path": ["rows", 0, "value"], "expected": 7},
@@ -277,6 +325,19 @@ async def test_whole_plan_real_native_http_scene_freeze_ack_and_report(native_la
         ) == [1, 2]
         assert all(
             json.loads(r.log_output)["步骤"][0]["statusCode"] == 201 for r in rows
+        )
+        assert all(
+            {
+                a.get("assertionType")
+                for a in json.loads(r.log_output)["步骤"][0]["assertions"]
+                if a.get("assertionType")
+            }
+            == {"RESPONSE_CODE", "RESPONSE_HEADER", "RESPONSE_BODY", "RESPONSE_TIME"}
+            for r in rows
+        )
+        assert all(
+            all(a["passed"] for a in json.loads(r.log_output)["步骤"][0]["assertions"])
+            for r in rows
         )
         assert all(
             (

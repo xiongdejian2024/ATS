@@ -144,17 +144,21 @@
             >
           </a-space></a-tab-pane
         >
-        <a-tab-pane key="assertions" tab="断言"
-          ><a-textarea
-            v-model:value="assertions"
+        <a-tab-pane key="assertions" tab="断言">
+          <NativeResponseAssertionEditor
+            v-model="responseAssertions"
             :disabled="disabled"
-            :rows="5"
-            aria-label="HTTP断言JSON"
           />
-          <p>
-            状态、JSON路径、响应头或文本断言；JSON路径使用键名和数组下标列表。
-          </p></a-tab-pane
-        >
+          <details class="assertion-advanced">
+            <summary>高级断言配置</summary>
+            <a-textarea
+              v-model:value="assertions"
+              :disabled="disabled"
+              :rows="5"
+              aria-label="HTTP断言JSON"
+            />
+          </details>
+        </a-tab-pane>
       </a-tabs>
     </template>
     <template v-else-if="enabled">
@@ -204,6 +208,7 @@
 </template>
 <script setup lang="ts">
 import NativeRequestParamTable from "./NativeRequestParamTable.vue";
+import NativeResponseAssertionEditor from "./NativeResponseAssertionEditor.vue";
 import { paramCount } from "./nativeRequestParams";
 const tabTitle = (title: string, raw: string) => {
   const count = paramCount(raw);
@@ -230,6 +235,7 @@ const {
   bodyType,
   body,
   assertions,
+  responseAssertions,
   error,
   steps,
   methods,
