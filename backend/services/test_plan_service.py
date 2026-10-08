@@ -33,6 +33,8 @@ class TestPlanService:
         archived: Optional[bool] = False,
         followed_by: Optional[str] = None,
         tag: Optional[str] = None,
+        filters: Optional[str] = None,
+        user_id: Optional[str] = None,
     ):
         """获取测试计划列表"""
         logger.debug(f"TestPlanService.get_test_plans - project_id: {project_id}, type: {type(project_id)}")
@@ -51,22 +53,9 @@ class TestPlanService:
                 "hasPrev": False
             }
         
-        # 查询所有计划（用于调试，仅在前几条记录时打印）
-        all_plans_count = db.query(TestPlan).count()
-        logger.debug(f"数据库中所有计划数量: {all_plans_count}")
-        
-        # 检查是否有匹配的项目ID
-        sample_plans = db.query(TestPlan).limit(5).all()
-        for p in sample_plans:
-            logger.debug(f"  示例计划: id={p.id}, name={p.name}, project_id={p.project_id} (str={str(p.project_id)})")
-        
-        # 使用字符串比较进行过滤
         query = db.query(TestPlan).filter(TestPlan.project_id == project_id_str)
-        
-        # 检查过滤后的数量
-        count_before_pagination = query.count()
-        logger.debug(f"过滤后计划数量 (project_id={project_id_str}): {count_before_pagination}")
-
+        from services.plan_index_filter import parse, apply, effective_status
+        conditions, logic = parse(filters)
         if group_id:
             from models.plan_orchestration import PlanSettings
             query = query.outerjoin(PlanSettings, PlanSettings.plan_id == TestPlan.id)
@@ -86,7 +75,7 @@ class TestPlanService:
 
         # 状态过滤
         if status:
-            query = query.filter(TestPlan.status == status)
+            query = query.filter((effective_status(db) if filters is not None else TestPlan.status) == status)
 
         # 类型过滤
         if plan_type:
@@ -102,6 +91,8 @@ class TestPlanService:
         if end_date:
             query = query.filter(TestPlan.start_date <= end_date)
         query = query.outerjoin(PlanWorkspace, PlanWorkspace.plan_id == TestPlan.id)
+        if filters is not None and any(row["field"] == "archived" for row in conditions):
+            archived = None
         if archived is not None:
             query = query.filter(PlanWorkspace.archived.is_(True)) if archived else query.filter(or_(PlanWorkspace.archived.is_(False), PlanWorkspace.plan_id.is_(None)))
         if module_id:
@@ -129,6 +120,8 @@ class TestPlanService:
             # JSON 数组的精确匹配同时兼容 SQLite 和 MySQL。
             matched = [m.plan_id for m in db.query(PlanWorkspace).join(TestPlan, TestPlan.id == PlanWorkspace.plan_id).filter(TestPlan.project_id == project_id_str) if tag in (m.tags or [])]
             query = query.filter(TestPlan.id.in_(matched))
+        if filters is not None:
+            query = apply(db, query, conditions, logic, user_id)
         # 总数
         total = query.count()
 
@@ -137,13 +130,18 @@ class TestPlanService:
         items = query.order_by(TestPlan.created_at.desc()).offset(offset).limit(size).all()
 
         # 检查并更新超时计划状态
-        TestPlanService._check_and_update_overdue_plans(db, items)
+        projected_statuses = {}
+        if filters is None:
+            TestPlanService._check_and_update_overdue_plans(db, items)
+        elif items:
+            projected_statuses = dict(db.query(TestPlan.id, effective_status(db)).filter(TestPlan.id.in_([item.id for item in items])).all())
 
         # 计算总页数
         pages = (total + size - 1) // size if total > 0 else 0
 
         return {
             "items": items,
+            "projectedStatuses": projected_statuses,
             "total": total,
             "page": page,
             "size": size,

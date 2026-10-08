@@ -15,9 +15,9 @@ def data(row):
     return dict(id=row.id, name=row.name, filters=row.filters)
 
 
-def save(db, user, plan, category, body, view_id=None):
+def save(db, user, plan, category, body, view_id=None, *, permission="test_case:read"):
     from core.project_access import require_project_access
-    require_project_access(db,user,plan.project_id,'test_case:read',current_read=True)
+    require_project_access(db,user,plan.project_id,permission,current_read=True)
     query = scope(db, user, plan, category)
     row = query.filter_by(id=view_id).populate_existing().with_for_update().first() if view_id else None
     if view_id and not row:
