@@ -74,8 +74,8 @@ button {
   cursor: pointer;
 }
 button:hover {
-  background: #f5eafa;
-  color: #811fa3;
+  background: var(--ms-primary-soft);
+  color: var(--primary-color);
 }
 button:disabled {
   cursor: wait;

@@ -16,7 +16,7 @@ from database import SessionLocal
 from models import User, TestPlan, TestSuite, Environment
 from models.task_queue import TaskQueue
 from models.task_schedule import TaskSchedule, TaskScheduleRun
-from services.suite_dispatch import build_suite_message
+from services.suite_dispatch import build_suite_message, load_dispatch_suite
 from utils.datetime_utils import beijing_now
 
 TERMINAL = {"completed", "failed", "cancelled"}
@@ -212,24 +212,26 @@ async def dispatch_pending(db):
     ).all()
     for task in rows:
         # 同环境串行锁覆盖容量检查与领取；条件更新防止重叠tick重复发送。
-        environment = db.query(Environment).filter_by(id=task.environment_id).with_for_update().first()
+        from services.task_queue_service import TaskQueueService
+        environment = TaskQueueService.lock_environment(db, task.environment_id)
         if not environment:
+            db.rollback()
             continue
         if not environment.status or task.environment_id not in manager.active_connections:
             db.rollback()
             continue
-        running = db.query(TaskQueue).filter_by(environment_id=task.environment_id, status="running").count()
-        if running >= (environment.max_concurrent_tasks or 1):
+        task = db.query(TaskQueue).filter_by(id=task.id).populate_existing().with_for_update().one()
+        run = db.query(TaskScheduleRun).filter_by(execution_id=task.execution_id).populate_existing().with_for_update().first()
+        if task.status != "pending" or not run or run.status in (*TERMINAL, "cancelling", "needs_confirmation"):
             db.rollback()
             continue
-        run = db.query(TaskScheduleRun).filter_by(execution_id=task.execution_id).first()
         try:
-            user = db.get(User, task.executor_id)
-            schedule = db.get(TaskSchedule, run.schedule_id)
-            if not user or not user.status:
-                raise ValueError("执行人已被禁用")
-            suite = check_target(db, user, schedule.project_id, "suite", task.suite_id)
-            payload = build_suite_message(db, suite, task.execution_id, task.executor_id)
+            schedule = db.query(TaskSchedule).filter_by(id=run.schedule_id).populate_existing().with_for_update().first()
+            suite = load_dispatch_suite(db, task.suite_id, task.executor_id)
+            plan = db.query(TestPlan).filter_by(id=suite.plan_id).populate_existing().with_for_update().one()
+            if not schedule or plan.project_id != schedule.project_id:
+                raise ValueError("定时任务与测试套项目不一致")
+            payload = build_suite_message(db, suite, task.execution_id, task.executor_id, current_read=True)
         except Exception:
             logger.exception("派发前校验失败：执行={}", task.execution_id)
             task.status, run.status = "failed", "failed"
@@ -237,10 +239,14 @@ async def dispatch_pending(db):
             run.error_message = "派发前校验失败，请检查目标和执行人权限"
             db.commit()
             continue
-        claimed = db.execute(update(TaskQueue).where(
-            TaskQueue.id == task.id, TaskQueue.status == "pending",
-        ).values(status="running", started_at=beijing_now()))
-        if claimed.rowcount != 1:
+        eligible_runs = db.query(TaskScheduleRun.execution_id).filter(
+            TaskScheduleRun.status.notin_((*TERMINAL, "cancelling", "needs_confirmation"))
+        )
+        claimed = TaskQueueService.start_task(
+            db, task.execution_id, environment_id=task.environment_id, commit=False,
+            eligibility=(TaskQueue.execution_id.in_(eligible_runs),),
+        )
+        if not claimed:
             db.rollback()
             continue
         suite.status, run.status = "running", "running"

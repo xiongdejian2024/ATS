@@ -229,17 +229,28 @@ async def test_legacy_sat_command_runs_through_xat(lab):
 
 
 @pytest.mark.asyncio
-async def test_normal_close_reconnect_replay_is_idempotent(lab):
+async def test_normal_close_reconnect_replay_is_idempotent(lab, monkeypatch):
     from database import SessionLocal
     from models.test_suite import TestSuiteExecution
     from services.suite_results import result_id
 
+    # Hold reconnect until the durable outbox has been observed. A fast
+    # reconnect/ACK can otherwise create and remove the file between polls.
+    reconnect_allowed = asyncio.Event()
+    original_connect = lab["agent"].ws_client.connect
+
+    async def controlled_reconnect():
+        await reconnect_allowed.wait()
+        return await original_connect()
+
+    monkeypatch.setattr(lab["agent"].ws_client, "connect", controlled_reconnect)
     suite_id = lab["suite"]["id"]
     await lab["client"].post(f"/api/v1/test-plans/suites/{suite_id}/execute")
     await until(lambda: lab["agent"].sat_runner.has_suite(suite_id))
     during_run = lab["agent"].ws_client.websocket
     await during_run.close(code=1000)
     await until(lambda: bool(list(lab["agent"].sat_runner.outbox.glob("*.json"))))
+    reconnect_allowed.set()
     await until(
         lambda: bool(queue_states(suite_id))
         and all(s == "completed" for s in queue_states(suite_id).values())
@@ -250,6 +261,7 @@ async def test_normal_close_reconnect_replay_is_idempotent(lab):
     with SessionLocal() as db:
         row = db.get(TestSuiteExecution, result_id(execution_id, case_id))
         assert row is not None
+    reconnect_allowed.clear()
     connection = lab["agent"].ws_client.websocket
     await connection.close(code=1000)
     await until(lambda: not lab["agent"].ws_client.connected)
@@ -264,6 +276,7 @@ async def test_normal_close_reconnect_replay_is_idempotent(lab):
         }
     )
     assert list(lab["agent"].sat_runner.outbox.glob("*.json"))
+    reconnect_allowed.set()
     await until(
         lambda: lab["agent"].ws_client.connected
         and lab["agent"].ws_client.websocket is not connection

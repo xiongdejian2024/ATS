@@ -1,5 +1,9 @@
 # XAT interrupted-result recovery
 
+Follow-on update: [node-capacity admission](NODE_CAPACITY_ADMISSION.md) now extends
+terminal-event slot release to native HTTP and legacy scripts as well. The original
+legacy immediate-cancellation behavior described below is historical.
+
 ## Problem
 
 XAT already atomically checkpoints each fully completed test after teardown in

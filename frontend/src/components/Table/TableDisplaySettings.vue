@@ -212,8 +212,8 @@ watch(
   color: #888;
 }
 .column-ghost {
-  border: 1px dashed #811fa3;
-  background: #faf0ff;
+  border: 1px dashed var(--primary-color);
+  background: var(--ms-primary-soft);
 }
 .settings-error {
   margin-bottom: 12px;

@@ -29,7 +29,7 @@ watch(()=>props.projectId,()=>{keyword.value='';expandedKeys.value=[];expanded.v
 <style scoped>
 .plan-navigator{width:300px;min-width:300px;padding:16px;overflow:auto;border-right:1px solid #f0f0f0;background:#fff}
 .navigator-tools{display:flex;gap:8px;margin-bottom:16px}.navigator-tools .ant-input-search{min-width:0;flex:1}
-.all-plans{display:flex;align-items:center;height:38px;padding-left:4px;margin-bottom:4px;border-radius:4px}.all-plans>button:first-child{flex:1;min-width:0;border:0;background:none;cursor:pointer;text-align:left;padding:0;white-space:nowrap}.all-plans.active{background:#f3e8f7;color:#811fa3}
+.all-plans{display:flex;align-items:center;height:38px;padding-left:4px;margin-bottom:4px;border-radius:4px}.all-plans>button:first-child{flex:1;min-width:0;border:0;background:none;cursor:pointer;text-align:left;padding:0;white-space:nowrap}.all-plans.active{background:var(--ms-primary-soft);color:var(--primary-color)}
 .navigation-node{display:flex;align-items:center;gap:6px;min-width:0}.node-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.navigation-node small{color:#86909c}.navigation-node .ant-btn{opacity:0}.navigation-node:hover .ant-btn,.navigation-node:focus-within .ant-btn{opacity:1}
 :deep(.ant-tree-node-content-wrapper){min-width:0;flex:1}:deep(.ant-tree-title){display:block}
 @media(max-width:768px){.plan-navigator{width:100%;min-width:0;border-right:0;border-bottom:1px solid #f0f0f0;max-height:250px;flex-shrink:0}}

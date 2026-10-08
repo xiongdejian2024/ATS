@@ -82,7 +82,7 @@
           :key="index"
           :d="path"
           fill="none"
-          stroke="#811fa3"
+          stroke="var(--primary-color)"
           stroke-width="1"
         />
       </g>
@@ -94,7 +94,7 @@
         :width="box.width"
         :height="box.height"
         rx="3"
-        fill="#811fa3"
+        fill="var(--primary-color)"
       />
       <rect
         :x="visible.x"
@@ -204,8 +204,8 @@ function stop() {
   font-size: 16px;
 }
 .minder-navigation button[aria-pressed="true"] {
-  background: #f5eafa;
-  color: #811fa3;
+  background: var(--ms-primary-soft);
+  color: var(--primary-color);
 }
 .minder-preview {
   position: absolute;

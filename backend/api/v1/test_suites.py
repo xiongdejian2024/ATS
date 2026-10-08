@@ -240,20 +240,20 @@ async def execute_test_suite(
         from services.suite_dispatch import build_suite_message
         task_message = build_suite_message(db, suite, execution_id, str(current_user.id))
         
-        # 检查是否可以立即执行
-        can_execute = TaskQueueService.can_execute_immediately(db, suite.environment_id)
-        
-        if can_execute:
-            # 可以立即执行，添加到队列并标记为running
-            TaskQueueService.add_to_queue(
-                db=db,
-                environment_id=suite.environment_id,
-                suite_id=suite.id,
-                execution_id=execution_id,
-                executor_id=str(current_user.id)
-            )
-            TaskQueueService.start_task(db, execution_id)
-            
+        TaskQueueService.add_to_queue(
+            db=db, environment_id=suite.environment_id, suite_id=suite.id,
+            execution_id=execution_id, executor_id=str(current_user.id),
+        )
+        TaskQueueService.lock_environment(db, suite.environment_id)
+        try:
+            from services.suite_dispatch import load_dispatch_suite
+            suite = load_dispatch_suite(db, suite_id, str(current_user.id))
+            task_message = build_suite_message(db, suite, execution_id, str(current_user.id), current_read=True)
+        except Exception:
+            TaskQueueService.complete_task(db, execution_id, "failed")
+            raise
+        claimed = TaskQueueService.start_task(db, execution_id, commit=False)
+        if claimed:
             # 更新测试套状态：如果有正在运行的任务，状态为running
             from models.task_queue import TaskQueue
             running_count = db.query(TaskQueue).filter(
@@ -270,13 +270,12 @@ async def execute_test_suite(
             from api.v1.websocket import manager
             success = await manager.send_message(suite.environment_id, task_message)
             if not success:
-                # 如果发送失败，回滚状态和队列
-                suite.status = "pending"
-                TaskQueueService.complete_task(db, execution_id, "failed")
-                db.commit()
+                # A failed socket write cannot prove the Agent did not receive
+                # it. Retain the slot; completion/cancellation resolves it.
+                logger.warning("派发结果未知，保留运行槽：执行={}", execution_id)
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="无法发送任务到Agent，请确保环境在线"
+                    detail="任务派发结果未知，已保留运行槽；请核对Agent执行状态后取消或等待完成"
                 )
             
             return APIResponse(
@@ -285,15 +284,6 @@ async def execute_test_suite(
                 data=serialize_model(suite, camel_case=True)
             )
         else:
-            # 需要排队，添加到队列并保持pending状态
-            TaskQueueService.add_to_queue(
-                db=db,
-                environment_id=suite.environment_id,
-                suite_id=suite.id,
-                execution_id=execution_id,
-                executor_id=str(current_user.id)
-            )
-            
             # 更新测试套状态：如果有正在运行的任务，状态为running，否则为pending
             from models.task_queue import TaskQueue
             running_count = db.query(TaskQueue).filter(
@@ -387,55 +377,32 @@ async def cancel_test_suite(
                     detail="该执行记录不在运行中或等待中，无法取消"
                 )
             
-            # 根据任务状态处理取消
-            if task.status == "running":
-                # 如果任务正在运行，需要发送取消消息到Agent
-                cancel_message = {
-                    "type": "cancel_test_suite",
-                    "suite_id": suite_id,
-                    "execution_id": execution_id
-                }
-                
-                # 发送到Agent
-                success = await manager.send_message(suite.environment_id, cancel_message)
+            # Serialize pending cancellation with every slot claimant. If a
+            # dispatcher won, send cancellation and keep its slot until ACK.
+            TaskQueueService.lock_environment(db, task.environment_id)
+            db.refresh(task, with_for_update=True)
+            if task.status == "pending":
+                TaskQueueService.complete_task(db, execution_id, "cancelled")
+            elif task.status == "running":
+                target_environment_id = task.environment_id
+                db.commit()  # Never hold a node lock across network I/O.
+                success = await manager.send_message(target_environment_id, {
+                    "type": "cancel_test_suite", "suite_id": suite_id,
+                    "execution_id": execution_id,
+                })
                 if not success:
                     raise HTTPException(
                         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                         detail="无法发送取消指令到Agent，请确保环境在线"
                     )
-            elif task.status == "pending":
-                # 如果任务还在等待中，直接标记为取消，不需要发送消息到Agent
-                pass
-            
-            if task.status == "running" and is_xat_command(suite.execution_command):
-                # The Agent completion ACK releases the slot after the child is stopped.
                 return APIResponse(status=ResponseStatus.SUCCESS, message="取消请求已发送", data={"executionId": execution_id})
-            previous_status = task.status
+            else:
+                db.commit()
+                return APIResponse(status=ResponseStatus.SUCCESS, message="执行已结束", data={"executionId": execution_id})
 
-            # 更新任务队列状态为cancelled
-            TaskQueueService.complete_task(db, execution_id, "cancelled")
-            
-            # 取消任务后，尝试执行队列中的下一个任务（无论取消的是running还是pending）
-            if previous_status in ["running", "pending"]:
-                next_task = TaskQueueService.get_next_pending_task(db, suite.environment_id)
-                if next_task:
-                    if TaskQueueService.can_execute_immediately(db, suite.environment_id):
-                        TaskQueueService.start_task(db, next_task.execution_id)
-                        next_suite = db.query(TestSuite).filter(TestSuite.id == next_task.suite_id).first()
-                        if next_suite:
-                            next_suite.status = "running"
-                        
-                        git_enabled = next_suite.git_enabled == 'true' if hasattr(next_suite, 'git_enabled') and next_suite.git_enabled else False
-                        
-                        # 根据case_ids查询对应的case_code
-                        from models.test_case import TestCase
-                        next_test_cases = db.query(TestCase).filter(TestCase.id.in_(next_suite.case_ids)).all()
-                        next_case_codes = [case.case_code for case in next_test_cases]
-                        
-                        from services.suite_dispatch import build_suite_message
-                        task_message = build_suite_message(db, next_suite, next_task.execution_id, next_task.executor_id)
-                        await manager.send_message(suite.environment_id, task_message)
-            
+            from services.queued_dispatch import dispatch_pending_suites
+            await dispatch_pending_suites(db, suite.environment_id)
+
             # 检查是否还有其他正在运行或等待的任务
             running_tasks = db.query(TaskQueue).filter(
                 TaskQueue.suite_id == suite_id,
@@ -482,37 +449,18 @@ async def cancel_test_suite(
                     "suite_id": suite_id,
                     "execution_id": task.execution_id
                 }
-                success = await manager.send_message(suite.environment_id, cancel_message)
+                success = await manager.send_message(task.environment_id, cancel_message)
                 if not success:
                     raise HTTPException(
                         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                         detail="无法发送取消指令到Agent，请确保环境在线"
                     )
-                if not is_xat_command(suite.execution_command):
-                    TaskQueueService.complete_task(db, task.execution_id, "cancelled")
-                # XAT must deliver preserved case results before its completion
-                # event marks the task cancelled and releases the running slot.
+                # Every runner confirms completion after cleanup. Socket send
+                # success alone cannot release a backend execution slot.
 
-            if is_xat_command(suite.execution_command):
-                # Completion may already have arrived while sending a cancel;
-                # leave all suite-status changes to that event as well.
-                return APIResponse(
-                    status=ResponseStatus.SUCCESS,
-                    message="取消请求已发送",
-                    data=serialize_model(suite, camel_case=True)
-                )
-            
-            # 更新测试套状态
-            pending_tasks = db.query(TaskQueue).filter(
-                TaskQueue.suite_id == suite_id,
-                TaskQueue.status == "pending"
-            ).count()
-            suite.status = "pending" if pending_tasks > 0 else "completed"
-            db.commit()
-            
             return APIResponse(
                 status=ResponseStatus.SUCCESS,
-                message="取消指令已发送",
+                message="取消请求已发送",
                 data=serialize_model(suite, camel_case=True)
             )
     except HTTPException:

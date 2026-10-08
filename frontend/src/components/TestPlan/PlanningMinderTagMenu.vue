@@ -68,8 +68,8 @@ button {
 }
 button:hover,
 button[aria-selected="true"] {
-  color: #811fa3;
-  background: #f5eafa;
+  color: var(--primary-color);
+  background: var(--ms-primary-soft);
 }
 button:disabled {
   cursor: wait;

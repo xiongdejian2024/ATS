@@ -79,7 +79,7 @@ export function useMinderLayout(
           enableKeyReceiver: false,
           enableAnimation: false,
           layoutAnimationDuration: 0,
-          defaultTheme: "fresh-purple",
+          defaultTheme: "fresh-blue",
         });
       }
       const sizes = new Map<string, MinderBox>();
@@ -109,7 +109,7 @@ export function useMinderLayout(
       engine.importJson({
         root: serialize(tree.value),
         template: mode.value,
-        theme: "fresh-purple",
+        theme: "fresh-blue",
       });
       engine.getRoot().traverse((node) => {
         const size = sizes.get(node.getData("id"));

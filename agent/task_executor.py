@@ -108,6 +108,8 @@ class TaskExecutor:
         status, error = "error", None
         timeout = task_config.get("timeout", 3600)
         try:
+            if task_id in self.cancelled:
+                raise asyncio.CancelledError
             options = dict(cwd=str(task_dir), env=env, stdout=asyncio.subprocess.PIPE,
                            stderr=asyncio.subprocess.STDOUT, start_new_session=(os.name == "posix"))
             if isinstance(command, str):
@@ -115,6 +117,8 @@ class TaskExecutor:
             else:
                 process = await asyncio.create_subprocess_exec(*command, **options)
             self.tasks[task_id] = process
+            if task_id in self.cancelled:
+                raise asyncio.CancelledError
             async def read_output():
                 while True:
                     chunk = await process.stdout.read(4096)
@@ -149,10 +153,10 @@ class TaskExecutor:
             from .sat_runner import terminate_process
         except ImportError:
             from sat_runner import terminate_process
+        self.cancelled.add(task_id)
         process = self.tasks.get(task_id)
         if process is None:
             return False
-        self.cancelled.add(task_id)
         await terminate_process(process)
         return True
 

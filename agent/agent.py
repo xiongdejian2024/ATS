@@ -22,6 +22,7 @@ if __name__ == "__main__":
     from workspace_manager import WorkspaceManager
     from sat_runner import SATRunner
     from native_http_runner import NativeHTTPRunner
+    from execution_admission import admission_for
 else:
     # 作为模块运行时，使用相对导入
     from .config import Config, parse_args
@@ -33,6 +34,7 @@ else:
     from .workspace_manager import WorkspaceManager
     from .sat_runner import SATRunner
     from .native_http_runner import NativeHTTPRunner
+    from .execution_admission import admission_for
 
 
 class Agent:
@@ -59,6 +61,14 @@ class Agent:
         self.sat_runner = SATRunner(self)
         self.native_http_runner = NativeHTTPRunner(self)
         self.suite_execution_ids: Dict[str, str] = {}  # suite_id -> execution_id
+        admission_for(self)
+        self.legacy_runs = {}
+        self.legacy_suites = {}
+        self.legacy_started = set()
+        self.legacy_cancel_requested = set()
+        self.legacy_finalizing = set()
+        self.task_runs = {}
+        self.task_cancel_requested = set()
 
     def setup(self) -> None:
         """初始化设置"""
@@ -210,12 +220,14 @@ class Agent:
             ensure_dir(self.work_dir / "logs" / "tasks")
             ensure_dir(self.work_dir / "cache")
 
-            # 重新初始化任务执行器
-            self.task_executor = TaskExecutor(
-                self.work_dir,
-                on_log=self._on_task_log,
-                logger=self.logger
-            )
+            # Reconnect sends welcome and auth_success; retain the executor
+            # owning live processes instead of orphaning their cancellation map.
+            if self.task_executor is None:
+                self.task_executor = TaskExecutor(
+                    self.work_dir,
+                    on_log=self._on_task_log,
+                    logger=self.logger
+                )
 
             # 初始化工作空间管理器
             self.workspace_manager = WorkspaceManager(self.work_dir)
@@ -276,8 +288,25 @@ class Agent:
                 self.logger.error("任务执行器未初始化，无法执行任务")
             return
 
-        # 在后台执行任务
-        asyncio.create_task(self._execute_task_async(message))
+        if self.execution_admission.register(task_id):
+            self.task_runs[task_id] = asyncio.create_task(self._execute_task_admitted(message))
+
+    async def _execute_task_admitted(self, message):
+        task_id = message["task_id"]
+        try:
+            admitted = await self.execution_admission.wait(task_id)
+            if not admitted or task_id in self.task_cancel_requested:
+                if self.ws_client:
+                    await self.ws_client.send_task_result(
+                        task_id=task_id, status="cancelled", exit_code=-1,
+                        output="", error="任务已取消", duration=0,
+                    )
+                return
+            await self._execute_task_async(message)
+        finally:
+            self.task_runs.pop(task_id, None)
+            self.task_cancel_requested.discard(task_id)
+            self.execution_admission.release(task_id)
 
     async def _execute_task_async(self, task_config: Dict[str, Any]) -> None:
         """
@@ -320,6 +349,8 @@ class Agent:
         if not self.task_executor:
             return
 
+        self.task_cancel_requested.add(task_id)
+        self.execution_admission.cancel_waiting(task_id)
         await self.task_executor.cancel_task(task_id)
 
     async def _on_task_log(self, task_id: str, level: str, message: str) -> None:
@@ -528,28 +559,46 @@ class Agent:
             self.sat_runner.start(message)
             return
 
-        # 检查是否已经在执行
-        if suite_id in self.running_suites:
-            if self.logger:
-                self.logger.warning(f"测试套 {suite_id} 正在执行中，忽略重复请求")
+        # Legacy scripts share suite-local files, so serialize that suite even
+        # when the node has several slots. IDs are deduplicated across runners.
+        if not self.execution_admission.register(execution_id, exclusive_key=suite_id):
             return
-
-        # 存储execution_id
-        self.suite_execution_ids[suite_id] = execution_id
-
-        # 在后台执行测试套（先启动任务，然后在任务内部发送开始日志）
-        asyncio.create_task(self._execute_test_suite_async(
-            suite_id=suite_id,
-            plan_id=plan_id,
-            execution_id=execution_id,  # 传递执行ID
-            git_repo_url=git_repo_url,
-            git_branch=git_branch,
-            git_token=git_token,
-            execution_command=execution_command,
-            case_ids=case_ids,
-            case_codes=case_codes,  # 传递case_codes
-            executor_id=executor_id
+        self.legacy_suites[execution_id] = suite_id
+        self.legacy_runs[execution_id] = asyncio.create_task(self._execute_legacy_admitted(
+            suite_id=suite_id, plan_id=plan_id, execution_id=execution_id,
+            git_repo_url=git_repo_url, git_branch=git_branch, git_token=git_token,
+            execution_command=execution_command, case_ids=case_ids,
+            case_codes=case_codes, executor_id=executor_id,
         ))
+
+    async def _execute_legacy_admitted(self, **kwargs):
+        execution_id, suite_id = kwargs["execution_id"], kwargs["suite_id"]
+        try:
+            admitted = await self.execution_admission.wait(execution_id)
+            self.legacy_started.add(execution_id)
+            if not admitted or execution_id in self.legacy_cancel_requested:
+                raise asyncio.CancelledError
+            self.suite_execution_ids[suite_id] = execution_id
+            completion = await self._execute_test_suite_async(**kwargs)
+            self.legacy_finalizing.add(execution_id)
+            if completion:
+                await self.sat_runner.deliver(completion)
+        except asyncio.CancelledError:
+            self.legacy_finalizing.add(execution_id)
+            # The legacy runner's finally has terminated its child before this
+            # terminal event, so an acknowledged cancellation releases safely.
+            await self.sat_runner.deliver(dict(
+                type="test_suite_completed", suite_id=suite_id,
+                execution_id=execution_id, status="cancelled",
+                message="测试套执行已取消",
+            ))
+        finally:
+            self.legacy_runs.pop(execution_id, None)
+            self.legacy_suites.pop(execution_id, None)
+            self.legacy_started.discard(execution_id)
+            self.legacy_cancel_requested.discard(execution_id)
+            self.legacy_finalizing.discard(execution_id)
+            self.execution_admission.release(execution_id)
 
     async def _handle_cancel_test_suite(self, message: Dict[str, Any]) -> None:
         """处理测试套取消请求"""
@@ -562,131 +611,43 @@ class Agent:
         if self.logger:
             self.logger.info(f"收到测试套取消指令: {suite_id}")
 
-        if self.native_http_runner.has_suite(suite_id):
-            await self.native_http_runner.cancel(suite_id, message.get('execution_id'))
-            return
+        execution_id = message.get("execution_id")
+        # A suite can have executions of different kinds after configuration
+        # changes. A scoped cancel must reach its actual runner, not the first
+        # runner that happens to contain that suite.
+        await asyncio.gather(
+            self.native_http_runner.cancel(suite_id, execution_id),
+            self.sat_runner.cancel(suite_id, execution_id),
+            self._cancel_legacy(suite_id, execution_id),
+        )
 
-        if self.sat_runner.has_suite(suite_id):
-            await self.sat_runner.cancel(suite_id, message.get("execution_id"))
-            return
-
-        if suite_id not in self.running_suites:
-            if self.logger:
-                self.logger.warning(f"测试套 {suite_id} 不在执行中")
-            # 获取execution_id（如果存在）
-            execution_id = self.suite_execution_ids.get(suite_id)
-            if self.ws_client:
-                log_msg = {
-                    "type": "test_suite_log",
-                    "suite_id": suite_id,
-                    "level": "warning",
-                    "message": f"测试套 {suite_id} 不在执行中，可能已完成或未启动",
-                    "timestamp": datetime.utcnow().isoformat() + "Z"
-                }
-                if execution_id:
-                    log_msg["execution_id"] = execution_id
-                await self.ws_client.send_message(log_msg)
-                
-                # 如果任务已经完成但后端还不知道，发送完成消息确保状态同步
-                if execution_id:
-                    await self.ws_client.send_message({
-                        "type": "test_suite_completed",
-                        "suite_id": suite_id,
-                        "execution_id": execution_id,
-                        "status": "completed",  # 已完成状态
-                        "message": "任务已完成，无需取消"
-                    })
-                    if self.logger:
-                        self.logger.info(f"已发送测试套完成消息（任务已完成）: suite_id={suite_id}, execution_id={execution_id}")
-            return
-
-        process = self.running_suites[suite_id]
-        execution_id = self.suite_execution_ids.get(suite_id)  # 获取execution_id
-
-        try:
-            # 发送取消日志
-            if self.ws_client:
-                log_msg = {
-                    "type": "test_suite_log",
-                    "suite_id": suite_id,
-                    "level": "warning",
-                    "message": "收到取消指令，正在终止执行...",
-                    "timestamp": datetime.utcnow().isoformat() + "Z"
-                }
-                if execution_id:
-                    log_msg["execution_id"] = execution_id
-                await self.ws_client.send_message(log_msg)
-
-            # 先从running_suites中移除，这样读取循环会检测到并退出
-            del self.running_suites[suite_id]
-
-            # 终止进程（发送SIGTERM）
+        if execution_id:
             try:
-                process.terminate()
-            except ProcessLookupError:
-                # 进程已经不存在
+                never_started = self.execution_admission.cancel_unknown_suite(suite_id, execution_id)
+            except (ValueError, OSError):
+                never_started = False
                 if self.logger:
-                    self.logger.warning(f"进程 {suite_id} 已经不存在")
+                    self.logger.exception("无法确认未知任务未启动，保留待核对状态")
+            if never_started:
+                await self.sat_runner.deliver(dict(
+                    type="test_suite_completed", suite_id=suite_id,
+                    execution_id=execution_id, status="cancelled",
+                    message="该执行未在节点启动，已取消并阻止延迟派发",
+                ))
+            else:
+                await self.sat_runner.flush()
 
-            # 等待进程结束，如果5秒后还没结束，强制杀死
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                if self.logger:
-                    self.logger.warning(f"进程 {suite_id} 在5秒内未结束，强制杀死")
-                try:
-                    process.kill()
-                    process.wait()
-                except ProcessLookupError:
-                    # 进程已经不存在
-                    pass
-
-            # 发送取消完成日志
-            if self.ws_client:
-                log_msg = {
-                    "type": "test_suite_log",
-                    "suite_id": suite_id,
-                    "level": "info",
-                    "message": "测试套执行已取消",
-                    "timestamp": datetime.utcnow().isoformat() + "Z"
-                }
-                if execution_id:
-                    log_msg["execution_id"] = execution_id
-                await self.ws_client.send_message(log_msg)
-
-            # 发送取消完成状态消息给后端（确保状态同步）
-            if self.ws_client and execution_id:
-                await self.ws_client.send_message({
-                    "type": "test_suite_completed",
-                    "suite_id": suite_id,
-                    "execution_id": execution_id,
-                    "status": "cancelled",  # 取消状态
-                    "message": "测试套执行已取消"
-                })
-                if self.logger:
-                    self.logger.info(f"已发送测试套取消完成消息: suite_id={suite_id}, execution_id={execution_id}")
-
-            # 清理execution_id
-            if suite_id in self.suite_execution_ids:
-                del self.suite_execution_ids[suite_id]
-
-            if self.logger:
-                self.logger.info(f"测试套 {suite_id} 已取消")
-
-        except Exception as e:
-            if self.logger:
-                self.logger.error(f"取消测试套失败: {e}")
-            if self.ws_client:
-                log_msg = {
-                    "type": "test_suite_log",
-                    "suite_id": suite_id,
-                    "level": "error",
-                    "message": f"取消测试套失败: {str(e)}",
-                    "timestamp": datetime.utcnow().isoformat() + "Z"
-                }
-                if execution_id:
-                    log_msg["execution_id"] = execution_id
-                await self.ws_client.send_message(log_msg)
+    async def _cancel_legacy(self, suite_id, execution_id=None):
+        tasks = [
+            (key, task) for key, task in self.legacy_runs.items()
+            if self.legacy_suites[key] == suite_id and (execution_id is None or key == execution_id)
+        ]
+        for key, task in tasks:
+            self.legacy_cancel_requested.add(key)
+            self.execution_admission.cancel_waiting(key)
+            if key in self.legacy_started and key not in self.legacy_finalizing and not task.cancelling():
+                task.cancel()
+        await asyncio.gather(*(asyncio.shield(task) for _, task in tasks), return_exceptions=True)
 
     async def _execute_test_suite_async(
         self,
@@ -700,10 +661,11 @@ class Agent:
         case_ids: List[str],
         case_codes: List[str],  # 添加case_codes参数
         executor_id: str
-    ) -> None:
-        """异步执行测试套"""
+    ) -> Optional[Dict[str, Any]]:
+        """执行测试套；清理进程后返回待可靠回传的完成消息。"""
         import subprocess
         import shutil
+        import os
         from pathlib import Path
 
         if not self.work_dir or not self.ws_client:
@@ -735,6 +697,7 @@ class Agent:
                     "timestamp": timestamp.isoformat() + "Z"
                 })
 
+        completion = None
         try:
             if self.logger:
                 self.logger.info(f"开始执行测试套: {suite_id}, execution_id={execution_id}")
@@ -946,6 +909,7 @@ class Agent:
                                     # 上报结果
                                     send_success = await self.ws_client.send_message({
                                         "type": "test_suite_result",
+                                        "execution_id": execution_id,
                                         "suite_id": suite_id,
                                         "case_id": case_id,
                                         "result": status,
@@ -1001,7 +965,8 @@ class Agent:
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,  # 行缓冲
-                universal_newlines=True
+                universal_newlines=True,
+                start_new_session=(os.name == "posix"),
             )
 
             log_output = ""
@@ -1137,6 +1102,7 @@ class Agent:
                     pass
                 return
 
+            self.legacy_finalizing.add(execution_id)
             # 执行完成后移除
             if suite_id in self.running_suites:
                 del self.running_suites[suite_id]
@@ -1187,6 +1153,7 @@ class Agent:
 
                                 send_success = await self.ws_client.send_message({
                                     "type": "test_suite_result",
+                                    "execution_id": execution_id,
                                     "suite_id": suite_id,
                                     "case_id": case_id,
                                     "result": status,
@@ -1220,7 +1187,7 @@ class Agent:
                 # 检查是否有失败的用例（通过已上报的结果判断）
                 # 注意：这里我们无法直接判断，因为结果已经上报了
                 # 但我们可以发送一个完成消息，让后端根据实际结果更新状态
-                await self.ws_client.send_message({
+                completion = {
                     "type": "test_suite_completed",
                     "suite_id": suite_id,
                     "execution_id": execution_id,
@@ -1228,14 +1195,15 @@ class Agent:
                     "reported_case_count": len(reported_results),
                     "total_case_count": len(case_ids),
                     "duration": duration
-                })
+                }
                 if self.logger:
-                    self.logger.info(f"已发送测试套完成消息: suite_id={suite_id}, execution_id={execution_id}")
+                    self.logger.info(f"测试套完成消息已准备，等待进程清理: suite_id={suite_id}, execution_id={execution_id}")
 
             if self.logger:
                 self.logger.info(f"测试套执行完成: {suite_id}, 用例数: {len(case_ids)}, 已上报结果数: {len(reported_results)}")
 
         except subprocess.TimeoutExpired:
+            self.legacy_finalizing.add(execution_id)
             error_msg = "执行超时"
             await send_log("error", f"测试套执行超时: {error_msg}")
             if self.logger:
@@ -1253,6 +1221,7 @@ class Agent:
             for case_id in case_ids:
                 await self.ws_client.send_message({
                     "type": "test_suite_result",
+                    "execution_id": execution_id,
                     "suite_id": suite_id,
                     "case_id": case_id,
                     "result": "error",
@@ -1264,15 +1233,16 @@ class Agent:
             
             # 发送超时完成状态消息
             if self.ws_client and execution_id:
-                await self.ws_client.send_message({
+                completion = {
                     "type": "test_suite_completed",
                     "suite_id": suite_id,
                     "execution_id": execution_id,
                     "status": "failed",  # 超时失败
                     "message": "测试套执行超时"
-                })
+                }
 
         except Exception as e:
+            self.legacy_finalizing.add(execution_id)
             error_msg = str(e)
             await send_log("error", f"测试套执行失败: {error_msg}")
             if self.logger:
@@ -1290,6 +1260,7 @@ class Agent:
             for case_id in case_ids:
                 await self.ws_client.send_message({
                     "type": "test_suite_result",
+                    "execution_id": execution_id,
                     "suite_id": suite_id,
                     "case_id": case_id,
                     "result": "error",
@@ -1301,15 +1272,23 @@ class Agent:
             
             # 发送执行失败完成状态消息
             if self.ws_client and execution_id:
-                await self.ws_client.send_message({
+                completion = {
                     "type": "test_suite_completed",
                     "suite_id": suite_id,
                     "execution_id": execution_id,
                     "status": "failed",  # 执行失败
                     "message": f"测试套执行失败: {error_msg}"
-                })
+                }
 
         finally:
+            # Terminate the entire owned process group before the wrapper
+            # delivers completion or gives this admission slot to a successor.
+            if 'process' in locals():
+                try:
+                    from .sat_runner import terminate_process
+                except ImportError:
+                    from sat_runner import terminate_process
+                await terminate_process(process, blocking=True)
             # 清理进程引用
             if suite_id in self.running_suites:
                 del self.running_suites[suite_id]
@@ -1327,6 +1306,7 @@ class Agent:
             # if suite_work_dir.exists():
             #     shutil.rmtree(suite_work_dir)
             pass
+        return completion
 
     async def _monitor_loop(self) -> None:
         """监控循环"""
@@ -1410,6 +1390,12 @@ class Agent:
             except asyncio.CancelledError:
                 pass
 
+        self.execution_admission.close()
+        for suite_id in set(self.legacy_suites.values()):
+            await self._cancel_legacy(suite_id)
+        for task_id in list(self.task_runs):
+            await self._handle_cancel_task({"task_id": task_id})
+        await asyncio.gather(*list(self.task_runs.values()), return_exceptions=True)
         for suite_id in set(self.native_http_runner.suites.values()):
             await self.native_http_runner.cancel(suite_id)
         for suite_id in set(self.sat_runner.suites.values()):

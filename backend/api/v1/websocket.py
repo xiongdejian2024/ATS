@@ -187,26 +187,8 @@ async def websocket_endpoint(
                 logger.error(f"[WebSocket] 发送认证成功消息失败: {e}", exc_info=True)
                 raise
             
-            # Resume a queued dispatch which could not be delivered during disconnect.
-            from services.task_queue_service import TaskQueueService
-            from services.suite_dispatch import build_suite_message
-            from models.test_suite import TestSuite
-            while TaskQueueService.can_execute_immediately(db, environment_id):
-                pending = TaskQueueService.get_next_pending_task(db, environment_id)
-                if not pending:
-                    break
-                suite = db.query(TestSuite).filter(TestSuite.id == pending.suite_id).first()
-                if not suite:
-                    break
-                TaskQueueService.start_task(db, pending.execution_id)
-                suite.status = "running"
-                sent = await manager.send_message(environment_id, build_suite_message(db, suite, pending.execution_id, pending.executor_id))
-                if not sent:
-                    pending.status = "pending"
-                    suite.status = "pending"
-                    db.commit()
-                    break
-                db.commit()
+            from services.queued_dispatch import dispatch_pending_suites
+            await dispatch_pending_suites(db, environment_id)
 
             # 保持连接，接收消息
             logger.info(f"[WebSocket] 进入消息接收循环，环境ID: {environment_id}")
@@ -408,94 +390,10 @@ async def handle_test_suite_result(db: Session, environment_id: str, message: di
                 logger.error(f"[WebSocket] 更新计划用例执行状态失败: {e}", exc_info=True)
                 db.rollback()
         
-        if suite:
-            # 获取最近一次执行的记录（通过executed_at时间戳判断）
-            # 找到最新的执行时间
-            from models.test_suite import TestSuiteExecution
-            from sqlalchemy import func
-            
-            latest_execution_time = db.query(func.max(TestSuiteExecution.executed_at)).filter(
-                TestSuiteExecution.suite_id == suite_id
-            ).scalar()
-            
-            if latest_execution_time:
-                # 获取最近一次执行的所有记录
-                latest_executions = db.query(TestSuiteExecution).filter(
-                    TestSuiteExecution.suite_id == suite_id,
-                    TestSuiteExecution.executed_at == latest_execution_time
-                ).all()
-                
-                executed_case_ids = {e.case_id for e in latest_executions}
-                
-                # 如果所有用例都已执行，更新测试套状态
-                if len(executed_case_ids) >= len(suite.case_ids):
-                    # 检查最近一次执行是否有失败的用例
-                    has_failed = any(e.result in ["failed", "error"] for e in latest_executions)
-                    
-                    # 获取execution_id（从最新的日志记录中获取）
-                    from models.test_suite import TestSuiteLog
-                    latest_log = db.query(TestSuiteLog).filter(
-                        TestSuiteLog.suite_id == suite_id
-                    ).order_by(TestSuiteLog.timestamp.desc()).first()
-                    
-                    if latest_log and latest_log.execution_id:
-                        # 完成任务队列中的任务
-                        from services.task_queue_service import TaskQueueService
-                        from models.task_queue import TaskQueue
-                        task_status = "failed" if has_failed else "completed"
-                        TaskQueueService.complete_task(db, latest_log.execution_id, task_status)
-                        
-                        # 检查是否还有其他正在运行或等待的任务
-                        running_tasks = db.query(TaskQueue).filter(
-                            TaskQueue.suite_id == suite_id,
-                            TaskQueue.status == "running"
-                        ).count()
-                        pending_tasks = db.query(TaskQueue).filter(
-                            TaskQueue.suite_id == suite_id,
-                            TaskQueue.status == "pending"
-                        ).count()
-                        
-                        # 根据任务队列状态更新测试套状态
-                        if running_tasks > 0:
-                            suite.status = "running"
-                        elif pending_tasks > 0:
-                            suite.status = "pending"
-                        else:
-                            # 所有任务都完成了，根据最后执行结果设置状态
-                            suite.status = "failed" if has_failed else "completed"
-                        
-                        # 尝试执行队列中的下一个任务
-                        next_task = TaskQueueService.get_next_pending_task(db, environment_id)
-                        if next_task:
-                            # 检查是否可以执行
-                            if TaskQueueService.can_execute_immediately(db, environment_id):
-                                # 开始执行下一个任务
-                                TaskQueueService.start_task(db, next_task.execution_id)
-                                
-                                # 更新测试套状态为running
-                                next_suite = db.query(TestSuite).filter(TestSuite.id == next_task.suite_id).first()
-                                if next_suite:
-                                    # 检查该测试套是否还有其他正在运行的任务
-                                    next_running = db.query(TaskQueue).filter(
-                                        TaskQueue.suite_id == next_task.suite_id,
-                                        TaskQueue.status == "running"
-                                    ).count()
-                                    next_suite.status = "running" if next_running > 0 else "pending"
-                                
-                                # 构建执行任务消息
-                                git_enabled = next_suite.git_enabled == 'true' if hasattr(next_suite, 'git_enabled') and next_suite.git_enabled else False
-                                
-                                from services.suite_dispatch import build_suite_message
-                                task_message = build_suite_message(db, next_suite, next_task.execution_id, next_task.executor_id)
-                                
-                                # 发送到Agent
-                                from api.v1.websocket import manager
-                                await manager.send_message(environment_id, task_message)
-                                logger.info(f"[WebSocket] 队列中的下一个任务已启动: suite_id={next_suite.id}, execution_id={next_task.execution_id}")
-                    
-                    db.commit()
-                    logger.info(f"[WebSocket] 测试套执行完成: suite_id={suite_id}, status={suite.status}, 用例数: {len(executed_case_ids)}/{len(suite.case_ids)}")
-        
+        # A last case row does not prove process teardown has finished.
+        # Only test_suite_completed releases its execution slot. Legacy rows
+        # lacking execution_id must not guess an owner from the latest log.
+
     except Exception as e:
         logger.exception(f"[WebSocket] 处理测试套执行结果时出错: {e}")
 
@@ -746,39 +644,9 @@ async def handle_test_suite_completed(db: Session, environment_id: str, message:
         db.commit()
         logger.info(f"[WebSocket] 测试套状态已更新: suite_id={suite_id}, status={suite.status}, 任务状态={task_status}, 运行中任务={running_tasks}, 等待中任务={pending_tasks}")
         
-        # 尝试执行队列中的下一个任务
-        next_task = TaskQueueService.get_next_pending_task(db, environment_id)
-        if next_task:
-            # 检查是否可以执行
-            if TaskQueueService.can_execute_immediately(db, environment_id):
-                # 开始执行下一个任务
-                TaskQueueService.start_task(db, next_task.execution_id)
-                
-                # 更新测试套状态为running
-                next_suite = db.query(TestSuite).filter(TestSuite.id == next_task.suite_id).first()
-                if next_suite:
-                    # 检查该测试套是否还有其他正在运行的任务
-                    next_running = db.query(TaskQueue).filter(
-                        TaskQueue.suite_id == next_task.suite_id,
-                        TaskQueue.status == "running"
-                    ).count()
-                    next_suite.status = "running" if next_running > 0 else "pending"
-                
-                # 构建执行任务消息
-                git_enabled = next_suite.git_enabled == 'true' if hasattr(next_suite, 'git_enabled') and next_suite.git_enabled else False
-                
-                from services.suite_dispatch import build_suite_message
-                task_message = build_suite_message(db, next_suite, next_task.execution_id, next_task.executor_id)
-                
-                # 发送到Agent
-                from api.v1.websocket import manager
-                sent = await manager.send_message(environment_id, task_message)
-                if not sent:
-                    next_task.status = "pending"
-                    next_suite.status = "pending"
-                logger.info(f"[WebSocket] 队列中的下一个任务已启动: suite_id={next_suite.id}, execution_id={next_task.execution_id}")
-                db.commit()
-        
+        from services.queued_dispatch import dispatch_pending_suites
+        await dispatch_pending_suites(db, environment_id)
+
         return True
 
     except Exception as e:

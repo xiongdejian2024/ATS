@@ -132,24 +132,56 @@ def read_results(path, case_ids):
     return rows
 
 
-async def terminate_process(process):
-    """Terminate the runner and its children without blocking the event loop."""
-    if process.returncode is not None:
-        return
+async def terminate_process(process, *, blocking=False):
+    """Stop an owned session, including children outliving its shell leader."""
+    async def wait():
+        if blocking:
+            return await asyncio.to_thread(process.wait)
+        return await process.wait()
+
+    alive = process.poll() is None if blocking else process.returncode is None
     try:
         if os.name == "posix":
+            # Even an exited leader can leave a live background child/group.
             os.killpg(process.pid, signal.SIGTERM)
-        else:
+        elif alive:
             process.terminate()
-        await asyncio.wait_for(process.wait(), timeout=3)
-    except asyncio.TimeoutError:
-        if os.name == "posix":
-            os.killpg(process.pid, signal.SIGKILL)
-        else:
-            process.kill()
-        await process.wait()
+        if alive:
+            try:
+                await asyncio.wait_for(wait(), timeout=3)
+            except asyncio.TimeoutError:
+                if os.name != "posix":
+                    process.kill()
     except ProcessLookupError:
-        logger.opt(exception=True).debug("子进程已退出，无需再次终止")
+        logger.opt(exception=True).debug("子进程组已退出，无需再次终止")
+    finally:
+        if os.name == "posix":
+            try:
+                # Shell exit is not proof that descendants honored SIGTERM.
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        if alive:
+            await wait()
+        if os.name == "posix":
+            import psutil
+
+            # Zombies have exited and no longer own execution resources. Keep
+            # the slot if an OS-level process has not yet actually stopped.
+            while True:
+                running = False
+                for child in psutil.process_iter():
+                    try:
+                        if os.getpgid(child.pid) == process.pid and child.status() not in (
+                            psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD
+                        ):
+                            running = True
+                            break
+                    except (ProcessLookupError, PermissionError, psutil.NoSuchProcess, psutil.AccessDenied):
+                        continue
+                if not running:
+                    break
+                await asyncio.sleep(0.02)
 
 
 class SATRunner:
@@ -230,9 +262,32 @@ class SATRunner:
         execution_id = message["execution_id"]
         if execution_id in self.runs or execution_id in self.executed:
             return
+        try:
+            from .execution_admission import admission_for
+        except ImportError:
+            from execution_admission import admission_for
+        admission = admission_for(self.agent)
+        if not admission.register(execution_id):
+            return
         self.executed.add(execution_id)
         self.suites[execution_id] = message["suite_id"]
-        self.runs[execution_id] = asyncio.create_task(self.execute(message))
+        self.runs[execution_id] = asyncio.create_task(self._execute_admitted(message))
+
+    async def _execute_admitted(self, message):
+        execution_id = message["execution_id"]
+        admission = self.agent.execution_admission
+        try:
+            if not await admission.wait(execution_id):
+                self.cancel_requested.add(execution_id)
+            await self.execute(message)
+        finally:
+            # Also covers failures before the runner enters its own try/finally.
+            self.started.discard(execution_id)
+            self.cancel_requested.discard(execution_id)
+            self.finalizing.discard(execution_id)
+            self.runs.pop(execution_id, None)
+            self.suites.pop(execution_id, None)
+            admission.release(execution_id)
 
     async def cancel(self, suite_id, execution_id=None):
         tasks = [
@@ -242,6 +297,7 @@ class SATRunner:
         ]
         for key, task in tasks:
             self.cancel_requested.add(key)
+            self.agent.execution_admission.cancel_waiting(key)
             # A task cancelled before its first turn never enters its finally.
             # Let execute consume that request; once finalizing, cancellation
             # waits for durable results/completion instead of interrupting them.

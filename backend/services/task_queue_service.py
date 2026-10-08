@@ -1,7 +1,7 @@
 """任务队列服务"""
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, update
 from models.task_queue import TaskQueue
 from models.environment import Environment
 from models.test_suite import TestSuite
@@ -76,21 +76,63 @@ class TaskQueueService:
         return task
     
     @staticmethod
-    def start_task(db: Session, execution_id: str) -> Optional[TaskQueue]:
-        """开始执行任务（从pending变为running）"""
-        task = db.query(TaskQueue).filter(
-            TaskQueue.execution_id == execution_id
-        ).first()
-        
-        if task and task.status == "pending":
-            task.status = "running"
-            task.started_at = beijing_now()
+    def lock_environment(db: Session, environment_id: str) -> Optional[Environment]:
+        """Serialize slot decisions until the caller commits/rolls back.
+
+        MySQL uses a current locking read, not an earlier repeatable-read
+        snapshot. SQLite has no row locks, so its offline/test path obtains a
+        write reservation with a no-op UPDATE before inspecting capacity.
+        """
+        if db.get_bind().dialect.name == "sqlite":
+            db.execute(update(Environment).where(Environment.id == environment_id).values(
+                id=Environment.id, updated_at=Environment.updated_at
+            ), execution_options={"synchronize_session": False})
+        return db.query(Environment).filter_by(id=environment_id).populate_existing().with_for_update().first()
+
+    @staticmethod
+    def start_task(
+        db: Session, execution_id: str, *, environment_id: Optional[str] = None,
+        commit: bool = True, eligibility=(),
+    ) -> Optional[TaskQueue]:
+        """Atomically reserve one slot and claim a pending execution.
+
+        Only the returned claim owner may dispatch. With commit=False the
+        caller must commit its delivery bookkeeping before network I/O, or
+        roll back the entire claim. Extra predicates preserve orchestration
+        cancellation/eligibility checks in the same conditional UPDATE.
+        """
+        environment_id = environment_id or db.query(TaskQueue.environment_id).filter_by(
+            execution_id=execution_id
+        ).scalar()
+        if not environment_id:
+            return None
+        environment = TaskQueueService.lock_environment(db, environment_id)
+        # Locking read is essential under MySQL REPEATABLE READ: an ordinary
+        # COUNT could reuse a snapshot from before the environment lock.
+        running = db.query(TaskQueue.id).filter_by(
+            environment_id=environment_id, status="running"
+        ).with_for_update().all()
+        task = None
+        if environment and environment.status and len(running) < max(1, environment.max_concurrent_tasks or 1):
+            changed = db.query(TaskQueue).filter(
+                TaskQueue.execution_id == execution_id,
+                TaskQueue.environment_id == environment_id,
+                TaskQueue.status == "pending", *eligibility,
+            ).update({"status": "running", "started_at": beijing_now()}, synchronize_session=False)
+            if changed == 1:
+                task = db.query(TaskQueue).filter_by(execution_id=execution_id).populate_existing().one()
+            elif changed > 1:
+                # Corrupt duplicate IDs must never dispatch multiple workloads.
+                db.rollback()
+                raise ValueError("执行ID对应多个任务，无法安全派发")
+        if commit:
             db.commit()
-            db.refresh(task)
-            logger.info(f"任务开始执行: execution_id={execution_id}")
-            return task
-        return None
-    
+            if task:
+                db.refresh(task)
+        if task:
+            logger.info("任务已领取运行槽：环境={}，执行={}", environment_id, execution_id)
+        return task
+
     @staticmethod
     def complete_task(
         db: Session,
@@ -102,16 +144,20 @@ class TaskQueueService:
             TaskQueue.execution_id == execution_id
         ).first()
         
-        if task and task.status in ["running", "pending"]:
-            task.status = status
+        if task:
+            values = {"status": status}
             if status in ["completed", "failed", "cancelled"]:
-                task.completed_at = beijing_now()
+                values["completed_at"] = beijing_now()
+            changed = db.query(TaskQueue).filter(
+                TaskQueue.id == task.id, TaskQueue.status.in_(("running", "pending"))
+            ).update(values, synchronize_session=False)
             db.commit()
             db.refresh(task)
-            logger.info(f"任务完成: execution_id={execution_id}, status={status}")
-            return task
+            if changed:
+                logger.info(f"任务完成: execution_id={execution_id}, status={status}")
+                return task
         return None
-    
+
     @staticmethod
     def get_next_pending_task(db: Session, environment_id: str) -> Optional[TaskQueue]:
         """获取下一个待执行的任务（按优先级和创建时间排序）"""

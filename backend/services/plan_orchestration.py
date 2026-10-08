@@ -414,20 +414,17 @@ async def advance_plan_runs(db):
                                 item.environment_id = candidate.id
                                 db.commit()
                                 break
-                    environment = db.query(Environment).filter_by(id=item.environment_id).with_for_update().first()
+                    environment = TaskQueueService.lock_environment(db, item.environment_id)
                     if not environment or not environment.status or item.environment_id not in manager.active_connections:
                         db.commit()
                         continue
-                    if not TaskQueueService.can_execute_immediately(db, item.environment_id):
-                        db.commit()
-                        continue
                     try:
-                        executor = db.query(User).filter_by(id=run.executor_id).populate_existing().first()
-                        plan = db.get(TestPlan, run.plan_id)
+                        executor = db.query(User).filter_by(id=run.executor_id).populate_existing().with_for_update().first()
+                        plan = db.query(TestPlan).filter_by(id=run.plan_id).populate_existing().with_for_update().first()
                         if not executor or not executor.status:
                             raise ValueError("计划执行人不存在或已被禁用")
-                        require_project_access(db, executor, plan.project_id, "test_plan:execute")
-                        suite = db.get(TestSuite, item.suite_id)
+                        require_project_access(db, executor, plan.project_id, "test_plan:execute", current_read=True)
+                        suite = db.query(TestSuite).filter_by(id=item.suite_id).populate_existing().with_for_update().first()
                         from types import SimpleNamespace
                         view = SimpleNamespace(**{column.name: getattr(suite, column.name) for column in TestSuite.__table__.columns})
                         view.case_ids = item.suite_snapshot["caseIds"]
@@ -438,7 +435,7 @@ async def advance_plan_runs(db):
                             view.git_enabled = item.suite_snapshot["gitEnabled"]
                             view.git_repo_url = item.suite_snapshot.get("gitRepoUrl")
                             view.git_branch = item.suite_snapshot.get("gitBranch")
-                        message = build_suite_message(db, view, item.execution_id, run.executor_id, run.case_snapshot)
+                        message = build_suite_message(db, view, item.execution_id, run.executor_id, run.case_snapshot, current_read=True)
                     except Exception:
                         logger.exception("计划派发前校验失败：批次={}，执行={}", run.id, item.execution_id)
                         _cancel_waiting_item(db, item, "failed", "派发前校验失败，请检查执行人权限与测试套配置")
@@ -448,13 +445,13 @@ async def advance_plan_runs(db):
                         continue
                     runnable_items = db.query(PlanRunItem.execution_id).join(PlanRun, PlanRun.id == PlanRunItem.run_id).filter(
                         PlanRun.status.in_(("queued", "running")))
-                    claimed = db.query(TaskQueue).filter(TaskQueue.execution_id == item.execution_id,
-                        TaskQueue.status == "pending", TaskQueue.environment_id == item.environment_id, TaskQueue.execution_id.in_(runnable_items)).update(
-                        {"status": "running", "started_at": beijing_now()}, synchronize_session=False)
-                    if claimed != 1:
+                    task = TaskQueueService.start_task(
+                        db, item.execution_id, environment_id=item.environment_id, commit=False,
+                        eligibility=(TaskQueue.execution_id.in_(runnable_items),),
+                    )
+                    if not task:
                         db.rollback()
                         continue
-                    task = db.query(TaskQueue).filter_by(execution_id=item.execution_id).populate_existing().one()
                     item.status = "running"
                     item.delivery_state = "dispatching"
                     item.dispatch_attempted_at = beijing_now()

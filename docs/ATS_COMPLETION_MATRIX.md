@@ -1,4 +1,6 @@
-# ATS remaining implementation and acceptance matrix
+# Historical ATS UI implementation and acceptance matrix
+
+> Superseded as the active completion scope on 2026-10-08 by the user’s explicit communication/script/log priority. See [Reliable Agent plan](RELIABLE_AGENT_PLAN.md). The former 23 feature groups are historical backlog, not a current promise to implement all groups. Unpublished review/report/media/aggregate-defect work is preserved separately and deferred.
 
 ## Scope and evidence
 

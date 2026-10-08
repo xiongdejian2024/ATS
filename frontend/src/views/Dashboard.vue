@@ -906,10 +906,10 @@ onMounted(() => {
   font-size: 24px;
 }
 
-.icon-box.primary { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.icon-box.primary { background: var(--ms-primary-soft); color: var(--primary-color); }
 .icon-box.success { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
 .icon-box.warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-.icon-box.purple { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
+.icon-box.purple { background: var(--ms-primary-soft); color: var(--primary-color); }
 
 .stat-info {
   display: flex;

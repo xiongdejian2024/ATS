@@ -47,3 +47,20 @@ def build_suite_message(db, suite, execution_id, executor_id, case_snapshots=Non
 def is_xat_command(command):
     """统一识别 XAT 命令和原 ats-sat 兼容入口。"""
     return command.strip().split(maxsplit=1)[:1] in (["xat"], ["ats-sat"])
+
+
+def load_dispatch_suite(db, suite_id, executor_id):
+    """Current-read permission/configuration check inside a slot transaction."""
+    from core.project_access import require_project_access
+    from models import User, TestSuite, TestPlan
+
+    executor = db.query(User).filter_by(id=executor_id).populate_existing().with_for_update().first()
+    if not executor or not executor.status:
+        raise ValueError("测试套执行人不存在或已被禁用")
+    suite = db.query(TestSuite).filter_by(id=suite_id).populate_existing().with_for_update().first()
+    plan = (db.query(TestPlan).filter_by(id=suite.plan_id).populate_existing().with_for_update().first()
+            if suite else None)
+    if not suite or not plan:
+        raise ValueError("测试套或所属计划不存在")
+    require_project_access(db, executor, plan.project_id, "test_plan:execute", current_read=True)
+    return suite

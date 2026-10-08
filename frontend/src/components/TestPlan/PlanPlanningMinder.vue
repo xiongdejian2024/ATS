@@ -109,7 +109,7 @@
                       :key="index"
                       :d="path"
                       fill="none"
-                      stroke="#c5b1d0"
+                      stroke="var(--primary-border)"
                       stroke-width="1"
                     />
                   </g>
@@ -1389,8 +1389,8 @@ watch(
   position: absolute;
   z-index: 40;
   pointer-events: none;
-  border: 1px solid #811fa3;
-  background: #811fa31a;
+  border: 1px solid var(--primary-color);
+  background: var(--primary-selection-overlay);
 }
 .minder-sizing {
   position: relative;

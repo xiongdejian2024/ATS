@@ -1245,8 +1245,8 @@ onBeforeUnmount(() => {
   position: absolute;
   pointer-events: none;
   z-index: 20;
-  border: 1px solid #811fa3;
-  background: #811fa318;
+  border: 1px solid var(--primary-color);
+  background: var(--primary-selection-overlay);
 }
 .multi-selection {
   margin: 8px;

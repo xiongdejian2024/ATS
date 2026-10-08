@@ -129,13 +129,13 @@ const position = computed(() =>
   overflow-wrap: anywhere;
 }
 .minder-node.root {
-  background: #811fa3;
+  background: var(--primary-color);
   color: #fff;
-  border-color: #811fa3;
+  border-color: var(--primary-color);
 }
 .minder-node.selected {
-  outline: 2px solid #c689de;
-  background: #f9f0ff;
+  outline: 2px solid var(--primary-focus);
+  background: var(--ms-primary-soft);
   color: #1d2129;
 }
 .case-code {

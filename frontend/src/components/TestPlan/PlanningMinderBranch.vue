@@ -260,9 +260,9 @@ function sortable(node: PlanMinderNode) {
 .minder-node {
   flex-shrink: 0;
   width: max-content;
-  border: 1px solid #d8c5e0;
+  border: 1px solid var(--primary-border);
   border-radius: 4px;
-  background: #faf7fc;
+  background: var(--ms-primary-soft);
   color: #333;
   padding: 8px 12px;
   font-size: 12px;
@@ -272,24 +272,24 @@ function sortable(node: PlanMinderNode) {
   text-align: left;
 }
 .minder-node.selected {
-  outline: 2px solid #811fa3;
+  outline: 2px solid var(--primary-color);
 }
 .minder-name-editor {
   box-sizing: border-box;
   width: 200px;
   padding: 8px 12px;
-  border: 2px solid #811fa3;
+  border: 2px solid var(--primary-color);
   border-radius: 4px;
   font-size: 12px;
 }
 .minder-node.root {
   color: white;
-  background: #811fa3;
+  background: var(--primary-color);
   font-weight: 600;
 }
 .fold-toggle {
   margin-left: 6px;
-  border: 1px solid #d8c5e0;
+  border: 1px solid var(--primary-border);
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -301,7 +301,7 @@ function sortable(node: PlanMinderNode) {
   display: flex;
   flex-direction: column;
   margin-left: 48px;
-  border-left: 1px solid #c5b1d0;
+  border-left: 1px solid var(--primary-border);
   position: relative;
   padding-left: 24px;
 }
@@ -311,7 +311,7 @@ function sortable(node: PlanMinderNode) {
   left: -48px;
   top: 50%;
   width: 48px;
-  border-top: 1px solid #c5b1d0;
+  border-top: 1px solid var(--primary-border);
 }
 .branch-children > .minder-branch::before,
 .collection-children > .minder-branch::before {
@@ -320,7 +320,7 @@ function sortable(node: PlanMinderNode) {
   left: -24px;
   top: 50%;
   width: 24px;
-  border-top: 1px solid #c5b1d0;
+  border-top: 1px solid var(--primary-border);
 }
 .sortable-collection > .branch-label > .minder-node {
   cursor: grab;

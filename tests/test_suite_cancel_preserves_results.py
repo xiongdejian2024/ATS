@@ -181,13 +181,18 @@ async def test_suite_cancel_does_not_overwrite_completion_during_send(plan_lab, 
 
 
 @pytest.mark.asyncio
-async def test_legacy_suite_wide_cancel_retains_immediate_completion(plan_lab):
+@pytest.mark.parametrize("command", ["pytest test_legacy.py", "ats-native-http"])
+async def test_all_running_runners_wait_for_terminal_ack(plan_lab, command):
     db, sent = plan_lab
-    suite, task = running_task(db, command="pytest test_legacy.py")
+    suite, task = running_task(db, command=command)
 
     await cancel_test_suite(suite.id, CancelRequest(), db, db.get(User, "owner"))
 
     db.refresh(task)
+    assert task.status == "running"
+    assert task.completed_at is None
+    assert sent[-1][1]["type"] == "cancel_test_suite"
+    assert await handle_test_suite_completed(db, "node", completion_message(task.execution_id))
+    db.refresh(task)
     assert task.status == "cancelled"
     assert task.completed_at is not None
-    assert sent[-1][1]["type"] == "cancel_test_suite"

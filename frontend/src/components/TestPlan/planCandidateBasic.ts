@@ -1,3 +1,4 @@
+import { bluePalette } from "@/styles/theme";
 import type { CandidateCondition } from "@/api/planCaseWorkspace";
 
 /** 官方请求方式顺序；未认识的插件方式仍按真实文本显示。 */
@@ -15,7 +16,7 @@ export function methodColor(method?: string | null) {
   if (["GET", "HEAD", "HTTP"].includes(method || "")) return "#00a870";
   if (method === "POST") return "#d88100";
   if (method === "DELETE") return "#f53f3f";
-  if (method === "PATCH") return "#811fa3";
+  if (method === "PATCH") return bluePalette.primary;
   if (method === "CONNECT") return "#bb81ce";
   return "#165dff";
 }

@@ -1,8 +1,11 @@
-/* 按 MS V3 默认主题独立实现，保留 ATS 品牌。 */
+/* ATS 蓝色主题；当前应用采用明确的浅色界面，系统深色偏好不产生半深色控件。 */
 :root {
-  --primary-color:#811fa3; --primary-hover:#6e1a8b;
+  color-scheme:light;
+  --primary-color:#1d4ed8; --primary-hover:#1e40af; --primary-active:#1e3a8a;
+  --primary-focus:#2563eb; --primary-border:#93c5fd; --primary-on-color:#ffffff;
+  --primary-selection-overlay:rgb(29 78 216 / 10%);
   --primary-gradient:var(--primary-color); --success-gradient:#00b42a; --warning-gradient:#ff7d00; --error-gradient:#f53f3f;
-  --ms-primary-soft:#f5eaf8; --ms-page-bg:#f2f3f5; --ms-border:#e5e6eb;
+  --ms-primary-soft:#eff6ff; --primary-selected:#dbeafe; --ms-page-bg:#f2f3f5; --ms-border:#e5e6eb;
   --ms-text:#1d2129; --ms-text-secondary:#4e5969; --ms-text-muted:#86909c;
   --glass-bg:#fff; --glass-border:var(--ms-border); --card-shadow:none; --glow-shadow:none;
   --shadow-sm:0 1px 2px rgb(0 0 0 / 5%); --shadow-md:0 2px 8px rgb(0 0 0 / 8%);
@@ -15,8 +18,8 @@ body { font-family:'Helvetica Neue',Arial,'PingFang SC',sans-serif; font-size:14
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:#c9cdd4; border-radius:4px; }
 ::-webkit-scrollbar-thumb:hover { background:#a9aeb8; }
-.ant-btn-primary:not(:disabled) { background:var(--primary-color); border-color:var(--primary-color); box-shadow:none; }
-.ant-btn-primary:not(:disabled):hover { background:var(--primary-hover); border-color:var(--primary-hover); transform:none; }
+.ant-btn-primary:not(:disabled):not(.ant-btn-dangerous) { background:var(--primary-color); border-color:var(--primary-color); box-shadow:none; }
+.ant-btn-primary:not(:disabled):not(.ant-btn-dangerous):hover { background:var(--primary-hover); border-color:var(--primary-hover); transform:none; }
 .ant-card,.glass-card { border-radius:4px !important; border:1px solid var(--ms-border) !important; background:#fff !important; backdrop-filter:none !important; box-shadow:none; }
 .glass-card:hover { transform:none; box-shadow:none; }
 .ant-table { background:#fff; }
