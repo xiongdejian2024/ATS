@@ -225,6 +225,9 @@ def test_current_authority_invalid_members_and_scope_are_atomic(pool_lab):
         invalid_member.value.status_code == 422
         and pools.catalog(db, user)["items"][0] == original
     )
+    # End the catalog request before simulating a permission change from
+    # another connection. Its current-read locks live until request teardown.
+    db.rollback()
     with SessionLocal() as fresh:
         fresh.query(UserRole).filter_by(user_id="owner").delete()
         fresh.commit()
