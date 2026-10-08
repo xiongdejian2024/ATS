@@ -77,7 +77,10 @@ async def test_immediate_cancel_before_execute_first_yield(
     )
     runner.start(message)
     task = runner.runs["run"]
-    await asyncio.wait_for(runner.cancel("suite", "run"), 10)
+    # wait_for(coro) schedules an extra Task on Python 3.11, allowing execute
+    # to start first. A timeout context preserves the pre-first-yield boundary.
+    async with asyncio.timeout(10):
+        await runner.cancel("suite", "run")
     assert not task.cancelled()
     assert not runner.runs and not runner.suites
     assert not runner.started and not runner.cancel_requested and not runner.finalizing
