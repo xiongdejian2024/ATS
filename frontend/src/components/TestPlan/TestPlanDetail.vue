@@ -7,7 +7,7 @@
       <a-tab-pane v-if="plan.categoryCounts?.functional" key="featureCase" :tab="`功能用例 (${plan.categoryCounts.functional})`"><PlanCategoryWorkspace :plan="plan" category="functional" :can-edit="canEdit" @changed="emit('changed')" /></a-tab-pane>
       <a-tab-pane v-if="plan.categoryCounts?.api" key="apiCase" :tab="`API 用例 (${plan.categoryCounts.api})`"><PlanCategoryWorkspace :plan="plan" category="api" :can-edit="canEdit" @changed="emit('changed')" /></a-tab-pane>
       <a-tab-pane v-if="plan.categoryCounts?.scenario" key="apiScenario" :tab="`API 场景 (${plan.categoryCounts.scenario})`"><PlanCategoryWorkspace :plan="plan" category="scenario" :can-edit="canEdit" @changed="emit('changed')" /></a-tab-pane>
-      <a-tab-pane key="defectList" tab="缺陷列表"><PlanDefects :plan-id="plan.id" :editable="canEdit" /></a-tab-pane>
+      <a-tab-pane key="defectList" tab="缺陷列表"><PlanDefects ref="defects" :plan-id="plan.id" :editable="canEdit" /></a-tab-pane>
       <a-tab-pane key="executeHistory" tab="执行历史">
         <a-button :loading="loading" style="margin-bottom:12px" @click="loadRuns">刷新执行历史</a-button>
         <a-alert message="每次执行独立保存用例和策略快照，报告按该批次实际结果统计。通过率以全部用例执行项为分母，跳过与未执行不算通过。" type="info" show-icon />
@@ -57,6 +57,7 @@ import { testPlanApi } from '@/api/testPlan'
 import { testSuiteApi, type TestSuite } from '@/api/testSuite'
 import { planOrchestrationApi, type PlanGroup, type PlanPolicy, type PlanRun } from '@/api/planOrchestration'
 const props = defineProps<{ plan: TestPlan; runId?: string;canEdit:boolean }>()
+const defects = ref<InstanceType<typeof PlanDefects>>()
 const emit = defineEmits<{changed:[]}>(),router=useRouter(),route=useRoute()
 const loading = ref(false), saving = ref(false), policyOpen = ref(false), logsOpen = ref(false)
 const tab=computed(()=>{const key=String(route.query.tab||'plan');const allowed=['plan','defectList','executeHistory'];if(props.plan.categoryCounts?.functional)allowed.push('featureCase');if(props.plan.categoryCounts?.api)allowed.push('apiCase');if(props.plan.categoryCounts?.scenario)allowed.push('apiScenario');return allowed.includes(key)?key:'plan'})
@@ -96,7 +97,7 @@ function onPage(p: any) { pagination.value.current = p.current; pagination.value
 watch(tab, key => { if (key === 'executeHistory') void loadRuns() })
 onMounted(load)
 watch(() => props.plan.id, () => { logsOpen.value = false; logRunId.value = ''; pagination.value.current = 1; load() })
-defineExpose({ refresh: loadRuns,openSettings:()=>{if(props.canEdit)policyOpen.value=true} })
+defineExpose({ refresh: loadRuns, beforeClose: async () => (await defects.value?.beforeClose()) ?? true, openSettings:()=>{if(props.canEdit)policyOpen.value=true} })
 </script>
 
 <style scoped>

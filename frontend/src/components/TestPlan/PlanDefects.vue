@@ -8,12 +8,10 @@
   />
   <template v-else>
     <div>
-      <a-alert
-        v-if="!caseId"
-        type="info"
-        message="在功能用例的缺陷面板或脑图菜单新建、关联缺陷"
-        style="margin-bottom: 16px"
-      />
+      <a-space v-if="!caseId" class="toolbar" wrap>
+        <a-button v-if="aggregateCapabilities.canCreate" type="primary" @click="pick('create')">新建缺陷</a-button>
+        <a-button v-if="aggregateCapabilities.canAssociate" @click="pick('associate')">关联缺陷</a-button>
+      </a-space>
       <a-space wrap class="toolbar"
         ><a-button
           v-if="canEdit && caseId"
@@ -55,6 +53,8 @@
         ></a-table
       >
     </div>
+    <PlanInstancePicker :plan-id="planId" :open="pickerOpen" @cancel="pickerOpen=false" @confirm="chooseInstances" />
+    <PlanDefectBindingEditor ref="aggregateEditor" :plan-id="planId" :selection="{ selectIds: chosenInstances }" @changed="aggregateChanged" />
     <a-modal
       v-model:open="open"
       title="新建计划缺陷"
@@ -98,9 +98,12 @@
 </template>
 <script setup lang="ts">
 import PlanInstanceDefects from "./PlanInstanceDefects.vue";
-import { computed, ref, reactive, watch } from "vue";
+import PlanInstancePicker from './PlanInstancePicker.vue'
+import PlanDefectBindingEditor from './PlanDefectBindingEditor.vue'
+import { computed, ref, reactive, watch, nextTick } from "vue";
 import { message } from "ant-design-vue";
 import { apiClient } from "@/utils/api";
+import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import type { CaseIssue } from "@/api/caseFeatures";
 const props = defineProps<{
     planId: string;
@@ -119,9 +122,18 @@ type Defect = CaseIssue & {
   caseCount?: number;
 };
 const instance = ref<InstanceType<typeof PlanInstanceDefects>>();
-defineExpose({
-  beforeClose: async () => (await instance.value?.beforeClose()) ?? true,
-});
+const aggregateEditor = ref<InstanceType<typeof PlanDefectBindingEditor>>()
+const pickerOpen = ref(false), pickMode = ref<'create' | 'associate'>('create'), chosenInstances = ref<string[]>([])
+const aggregateCapabilities = ref({ canCreate: false, canAssociate: false })
+function pick(mode: 'create' | 'associate') { pickMode.value = mode; pickerOpen.value = true }
+async function chooseInstances(keys: string[]) {
+  chosenInstances.value = keys; pickerOpen.value = false
+  await nextTick(); await aggregateEditor.value?.open(pickMode.value)
+}
+async function aggregateChanged() { await load(); emit('changed') }
+const beforeClose = async () => (await instance.value?.beforeClose()) ?? (await aggregateEditor.value?.beforeClose()) ?? true
+onBeforeRouteLeave(beforeClose); onBeforeRouteUpdate(beforeClose)
+defineExpose({ beforeClose });
 const page = ref(1),
   total = ref(0),
   submittedSearch = ref("");
@@ -200,6 +212,8 @@ async function load() {
       items: Defect[];
       cases: { id: string; name: string }[];
       canEdit: boolean;
+      canCreate?: boolean;
+      canAssociate?: boolean;
       total?: number;
     }>(
       props.caseId
@@ -220,6 +234,7 @@ async function load() {
       total.value = result.total || 0;
       cases.value = result.cases;
       permission.value = result.canEdit;
+      aggregateCapabilities.value = { canCreate: !!result.canCreate, canAssociate: !!result.canAssociate }
     }
   } catch (error) {
     console.error("加载计划缺陷失败", error);
@@ -227,6 +242,7 @@ async function load() {
       failed.value = true;
       items.value = [];
       permission.value = false;
+      aggregateCapabilities.value = { canCreate: false, canAssociate: false }
     }
   } finally {
     if (current === sequence) loading.value = false;
@@ -260,6 +276,8 @@ watch(
   () => {
     items.value = [];
     permission.value = false;
+    aggregateCapabilities.value = { canCreate: false, canAssociate: false }
+    pickerOpen.value = false; chosenInstances.value = []
     open.value = false;
     view.value = undefined;
     if (!props.associationKey) void load();

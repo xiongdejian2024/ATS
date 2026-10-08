@@ -83,6 +83,7 @@
   </a-drawer>
 </template>
 <script setup lang="ts">
+import {onMounted as mountUnload, onBeforeUnmount as unmountUnload} from "vue";
 import { computed, ref, watch, onBeforeUnmount } from "vue";
 import { Modal, message } from "ant-design-vue";
 import type { Key } from "ant-design-vue/es/_util/type";
@@ -120,6 +121,9 @@ const dirty = computed(
 let sequence = 0,
   candidatesSequence = 0,
   pending: { body: string; id: string } | undefined;
+function beforeUnload(event: BeforeUnloadEvent) { if (visible.value && (dirty.value || saving.value)) { event.preventDefault(); event.returnValue = ""; } }
+mountUnload(() => window.addEventListener("beforeunload", beforeUnload));
+unmountUnload(() => window.removeEventListener("beforeunload", beforeUnload));
 async function beforeClose() {
   if (saving.value || loading.value) {
     message.warning("请等待缺陷操作完成");

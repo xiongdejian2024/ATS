@@ -4,6 +4,14 @@
       <a-button @click="back">返回测试计划</a-button>
       <h2>{{ plan?.name || "功能用例执行" }}</h2>
     </header>
+    <a-alert v-if="activeRuns.length" type="info" message="此计划有活动批次；请在冻结批次中回填，独立历史保持不变">
+      <template #description>
+        <a-space direction="vertical">
+          <a-button v-for="run in activeRuns" :key="run.id" @click="openActiveRun(run)">打开批次 {{ run.id }} · {{ run.status }}{{ run.frozenSelection ? ' · 当前用例在冻结范围内' : ' · 查看批次范围' }}</a-button>
+          <a-pagination v-if="activeTotal > 20" v-model:current="activePage" :page-size="20" :total="activeTotal" @change="loadActiveRuns" />
+        </a-space>
+      </template>
+    </a-alert>
     <a-result
       v-if="failed"
       status="error"
@@ -334,6 +342,7 @@ import {
 } from "vue-router";
 import { message, Modal } from "ant-design-vue";
 import { testPlanApi } from "@/api/testPlan";
+import { planOrchestrationApi } from '@/api/planOrchestration'
 import {
   planCaseWorkspaceApi,
   type PlanCaseEntry,
@@ -360,6 +369,23 @@ const route = useRoute(),
   router = useRouter(),
   projects = useProjectStore();
 const planId = computed(() => String(route.params.planId || ""));
+type ActiveRun = Awaited<ReturnType<typeof planOrchestrationApi.activeRuns>>['items'][number]
+const activeRuns = ref<ActiveRun[]>([]), activeTotal = ref(0), activePage = ref(1)
+let activeSequence = 0
+async function loadActiveRuns() {
+  const current = ++activeSequence
+  try {
+    const data = await planOrchestrationApi.activeRuns(planId.value, {
+      source: typeof route.query.source === 'string' ? route.query.source : undefined,
+      associationId: typeof route.query.associationId === 'string' ? route.query.associationId : undefined,
+      caseId: typeof route.query.caseId === 'string' ? route.query.caseId : undefined, page: activePage.value,
+    })
+    if (current === activeSequence) { activeRuns.value = data.items; activeTotal.value = data.total }
+  } catch (error) { if (current === activeSequence) { activeRuns.value = []; activeTotal.value = 0; console.error('读取活动批次失败', error) } }
+}
+function openActiveRun(run: ActiveRun) {
+  void router.push({ name: 'TestPlanReportDetail', params: { runId: run.id }, query: { projectId: projectId.value, kind: 'PLAN', ...(run.associationId ? { associationId: run.associationId } : {}) } })
+}
 const projectId = computed(() =>
   String(route.query.projectId || projects.currentProject?.id || ""),
 );
@@ -399,6 +425,7 @@ const search = ref(initialListing.search),
   tab = ref("details");
 const mediaDraft = new ExecutionMediaDraft(planCaseMediaApi.cleanup);
 onBeforeUnmount(() => {
+  ++activeSequence;
   active = false;
   ++contextSequence;
   ++listSequence;
@@ -751,6 +778,10 @@ watch(selectedKey, () => {
     void loadDetail();
   }
 });
+watch(() => [planId.value, projectId.value, selectedKey.value], () => {
+  ++activeSequence; activeRuns.value = []; activeTotal.value = 0; activePage.value = 1
+  if (planId.value) void loadActiveRuns()
+}, { immediate: true })
 </script>
 <style scoped>
 .functional-execution {

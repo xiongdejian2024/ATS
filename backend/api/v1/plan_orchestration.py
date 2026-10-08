@@ -39,6 +39,25 @@ def require_run(db, user, run_id, action="read", *, metadata_only=False):
     return run
 
 
+@router.get("/plans/{plan_id}/active-execution-context", response_model=APIResponse)
+def active_execution_context(plan_id: str, source: str = Query("", pattern="^(?:legacy|node|)$"), associationId: str = Query("", max_length=36), caseId: str = Query("", max_length=36), page: int = Query(1, ge=1), db: Session = Depends(get_db), user=Depends(get_current_user)):
+    require_plan(db, user, plan_id)
+    from services.plan_orchestration import ACTIVE
+    runs = db.query(PlanRun).filter(PlanRun.plan_id == plan_id, PlanRun.status.in_(ACTIVE))
+    total = runs.count()
+    items = []
+    for run in runs.order_by(PlanRun.created_at.desc(), PlanRun.id).offset((page - 1) * 20).limit(20):
+        # A legacy snapshot may predate association IDs. Match its master ID
+        # only for legacy rows, never for duplicated tree instances.
+        selected = next((row for row in run.case_snapshot if row.get("id") == caseId and (
+            row.get("associationId") == associationId or source == "legacy" and not row.get("associationId"))), None)
+        items.append(dict(id=run.id, status=run.status, createdAt=run.created_at,
+                          associationId=selected.get("associationId", selected["id"]) if selected else None,
+                          caseName=selected.get("name") if selected else None,
+                          frozenSelection=bool(selected)))
+    return ok(dict(items=items, total=total, page=page, size=20))
+
+
 @router.get("/projects/{project_id}/groups", response_model=APIResponse)
 def groups(project_id: str, archived: bool = False, db: Session = Depends(get_db), user=Depends(get_current_user)):
     require_project_access(db, user, project_id, "test_plan:read")

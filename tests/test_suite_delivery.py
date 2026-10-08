@@ -37,6 +37,8 @@ def test_failed_dispatch_requires_explicit_proof_and_preserves_results(plan_lab)
 def test_node_ownership_and_frozen_environment_are_required(plan_lab):
     db, _ = plan_lab
     task = start(db)
+    db.add(User(id="different-owner", username="other node owner", email="other-node@example.com", password_hash="synthetic unused password"))
+    db.flush()
     db.get(Environment, "node").created_by = "different-owner"
     db.commit()
     with pytest.raises(HTTPException) as error:
