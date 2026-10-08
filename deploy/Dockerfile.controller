@@ -1,0 +1,13 @@
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY backend /app/backend
+COPY xat/pyproject.toml xat/README.md /app/xat/
+COPY xat/framework /app/xat/framework
+RUN pip install --no-cache-dir /app/backend /app/xat
+COPY scripts/start_render.py /app/scripts/start_render.py
+COPY scripts/init_postgres.py /app/scripts/init_postgres.py
+RUN useradd --create-home --uid 10001 ats && chown -R ats:ats /app
+USER ats
+EXPOSE 17400
+CMD ["python", "/app/scripts/start_render.py"]

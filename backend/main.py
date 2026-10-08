@@ -9,6 +9,7 @@ from fastapi.exceptions import RequestValidationError, HTTPException
 from fastapi import WebSocket, WebSocketDisconnect
 import traceback
 from config import settings
+from core.origin_access import OriginAccessMiddleware
 from database import engine, Base, SessionLocal
 from api.v1 import auth, users, dashboard, projects, environments, test_cases, test_plans, executions, workspace, test_suites, notifications, reports
 from api.v1.websocket import websocket_endpoint, frontend_manager
@@ -114,7 +115,7 @@ app.add_middleware(
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """处理请求验证错误，返回详细的错误信息"""
-    logger.exception(f"请求验证失败: {request.method} {request.url}")
+    logger.exception(f"请求验证失败: {request.method} {request.url.path}")
     errors = []
     for error in exc.errors():
         field = " -> ".join(str(loc) for loc in error["loc"])
@@ -141,7 +142,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def global_exception_handler(request: Request, exc: Exception):
     """全局异常处理器，捕获所有未处理的异常"""
     # 记录异常详细信息
-    logger.exception(f"未处理的异常: {request.method} {request.url}")
+    logger.exception(f"未处理的异常: {request.method} {request.url.path}")
     
     # 如果是 HTTPException，直接返回
     if isinstance(exc, HTTPException):
@@ -329,6 +330,29 @@ async def health_check():
         "service": settings.PROJECT_NAME,
         "version": settings.PROJECT_VERSION
     }
+
+
+@app.get("/ready")
+def readiness_check():
+    """Readiness includes database connectivity and the current model columns."""
+    from sqlalchemy import inspect, text
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+            inspector = inspect(connection)
+            schema = settings.DATABASE_SCHEMA or None
+            reflected = inspector.get_multi_columns(schema=schema, filter_names=list(Base.metadata.tables))
+            for table in Base.metadata.sorted_tables:
+                columns = {column["name"] for column in reflected.get((schema, table.name), [])}
+                if not set(table.columns.keys()) <= columns:
+                    return JSONResponse(status_code=503, content={"status": "not_ready"})
+    except Exception:
+        return JSONResponse(status_code=503, content={"status": "not_ready"})
+    return {"status": "ready"}
+
+
+app.add_middleware(OriginAccessMiddleware, required=settings.ATS_REQUIRE_ORIGIN_AUTH,
+                   service_key=settings.ATS_ORIGIN_SERVICE_KEY)
 
 
 if __name__ == "__main__":

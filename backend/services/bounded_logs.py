@@ -2,6 +2,7 @@
 from datetime import date, datetime
 from sqlalchemy import func
 from models.test_suite import TestSuiteLog
+from services.sql_dialect import text_tail
 from utils.serializer import to_camel_case
 
 MAX_LOG_RECORDS = 20
@@ -22,10 +23,10 @@ def log_window(query, skip, limit, tail_chars=None, latest=False, *, model=TestS
                   for key, value in row.items()} for row in legacy_log_rows(query, skip, limit)]
     else:
         query = query.offset(skip).limit(limit)
-        # 避免ORM序列化触发完整message的惰性加载；SQLite/MySQL均支持substr和char_length。
+        # 只投影尾部，避免ORM序列化触发完整message的惰性加载。
         length = func.length(model.message) if query.session.bind.dialect.name == 'sqlite' else func.char_length(model.message)
         columns = [c for c in model.__table__.columns if c.name != 'message']
-        rows = query.with_entities(*columns, func.substr(model.message, -tail_chars).label('message'), length.label('total_chars')).all()
+        rows = query.with_entities(*columns, text_tail(query.session, model.message, tail_chars).label('message'), length.label('total_chars')).all()
         items = []
         for row in rows:
             item = {to_camel_case(key): value.isoformat() if isinstance(value, (date, datetime)) else value for key, value in row._mapping.items()}

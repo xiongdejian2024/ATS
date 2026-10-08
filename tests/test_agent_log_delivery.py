@@ -172,6 +172,9 @@ def test_batch_persists_once_and_detects_gap_and_cross_node(plan_lab):
         db, "node", batch("too far", stream_id=message["stream_id"], first=4)
     )
     assert gap["reason"] == "gap" and gap["expected_sequence"] == 3
+    from models import Environment
+    db.add(Environment(id="other-node", name="Other authenticated node"))
+    db.commit()
     wrong, _ = persist_log_batch(db, "other-node", batch("not owned"))
     assert wrong["reason"] == "execution_not_owned"
     overlap, deltas = persist_log_batch(

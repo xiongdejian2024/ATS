@@ -11,7 +11,20 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "backend"))
 TEST_DIRECTORY = Path(tempfile.mkdtemp(prefix="ats-software-regression-"))
-os.environ["DATABASE_URL"] = "sqlite:///" + str(TEST_DIRECTORY / "test.sqlite")
+postgres_test_url = os.environ.get("ATS_POSTGRES_TEST_URL")
+if postgres_test_url:
+    from sqlalchemy.engine import make_url
+    test_url = make_url(postgres_test_url)
+    if (test_url.get_backend_name() != "postgresql"
+            or test_url.host not in {"127.0.0.1", "localhost"}
+            or test_url.database != "ats_pg_regression"
+            or test_url.query
+            or any(name.startswith("PG") for name in os.environ)):
+        raise RuntimeError("Destructive regression tests require loopback ats_pg_regression")
+    os.environ["DATABASE_URL"] = postgres_test_url
+    os.environ["DATABASE_SCHEMA"] = ""
+else:
+    os.environ["DATABASE_URL"] = "sqlite:///" + str(TEST_DIRECTORY / "test.sqlite")
 os.environ["ENVIRONMENT"] = "test"
 os.environ["LOG_FILE"] = str(TEST_DIRECTORY / "backend.log")
 

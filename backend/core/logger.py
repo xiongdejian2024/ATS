@@ -11,8 +11,9 @@ def setup_logger():
     logger.remove()
     
     # 创建日志目录
-    log_dir = Path("logs")
-    log_dir.mkdir(exist_ok=True)
+    log_file = Path(settings.LOG_FILE)
+    log_dir = log_file.parent
+    log_dir.mkdir(parents=True, exist_ok=True)
     
     # 日志格式
     log_format = (
@@ -43,7 +44,7 @@ def setup_logger():
     
     # 文件输出 - 所有日志
     logger.add(
-        log_dir / "ats.log",
+        log_file,
         format=log_format,
         level=settings.LOG_LEVEL,
         rotation="10 MB",

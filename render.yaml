@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: ats-controller
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deploy/Dockerfile.controller
+    numInstances: 1
+    # No anonymous HTTP health exemption: use Render's default TCP check.
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: ATS_REQUIRE_ORIGIN_AUTH
+        value: 'true'
+      - key: DATABASE_SCHEMA
+        value: ats
+      - key: DATABASE_POOL_SIZE
+        value: '3'
+      - key: DATABASE_MAX_OVERFLOW
+        value: '2'
+      - key: LOG_FILE
+        value: /tmp/ats/controller.log
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: ATS_ORIGIN_SERVICE_KEY
+        sync: false
