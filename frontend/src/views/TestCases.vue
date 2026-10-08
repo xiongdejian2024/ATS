@@ -203,6 +203,10 @@
                 {{ formatDateTime(record.updatedAt) }}
               </template>
 
+              <template v-else-if="column.key.startsWith('customFields.')">
+                {{ caseCustomValue(record.customFields?.[column.key.slice(13)], column.fieldType) }}
+              </template>
+
               <template v-else-if="column.key === 'actions'">
                 <a-space>
                   <a-button type="link" size="small" @click="handleEditCase(record)">
@@ -369,6 +373,7 @@ import TestCaseFilter from '@/components/TestCase/TestCaseFilter.vue'
 import { caseSearchParams, isAdvancedCaseSearch } from '@/components/TestCase/caseSearchScope'
 import { useCaseSelection } from '@/components/TestCase/caseSelection'
 import { filterFieldCatalog } from '@/components/TestCase/filterFieldCatalog'
+import { caseCustomColumns, caseCustomValue, retainUnavailableCaseColumns } from '@/components/TestCase/caseCustomColumns'
 import { caseGovernanceApi } from '@/api/caseGovernance'
 import ImportCasesModal from '@/components/TestCase/ImportCasesModal.vue'
 import CaseGovernancePanel from '@/components/TestCase/CaseGovernancePanel.vue'
@@ -512,6 +517,7 @@ let filterMetadataCache: {
 } = { project: '', templates: [], members: [] }
 const loadFilterFields = async () => {
   const project = projectId.value
+  const scope=mindScope.value
   if (!project) return
   const sequence = ++filterLoadSequence
   filterFieldLoading.value = true
@@ -521,7 +527,7 @@ const loadFilterFields = async () => {
       caseFeaturesApi.templates(project),
       caseGovernanceApi.reviewers(project),
     ])
-    if (sequence !== filterLoadSequence || project !== projectId.value) return
+    if (sequence !== filterLoadSequence || scope !== mindScope.value) return
     const labels = ['筛选字段', '自定义字段', '项目成员']
     const failed: string[] = []
     results.forEach((result, index) => {
@@ -530,8 +536,8 @@ const loadFilterFields = async () => {
         console.error(`加载${labels[index]}失败`, result.reason)
       }
     })
-    if (filterMetadataCache.project !== project)
-      filterMetadataCache = { project, templates: [], members: [] }
+    if (filterMetadataCache.project !== scope)
+      filterMetadataCache = { project:scope, templates: [], members: [] }
     if (results[0].status === 'fulfilled')
       filterMetadataCache.fields = results[0].value
     if (results[1].status === 'fulfilled')
@@ -557,7 +563,7 @@ const loadFilterFields = async () => {
       : ''
   } catch (error) {
     console.error('整理筛选字段失败，保留错误和重试入口', error)
-    if (sequence === filterLoadSequence && project === projectId.value)
+    if (sequence === filterLoadSequence && scope === mindScope.value)
       filterFieldError.value = '筛选字段加载失败，请重试'
   } finally {
     if (sequence === filterLoadSequence) filterFieldLoading.value = false
@@ -833,7 +839,7 @@ const baseColumns = [
 ]
 
 const defaultColumnOrder = ['id','name','level','reviewResult','executionResult','modulePath','tags','updatedBy','updatedAt','createdBy','createdAt','isAutomated']
-const allColumns = defaultColumnOrder.map(key=>baseColumns.find(column=>column.key===key)!)
+const allColumns = computed(()=>[...defaultColumnOrder.map(key=>baseColumns.find(column=>column.key===key)!),...caseCustomColumns(filterFields.value)])
 
 // 操作列（始终显示）
 const actionColumn = {
@@ -844,14 +850,14 @@ const actionColumn = {
 }
 
 // 显示偏好与当前用户、项目隔离，复用本地存储保存列宽。
-const displayDefinitions: DisplayColumn[] = allColumns.map(column=>({key:column.key,title:column.title,required:['id','name'].includes(column.key),defaultVisible:column.defaultVisible}))
+const displayDefinitions = computed<DisplayColumn[]>(()=>allColumns.value.map(column=>({key:column.key,title:column.title,required:['id','name'].includes(column.key),defaultVisible:column.defaultVisible})))
 const tableStorageKey = computed(()=>displayStorageKey(userStore.user?.id || '',projectId.value,'test-cases'))
-const tableDisplay = ref<TableDisplay>(readDisplay(localStorage,tableStorageKey.value,displayDefinitions))
+const tableDisplay = ref<TableDisplay>(readDisplay(localStorage,tableStorageKey.value,displayDefinitions.value))
 pagination.pageSize = tableDisplay.value.pageSize
 const columnSettingVisible = ref(false), tableSettingsError = ref('')
 const columns = computed(()=>{
-  const definitions = new Map(allColumns.map(column=>[column.key,column]))
-  const shown = tableDisplay.value.columns.filter(column=>column.visible).map(column=>{
+  const definitions = new Map(allColumns.value.map(column=>[column.key,column]))
+  const shown = tableDisplay.value.columns.filter(column=>column.visible && definitions.has(column.key)).map(column=>{
     const definition=definitions.get(column.key)!
     const values:Record<string,unknown>={level:filters.level,reviewResult:filters.reviewResult,executionResult:filters.executionResult,isAutomated:filters.isAutomated}
     return {...resizableColumn(definition,column), filters:isAdvancedSearchMode.value ? undefined : definition.filters, filteredValue:isAdvancedSearchMode.value || values[column.key]===undefined ? null : [values[column.key]]}
@@ -861,8 +867,12 @@ const columns = computed(()=>{
 const tableWidth = computed(()=>columns.value.reduce((width,column)=>width+column.width,50))
 function persistTableDisplay(next:TableDisplay):boolean {
   try {
-    const normalized=normalizeDisplay(next,displayDefinitions)
-    localStorage.setItem(tableStorageKey.value,JSON.stringify(normalized))
+    const normalized=normalizeDisplay(next,displayDefinitions.value)
+    const previous=localStorage.getItem(tableStorageKey.value)
+    let previousDisplay:unknown
+    try{previousDisplay=previous ? JSON.parse(previous) : undefined}catch{previousDisplay=undefined}
+    const preserved=retainUnavailableCaseColumns(normalized,previousDisplay,displayDefinitions.value,next.columns)
+    localStorage.setItem(tableStorageKey.value,JSON.stringify(preserved))
     tableDisplay.value=normalized
     tableSettingsError.value=''
     console.info('测试用例表格显示配置已保存',{projectId:projectId.value,pageSize:normalized.pageSize,includeDescendants:normalized.includeDescendants})
@@ -889,15 +899,13 @@ function setSubdirectory(includeDescendants:boolean) {
   pagination.current=1
   void loadTestCases()
 }
-watch(tableStorageKey,()=>{
-  columnSettingVisible.value=false
+watch([tableStorageKey,displayDefinitions],(_next,previous)=>{
+  if(_next[0]!==previous[0])columnSettingVisible.value=false
   tableSettingsError.value=''
-  tableDisplay.value=readDisplay(localStorage,tableStorageKey.value,displayDefinitions)
+  tableDisplay.value=readDisplay(localStorage,tableStorageKey.value,displayDefinitions.value)
   pagination.pageSize=tableDisplay.value.pageSize
-  pagination.current=1
-  testCases.value=[]
-  void loadTestCases()
-})
+  if(_next[0]!==previous[0]){pagination.current=1;testCases.value=[];void loadTestCases()}
+},{flush:'sync'})
 
 // 生成用例显示ID
 const getCaseDisplayId = (record: TestCase, index: number) => {
@@ -1904,6 +1912,7 @@ watch(
   () => mindScope.value,
   () => {
     testCases.value=[];modules.value=[];allCasesForTree.value=[];moduleTreeData.value=[];recycleTotal.value=0
+    filterFields.value=[];filterMetadataCache={project:'',templates:[],members:[]}
     if (projectId.value) {
       if (!filterSaving.value) filterDrawerVisible.value = false
       advancedFilters.value = []; filterLogic.value = 'and'; viewMode.value='all'; resetBasicSearch()

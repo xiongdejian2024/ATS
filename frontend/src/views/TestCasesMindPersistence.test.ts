@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   modules: vi.fn(),
   confirm: vi.fn(),
+  templates: vi.fn(),
   project: { id: "p", name: "Project" },
   user: { id: "u" },
 }));
@@ -21,9 +22,11 @@ vi.mock("@/api/caseFeatures", () => ({
     {},
     {
       get: (_, key) =>
-        key === "recycle"
-          ? vi.fn().mockResolvedValue({ total: 0 })
-          : vi.fn().mockResolvedValue([]),
+        key === "templates"
+          ? mocks.templates
+          : key === "recycle"
+            ? vi.fn().mockResolvedValue({ total: 0 })
+            : vi.fn().mockResolvedValue([]),
     },
   ),
 }));
@@ -110,9 +113,57 @@ beforeEach(() => {
   });
   mocks.get.mockResolvedValue({ items: [row("old")], total: 1 });
   mocks.modules.mockResolvedValue({ modules: [], totalCaseCount: 1 });
+  mocks.templates.mockResolvedValue([]);
   mocks.update.mockResolvedValue(row("PUT"));
 });
 describe("脑图保存确认与父层权威读取", () => {
+  it("自定义字段异步加载前保存基础显示，加载后恢复原列宽和可见性", async () => {
+    const storage = new Map<string, string>();
+    const key = "ats:table-display:u:p:test-cases";
+    storage.set(
+      key,
+      JSON.stringify({
+        columns: [{ key: "customFields.model", visible: true, width: 280 }],
+        pageSize: 20,
+      }),
+    );
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => storage.get(key) || null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    });
+    let finish!: (templates: any[]) => void;
+    mocks.templates.mockReturnValue(new Promise((r) => (finish = r)));
+    const { state: s, stop } = componentHost(TestCases, {});
+    await flush();
+    expect(s.columns.some((c: any) => c.key === "customFields.model")).toBe(
+      false,
+    );
+    expect(s.persistTableDisplay({ ...s.tableDisplay, pageSize: 30 })).toBe(
+      true,
+    );
+    expect(JSON.parse(storage.get(key)!).columns).toContainEqual({
+      key: "customFields.model",
+      visible: true,
+      width: 280,
+    });
+    finish([
+      {
+        id: "template",
+        name: "Template",
+        fields: [{ key: "model", name: "车型", type: "text", options: [] }],
+      },
+    ]);
+    await flush();
+    expect(
+      s.columns.find((c: any) => c.key === "customFields.model"),
+    ).toMatchObject({
+      width: 280,
+      dataIndex: ["customFields", "model"],
+      sorter: false,
+    });
+    expect(s.pagination.pageSize).toBe(30);
+    stop();
+  });
   it("成功的同秒后读返回新GET，失败后读返回PUT并保留列表", async () => {
     const { state: s, stop } = componentHost(TestCases, {});
     await flush();
