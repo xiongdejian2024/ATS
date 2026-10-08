@@ -2,7 +2,8 @@
 from fastapi import WebSocket, WebSocketDisconnect
 from services.environment_service import EnvironmentService
 from core.logger import logger
-from typing import Dict, List
+from typing import Dict
+from services.frontend_log_stream import FrontendConnectionManager
 from sqlalchemy.orm import Session
 import json
 import asyncio
@@ -83,52 +84,6 @@ class ConnectionManager:
 # 全局连接管理器
 manager = ConnectionManager()
 
-
-class FrontendConnectionManager:
-    """前端WebSocket连接管理器"""
-    
-    def __init__(self):
-        # 存储前端连接: {suite_id: [websocket1, websocket2, ...]}
-        self.frontend_connections: Dict[str, List[WebSocket]] = {}
-    
-    async def connect(self, websocket: WebSocket, suite_id: str):
-        """注册前端WebSocket连接"""
-        if suite_id not in self.frontend_connections:
-            self.frontend_connections[suite_id] = []
-        
-        self.frontend_connections[suite_id].append(websocket)
-        logger.info(f"[Frontend WebSocket] 订阅测试套 {suite_id} 日志，当前连接数: {len(self.frontend_connections[suite_id])}")
-    
-    def disconnect(self, websocket: WebSocket, suite_id: str):
-        """断开前端WebSocket连接"""
-        if suite_id in self.frontend_connections:
-            connections = self.frontend_connections[suite_id]
-            if websocket in connections:
-                connections.remove(websocket)
-                if not connections:
-                    del self.frontend_connections[suite_id]
-                logger.info(f"[Frontend WebSocket] 取消订阅测试套 {suite_id} 日志，剩余连接数: {len(connections) if suite_id in self.frontend_connections else 0}")
-    
-    async def broadcast_log(self, suite_id: str, log_data: dict):
-        """向所有订阅该测试套日志的前端推送日志"""
-        if suite_id not in self.frontend_connections:
-            return
-        
-        disconnected = []
-        for websocket in self.frontend_connections[suite_id]:
-            try:
-                await websocket.send_json({
-                    "type": "test_suite_log",
-                    "suite_id": suite_id,
-                    "data": log_data
-                })
-            except Exception as e:
-                logger.error(f"[Frontend WebSocket] 推送日志失败: {e}")
-                disconnected.append(websocket)
-        
-        # 清理断开的连接
-        for websocket in disconnected:
-            self.disconnect(websocket, suite_id)
 
 # 全局前端连接管理器
 frontend_manager = FrontendConnectionManager()
@@ -681,7 +636,7 @@ async def handle_test_suite_log(db: Session, environment_id: str, message: dict)
                 db.commit()
                 logger.info(f"[WebSocket] 测试套执行耗时已保存到日志: suite_id={suite_id}, execution_id={execution_id}, duration={log_entry.duration}, status={suite.status}")
         
-        logger.debug(f"[WebSocket] 测试套日志已存储并推送: suite_id={suite_id}, execution_id={execution_id}, message={log_message[:50]}")
+        logger.debug(f"[WebSocket] 测试套日志已存储并提交实时队列（非送达确认）: suite_id={suite_id}, execution_id={execution_id}, message={log_message[:50]}")
         
     except Exception as e:
         logger.exception(f"[WebSocket] 处理测试套日志时出错: {e}")

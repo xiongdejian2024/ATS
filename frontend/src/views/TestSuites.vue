@@ -317,7 +317,7 @@
       :footer="null"
       @cancel="closeLogModal"
     >
-      <template #extra>
+      <div class="log-actions">
         <a-space>
           <a-button @click="clearLogs" size="small">清空</a-button>
           <a-button @click="refreshLogs" size="small">
@@ -325,8 +325,9 @@
             刷新
           </a-button>
         </a-space>
-      </template>
+      </div>
       <div class="log-container">
+        <a-alert v-if="logStatus" :type="logStatus.type" :message="logStatus.message" show-icon class="log-status" />
         <a-spin :spinning="executionLogLoading">
           <BoundedLogViewer :records="suiteLogs" />
         </a-spin>
@@ -336,7 +337,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined, ReloadOutlined, GithubOutlined, GitlabOutlined, CodeOutlined, PlayCircleOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, FileTextOutlined } from '@ant-design/icons-vue';
@@ -345,9 +346,8 @@ import { testPlanApi } from '@/api/testPlan';
 import { environmentApi } from '@/api/environment';
 import { useProjectStore } from '@/stores/project';
 import TestSuiteEdit from '@/components/TestPlan/TestSuiteEdit.vue'
-import { logWebSocketManager, type LogMessage } from '@/utils/logWebSocket';
 import BoundedLogViewer from '@/components/ExecutionLogs/BoundedLogViewer.vue';
-import { useBoundedLogs } from '@/components/ExecutionLogs/useBoundedLogs';
+import { useSuiteLogStream } from '@/components/ExecutionLogs/useSuiteLogStream';
 import type { TestPlan, Project } from '@/types';
 import dayjs from 'dayjs'
 import { useIntervalFn } from '@vueuse/core'
@@ -462,15 +462,14 @@ const columns = [
 // 执行详情相关
 const executionHistoryDrawerVisible = ref(false)
 const executionHistoryLoading = ref(false)
-const executionLogLoading = ref(false)
 const currentSuiteId = ref<string>('')
 const executionHistory = ref<any[]>([])
 
 const executionLogModalVisible = ref(false)
 const currentLogSuite = ref<TestSuite | null>(null)
-const { records: suiteLogs, append: appendLog, replace: replaceLogs, clear: clearLogBuffer } = useBoundedLogs()
-let logRequest = 0
-const currentLogHandler = ref<((message: LogMessage) => void) | null>(null)
+const logStream = useSuiteLogStream()
+const { records: suiteLogs, loading: executionLogLoading, status: logStatus,
+  clear: clearLogs, refresh: refreshLogs } = logStream
 const executionSearchValue = ref<string>('')
 const executionResultFilter = ref<string>()
 const executionDateRange = ref<any[]>([])
@@ -747,11 +746,7 @@ const executeSuite = async (suite: TestSuite) => {
         
         // 如果日志对话框已打开且是当前测试套，清空日志准备接收新日志
         if (executionLogModalVisible.value && currentLogSuite.value?.id === suite.id) {
-          clearLogBuffer()
-          // 确保WebSocket连接已建立
-          if (!logWebSocketManager.isConnected() || logWebSocketManager.getCurrentSuiteId() !== suite.id) {
-            await logWebSocketManager.connect(suite.id)
-          }
+          logStream.open({ suiteId: suite.id, live: true })
         }
       } catch (error: any) {
         console.error('Failed to execute suite:', error)
@@ -784,65 +779,17 @@ const cancelSuite = async (suite: TestSuite) => {
 }
 
 
-const viewSuiteLogs = async (suite: TestSuite) => {
-  closeLogModal()
+const viewSuiteLogs = (suite: TestSuite) => {
   currentLogSuite.value = suite
-  clearLogBuffer()
   executionLogModalVisible.value = true
-  const logHandler = (event: LogMessage) => {
-    if (executionLogModalVisible.value && currentLogSuite.value?.id === suite.id
-      && event.type === 'test_suite_log' && event.suite_id === suite.id && event.data) appendLog(event.data)
-  }
-  logWebSocketManager.on(logHandler)
-  currentLogHandler.value = logHandler
-  const connected = await logWebSocketManager.connect(suite.id)
-  if (currentLogSuite.value?.id !== suite.id || !executionLogModalVisible.value) return
-  if (!connected) message.warning('实时日志连接失败，可刷新查看服务器日志')
-  await loadSuiteLogs(suite.id)
-}
-
-const loadSuiteLogs = async (suiteId: string) => {
-  const request = ++logRequest
-  executionLogLoading.value = true
-  try {
-    const response = await testSuiteApi.getSuiteLogs(suiteId, { skip: 0, limit: 20 })
-    if (request === logRequest && currentLogSuite.value?.id === suiteId && executionLogModalVisible.value) replaceLogs(response.items || [])
-  } catch (error) {
-    console.error('加载测试套日志失败:', error)
-    if (request === logRequest) message.error('加载日志失败')
-  } finally {
-    if (request === logRequest) executionLogLoading.value = false
-  }
-}
-
-const refreshLogs = () => {
-  if (currentLogSuite.value) {
-    loadSuiteLogs(currentLogSuite.value.id)
-  }
-}
-
-const clearLogs = () => {
-  logRequest++
-  executionLogLoading.value = false
-  clearLogBuffer()
+  logStream.open({ suiteId: suite.id, live: true })
 }
 
 const closeLogModal = () => {
-  logRequest++
-  executionLogLoading.value = false
-  clearLogBuffer()
+  logStream.close()
   executionLogModalVisible.value = false
   currentLogSuite.value = null
-  
-  // 取消注册处理器并断开WebSocket连接
-  if (currentLogHandler.value) {
-    logWebSocketManager.off(currentLogHandler.value)
-    currentLogHandler.value = null
-  }
-  logWebSocketManager.disconnect()
 }
-
-
 
 const handleMoreMenuClick = (key: string, record: TestSuite) => {
   switch (key) {
@@ -1172,18 +1119,12 @@ useIntervalFn(() => {
   }
 }, 3000)
 
-onUnmounted(() => {
-  // 断开WebSocket连接
-  if (currentLogHandler.value) {
-    logWebSocketManager.off(currentLogHandler.value)
-    currentLogHandler.value = null
-  }
-  logWebSocketManager.disconnect()
-})
 const handleMoreMenuEvent = (info: { key: string | number }, record: TestSuite) => handleMoreMenuClick(String(info.key), record)
 </script>
 
 <style scoped>
+.log-status { margin-bottom: 8px; }
+.log-actions { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 .test-suites-container {
   height: 100%;
   background: #f5f5f5;

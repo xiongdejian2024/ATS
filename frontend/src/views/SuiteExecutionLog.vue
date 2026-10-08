@@ -16,6 +16,7 @@
     </a-page-header>
 
     <div class="log-container">
+      <a-alert v-if="logStatus" :type="logStatus.type" :message="logStatus.message" show-icon class="log-status" />
       <a-spin :spinning="loading" class="log-spin">
         <BoundedLogViewer :records="suiteLogs" height="100%" />
       </a-spin>
@@ -24,133 +25,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { ReloadOutlined } from '@ant-design/icons-vue';
 import { testSuiteApi } from '@/api/testSuite';
-import { logWebSocketManager, type LogMessage } from '@/utils/logWebSocket';
 import BoundedLogViewer from '@/components/ExecutionLogs/BoundedLogViewer.vue'
-import { useBoundedLogs } from '@/components/ExecutionLogs/useBoundedLogs'
+import { useSuiteLogStream } from '@/components/ExecutionLogs/useSuiteLogStream'
 
 const route = useRoute()
 const router = useRouter()
+const suiteName = ref('')
+const logStream = useSuiteLogStream()
+const { records: suiteLogs, loading, status: logStatus, clear: clearLogs, refresh: refreshLogs } = logStream
+let suiteRequest = 0
+const handleBack = () => router.back()
+const queryString = (value: unknown) => typeof value === 'string' ? value : undefined
 
-const suiteId = ref<string>('')
-const suiteName = ref<string>('')
-const logId = ref<string | undefined>(undefined)
-const executionId = ref<string | undefined>(undefined)
-const isRunning = ref<boolean>(false)
-
-const loading = ref(false)
-const { records: suiteLogs, append: appendLog, replace: replaceLogs, clear: clearLogBuffer } = useBoundedLogs()
-let active = true
-let logRequest = 0
-const currentLogHandler = ref<((message: LogMessage) => void) | null>(null)
-
-const loadSuiteLogs = async () => {
-  if (!suiteId.value) return
-
-  loading.value = true
-  const request = ++logRequest
-  try {
-    const params: any = {
-      skip: 0,
-      limit: 20
-    }
-
-    if (logId.value) {
-      params.logId = logId.value
-    } else if (executionId.value) {
-      params.executionId = executionId.value
-    }
-
-    const response = await testSuiteApi.getSuiteLogs(suiteId.value, params)
-
-    if (active && request === logRequest) replaceLogs(response.items || [])
-  } catch (error) {
-    console.error('加载测试套日志失败:', error)
-    message.error('加载日志失败')
-  } finally {
-    if (request === logRequest) loading.value = false
-  }
-}
-
-const refreshLogs = () => {
-  loadSuiteLogs()
-}
-
-const clearLogs = () => {
-  logRequest++
-  loading.value = false
-  clearLogBuffer()
-}
-
-const handleBack = () => {
-  router.back()
-}
-
-// 初始化
-onMounted(async () => {
-  // 从路由参数获取信息
-  suiteId.value = route.query.suiteId as string || ''
-  logId.value = route.query.logId as string || undefined
-  executionId.value = route.query.executionId as string || undefined
-  isRunning.value = route.query.isRunning === 'true'
-
-  if (!suiteId.value) {
+// Query-only navigation can reuse this component; isolate every selection and request.
+watch(() => [route.query.suiteId, route.query.logId, route.query.executionId, route.query.isRunning], () => {
+  const request = ++suiteRequest
+  const suiteId = queryString(route.query.suiteId)
+  suiteName.value = ''
+  if (!suiteId) {
+    logStream.close()
     message.error('缺少测试套ID')
     router.back()
     return
   }
+  logStream.open({ suiteId, logId: queryString(route.query.logId),
+    executionId: queryString(route.query.executionId), live: route.query.isRunning === 'true' })
+  void testSuiteApi.getTestSuite(suiteId).then(suite => {
+    if (request === suiteRequest) suiteName.value = suite.name
+  }).catch(error => {
+    if (request === suiteRequest) console.error('加载测试套失败:', error)
+  })
+}, { immediate: true })
 
-  // 加载测试套信息
-  try {
-    const suite = await testSuiteApi.getTestSuite(suiteId.value)
-    suiteName.value = suite.name
-  } catch (error) {
-    console.error('加载测试套失败:', error)
-  }
-
-  if (isRunning.value && active) await connectWebSocket()
-  if (active) await loadSuiteLogs()
-})
-
-// 连接WebSocket
-const connectWebSocket = async () => {
-  if (!suiteId.value) return
-
-  // 如果之前有处理器，先移除
-  if (currentLogHandler.value) {
-    logWebSocketManager.off(currentLogHandler.value)
-    currentLogHandler.value = null
-  }
-
-  const logHandler = (event: LogMessage) => {
-    if (active && event.type === 'test_suite_log' && event.suite_id === suiteId.value && event.data
-      && (!executionId.value || event.data.execution_id === executionId.value)
-      && (!logId.value || event.data.id === logId.value)) appendLog(event.data)
-  }
-
-  logWebSocketManager.on(logHandler)
-  currentLogHandler.value = logHandler
-  if (!await logWebSocketManager.connect(suiteId.value) && active) message.warning('实时日志连接失败，可刷新查看服务器日志')
-}
-
-// 组件卸载时清理
-onUnmounted(() => {
-  active = false
-  logRequest++
-  // 断开WebSocket连接
-  if (currentLogHandler.value) {
-    logWebSocketManager.off(currentLogHandler.value)
-    currentLogHandler.value = null
-  }
-  logWebSocketManager.disconnect()
-})
+onUnmounted(() => { suiteRequest++ })
 </script>
 
 <style scoped>
+.log-status { flex-shrink: 0; margin-bottom: 8px; }
 .execution-log-page {
   /* 使用calc计算高度：100vh - layout-header(64px) - layout-content上下padding(48px) */
   height: calc(100vh - 64px - 48px);

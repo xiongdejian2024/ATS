@@ -79,6 +79,7 @@ async def application_lifespan(app):
     try:
         yield
     finally:
+        await frontend_manager.aclose()
         if scheduler_task:
             scheduler_task.cancel()
             try:
@@ -256,31 +257,38 @@ async def frontend_websocket_route(websocket: WebSocket):
             db.close()
             return
         
+        # 与 HTTP 日志读取使用相同的测试套/项目权限；未授权时不注册订阅。
+        try:
+            test_suites.require_suite_access(db, user, suite_id, "read")
+        except HTTPException:
+            await websocket.close(code=1008, reason="Suite not found or access denied")
+            return
+
         # 注册连接
         await frontend_manager.connect(websocket, suite_id)
         
-        # 发送连接成功消息
-        await websocket.send_json({
+        # 所有前端出站帧经同一个 FIFO，防止心跳与日志并发写入。
+        if not frontend_manager.enqueue_message(websocket, suite_id, {
             "type": "connected",
             "message": f"已连接到测试套 {suite_id} 的日志流"
-        })
+        }):
+            return
         
         # 保持连接，等待断开
-        while True:
+        while frontend_manager.is_connected(websocket, suite_id):
             try:
                 # 接收心跳消息（可选）
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
                 try:
                     message = json.loads(data)
                     if message.get("type") == "ping":
-                        await websocket.send_json({"type": "pong"})
+                        if not frontend_manager.enqueue_message(websocket, suite_id, {"type": "pong"}):
+                            break
                 except json.JSONDecodeError:
                     pass
             except asyncio.TimeoutError:
-                # 发送心跳
-                try:
-                    await websocket.send_json({"type": "ping"})
-                except:
+                # 发送心跳；排队失败意味着该订阅已断开。
+                if not frontend_manager.enqueue_message(websocket, suite_id, {"type": "ping"}):
                     break
             except WebSocketDisconnect:
                 break
@@ -288,9 +296,13 @@ async def frontend_websocket_route(websocket: WebSocket):
     except Exception as e:
         logger.exception(f"[Frontend WebSocket] 连接错误: {e}")
     finally:
-        if suite_id:
-            frontend_manager.disconnect(websocket, suite_id)
-        db.close()
+        try:
+            if suite_id:
+                cleanup = frontend_manager.disconnect(websocket, suite_id)
+                if cleanup is not None:
+                    await cleanup
+        finally:
+            db.close()
 
 
 @app.get("/")
