@@ -235,6 +235,14 @@ async def get_project_modules(
     )
 
 
+def require_module_authority(db, user, project_id, action):
+    from core.project_access import require_project_access
+    actor = db.query(User).filter_by(id=str(user.id)).populate_existing().with_for_update(read=True).one_or_none()
+    if actor is None or not actor.status:
+        raise HTTPException(403, "当前用户不可操作")
+    return require_project_access(db, actor, project_id, "test_case:" + action, current_read=True)
+
+
 @router.post("/{project_id}/modules", response_model=APIResponse)
 async def create_module(
     project_id: str,
@@ -243,6 +251,7 @@ async def create_module(
     current_user: User = Depends(get_current_user)
 ):
     """创建模块（数据库持久化）"""
+    require_module_authority(db,current_user,project_id,"create")
     try:
         module = ModuleService.create_module(
             db=db,
@@ -257,10 +266,12 @@ async def create_module(
             data=serialize_model(module, camel_case=True)
         )
     except HTTPException:
+        db.rollback()
         raise
     except Exception as e:
+        db.rollback()
         logger.exception("创建模块失败")
-        raise HTTPException(status_code=400, detail=f"创建失败: {str(e)}")
+        raise HTTPException(status_code=500, detail="创建模块失败，请重试")
 
 
 @router.put("/{project_id}/modules/{module_id}", response_model=APIResponse)
@@ -272,9 +283,8 @@ async def update_module(
     current_user: User = Depends(get_current_user)
 ):
     """更新模块（数据库持久化）"""
-    from core.project_access import require_project_access
     from models.module import Module
-    require_project_access(db,current_user,project_id,"test_case:update")
+    require_module_authority(db,current_user,project_id,"update")
     if not db.query(Module).filter_by(id=module_id,project_id=project_id).first():
         raise HTTPException(404,"项目中不存在该模块")
     try:
@@ -308,7 +318,16 @@ async def delete_module(
     current_user: User = Depends(get_current_user)
 ):
     """删除模块（数据库持久化）"""
-    success = ModuleService.delete_module(db=db, module_id=module_id)
+    from models.module import Module
+    require_module_authority(db,current_user,project_id,"delete")
+    if not db.query(Module).filter_by(id=module_id,project_id=project_id).first():
+        raise HTTPException(404,"项目中不存在该模块")
+    try:
+        success = ModuleService.delete_module(db=db, module_id=module_id)
+    except Exception:
+        db.rollback()
+        logger.exception("删除模块失败 module_id={}",module_id)
+        raise
     
     if not success:
         raise HTTPException(status_code=404, detail="模块不存在")

@@ -91,9 +91,11 @@ class ModuleService:
         # 计算层级
         level = 1
         if module_data.parent_id:
-            parent = db.query(Module).filter(Module.id == module_data.parent_id).first()
-            if parent:
-                level = parent.level + 1
+            parent = db.query(Module).filter_by(id=module_data.parent_id,project_id=project_id).populate_existing().with_for_update().first()
+            if not parent:
+                from fastapi import HTTPException
+                raise HTTPException(422,"父模块不属于当前项目")
+            level = parent.level + 1
 
         module = Module(
             id=str(uuid.uuid4()),
@@ -116,7 +118,7 @@ class ModuleService:
         db: Session, module_id: str, module_data: ModuleUpdate, current_user_id: str
     ) -> Optional[Module]:
         """更新模块"""
-        module = db.query(Module).filter(Module.id == module_id).first()
+        module = db.query(Module).filter(Module.id == module_id).populate_existing().with_for_update().first()
 
         if not module:
             return None
@@ -133,7 +135,7 @@ class ModuleService:
                     .filter(
                         Module.id == parent_id, Module.project_id == module.project_id
                     )
-                    .first()
+                    .populate_existing().with_for_update().first()
                 )
                 if not parent:
                     from fastapi import HTTPException
@@ -148,7 +150,7 @@ class ModuleService:
                         raise HTTPException(422, "模块不能移动到自身或子模块内")
                     seen.add(cursor.id)
                     cursor = (
-                        db.query(Module).filter_by(id=cursor.parent_id).first()
+                        db.query(Module).filter_by(id=cursor.parent_id,project_id=module.project_id).populate_existing().with_for_update().first()
                         if cursor.parent_id
                         else None
                     )
@@ -170,7 +172,14 @@ class ModuleService:
         module.updated_at = beijing_now()
 
         # 修改父级后，同步整棵子树的层级；兄弟顺序由前端明确传递 sortOrder。
-        queue = [module]
+        ModuleService.sync_subtree_levels(db,[module])
+        db.commit()
+        db.refresh(module)
+        return module
+
+    @staticmethod
+    def sync_subtree_levels(db: Session, roots: List[Module]):
+        queue = list(roots)
         visited = set()
         while queue:
             parent = queue.pop(0)
@@ -181,35 +190,40 @@ class ModuleService:
             visited.add(parent.id)
             for child in (
                 db.query(Module)
-                .filter_by(parent_id=parent.id, project_id=module.project_id)
-                .all()
+                .filter_by(parent_id=parent.id, project_id=parent.project_id)
+                .populate_existing().with_for_update().all()
             ):
                 child.level = parent.level + 1
                 queue.append(child)
 
-        db.commit()
-        db.refresh(module)
-
-        return module
-
     @staticmethod
     def delete_module(db: Session, module_id: str) -> bool:
         """删除模块"""
-        module = db.query(Module).filter(Module.id == module_id).first()
+        module = db.query(Module).filter(Module.id == module_id).populate_existing().with_for_update().first()
 
         if not module:
             return False
 
-        # 先将子模块的 parent_id 设置为当前模块的 parent_id（提升子模块）
-        db.query(Module).filter(Module.parent_id == module_id).update(
-            {"parent_id": module.parent_id}
-        )
+        # 旧创建入口曾允许跨项目父级。拒绝删除这类旧关联，避免 ORM 回填外项目行。
+        from models.test_case import TestCase
+        foreign_children=db.query(Module.id).filter(Module.parent_id==module.id,Module.project_id!=module.project_id).first()
+        foreign_cases=db.query(TestCase.id).filter(TestCase.module_id==module.id,TestCase.project_id!=module.project_id).first()
+        if foreign_children or foreign_cases:
+            from fastapi import HTTPException
+            raise HTTPException(409,"模块存在跨项目旧关联，请先核对并修复关联")
+
+        # 提升子模块时同步整棵子树层级，保留所有模块内容。
+        children=db.query(Module).filter_by(parent_id=module.id,project_id=module.project_id).populate_existing().with_for_update().all()
+        parent=(db.query(Module).filter_by(id=module.parent_id,project_id=module.project_id).populate_existing().with_for_update().first() if module.parent_id else None)
+        for child in children:
+            # 同时更新 ORM 关系，避免删除旧父节点时 UOW 再把已提升子节点置为根。
+            child.parent=parent
+            child.level=parent.level+1 if parent else 1
+        ModuleService.sync_subtree_levels(db,children)
 
         # 将关联的测试用例的 module_id 设置为 None
-        from models.test_case import TestCase
-
-        db.query(TestCase).filter(TestCase.module_id == module_id).update(
-            {"module_id": None}
+        db.query(TestCase).filter(TestCase.module_id == module_id,TestCase.project_id==module.project_id).update(
+            {"module_id": None,"module_path":None}
         )
 
         db.delete(module)
