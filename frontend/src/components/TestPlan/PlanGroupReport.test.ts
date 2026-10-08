@@ -1,3 +1,4 @@
+import { reactive } from "vue";
 import { beforeEach, describe, it, expect, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   summary: vi.fn(),
@@ -24,9 +25,8 @@ vi.mock("vue-router", () => ({
   onBeforeRouteLeave: mocks.leave,
   onBeforeRouteUpdate: mocks.update,
 }));
-vi.mock("@/stores/user", () => ({
-  useUserStore: () => ({ user: { id: "user" } }),
-}));
+const user = reactive({ user: { id: "user" } });
+vi.mock("@/stores/user", () => ({ useUserStore: () => user }));
 import PlanGroupReport from "./PlanGroupReport.vue";
 import { componentHost, flushComponent as flush } from "@/test/componentHost";
 const run = (id = "run", notes = "saved") => ({
@@ -37,6 +37,7 @@ const run = (id = "run", notes = "saved") => ({
 });
 beforeEach(() => {
   vi.clearAllMocks();
+  user.user = { id: "user" };
   vi.stubGlobal("window", {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
@@ -184,4 +185,48 @@ describe("计划组报告总结的操作与草稿隔离", () => {
     stop();
     expect(window.removeEventListener).toHaveBeenCalled();
   });
+});
+
+for (const n of [1, 2, 3, 4, 5, 6])
+  it(`child navigation confirmation tail rejects fresh actor n${n}`, async () => {
+    const h = componentHost(PlanGroupReport, { run: run(), projectId: "p" }),
+      s = h.state,
+      actors: string[] = [];
+    mocks.push.mockImplementation(() => {
+      actors.push(user.user.id);
+      return Promise.resolve();
+    });
+    s.detailCards = {
+      beforeClose: () =>
+        Promise.resolve().then(() => {
+          const step = (left: number): void =>
+            queueMicrotask(() =>
+              left > 1 ? step(left - 1) : (user.user = { id: "other" }),
+            );
+          step(n);
+          return true;
+        }),
+    };
+    try {
+      await s.openChild("child");
+      await flush();
+      expect(actors).not.toContain("other");
+    } finally {
+      h.stop();
+    }
+  });
+it("card drafts block explicit refresh and child navigation", async () => {
+  const refresh = vi.fn(),
+    h = componentHost(PlanGroupReport, {
+      run: run(),
+      projectId: "p",
+      onRefresh: refresh,
+    }),
+    s = h.state;
+  s.detailCards = { beforeClose: vi.fn().mockResolvedValue(false) };
+  await s.refresh();
+  await s.openChild("child");
+  expect(refresh).not.toHaveBeenCalled();
+  expect(mocks.push).not.toHaveBeenCalled();
+  h.stop();
 });

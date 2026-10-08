@@ -1,5 +1,6 @@
 import { apiClient } from "@/utils/api";
 import { useUserStore } from "@/stores/user";
+import type { ReportDetails } from "./reportDetails";
 import type { PlanRun, RunCase } from "./planOrchestration";
 export interface StepResult {
   index: number;
@@ -26,6 +27,7 @@ export interface ReportCase extends RunCase {
 }
 export type ReportRun = PlanRun & {
   summary?: { conclusion?: string; risk?: string; notes?: string };
+  reportDetails?: ReportDetails;
   report: PlanRun["report"] & {
     categories?: Record<
       string,
