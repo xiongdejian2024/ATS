@@ -69,6 +69,7 @@ jobs:
           tests/test_defect_workspace.py tests/test_defect_workspace_authority.py tests/test_defect_workspace_migration.py
           tests/test_defect_live_authority.py tests/test_plan_detail.py tests/test_plan_orchestration.py
           tests/test_plan_case_defects.py tests/test_aggregate_defect_entry.py tests/test_case_features.py
+          tests/test_native_initial_variables.py tests/test_native_environment_variables.py tests/test_native_variable_delivery.py
   python:
     name: XAT 集成与 Agent（无硬件）
     runs-on: ubuntu-latest
@@ -128,4 +129,4 @@ jobs:
         env:
           ATS_MYSQL_TEST_URL: mysql+pymysql://ats_test:ci-test-only@127.0.0.1:3306/ats_migration_test
           ATS_MYSQL_ISOLATED: '1'
-        run: python -m pytest tests/test_script_jobs_mysql_migration.py tests/test_request_environment_groups_mysql.py tests/test_global_resource_pools_mysql.py tests/test_defect_workspace_mysql.py -q -o addopts=''
+        run: python -m pytest tests/test_script_jobs_mysql_migration.py tests/test_request_environment_groups_mysql.py tests/test_global_resource_pools_mysql.py tests/test_defect_workspace_mysql.py tests/test_native_environment_variables_mysql.py -q -o addopts=''

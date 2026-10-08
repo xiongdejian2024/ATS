@@ -5,6 +5,7 @@ import hashlib
 import json
 from fastapi import HTTPException
 from models.native_case import ApiDefinition, ApiTestEnvironment, NativeCaseConfig
+from models.native_environment_variables import NativeEnvironmentVariables
 from services.case_governance import case_for_project
 from services.review_workspace import lock_project
 from core.project_access import require_project_access, project_allows
@@ -32,7 +33,11 @@ def catalog(db, user, project_id):
                 for r in db.query(model).filter_by(project_id=project_id).order_by(model.created_at, model.id)]
     definitions = rows(ApiDefinition, ['name', 'protocol', 'path', 'parameters', 'module_id', 'state', 'tags', 'created_by'])
     from models import TestCase
-    return dict(definitions=definitions, environments=rows(ApiTestEnvironment, ['name', 'address']),
+    environments = rows(ApiTestEnvironment, ['name', 'address'])
+    declarations = {r.environment_id: r.variables for r in db.query(NativeEnvironmentVariables).filter(NativeEnvironmentVariables.environment_id.in_([r['id'] for r in environments])).all()}
+    for item in environments:
+        item['variables'] = deepcopy(declarations.get(item['id'], []))
+    return dict(definitions=definitions, environments=environments,
                 apiCases=[dict(id=c.id, name=c.name) for c in db.query(TestCase).filter_by(project_id=project_id, type='api').filter(TestCase.deleted_at.is_(None)).order_by(TestCase.created_at, TestCase.id)],
                 protocols=sorted({r['protocol'] for r in definitions}),
                 canCreate=project_allows(db, user, project, 'test_case:create'),
@@ -42,6 +47,11 @@ def catalog(db, user, project_id):
 def save_entity(db, user, project_id, model, body, identity=None):
     require_project_access(db, user, project_id, 'test_case:update' if identity else 'test_case:create')
     lock_project(db, project_id)
+    from models import User
+    user = db.query(User).filter_by(id=user.id).populate_existing().with_for_update(read=True).first()
+    if not user or not user.status:
+        raise HTTPException(403, '当前用户不存在或已被禁用')
+    require_project_access(db, user, project_id, 'test_case:update' if identity else 'test_case:create', current_read=True)
     row = entity(db, model, project_id, identity, lock=True) if identity else model(project_id=project_id, revision=0)
     if row.revision != body.expectedRevision:
         raise HTTPException(409, '配置已经被修改，请刷新后重试；当前草稿可保留')
@@ -51,7 +61,7 @@ def save_entity(db, user, project_id, model, body, identity=None):
         from models import Module
         entity(db, Module, project_id, body.module_id, lock=True)
     # 旧客户端没有提交元数据时保留原值；不能用默认空值覆盖新客户端已保存的模块。
-    values = body.model_dump(exclude={'expectedRevision'})
+    values = body.model_dump(exclude={'expectedRevision', 'variables'})
     if model is ApiDefinition:
         for field in {'module_id', 'state', 'tags'} - body.model_fields_set:
             values.pop(field, None)
@@ -64,6 +74,13 @@ def save_entity(db, user, project_id, model, body, identity=None):
     row.updated_by = str(user.id)
     row.revision += 1
     db.add(row); db.flush()
+    if model is ApiTestEnvironment and (not identity or 'variables' in body.model_fields_set):
+        declarations = db.query(NativeEnvironmentVariables).filter_by(environment_id=row.id).populate_existing().with_for_update().first()
+        if declarations is None:
+            declarations = NativeEnvironmentVariables(environment_id=row.id)
+        declarations.variables = [v.model_dump() for v in body.variables]
+        db.add(declarations)
+        db.flush()
     logger.info('原生配置已保存 project_id={} model={} id={} revision={}', project_id, model.__tablename__, row.id, row.revision)
     return catalog(db, user, project_id)
 
@@ -109,6 +126,12 @@ def config_data(db, user, project_id, case_id):
 
 def save_config(db, user, project_id, case_id, body):
     require_project_access(db, user, project_id, 'test_case:update')
+    lock_project(db, project_id)
+    from models import User
+    user = db.query(User).filter_by(id=user.id).populate_existing().with_for_update(read=True).first()
+    if not user or not user.status:
+        raise HTTPException(403, '当前用户不存在或已被禁用')
+    require_project_access(db, user, project_id, 'test_case:update', current_read=True)
     case = case_for_project(db, project_id, case_id, lock=True)
     if case.type not in STATES or body.state not in STATES[case.type]:
         raise HTTPException(422, '原生用例状态与分类不一致')

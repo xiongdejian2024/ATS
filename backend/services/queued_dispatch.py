@@ -4,6 +4,7 @@ from core.logger import logger
 from models.task_queue import TaskQueue
 from services.suite_dispatch import build_suite_message, load_dispatch_suite
 from services.task_queue_service import TaskQueueService
+from services import native_variable_delivery
 
 
 async def dispatch_pending_suites(db, environment_id):
@@ -54,6 +55,12 @@ async def dispatch_pending_suites(db, environment_id):
             else:
                 TaskQueueService.complete_task(db, execution_id, "failed")
             continue
+        variable_session = None
+        if pending.kind != 'script' and native_variable_delivery.requires_variables(payload):
+            variable_session = native_variable_delivery.session_for(manager, environment_id, payload)
+            if variable_session is None:
+                db.rollback()
+                return
         claimed = TaskQueueService.start_task(
             db, execution_id, environment_id=environment_id, commit=False
         )
@@ -69,7 +76,7 @@ async def dispatch_pending_suites(db, environment_id):
         db.commit()
         try:
             sent = (await manager.send_session(session, payload) if pending.kind == "script"
-                    else await manager.send_message(environment_id, payload))
+                    else await native_variable_delivery.send(manager, environment_id, payload, variable_session))
         except Exception:
             logger.exception("排队测试套派发异常：执行={}", execution_id)
             sent = False

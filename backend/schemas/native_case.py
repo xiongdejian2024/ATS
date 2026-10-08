@@ -2,6 +2,7 @@
 import json
 from typing import Literal
 from pydantic import BaseModel, Field, ConfigDict, field_validator
+from framework.native_http.variable_models import InitialVariable, validate_variables
 
 
 class NativeBody(BaseModel):
@@ -36,6 +37,12 @@ class DefinitionInput(NativeBody):
 class EnvironmentInput(NativeBody):
     name: str = Field(min_length=1, max_length=255)
     address: str = Field(min_length=1, max_length=500)
+    variables: list[InitialVariable] = Field(default_factory=list, max_length=100)
+
+    @field_validator('variables')
+    @classmethod
+    def bounded_variables(cls, rows):
+        return validate_variables(rows)
 
 
 class ConfigInput(NativeBody):

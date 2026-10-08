@@ -178,7 +178,7 @@ class WebSocketClient:
         platform_info = get_platform_info()
         auth_message = {
             "type": "auth",
-            "capabilities": ["log_batch_v1", "script_jobs_v1"],
+            "capabilities": ["log_batch_v1", "script_jobs_v1", "native_http_variables_v1"],
             "token": self.token,
             "agent_info": {
                 "version": "1.0.0",

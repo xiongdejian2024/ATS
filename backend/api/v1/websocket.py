@@ -78,7 +78,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 or "",
                 "reconnect_delay": reconnect_delay,
                 "heartbeat_timeout": manager.heartbeat_timeout,
-                "capabilities": ["log_batch_v1", "script_jobs_v1"],
+                "capabilities": ["log_batch_v1", "script_jobs_v1", "native_http_variables_v1"],
             }
             if not await manager.send_session(session, dict(config, type="welcome")):
                 return

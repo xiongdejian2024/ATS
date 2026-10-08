@@ -5,7 +5,6 @@ from .response_assertion_models import ResponseAssertion
 from .body_models import FileReference, BinaryBody, FrozenFile
 from .schema_models import JsonBodySchema
 from .extraction_models import PostProcessorConfig
-from .variable_models import InitialVariable, validate_variables
 from urllib.parse import urlsplit
 from pydantic import (
     BaseModel,
@@ -94,13 +93,6 @@ class Assertion(NativeModel):
 
 
 class RequestSpec(NativeModel):
-    initialVariables: list[InitialVariable] = Field(default_factory=list, max_length=100)
-
-    @field_validator("initialVariables")
-    @classmethod
-    def bounded_initial_variables(cls, rows):
-        return validate_variables(rows)
-
     postProcessorConfig: PostProcessorConfig = Field(default_factory=PostProcessorConfig)
     method: Literal[
         "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "CONNECT"
@@ -187,13 +179,6 @@ class RequestSpec(NativeModel):
 
 
 class FrozenRequest(RequestSpec):
-    environmentVariables: list[InitialVariable] = Field(default_factory=list, max_length=100)
-
-    @field_validator("environmentVariables")
-    @classmethod
-    def bounded_environment_variables(cls, rows):
-        return validate_variables(rows)
-
     files: list[FrozenFile] = Field(default_factory=list, max_length=4000)
     url: str = Field(min_length=1, max_length=2000)
     name: str = Field(min_length=1, max_length=255)
@@ -242,25 +227,11 @@ class ScenarioStep(NativeModel):
 
 
 class ScenarioSpec(NativeModel):
-    initialVariables: list[InitialVariable] = Field(default_factory=list, max_length=100)
-
-    @field_validator("initialVariables")
-    @classmethod
-    def bounded_initial_variables(cls, rows):
-        return validate_variables(rows)
-
     steps: list[ScenarioStep] = Field(min_length=1, max_length=1000)
     stopOnFailure: StrictBool = True
 
 
 class FrozenCase(NativeModel):
-    initialVariables: list[InitialVariable] = Field(default_factory=list, max_length=100)
-
-    @field_validator("initialVariables")
-    @classmethod
-    def bounded_initial_variables(cls, rows):
-        return validate_variables(rows)
-
     id: str = Field(min_length=1, max_length=36)
     category: Literal["api", "scenario"]
     requests: list[FrozenRequest] = Field(min_length=1, max_length=1000)

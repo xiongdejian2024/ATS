@@ -15,13 +15,14 @@ from .extractions import evaluate as extract, resolve_request, render_value
 from .result_details import exchange, bounded_detail, request_detail
 from .parameters import arguments as request_arguments, request_url
 from .request_bodies import load_files, arguments as body_arguments
+from .variable_models import values
 
 
 async def execute(case: FrozenCase, *, transport=None, file_loader=None):
     started = time.monotonic()
     rows = []
     details = []
-    variables = {}
+    temporary = {}
 
     async def capture_request(value):
         await value.aread()
@@ -36,6 +37,12 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
             detail_attempts = []
             step_started = time.monotonic()
             for attempt in range(case.retryTimes + 1):
+                variables = {
+                    **values(template.environmentVariables),
+                    **values(case.initialVariables),
+                    **values(template.initialVariables),
+                    **temporary,
+                }
                 if attempt:
                     logger.info(
                         "等待原生HTTP步骤重试：用例=%s，步骤=%s，重试=%s，间隔毫秒=%s",
@@ -120,7 +127,7 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                     elapsed_ms = (time.monotonic() - network_started) * 1000
                     actual.update(exchange(response, elapsed_ms))
                     actual["extractResults"] = await asyncio.to_thread(
-                        extract, request.postProcessorConfig, response, variables
+                        extract, request.postProcessorConfig, response, variables, temporary
                     )
                     logger.info(
                         "后置参数提取完成：用例=%s，步骤=%s，执行项数=%s",

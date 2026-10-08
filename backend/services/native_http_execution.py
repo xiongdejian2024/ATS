@@ -6,6 +6,7 @@ from uuid import uuid5, NAMESPACE_URL
 from fastapi import HTTPException
 from models import TestCase, TestSuite, Environment
 from models.native_case import NativeCaseConfig, ApiDefinition, ApiTestEnvironment
+from models.native_environment_variables import NativeEnvironmentVariables
 from services.plan_candidate_project import require_case_sources
 from core.logger import logger
 from framework.native_http.models import (
@@ -78,7 +79,8 @@ def freeze(db, case, user, *, environment_id=None):
         else:
             raise ValueError("原生HTTP执行只支持API用例或场景")
         return FrozenCase(
-            id=case.id, category=case.type, requests=requests, stopOnFailure=stopped
+            id=case.id, category=case.type, requests=requests, stopOnFailure=stopped,
+            initialVariables=scenario.initialVariables if case.type == 'scenario' else [],
         ).model_dump()
     except ValueError as exception:
         logger.exception("原生HTTP冻结校验失败：用例={}", case.id)
@@ -122,9 +124,12 @@ def _request(db, case, config, override_environment):
         url = path
     from services.native_request_files import frozen_files
 
+    declarations = (db.query(NativeEnvironmentVariables).filter_by(environment_id=target.id).populate_existing().with_for_update().first() if target else None)
+
     return FrozenRequest(
         **request.model_dump(exclude={"bodyDrafts", "jsonBody"}),
         files=frozen_files(db, case.project_id, request),
+        environmentVariables=deepcopy(declarations.variables) if declarations else [],
         name=case.name,
         url=url,
     )
