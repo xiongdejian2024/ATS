@@ -3,6 +3,15 @@ import type { CaseIssue, CaseFile, CaseCustomField } from "./caseFeatures";
 import type { TestCase } from "@/types";
 import type { CaseFolder } from "./planCaseWorkspace";
 import { apiClient } from "@/utils/api";
+import type { PlanCaseSavedView } from "./planCaseWorkspace";
+import type {
+  FilterCondition,
+  FilterLogic,
+} from "@/components/TestCase/advancedFilter";
+type ReviewViewFilters = {
+  filterConditions: FilterCondition[];
+  filterLogic: FilterLogic;
+};
 export interface ReviewModule {
   id: string;
   name: string;
@@ -110,6 +119,25 @@ export interface ReviewSelectionSummary {
 const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
+  candidateViews: (p: string) =>
+    apiClient.get<PlanCaseSavedView[]>(`${base(p)}/candidate-views`),
+  saveCandidateView: (p: string, name: string, filters: ReviewViewFilters) =>
+    apiClient.post<PlanCaseSavedView>(`${base(p)}/candidate-views`, {
+      name,
+      filters,
+    }),
+  updateCandidateView: (
+    p: string,
+    id: string,
+    name: string,
+    filters?: ReviewViewFilters,
+  ) =>
+    apiClient.put<PlanCaseSavedView>(`${base(p)}/candidate-views/${id}`, {
+      name,
+      ...(filters === undefined ? {} : { filters }),
+    }),
+  deleteCandidateView: (p: string, id: string) =>
+    apiClient.delete(`${base(p)}/candidate-views/${id}`),
   selection: (p: string, id: string, body: ReviewItemSelection) =>
     apiClient.post<ReviewSelectionSummary>(
       `${base(p)}/${id}/item-selection`,
@@ -123,7 +151,11 @@ export const reviewWorkspaceApi = {
   batchVote: (
     p: string,
     id: string,
-    body: ReviewItemSelection & { decision: string; comment: string; fileIds?: string[] },
+    body: ReviewItemSelection & {
+      decision: string;
+      comment: string;
+      fileIds?: string[];
+    },
   ) => apiClient.post<CaseReview>(`${base(p)}/${id}/batch-decision`, body),
   reading: (p: string, id: string, item: string) =>
     apiClient.get<ReviewReading>(`${base(p)}/${id}/items/${item}/reading`),

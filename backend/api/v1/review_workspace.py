@@ -23,6 +23,31 @@ from schemas.case_governance import ReviewHeader
 router = APIRouter(prefix="/review-workspace", tags=["评审首页"])
 
 
+from schemas.plan_candidate_view import CandidateViewCreate, CandidateViewUpdate
+from services import review_saved_view
+
+
+@router.get("/candidate-views")
+def candidate_views(project_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return result(review_saved_view.listing(db, user, project_id))
+
+
+@router.post("/candidate-views")
+def create_candidate_view(project_id: str, body: CandidateViewCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return result(transact(db, lambda: review_saved_view.save(db, user, project_id, body)))
+
+
+@router.put("/candidate-views/{view_id}")
+def update_candidate_view(project_id: str, view_id: str, body: CandidateViewUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return result(transact(db, lambda: review_saved_view.save(db, user, project_id, body, view_id)))
+
+
+@router.delete("/candidate-views/{view_id}")
+def delete_candidate_view(project_id: str, view_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    transact(db, lambda: review_saved_view.remove(db, user, project_id, view_id))
+    return result()
+
+
 @router.get("/{review_id}/detail")
 def detail(
     project_id: str,
@@ -282,6 +307,8 @@ def candidates(
     priority: Literal["P0", "P1", "P2", "P3"] | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
+    filters: str | None = Query(None, max_length=20000),
+    mine: bool = False,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
@@ -289,6 +316,11 @@ def candidates(
     from services.case_candidates import candidates as shared_candidates
 
     project_access(db, user, project_id)
+    if filters is not None or mine:
+        from types import SimpleNamespace
+        from services.plan_candidate_filter import advanced_candidates
+        return result(advanced_candidates(db, SimpleNamespace(project_id=project_id),
+                      "functional", filters, mine, str(user.id), page, size))
     return result(
         shared_candidates(
             db, project_id, "functional", search, folder, priority, page, size
@@ -311,8 +343,17 @@ def select_candidates(
 
     project_access(db, user, project_id, "update")
     query, _, _, _ = candidate_query(
-        db, project_id, "functional", body.search, body.folder, body.priority
+        db, project_id, "functional",
+        "" if body.filters is not None or body.mine else body.search,
+        "all" if body.filters is not None or body.mine else body.folder,
+        None if body.filters is not None or body.mine else body.priority
     )
+    if body.filters is not None or body.mine:
+        from types import SimpleNamespace
+        from services.plan_candidate_filter import filter_cases
+        rows, _, _ = filter_cases(db, SimpleNamespace(project_id=project_id),
+                                 "functional", body.filters, str(user.id), body.mine)
+        query = query.filter(TestCase.id.in_([row.id for row in rows]))
     excluded = set(body.excludeIds)
     if body.selectionScope:
         from services.case_selection import resolve

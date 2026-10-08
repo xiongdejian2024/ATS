@@ -21,7 +21,7 @@
       show-icon
     />
     <div class="associate-layout">
-      <aside>
+      <aside v-if="!advanced">
         <a-input
           :disabled="locked"
           v-model:value="moduleSearch"
@@ -69,6 +69,7 @@
       <main>
         <div class="search-toolbar">
           <a-input-search
+            v-if="!advanced"
             :disabled="locked"
             v-model:value="search"
             placeholder="通过 ID / 名称搜索"
@@ -76,6 +77,7 @@
             allow-clear
             @search="resetPage"
           /><a-select
+            v-if="!advanced"
             :disabled="locked"
             v-model:value="priority"
             placeholder="等级"
@@ -86,7 +88,25 @@
             @change="resetPage"
           /><a-button :disabled="locked" :loading="loading" @click="load"
             >刷新</a-button
-          >
+          ><ReviewCandidateFilters
+            v-if="open"
+            ref="filterEditor"
+            :key="identity"
+            :project-id="projectId"
+            :modules="data?.modules || []"
+            :conditions="conditions"
+            :logic="logic"
+            :view-id="viewId"
+            :busy="locked"
+            @apply="applyFilters"
+            @saving="filterSaving = $event"
+          />
+          <a-button
+            :disabled="locked"
+            aria-label="评审关联表格设置"
+            @click="settingsOpen = true"
+            ><SettingOutlined
+          /></a-button>
         </div>
         <a-alert
           v-if="failed"
@@ -118,6 +138,7 @@
           :pagination="pagination"
           :scroll="{ x: 800, y: 400 }"
           @change="tableChange"
+          @resize-column="resizeColumn"
           ><template #bodyCell="{ column, record }"
             ><template v-if="column.key === 'name'"
               >{{ record.name
@@ -168,17 +189,45 @@
       </div></template
     >
   </a-drawer>
+  <TableDisplaySettings
+    :open="settingsOpen"
+    :definitions="definitions"
+    :columns="display.columns"
+    :page-size="display.pageSize"
+    :include-descendants="true"
+    :show-descendants="false"
+    :show-mode="false"
+    :error="settingsError"
+    @close="saveColumns"
+    @page-size-change="savePageSize"
+  />
 </template>
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
-import { FolderOpenOutlined } from "@ant-design/icons-vue";
+import { FolderOpenOutlined, SettingOutlined } from "@ant-design/icons-vue";
 import {
   reviewWorkspaceApi,
   type ReviewCandidates,
 } from "@/api/reviewWorkspace";
 import { caseFolderTree } from "@/components/TestPlan/planCaseFolders";
 import { caseGovernanceApi, type CaseSelection } from "@/api/caseGovernance";
+import { useUserStore } from "@/stores/user";
+import ReviewCandidateFilters from "./ReviewCandidateFilters.vue";
+import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
+import {
+  normalizeDisplay,
+  readDisplay,
+  displayStorageKey,
+  resizableColumn,
+  type TableDisplay,
+  type ColumnVisibility,
+} from "@/components/Table/tableDisplay";
+import { useTableColumnResize } from "@/components/Table/useTableColumnResize";
+import type {
+  FilterCondition,
+  FilterLogic,
+} from "@/components/TestCase/advancedFilter";
 const props = defineProps<{
   open: boolean;
   projectId: string;
@@ -211,7 +260,42 @@ const data = ref<ReviewCandidates>(),
   selected = ref(new Set<string>()),
   reviewers = ref<string[]>([]);
 const scopedIds = ref<string[]>([]);
-const locked = computed(() => selecting.value || saving.value);
+const user = useUserStore();
+const identity = computed(() =>
+  JSON.stringify([props.open, props.projectId, user.user?.id]),
+);
+const conditions = ref<FilterCondition[]>(),
+  logic = ref<FilterLogic>("and"),
+  viewId = ref<string>();
+const advanced = computed(
+  () => conditions.value !== undefined || viewId.value === "system:my",
+);
+const filterSaving = ref(false),
+  settingsOpen = ref(false),
+  settingsError = ref("");
+const filterEditor = ref<{ beforeClose: () => Promise<boolean> }>();
+const locked = computed(
+  () => selecting.value || saving.value || filterSaving.value,
+);
+function filterParams() {
+  return advanced.value
+    ? {
+        filters: { conditions: conditions.value || [], logic: logic.value },
+        mine: viewId.value === "system:my",
+      }
+    : {};
+}
+function applyFilters(
+  next: FilterCondition[] | undefined,
+  nextLogic: FilterLogic,
+  nextView?: string,
+) {
+  if (selecting.value || saving.value) return;
+  conditions.value = next;
+  logic.value = nextLogic;
+  viewId.value = nextView;
+  resetPage();
+}
 const moduleTree = computed(() =>
   caseFolderTree(data.value?.modules || [], moduleSearch.value),
 );
@@ -222,13 +306,71 @@ const pagination = computed(() => ({
   showSizeChanger: true,
   showTotal: (total: number) => `共 ${total} 条`,
 }));
-const columns = [
-  { title: "ID", dataIndex: "caseCode", width: 130 },
+const allColumns = [
+  { title: "ID", key: "caseCode", dataIndex: "caseCode", width: 130 },
   { title: "名称", key: "name", width: 240 },
   { title: "等级", key: "priority", width: 70 },
   { title: "标签", key: "tags", width: 160 },
-  { title: "所属模块", dataIndex: "moduleName", width: 200 },
+  { title: "所属模块", key: "moduleName", dataIndex: "moduleName", width: 200 },
 ];
+const definitions = allColumns.map((column) => ({
+  key: column.key,
+  title: column.title,
+  required: ["caseCode", "name"].includes(column.key),
+}));
+const storageKey = computed(() =>
+  displayStorageKey(
+    String(user.user?.id || "anonymous"),
+    props.projectId,
+    "review-associate",
+  ),
+);
+const display = ref(normalizeDisplay(undefined, definitions));
+const columns = computed(() =>
+  display.value.columns
+    .filter((preference) => preference.visible)
+    .map((preference) =>
+      resizableColumn(
+        allColumns.find((column) => column.key === preference.key)!,
+        preference,
+      ),
+    ),
+);
+function persistDisplay(next: TableDisplay) {
+  try {
+    const normalized = normalizeDisplay(next, definitions);
+    localStorage.setItem(storageKey.value, JSON.stringify(normalized));
+    display.value = normalized;
+    settingsError.value = "";
+    return true;
+  } catch (error) {
+    console.error("保存关联表格配置失败", error);
+    settingsError.value = "保存失败，请重试；当前修改保留";
+    return false;
+  }
+}
+function saveColumns(next: ColumnVisibility[]) {
+  if (persistDisplay({ ...display.value, columns: next }))
+    settingsOpen.value = false;
+}
+function savePageSize(next: number) {
+  if (!live || locked.value) return;
+  if (persistDisplay({ ...display.value, pageSize: next })) {
+    size.value = next;
+    resetPage();
+  }
+}
+const resizeColumn = useTableColumnResize(display, storageKey, persistDisplay);
+watch(
+  storageKey,
+  () => {
+    display.value = readDisplay(localStorage, storageKey.value, definitions);
+    size.value = display.value.pageSize;
+    settingsOpen.value = false;
+    settingsError.value = "";
+  },
+  { immediate: true, flush: "sync" },
+);
 const rowSelection = computed(() => ({
   selectedRowKeys: [...selected.value],
   preserveSelectedRowKeys: true,
@@ -245,11 +387,17 @@ const rowSelection = computed(() => ({
     selected.value = new Set(keys.map(String));
   },
 }));
-let sequence = 0;
+let sequence = 0,
+  live = true;
+onBeforeUnmount(() => {
+  live = false;
+  ++sequence;
+});
 async function load() {
-  if (!props.open || !props.projectId) return;
+  if (!live || !props.open || !props.projectId) return;
   const current = ++sequence,
-    p = props.projectId;
+    p = props.projectId,
+    scope = identity.value;
   loading.value = true;
   failed.value = false;
   try {
@@ -259,7 +407,12 @@ async function load() {
       folder: folder.value,
       page: page.value,
       size: size.value,
+      ...filterParams(),
+      ...(advanced.value
+        ? { filters: JSON.stringify(filterParams().filters) }
+        : {}),
     });
+    if (current !== sequence || scope !== identity.value) return;
     const membership = props.selectionScope
       ? await caseGovernanceApi.selectionMembership(
           p,
@@ -267,18 +420,18 @@ async function load() {
           result.items.map((row) => row.id),
         )
       : { caseIds: [] };
-    if (current === sequence && p === props.projectId && props.open) {
+    if (current === sequence && scope === identity.value && props.open) {
       data.value = result;
       scopedIds.value = membership.caseIds;
     }
   } catch (error) {
     console.error("加载评审关联候选失败", error);
-    if (current === sequence) {
+    if (current === sequence && scope === identity.value) {
       data.value = undefined;
       failed.value = true;
     }
   } finally {
-    if (current === sequence) loading.value = false;
+    if (current === sequence && scope === identity.value) loading.value = false;
   }
 }
 function resetPage() {
@@ -290,23 +443,38 @@ function selectFolder(id: string) {
   resetPage();
 }
 function tableChange(p: { current: number; pageSize: number }) {
+  if (!live || locked.value) return;
+  if (
+    p.pageSize !== size.value &&
+    !persistDisplay({ ...display.value, pageSize: p.pageSize })
+  )
+    return;
   page.value = p.current;
-  size.value = p.pageSize;
+  size.value = display.value.pageSize;
   void load();
 }
 async function selectAll() {
+  if (!live || locked.value || loading.value || failed.value) return;
   const p = props.projectId,
-    current = sequence;
+    current = sequence,
+    scope = identity.value;
   selecting.value = true;
   try {
     const result = await reviewWorkspaceApi.selectCandidates(p, {
       search: search.value,
       folder: folder.value,
       priority: priority.value,
+      ...filterParams(),
       excludeIds: [...new Set([...props.excluded, ...selected.value])],
       ...(props.selectionScope ? { selectionScope: props.selectionScope } : {}),
     });
-    if (p !== props.projectId || !props.open || current !== sequence) return;
+    if (
+      !live ||
+      scope !== identity.value ||
+      !props.open ||
+      current !== sequence
+    )
+      return;
     selected.value = new Set([...selected.value, ...result.caseIds]);
     console.info("评审草稿已全选筛选结果", {
       projectId: p,
@@ -315,15 +483,26 @@ async function selectAll() {
   } catch (error) {
     console.error("评审关联全选失败", error);
   } finally {
-    selecting.value = false;
+    if (live && scope === identity.value) selecting.value = false;
   }
 }
-function close() {
-  if (locked.value) return;
+async function close() {
+  if (!live || locked.value || settingsOpen.value) return;
+  const scope = identity.value;
+  if (filterEditor.value && !(await filterEditor.value.beforeClose())) return;
+  if (!live || locked.value || scope !== identity.value) return;
   emit("update:open", false);
 }
 async function confirm() {
-  if (!reviewers.value.length || !selected.value.size || locked.value) return;
+  if (!live || !reviewers.value.length || !selected.value.size || locked.value)
+    return;
+  const scope = identity.value;
+  if (
+    settingsOpen.value ||
+    (filterEditor.value && !(await filterEditor.value.beforeClose()))
+  )
+    return;
+  if (!live || scope !== identity.value || locked.value) return;
   const data = {
     caseIds: [...selected.value],
     reviewerIds: [...reviewers.value],
@@ -333,6 +512,7 @@ async function confirm() {
   try {
     if (props.saveSelection) await props.saveSelection(data);
     else emit("confirm", data);
+    if (!live || scope !== identity.value) return;
     emit("update:open", false);
     console.info(
       props.saveSelection ? "评审关联已保存" : "关联选择已加入评审草稿",
@@ -340,15 +520,23 @@ async function confirm() {
     );
   } catch (error) {
     console.error("保存评审关联失败，保留当前选择", error);
-    saveError.value = "关联失败，请根据提示修正后重试，或刷新列表重新选择";
+    if (live && scope === identity.value)
+      saveError.value = "关联失败，请根据提示修正后重试，或刷新列表重新选择";
   } finally {
-    saving.value = false;
+    if (live && scope === identity.value) saving.value = false;
   }
 }
 watch(
-  () => [props.open, props.projectId],
+  identity,
   () => {
     ++sequence;
+    selecting.value = false;
+    saving.value = false;
+    filterSaving.value = false;
+    conditions.value = undefined;
+    logic.value = "and";
+    viewId.value = undefined;
+    settingsOpen.value = false;
     data.value = undefined;
     scopedIds.value = [];
     selected.value = new Set();
@@ -364,7 +552,7 @@ watch(
     saveError.value = "";
     void load();
   },
-  { immediate: true },
+  { immediate: true, flush: "sync" },
 );
 </script>
 <style scoped>

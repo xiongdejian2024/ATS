@@ -37,6 +37,19 @@ class ReviewCandidateSelection(StrictRequest):
     priority: Literal["P0", "P1", "P2", "P3"] | None = None
     excludeIds: list[str] = Field(default_factory=list, max_length=10000)
     selectionScope: CaseSelection | None = None
+    filters: dict | None = None
+    mine: bool = False
+
+    @field_validator("filters")
+    @classmethod
+    def candidate_filters(cls, value):
+        if value is not None:
+            from services.plan_candidate_filter import parse_candidate_filters
+            import json
+            if len(json.dumps(value, ensure_ascii=False)) > 20000:
+                raise ValueError("筛选条件过大")
+            parse_candidate_filters(value, "functional")
+        return value
 
 
 class ReviewAssociate(StrictRequest):
