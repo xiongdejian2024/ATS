@@ -172,7 +172,8 @@ class ModuleService:
         module.updated_at = beijing_now()
 
         # 修改父级后，同步整棵子树的层级；兄弟顺序由前端明确传递 sortOrder。
-        ModuleService.sync_subtree_levels(db,[module])
+        changed_ids=ModuleService.sync_subtree_levels(db,[module])
+        ModuleService.sync_case_module_paths(db,module.project_id,changed_ids)
         db.commit()
         db.refresh(module)
         return module
@@ -195,6 +196,43 @@ class ModuleService:
             ):
                 child.level = parent.level + 1
                 queue.append(child)
+        return visited
+
+    @staticmethod
+    def sync_case_module_paths(db: Session, project_id: str, module_ids):
+        """父级移动/重命名后同步本项目的显示路径，不改用例身份或历史。"""
+        if not module_ids:
+            return
+        # SessionLocal 禁用 autoflush；当前读前先写入本事务内的新名称/父级/层级。
+        db.flush()
+        from models.test_case import TestCase
+        paths=ModuleService.module_paths(db,project_id,module_ids)
+        cases=db.query(TestCase).filter(TestCase.project_id==project_id,TestCase.module_id.in_(module_ids)).populate_existing().with_for_update().all()
+        for case in cases:
+            case.module_path=paths[case.module_id]
+
+    @staticmethod
+    def module_paths(db: Session, project_id: str, module_ids):
+        """在调用者持有项目写锁时读取完整路径，兼容 MySQL 当前读。"""
+        from fastapi import HTTPException
+        modules={m.id:m for m in db.query(Module).filter_by(project_id=project_id).populate_existing().with_for_update().all()}
+        paths={}
+        for module_id in module_ids:
+            names=[];seen=set();cursor=modules.get(module_id)
+            if not cursor:
+                raise HTTPException(422,"目标模块不属于本项目")
+            while cursor:
+                if cursor.id in seen or len(seen)>=1000:
+                    raise HTTPException(409,"现有模块层级存在循环或过深，请先修复")
+                seen.add(cursor.id);names.append(cursor.name)
+                if cursor.parent_id and cursor.parent_id not in modules:
+                    raise HTTPException(409,"现有父模块不属于当前项目，请先核对关联")
+                cursor=modules.get(cursor.parent_id)
+            path='/'.join(reversed(names))
+            if len(path)>500:
+                raise HTTPException(422,"模块路径超过500字符，请缩短名称或层级")
+            paths[module_id]=path
+        return paths
 
     @staticmethod
     def delete_module(db: Session, module_id: str) -> bool:
@@ -219,7 +257,8 @@ class ModuleService:
             # 同时更新 ORM 关系，避免删除旧父节点时 UOW 再把已提升子节点置为根。
             child.parent=parent
             child.level=parent.level+1 if parent else 1
-        ModuleService.sync_subtree_levels(db,children)
+        changed_ids=ModuleService.sync_subtree_levels(db,children)
+        ModuleService.sync_case_module_paths(db,module.project_id,changed_ids)
 
         # 将关联的测试用例的 module_id 设置为 None
         db.query(TestCase).filter(TestCase.module_id == module_id,TestCase.project_id==module.project_id).update(

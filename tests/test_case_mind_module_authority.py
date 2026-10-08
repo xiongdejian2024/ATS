@@ -52,6 +52,64 @@ def test_disabled_actor_is_rechecked_even_when_request_session_holds_stale_user(
     assert g['db'].query(Module).count()==0
 
 
+def test_module_rename_move_and_parent_delete_refresh_all_local_case_paths(governance):
+    g=governance;c=g['client'];db=g['db'];base=f"/api/v1/projects/{g['project'].id}/modules"
+    def create(name,parent=None):return c.post(base,json={'name':name,'parentId':parent}).json()['data']['id']
+    root=create('根');child=create('子',root);leaf=create('叶',child);target=create('目标')
+    a,b=g['cases'][:2];a.module_id=child;a.module_path='旧子路径';b.module_id=leaf;b.module_path='旧叶路径';db.commit()
+    original_ids=(a.id,b.id)
+    assert c.put(base+'/'+root,json={'name':'新根'}).status_code==200
+    db.expire_all();assert db.get(Case,a.id).module_path=='新根/子';assert db.get(Case,b.id).module_path=='新根/子/叶'
+    assert c.put(base+'/'+child,json={'parentId':target}).status_code==200
+    db.expire_all();assert db.get(Case,a.id).module_path=='目标/子';assert db.get(Case,b.id).module_path=='目标/子/叶'
+    assert c.delete(base+'/'+child).status_code==200
+    db.expire_all();assert db.get(Case,a.id).module_path is None;assert db.get(Case,b.id).module_path=='目标/叶'
+    assert (a.id,b.id)==original_ids and db.get(Case,b.id).deleted_at is None
+
+
+def test_module_path_overflow_rejects_and_rolls_back_move(governance):
+    g=governance;c=g['client'];db=g['db'];base=f"/api/v1/projects/{g['project'].id}/modules"
+    def create(name,parent=None):return c.post(base,json={'name':name,'parentId':parent}).json()['data']['id']
+    source=create('原模块');target=None
+    for _ in range(5):target=create('测'*100,target)
+    case=g['cases'][0];case.module_id=source;case.module_path='原模块';db.commit()
+    response=c.put(base+'/'+source,json={'parentId':target});assert response.status_code==422,response.text
+    db.expire_all();assert db.get(Module,source).parent_id is None;assert db.get(Case,case.id).module_path=='原模块'
+
+
+def test_module_path_refresh_preserves_review_snapshot_and_marks_current_content_changed(governance):
+    from test_case_governance import request_review
+    from models import CaseVersion
+    from services.case_governance import current_review_statuses
+    g=governance;c=g['client'];db=g['db'];base=f"/api/v1/projects/{g['project'].id}/modules"
+    module=c.post(base,json={'name':'旧模块'}).json()['data']['id'];case=g['cases'][0]
+    assert c.post(g['base']+'/batch',json={'caseIds':[case.id],'moduleId':module}).status_code==200
+    review=request_review(g,reviewers=[g['users'][0].id]);item=next(i for i in review['items'] if i['caseId']==case.id)
+    voted=c.post(g['base']+f"/reviews/{review['id']}/items/{item['id']}/decision",json={'decision':'approved','comment':'合成验收'})
+    assert voted.status_code==200,voted.text
+    before=[(v.id,dict(v.snapshot)) for v in db.query(CaseVersion).filter_by(case_id=case.id).all()]
+    assert current_review_statuses(db,[case])[case.id]=='passed'
+    assert c.put(base+'/'+module,json={'name':'新模块'}).status_code==200
+    db.expire_all();fresh=db.get(Case,case.id);assert fresh.module_path=='新模块'
+    assert [(v.id,dict(v.snapshot)) for v in db.query(CaseVersion).filter_by(case_id=case.id).all()]==before
+    fetched=c.get(g['base']+f"/reviews/{review['id']}").json()['data']
+    old=next(i for i in fetched['items'] if i['caseId']==case.id)
+    assert old['snapshot']['module_path']=='旧模块' and old['outdated'] is True
+    assert current_review_statuses(db,[fresh])[fresh.id]=='resubmit'
+
+
+def test_case_move_copy_and_create_use_full_nested_target_path(governance):
+    g=governance;c=g['client'];db=g['db'];base=f"/api/v1/projects/{g['project'].id}/modules"
+    root=c.post(base,json={'name':'根'}).json()['data']['id'];leaf=c.post(base,json={'name':'叶','parentId':root}).json()['data']['id'];case=g['cases'][0]
+    moved=c.post(g['base']+'/batch',json={'caseIds':[case.id],'moduleId':leaf});assert moved.status_code==200,moved.text
+    db.expire_all();assert db.get(Case,case.id).module_path=='根/叶'
+    copied=c.post(g['base']+'/batch-copy',json={'caseIds':[case.id],'moduleId':leaf});assert copied.status_code==200,copied.text
+    copy=db.get(Case,copied.json()['data']['caseIds'][0]);assert copy.module_path=='根/叶' and copy.id!=case.id
+    created=c.post("/api/v1/test-cases",json={'project_id':g['project'].id,'name':'脑图复制普通内容','type':'functional','module_id':leaf,'module_path':'伪造路径'})
+    assert created.status_code==200,created.text
+    assert db.get(Case,created.json()['data']['id']).module_path=='根/叶'
+
+
 @pytest.mark.parametrize('reference',['module','case'])
 def test_delete_refuses_legacy_cross_project_references_instead_of_rewriting_them(governance,reference):
     g=governance;db=g['db'];source=Module(project_id=g['project'].id,name='旧关联来源');db.add(source);db.flush()
@@ -90,3 +148,15 @@ def test_postgres_reciprocal_module_moves_serialize_before_cycle_validation(gove
         assert sorted(f.result(timeout=10) for f in results)==[200,422]
     g['db'].expire_all()
     assert not(g['db'].get(Module,a).parent_id==b and g['db'].get(Module,b).parent_id==a)
+
+
+def test_case_update_uses_full_target_path_and_clears_path_on_unassignment(governance):
+    g=governance;c=g['client'];db=g['db'];base=f"/api/v1/projects/{g['project'].id}/modules"
+    root=c.post(base,json={'name':'根'}).json()['data']['id'];leaf=c.post(base,json={'name':'叶','parentId':root}).json()['data']['id'];case=g['cases'][0]
+    target=f"/api/v1/test-cases/{case.id}"
+    changed=c.put(target,json={'module_id':leaf,'module_path':'伪造路径'});assert changed.status_code==200,changed.text
+    db.expire_all();assert db.get(Case,case.id).module_path=='根/叶'
+    changed=c.put(target,json={'module_path':'再次伪造'});assert changed.status_code==200,changed.text
+    db.expire_all();assert db.get(Case,case.id).module_path=='根/叶'
+    changed=c.put(target,json={'module_id':None});assert changed.status_code==200,changed.text
+    db.expire_all();assert db.get(Case,case.id).module_id is None and db.get(Case,case.id).module_path is None
