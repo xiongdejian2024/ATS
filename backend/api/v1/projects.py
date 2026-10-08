@@ -417,7 +417,7 @@ async def export_test_cases(
                 while cursor and cursor.id not in seen:
                     seen.add(cursor.id);parts.append(cursor.name);cursor=by_id.get(cursor.parent_id)
                 paths[module.id]="/".join(reversed(parts))
-            return StreamingResponse(BytesIO(export_xmind(cases,paths)),media_type="application/octet-stream",headers={"Content-Disposition":"attachment; filename=cases.xmind"})
+            return StreamingResponse(BytesIO(export_xmind(cases,paths,fields=fields)),media_type="application/octet-stream",headers={"Content-Disposition":"attachment; filename=cases.xmind"})
         if layout not in {"case","step"}:
             raise HTTPException(422,"不支持的导出布局")
         
@@ -594,7 +594,7 @@ async def export_test_cases(
         raise
     except Exception as e:
         logger.exception("导出测试用例失败")
-        raise HTTPException(status_code=500, detail=f"导出失败: {str(e)}")
+        raise HTTPException(status_code=500, detail="导出失败，请重试或联系管理员")
 
 
 @router.get("/{project_id}/cases/template")
@@ -602,12 +602,20 @@ async def download_case_template(
     project_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    format: str = 'xlsx',
 ):
     """下载测试用例导入模板"""
     from core.project_access import require_project_access
     require_project_access(db, current_user, project_id, "test_case:read")
     from fastapi.responses import StreamingResponse
     from io import BytesIO
+    if format not in {'xlsx','xmind'}:
+        raise HTTPException(422,'不支持的模板格式')
+    if format == 'xmind':
+        from types import SimpleNamespace
+        from services.case_interchange import export_xmind
+        example=SimpleNamespace(name='示例用例（导入前请修改名称）',case_code='',type='functional',priority='P2',tags=[],is_automated=False,requirement_ref='',module_path='示例模块',module_id=None,template_id=None,custom_fields={},steps=[{'step':1,'action':'填写操作步骤','expected':'填写预期结果'}],precondition='填写前置条件',case_edit_type='STEP',text_description='',expected_result='',description='复制用例节点可以添加更多用例')
+        return StreamingResponse(BytesIO(export_xmind([example])),media_type='application/octet-stream',headers={'Content-Disposition':'attachment; filename=case-template.xmind','X-Content-Type-Options':'nosniff'})
     from utils.excel_handler import export_to_excel
     from tempfile import NamedTemporaryFile
     import os
@@ -724,7 +732,9 @@ async def import_test_cases(
         # 编号按字符串读取，避免数字编号丢失前导零。
         if suffix == '.xmind':
             from services.case_interchange import read_xmind
-            df=pd.DataFrame(read_xmind(content))
+            xmind_rows = read_xmind(content)
+            provided_columns = [set(row) for row in xmind_rows]
+            df=pd.DataFrame(xmind_rows)
         else:
             df = pd.read_csv(tmp_path, dtype={"ID": str}) if suffix == '.csv' else pd.read_excel(tmp_path, dtype={"ID": str})
         if '操作' in df.columns and '用例名称' in df.columns:
@@ -764,6 +774,8 @@ async def import_test_cases(
         pending_modules=[]
         if suffix=='.xmind':
             for value in df.get('所属模块',[]):
+                if pd.isna(value):
+                    continue
                 parent_id=None
                 for level,name in enumerate(str(value).split('/'),1):
                     if not name: continue
@@ -867,12 +879,14 @@ async def import_test_cases(
         import_data = []  # 存储解析后的数据
         
         for index, row in df.iterrows():
+            # XMind 节点可各自选择字段；DataFrame 的全局列不能把缺失值变成清空操作。
+            row_columns = provided_columns[index] if suffix == ".xmind" else set(df.columns)
             row_num = index + 2  # Excel行号（第1行是表头）
             row_errors = []
             
             # 获取ID（用例编号）
             case_id = None
-            if 'ID' in df.columns and not pd.isna(row.get('ID')):
+            if 'ID' in row_columns and not pd.isna(row.get('ID')):
                 case_id = str(row['ID']).strip()
                 if case_id:
                     # 检查ID是否存在
@@ -883,7 +897,7 @@ async def import_test_cases(
             
             # 校验用例名称（必填）
             name = None
-            if '用例名称' in df.columns and not pd.isna(row.get('用例名称')):
+            if '用例名称' in row_columns and not pd.isna(row.get('用例名称')):
                 name = str(row['用例名称']).strip()
                 if not name:
                     row_errors.append("用例名称不能为空")
@@ -892,7 +906,7 @@ async def import_test_cases(
             
             # 解析其他字段
             priority = 'P2'
-            if '用例等级' in df.columns and not pd.isna(row.get('用例等级')):
+            if '用例等级' in row_columns and not pd.isna(row.get('用例等级')):
                 priority_val = str(row['用例等级']).strip()
                 if priority_val in ['P0', 'P1', 'P2', 'P3']:
                     priority = priority_val
@@ -900,7 +914,7 @@ async def import_test_cases(
                     row_errors.append(f"用例等级 '{priority_val}' 无效，应为 P0/P1/P2/P3")
             
             case_type = 'functional'
-            if '用例类型' in df.columns and not pd.isna(row.get('用例类型')):
+            if '用例类型' in row_columns and not pd.isna(row.get('用例类型')):
                 type_val = str(row['用例类型']).strip()
                 valid_types = ['functional', 'interface', 'ui', 'performance', 'security']
                 if type_val in valid_types:
@@ -909,7 +923,7 @@ async def import_test_cases(
                     row_errors.append(f"用例类型 '{type_val}' 无效")
             
             status = 'not_executed'
-            if '执行结果' in df.columns and not pd.isna(row.get('执行结果')):
+            if '执行结果' in row_columns and not pd.isna(row.get('执行结果')):
                 status_val = str(row['执行结果']).strip()
                 valid_statuses = ['not_executed', 'passed', 'failed', 'blocked', 'skipped']
                 if status_val in valid_statuses:
@@ -919,7 +933,7 @@ async def import_test_cases(
             
             # 解析模块路径
             module_id = None
-            if '所属模块' in df.columns and not pd.isna(row.get('所属模块')):
+            if '所属模块' in row_columns and not pd.isna(row.get('所属模块')):
                 module_path = str(row['所属模块']).strip()
                 if module_path:
                     module_id = get_module_id_by_path(module_path)
@@ -928,37 +942,37 @@ async def import_test_cases(
             
             # 解析标签
             tags = []
-            if '标签' in df.columns and not pd.isna(row.get('标签')):
+            if '标签' in row_columns and not pd.isna(row.get('标签')):
                 tags_text = str(row['标签']).strip()
                 if tags_text:
                     tags = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
             
             # 解析测试步骤
             steps = []
-            if '测试步骤' in df.columns and not pd.isna(row.get('测试步骤')):
+            if '测试步骤' in row_columns and not pd.isna(row.get('测试步骤')):
                 steps_text = str(row['测试步骤'])
                 steps = parse_steps(steps_text)
             
             # 其他字段
             precondition = None
-            if '前置条件' in df.columns and not pd.isna(row.get('前置条件')):
+            if '前置条件' in row_columns and not pd.isna(row.get('前置条件')):
                 precondition = str(row['前置条件']).strip() or None
             
             is_automated = False
-            if '是否自动化' in df.columns and not pd.isna(row.get('是否自动化')):
+            if '是否自动化' in row_columns and not pd.isna(row.get('是否自动化')):
                 automated_val = str(row['是否自动化']).strip()
                 is_automated = automated_val in ['是', 'true', 'True', '1', 'yes']
             extra_values={}
             for key,column in [('requirement_ref','需求关联'),('template_id','模板ID'),('text_description','文本描述'),('expected_result','文本预期结果'),('description','备注')]:
-                if column in df.columns:
+                if column in row_columns:
                     extra_values[key]=None if pd.isna(row.get(column)) else str(row[column]).strip() or None
-            if '描述方式' in df.columns:
+            if '描述方式' in row_columns:
                 value = 'STEP' if pd.isna(row.get('描述方式')) else str(row['描述方式']).strip()
                 if value not in {'STEP','TEXT'}:
                     row_errors.append('描述方式必须为STEP或TEXT')
                 else:
                     extra_values['case_edit_type'] = value
-            if '自定义字段' in df.columns:
+            if '自定义字段' in row_columns:
                 try:
                     extra_values['custom_fields']={} if pd.isna(row.get('自定义字段')) else json.loads(str(row['自定义字段']))
                 except ValueError:
@@ -968,11 +982,11 @@ async def import_test_cases(
                 existing_for_template=case_code_map.get(case_id) if case_id else None
                 data_for_template={'type':case_type,'priority':priority,'precondition':precondition,'steps':steps,'tags':tags,'is_automated':is_automated,**extra_values}
                 columns_for_template={'type':'用例类型','priority':'用例等级','precondition':'前置条件','steps':'测试步骤','tags':'标签','is_automated':'是否自动化'}
-                explicit_fields=set(extra_values)|{field for field,column in columns_for_template.items() if column in df.columns}
+                explicit_fields=set(extra_values)|{field for field,column in columns_for_template.items() if column in row_columns}
                 prepared=prepare_case_template(db,project_id,data_for_template,explicit_fields,existing=existing_for_template)
                 extra_values.update({key:prepared[key] for key in ['template_id','custom_fields']})
                 if existing_for_template is None:
-                    extra_values.update({field:prepared[field] for field,column in columns_for_template.items() if column not in df.columns})
+                    extra_values.update({field:prepared[field] for field,column in columns_for_template.items() if column not in row_columns})
             except HTTPException as exc:
                 row_errors.append(str(exc.detail))
             
@@ -1004,7 +1018,7 @@ async def import_test_cases(
                             'module_id':'所属模块', 'precondition':'前置条件',
                             'steps':'测试步骤', 'tags':'标签', 'is_automated':'是否自动化',
                         }.items():
-                            if column not in df.columns:
+                            if column not in row_columns:
                                 values[field] = getattr(existing_case, field)
                         # 检查内容是否有变化
                         has_changes = overwrite and any(getattr(existing_case, field) != value for field, value in values.items())

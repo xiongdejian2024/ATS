@@ -145,10 +145,10 @@ export const testCaseApi = {
     return response.data
   },
 
-  getCaseTemplate: async (projectId: string): Promise<Blob> => {
+  getCaseTemplate: async (projectId: string, format:'xlsx'|'xmind'='xlsx'): Promise<Blob> => {
     const response = await apiClient.getInstance().get(
       `projects/${projectId}/cases/template`,
-      { responseType: 'blob' }
+      { responseType: 'blob',params:{format} }
     )
     
     return response.data
