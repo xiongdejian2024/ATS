@@ -81,7 +81,7 @@ def verify(url):
         with engine.connect() as connection:
             transaction = connection.begin()
             connection.exec_driver_sql(ddl)
-            assert len(inspect(connection).get_table_names(schema="ats")) == 82
+            assert len(inspect(connection).get_table_names(schema="ats")) == 84
             transaction.rollback()
         with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as connection:
             assert not inspect(connection).has_schema("ats")
@@ -89,7 +89,7 @@ def verify(url):
             assert outside_snapshot(connection) == baseline
 
         plan = initialize(False, schema="ats", connection_engine=engine, metadata=metadata)
-        assert plan["expectedTableCount"] == 82 and len(plan["existingTables"]) == 82
+        assert plan["expectedTableCount"] == 84 and len(plan["existingTables"]) == 84
         assert not plan["createSchema"] and plan["createTables"] == []
         index_count = comment_count = 0
         with engine.connect() as connection:
@@ -155,13 +155,13 @@ def verify(url):
             expect_failure(connection, ddl, "42P06")
             assert connection.exec_driver_sql("SELECT id FROM ats.users").scalar_one() == "sentinel"
             assert connection.exec_driver_sql("SELECT count(*) FROM ats.task_queue").scalar_one() == 2
-            assert len(inspect(connection).get_table_names(schema="ats")) == 82
+            assert len(inspect(connection).get_table_names(schema="ats")) == 84
             assert outside_snapshot(connection) == baseline
 
         final_plan = initialize(False, schema="ats", connection_engine=engine, metadata=metadata)
         assert final_plan["createTables"] == []
         return {
-            "postgresVersion": "17.11", "schema": "ats", "tables": 82,
+            "postgresVersion": "17.11", "schema": "ats", "tables": 84,
             "modelIndexes": index_count, "modelComments": comment_count,
             "ownedSerialSequences": 1,
             "ddlSha256": hashlib.sha256(ddl.encode("utf-8")).hexdigest(),

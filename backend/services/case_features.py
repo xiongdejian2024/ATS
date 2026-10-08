@@ -321,6 +321,8 @@ def storage_root():
 
 
 def attachment_path(row):
+    if row.file_path.startswith(("db:", "s3:")):
+        return row.file_path
     root = storage_root()
     path = (root / row.file_path).resolve()
     if not path.is_relative_to(root):
@@ -358,10 +360,12 @@ def upload_attachment(db, user, project_id, case_id, file):
         file_type=file.content_type,
         uploaded_by=str(user.id),
     )
-    path = attachment_path(row)
+    storage_key = None
+    commit_started = False
     try:
-        save_upload_file(file, str(path))
-        row.file_size = path.stat().st_size
+        from services import attachment_storage
+        storage_key, row.file_size = attachment_storage.write(db, relative, file)
+        row.file_path = storage_key
         db.add(row)
         change(
             db,
@@ -370,14 +374,17 @@ def upload_attachment(db, user, project_id, case_id, file):
             "上传附件",
             {"attachmentId": identifier, "fileName": name},
         )
+        commit_started = True
         db.commit()
         db.refresh(row)
         return row
     except Exception:
         db.rollback()
         logger.exception("上传用例附件失败 case_id={}", case.id)
-        if path.exists():
-            path.unlink()
+        # A commit/refresh error does not prove the database rejected the row.
+        # Retain its external evidence; an orphan can be reconciled later.
+        if storage_key and not commit_started:
+            attachment_storage.remove_external(storage_key)
         raise
 
 
@@ -394,7 +401,8 @@ def find_attachment(db, user, project_id, attachment_id, permission="read"):
 def remove_files(paths):
     for path in paths:
         try:
-            path.unlink(missing_ok=True)
+            from services.attachment_storage import remove_external
+            remove_external(path)
         except Exception:
             logger.exception("清理用例附件文件失败 path={}", path)
             raise
@@ -431,6 +439,9 @@ def purge_case(db, user, project_id, case_id):
     if db.query(TestExecution).filter_by(case_id=case_id).first():
         raise HTTPException(409, "用例存在执行历史，不能彻底删除；可保留在回收站")
     paths = [attachment_path(row) for row in case.attachments]
+    from services.attachment_storage import delete_blob
+    for row in case.attachments:
+        delete_blob(db, row.file_path)
     for model in [CaseIssueLink, CaseAutomationLink, CaseFollow, CaseComment]:
         db.query(model).filter_by(case_id=case_id).delete(synchronize_session=False)
     from sqlalchemy import or_

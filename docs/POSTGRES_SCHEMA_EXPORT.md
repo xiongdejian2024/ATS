@@ -1,6 +1,6 @@
 # Fresh PostgreSQL schema export
 
-`deploy/postgres_schema.sql` creates the original ATS controller's 82 model tables
+`deploy/postgres_schema.sql` creates the original ATS controller's 84 model tables
 in the fixed `ats` schema. It is a fresh initialization artifact, not an upgrade or
 data migration. It refuses **any existing `ats` schema**, including an empty or
 already compatible one, before creating a table. It does not create database roles,

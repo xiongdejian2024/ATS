@@ -121,6 +121,9 @@ class TaskQueueService:
             ).update({"status": "running", "started_at": beijing_now()}, synchronize_session=False)
             if changed == 1:
                 task = db.query(TaskQueue).filter_by(execution_id=execution_id).populate_existing().one()
+                if task.kind == "suite":
+                    from services.suite_delivery import reserve
+                    reserve(db, task)
             elif changed > 1:
                 # Corrupt duplicate IDs must never dispatch multiple workloads.
                 db.rollback()

@@ -62,3 +62,5 @@ from . import plan_case_defect
 
 from .agent_log import AgentLogCursor, AgentTaskLog
 from .script_job import ScriptJob, ScriptJobRun, ScriptJobLog
+from .suite_delivery import SuiteDelivery
+from .attachment_blob import AttachmentBlob

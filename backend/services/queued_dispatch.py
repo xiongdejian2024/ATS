@@ -42,6 +42,8 @@ async def dispatch_pending_suites(db, environment_id):
                 run, session, payload = prepared
             else:
                 suite = load_dispatch_suite(db, pending.suite_id, pending.executor_id)
+                if suite.environment_id != pending.environment_id:
+                    raise ValueError("测试套节点在排队后已改变，拒绝跨节点派发")
                 payload = build_suite_message(
                     db, suite, execution_id, pending.executor_id, current_read=True
                 )
@@ -76,6 +78,9 @@ async def dispatch_pending_suites(db, environment_id):
             db.query(ScriptJobRun).filter_by(execution_id=execution_id, delivery_state="dispatching").update(
                 {"delivery_state": "sent" if sent else "unknown"}, synchronize_session=False)
             db.commit()
+        else:
+            from services.suite_delivery import dispatched
+            dispatched(db, execution_id, sent)
         if not sent:
             # As with plans/schedules, a write failure is an uncertain delivery,
             # never permission to release the slot or automatically resend.

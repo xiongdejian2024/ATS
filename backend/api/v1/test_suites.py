@@ -14,6 +14,7 @@ from datetime import timedelta
 from core.logger import logger
 from services.suite_dispatch import is_xat_command
 from services.raw_log_export import LogExportRequest, export_log_chunk
+from services.suite_delivery import ResolveSuiteInput
 
 router = APIRouter()
 
@@ -26,6 +27,22 @@ def require_suite_access(db, user, suite_id, action="read"):
         raise HTTPException(404, "测试套不存在")
     require_plan(db, user, suite.plan_id, action)
     return suite
+
+
+@router.get("/suites/{suite_id}/runs/{execution_id}/delivery", response_model=APIResponse)
+def delivery_state(suite_id: str, execution_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    from services.suite_delivery import find_task, state_json
+    require_suite_access(db, current_user, suite_id)
+    return APIResponse(status=ResponseStatus.SUCCESS, message="获取成功", data=state_json(db, find_task(db, suite_id, execution_id)))
+
+
+@router.post("/suites/{suite_id}/runs/{execution_id}/resolve", response_model=APIResponse)
+async def resolve_delivery(suite_id: str, execution_id: str, data: ResolveSuiteInput, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    from services.suite_delivery import resolve
+    outcome = resolve(db, current_user, suite_id, execution_id, data)
+    from services.queued_dispatch import dispatch_pending_suites
+    await dispatch_pending_suites(db, outcome["environmentId"])
+    return APIResponse(status=ResponseStatus.SUCCESS, message="未知结果已人工关闭，未重跑", data=outcome)
 
 
 
@@ -242,14 +259,17 @@ async def execute_test_suite(
         from services.suite_dispatch import build_suite_message
         task_message = build_suite_message(db, suite, execution_id, str(current_user.id))
         
-        TaskQueueService.add_to_queue(
+        queued = TaskQueueService.add_to_queue(
             db=db, environment_id=suite.environment_id, suite_id=suite.id,
             execution_id=execution_id, executor_id=str(current_user.id),
         )
-        TaskQueueService.lock_environment(db, suite.environment_id)
+        target_environment_id = queued.environment_id
+        TaskQueueService.lock_environment(db, target_environment_id)
         try:
             from services.suite_dispatch import load_dispatch_suite
             suite = load_dispatch_suite(db, suite_id, str(current_user.id))
+            if suite.environment_id != target_environment_id:
+                raise ValueError("测试套节点在派发前已改变，请核对配置后重新提交")
             task_message = build_suite_message(db, suite, execution_id, str(current_user.id), current_read=True)
         except Exception:
             TaskQueueService.complete_task(db, execution_id, "failed")
@@ -270,7 +290,9 @@ async def execute_test_suite(
             
             # 发送到Agent
             from api.v1.websocket import manager
-            success = await manager.send_message(suite.environment_id, task_message)
+            success = await manager.send_message(claimed.environment_id, task_message)
+            from services.suite_delivery import dispatched
+            dispatched(db, execution_id, success)
             if not success:
                 # A failed socket write cannot prove the Agent did not receive
                 # it. Retain the slot; completion/cancellation resolves it.

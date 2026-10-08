@@ -19,11 +19,13 @@ def dispatch_case_ids(db, task, suite):
 
 
 def handle_run_result(db, environment_id, message):
+    from services.task_queue_service import TaskQueueService
+    TaskQueueService.lock_environment(db, environment_id)
     suite = db.query(TestSuite).filter(TestSuite.id == message.get("suite_id")).first()
     task = (
         db.query(TaskQueue)
         .filter(TaskQueue.execution_id == message.get("execution_id"))
-        .first()
+        .populate_existing().with_for_update().first()
     )
     if (
         not suite
