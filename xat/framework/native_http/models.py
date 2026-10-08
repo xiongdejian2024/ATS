@@ -1,11 +1,14 @@
-"""声明式请求/断言模型；拒绝未知配置，不执行脚本或shell。"""
+"""声明式请求/断言与有界处理器引用；拒绝未知或未冻结的可执行配置。"""
 
-from typing import Literal
+from typing import Literal, Annotated
 from .response_assertion_models import ResponseAssertion
 from .body_models import FileReference, BinaryBody, FrozenFile
 from .schema_models import JsonBodySchema
 from .extraction_models import PostProcessorConfig
 from .variable_models import InitialVariable, validate_variables
+from .extension_models import MockResponse
+from .sql_models import SqlProcessor
+from .hook_models import ScriptHook, FrozenScriptHook
 from urllib.parse import urlsplit
 from pydantic import (
     BaseModel,
@@ -93,7 +96,17 @@ class Assertion(NativeModel):
         return self
 
 
+Processor = Annotated[SqlProcessor | ScriptHook, Field(discriminator='type')]
+FrozenProcessor = Annotated[SqlProcessor | FrozenScriptHook, Field(discriminator='type')]
+
+
 class RequestSpec(NativeModel):
+    globalPreProcessors: list[Processor] = Field(default_factory=list, max_length=10)
+    globalPostProcessors: list[Processor] = Field(default_factory=list, max_length=10)
+    preProcessors: list[Processor] = Field(default_factory=list, max_length=10)
+    postProcessors: list[Processor] = Field(default_factory=list, max_length=10)
+    mockResponse: MockResponse | None = None
+    reportPhases: StrictBool = False
     initialVariables: list[InitialVariable] = Field(default_factory=list, max_length=100)
 
     @field_validator("initialVariables")
@@ -133,6 +146,9 @@ class RequestSpec(NativeModel):
 
     @model_validator(mode="after")
     def valid_body(self):
+        for processors in (self.preProcessors, self.postProcessors, self.globalPreProcessors, self.globalPostProcessors):
+            if len({p.id for p in processors}) != len(processors):
+                raise ValueError('处理器ID不能重复')
         groups = self.responseAssertions
         if len({g.id for g in groups}) != len(groups) or len(
             {g.assertionType for g in groups}
@@ -187,6 +203,8 @@ class RequestSpec(NativeModel):
 
 
 class FrozenRequest(RequestSpec):
+    preProcessors: list[FrozenProcessor] = Field(default_factory=list, max_length=10)
+    postProcessors: list[FrozenProcessor] = Field(default_factory=list, max_length=10)
     environmentVariables: list[InitialVariable] = Field(default_factory=list, max_length=100)
 
     @field_validator("environmentVariables")
@@ -242,6 +260,8 @@ class ScenarioStep(NativeModel):
 
 
 class ScenarioSpec(NativeModel):
+    globalPreProcessors: list[Processor] = Field(default_factory=list, max_length=10)
+    globalPostProcessors: list[Processor] = Field(default_factory=list, max_length=10)
     initialVariables: list[InitialVariable] = Field(default_factory=list, max_length=100)
 
     @field_validator("initialVariables")
@@ -252,8 +272,17 @@ class ScenarioSpec(NativeModel):
     steps: list[ScenarioStep] = Field(min_length=1, max_length=1000)
     stopOnFailure: StrictBool = True
 
+    @field_validator('globalPreProcessors', 'globalPostProcessors')
+    @classmethod
+    def unique_processors(cls, rows):
+        if len({p.id for p in rows}) != len(rows):
+            raise ValueError('处理器ID不能重复')
+        return rows
+
 
 class FrozenCase(NativeModel):
+    globalPreProcessors: list[FrozenProcessor] = Field(default_factory=list, max_length=10)
+    globalPostProcessors: list[FrozenProcessor] = Field(default_factory=list, max_length=10)
     initialVariables: list[InitialVariable] = Field(default_factory=list, max_length=100)
 
     @field_validator("initialVariables")
@@ -267,3 +296,10 @@ class FrozenCase(NativeModel):
     stopOnFailure: StrictBool = True
     retryTimes: StrictInt = Field(0, ge=0, le=10)
     retryInterval: StrictInt = Field(0, ge=0, le=2147483647)
+
+    @field_validator('globalPreProcessors', 'globalPostProcessors')
+    @classmethod
+    def unique_processors(cls, rows):
+        if len({p.id for p in rows}) != len(rows):
+            raise ValueError('处理器ID不能重复')
+        return rows

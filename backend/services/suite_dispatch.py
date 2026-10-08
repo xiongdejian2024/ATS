@@ -3,7 +3,7 @@
 from models.test_case import TestCase
 
 
-def build_suite_message(db, suite, execution_id, executor_id, case_snapshots=None, *, current_read=False):
+def build_suite_message(db, suite, execution_id, executor_id, case_snapshots=None, *, current_read=False, node_current=False):
     if not suite.case_ids:
         raise ValueError("至少需要选择一个测试用例")
     query = db.query(TestCase).filter(TestCase.id.in_(suite.case_ids), TestCase.deleted_at.is_(None))
@@ -44,6 +44,11 @@ def build_suite_message(db, suite, execution_id, executor_id, case_snapshots=Non
         **({"native_cases": native_cases} if native_cases is not None else {}),
     }
     if native_cases is not None:
+        from services.native_hooks import authorize_frozen, required_node
+        hook_node=required_node(message)
+        if hook_node and hook_node != suite.environment_id:
+            raise ValueError('冻结脚本钩子与派发节点不一致')
+        authorize_frozen(db, executor_id, message, node_current=node_current)
         from services.native_variable_delivery import validate_budget
         validate_budget(message)
     return message

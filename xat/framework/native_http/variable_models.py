@@ -37,10 +37,14 @@ def values(rows):
 def wire_case(case):
     """Old strict Agents must receive no newly added empty fields."""
     data = case.model_dump()
-    if not data["initialVariables"]:
-        data.pop("initialVariables")
+    for field in ('initialVariables','globalPreProcessors','globalPostProcessors'):
+        if not data[field]: data.pop(field)
     for request in data["requests"]:
-        for field in ("initialVariables", "environmentVariables"):
+        for field in ("initialVariables", "environmentVariables", "preProcessors", "postProcessors", "globalPreProcessors", "globalPostProcessors"):
             if not request[field]:
                 request.pop(field)
+        if not request.get("reportPhases"):
+            request.pop("reportPhases", None)
+        if not (request.get("mockResponse") or {}).get("enable"):
+            request.pop("mockResponse", None)
     return data

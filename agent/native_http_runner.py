@@ -108,8 +108,21 @@ class NativeHTTPRunner(SATRunner):
             # timeouts. Bound this startup await before invoking any request.
             async with asyncio.timeout(positive_timeout(self.agent.config.default_timeout)):
                 await self.log(message, f"开始原生HTTP执行，实际用例数：{len(cases)}")
+            hook_sequence = 0
             for case in cases:
-                row = await execute(case, file_loader=load_file)
+                extended = 'native_http_processors_v1' in getattr(self.agent.ws_client, 'server_capabilities', ())
+                requested = case.globalPreProcessors or case.globalPostProcessors or any(r.reportPhases or r.preProcessors or r.postProcessors or (r.mockResponse and r.mockResponse.enable) for r in case.requests)
+                if not extended and requested:
+                    raise ValueError('Controller未协商原生处理器和高级报告能力')
+                async def execute_hook(hook):
+                    nonlocal hook_sequence
+                    hook_sequence += 1
+                    try:
+                        from .native_hook_runtime import execute as run_hook
+                    except ImportError:
+                        from native_hook_runtime import execute as run_hook
+                    return await run_hook(self,message,hook,directory/'hooks'/str(hook_sequence))
+                row = await execute(case, file_loader=load_file, extended_details=bool(extended and requested),hook_executor=execute_hook)
                 rows.append(row)
                 await self.deliver(
                     dict(

@@ -152,6 +152,8 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
         for cid, payload in native.items():
             compatible = [suite for suite in originals if cid in suite.case_ids]
             node_id = plan.environment_id or (compatible[0].environment_id if len(compatible) == 1 else None)
+            from services.native_hooks import bind_node
+            node_id = bind_node(payload,node_id)
             view = suite_view(managed_suite(db, plan, cases[cid], node_id, actor.id))
             view.native_cases = [payload]
             suites.append(view)
@@ -422,7 +424,7 @@ async def advance_plan_runs(db):
                     if pool:
                         candidates = db.query(Environment).filter(Environment.id.in_(pool), Environment.status.is_(True)).all()
                         for candidate in sorted(candidates, key=lambda env: db.query(TaskQueue).filter_by(environment_id=env.id, status="running").count()):
-                            if native_variable_delivery.requires_variables(variable_payload) and native_variable_delivery.session_for(manager, candidate.id, variable_payload) is None:
+                            if native_variable_delivery.requires_extensions(variable_payload) and native_variable_delivery.session_for(manager, candidate.id, variable_payload) is None:
                                 continue
                             if candidate.id in manager.active_connections and TaskQueueService.can_execute_immediately(db, candidate.id):
                                 moved = db.query(TaskQueue).filter_by(execution_id=item.execution_id, status="pending").update({"environment_id": candidate.id})
@@ -448,12 +450,13 @@ async def advance_plan_runs(db):
                         view.case_ids = item.suite_snapshot["caseIds"]
                         view.execution_command = item.suite_snapshot["executionCommand"]
                         view.native_cases = item.suite_snapshot.get("nativeCases")
+                        view.environment_id = item.environment_id
                         # 范围批次冻结仓库和分支；凭据不写入历史快照。
                         if "gitEnabled" in item.suite_snapshot:
                             view.git_enabled = item.suite_snapshot["gitEnabled"]
                             view.git_repo_url = item.suite_snapshot.get("gitRepoUrl")
                             view.git_branch = item.suite_snapshot.get("gitBranch")
-                        message = build_suite_message(db, view, item.execution_id, run.executor_id, run.case_snapshot, current_read=True)
+                        message = build_suite_message(db, view, item.execution_id, run.executor_id, run.case_snapshot, current_read=True, node_current=True)
                     except Exception:
                         logger.exception("计划派发前校验失败：批次={}，执行={}", run.id, item.execution_id)
                         _cancel_waiting_item(db, item, "failed", "派发前校验失败，请检查执行人权限与测试套配置")
@@ -462,7 +465,7 @@ async def advance_plan_runs(db):
                         db.commit()
                         continue
                     variable_session = None
-                    if native_variable_delivery.requires_variables(message):
+                    if native_variable_delivery.requires_extensions(message):
                         variable_session = native_variable_delivery.session_for(manager, item.environment_id, message)
                         if variable_session is None:
                             db.rollback()

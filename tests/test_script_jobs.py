@@ -23,6 +23,8 @@ def script_lab(plan_lab, monkeypatch):
     from api.v1.websocket import manager
     db, _ = plan_lab
     node = db.get(Environment, "node"); node.created_by = "owner"; node.max_concurrent_tasks = 1
+    db.add(User(id='other',username='other-script-owner',email='other-script@example.test',password_hash='unused'))
+    db.flush()
     db.commit()
     sent = []
     socket = object()
@@ -152,6 +154,7 @@ async def test_script_logs_share_cursor_replay_atomicity_and_export(script_lab):
     db, user, _, _, _ = script_lab
     run = await jobs.trigger(db, user, create(script_lab).id, "logs")
     stream = str(uuid.uuid4())
+    db.add(Environment(id='foreign-node',name='foreign-node',created_by='other'));db.commit()
     payload = dict(type="script_job_log", script_job_id=run.job_id, execution_id=run.execution_id,
                    message="原始 😀\r\n  ", raw=True)
     message = dict(stream_id=stream, records=[dict(sequence=1, payload=payload)])
@@ -294,6 +297,8 @@ def test_fresh_schema_migration_is_noop_and_missing_indexes_are_repaired():
     import importlib.util
     from pathlib import Path
     from database import engine
+    if engine.dialect.name=='postgresql':
+        pytest.skip('Legacy MySQL/SQLite upgrade; PostgreSQL fresh DDL/initializer has separate coverage')
     spec = importlib.util.spec_from_file_location("upgrade_script_jobs", Path(__file__).resolve().parents[1] / "scripts/upgrade_script_jobs.py")
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     assert module.upgrade(engine) == []
@@ -337,3 +342,39 @@ async def test_unfinished_auth_does_not_claim_script_capacity(script_lab):
     session.auth_received = True
     await dispatch_pending_suites(db, "node")
     assert jobs.run_json(db, run)["status"] == "running" and len(sent) == 1
+
+
+@pytest.mark.asyncio
+async def test_idempotent_receipt_retains_frozen_node_authority_after_job_retarget(script_lab):
+    db,user,manager,session,sent=script_lab
+    job=create(script_lab);run=await jobs.trigger(db,user,job.id,'old-receipt')
+    db.add(Environment(id='new-node',name='new',created_by='owner'));db.commit()
+    data={k:v for k,v in definition().items() if k!='projectId'};data['environmentId']='new-node'
+    jobs.update_job(db,user,job.id,ScriptJobConfig(**data))
+    db.get(Environment,'new-node').created_by='other';db.commit()
+    repeated=await jobs.trigger(db,user,job.id,'old-receipt')
+    assert repeated.execution_id==run.execution_id and repeated.environment_id=='node' and len(sent)==1
+    db.get(Environment,'node').created_by='other';db.commit()
+    with pytest.raises(HTTPException) as rejected:await jobs.trigger(db,user,job.id,'old-receipt')
+    assert rejected.value.status_code==403 and len(sent)==1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('operation',['receipt','trigger','update','create'])
+async def test_cached_disabled_actor_cannot_mutate_or_retrieve_script_receipt(script_lab,operation):
+    from database import SessionLocal
+    db,user,_,_,sent=script_lab
+    job=create(script_lab);run=await jobs.trigger(db,user,job.id,'receipt');db.commit()
+    assert user.status is True
+    with SessionLocal() as other:
+        actor=other.get(User,user.id);actor.status=False;other.commit()
+    assert user.status is True # Old in-memory API actor, before the node wait.
+    config={k:v for k,v in definition().items() if k!='projectId'}
+    with pytest.raises(HTTPException) as rejected:
+        if operation=='receipt':await jobs.trigger(db,user,job.id,'receipt')
+        elif operation=='trigger':await jobs.trigger(db,user,job.id,'new-request')
+        elif operation=='update':jobs.update_job(db,user,job.id,ScriptJobConfig(**config))
+        else:jobs.create_job(db,user,ScriptJobCreate(**definition()))
+    assert rejected.value.status_code==403 and len(sent)==1
+    db.rollback()
+    assert db.query(TaskQueue).count()==1

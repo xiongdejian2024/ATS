@@ -213,6 +213,8 @@ def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None, user
                         enabled = db.query(Environment).filter(Environment.id.in_(resources), Environment.status.is_(True)).populate_existing().with_for_update().all() if resources else []
                         enabled.sort(key=lambda env: (not env.is_online, resources.index(env.id)))
                         resource_id = config.get('environmentId') or (enabled[0].id if enabled else None) or (suite.environment_id if suite else None) or plan.environment_id
+                        from services.native_hooks import bind_node
+                        resource_id = bind_node(native_case,resource_id,resources if not config.get('environmentId') else None)
                         suite = managed_suite(db, plan, case, resource_id, user.id)
                 if suite:
                     # 复制 ORM 对象仅作发送视图，不加入 Session；使用独立属性避免修改原套。
@@ -230,6 +232,9 @@ def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None, user
                             raise ValueError("资源池没有启用的执行环境")
                         available.sort(key=lambda env: (not env.is_online, db.query(TaskQueue).filter(TaskQueue.environment_id == env.id, TaskQueue.status.in_(("pending", "running"))).count(), pool.index(env.id)))
                         suite.environment_id = available[0].id
+                    if native_case:
+                        from services.native_hooks import bind_node
+                        suite.environment_id=bind_node(native_case,suite.environment_id,pool if not config.get('environmentId') else None)
                 entries.append(dict(node=node, suite=suite, config=config, prerequisites=list(dict.fromkeys(deps)), nativeCase=native_case))
                 branch = [node.id]
             leaves.extend(branch)

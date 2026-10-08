@@ -40,6 +40,9 @@ export interface HttpAssertion {
   rowIndex?: number;
 }
 export interface HttpAttempt {
+  source?: 'http'|'mock';
+  timings?: Partial<Record<'preparationMs'|'httpMs'|'extractionMs'|'assertionMs'|'preProcessorsMs'|'postProcessorsMs',number|null>>;
+  processorResults?: {id:string;name:string;type:'sql'|'script';phase:string;result:string;durationMs:number;error?:string|null;rowCount?:number|null;bindings:{name:string;value:string;truncated:boolean}[]}[]|null;
   attempt: number;
   result: string;
   duration: number;
@@ -72,7 +75,9 @@ export interface HttpStep {
   error?: string;
 }
 export interface HttpDetail {
-  version: 1;
+  version: 1 | 2;
+  globalProcessorResults?: NonNullable<HttpAttempt['processorResults']>;
+  omittedGlobalProcessors?: number;
   totalSteps: number;
   omittedSteps: number;
   steps: HttpStep[];
@@ -101,6 +106,9 @@ export const nativeHttpReportApi = {
 
 export function bytes(body: HttpBody) {
   return Uint8Array.from(atob(body.base64), (c) => c.charCodeAt(0));
+}
+export function phaseTimings(attempt: HttpAttempt) {
+  return (['preparationMs','httpMs','extractionMs','assertionMs','preProcessorsMs','postProcessorsMs'] as const).map(key=>({key,name:({preparationMs:'准备',httpMs:attempt.source==='mock'?'Mock响应':'HTTP交换',extractionMs:'参数提取',assertionMs:'断言',preProcessorsMs:'前置处理器',postProcessorsMs:'后置处理器'})[key],value: typeof attempt.timings?.[key]==='number' ? `${attempt.timings[key]!.toFixed(3)} ms` : '未记录'}));
 }
 export function decodeBody(body: HttpBody, charset = body.charset || "utf-8") {
   return new TextDecoder(charset).decode(bytes(body));

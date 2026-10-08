@@ -11,6 +11,8 @@
         type="warning"
         :message="`本次详情捕获${report.detail.steps.length}/${report.detail.totalSteps}步骤，超出捕获范围的${report.detail.omittedSteps}步骤未保存详情`"
       />
+      <a-alert v-if="report.detail.omittedGlobalProcessors" type="warning" :message="`全局处理器结果超出保存容量，省略 ${report.detail.omittedGlobalProcessors} 项`" />
+      <a-collapse v-if="report.detail.globalProcessorResults?.length"><a-collapse-panel key="global" header="全局处理器（每个用例或场景执行一次）"><a-table :data-source="report.detail.globalProcessorResults" :columns="[{title:'名称',dataIndex:'name'},{title:'阶段',dataIndex:'phase'},{title:'结果',dataIndex:'result'},{title:'耗时(ms)',dataIndex:'durationMs'},{title:'说明',dataIndex:'error'}]" :pagination="false" :row-key="(r:any)=>r.phase+':'+r.id" size="small" /><details v-for="row in report.detail.globalProcessorResults" :key="row.phase+':'+row.id"><summary>{{row.name}} · 变量绑定</summary><div v-for="binding in row.bindings" :key="binding.name">{{binding.name}} = {{binding.value}}<small v-if="binding.truncated">（已截断）</small></div></details></a-collapse-panel></a-collapse>
       <div class="http-report-layout">
         <div class="http-step-nav" aria-label="实际HTTP请求步骤">
           <button
@@ -54,6 +56,7 @@
             :message="step.error"
           />
           <template v-if="attempt">
+            <a-alert v-if="attempt.source === 'mock'" type="info" message="本次响应来自本地静态 Mock，未调用目标接口" show-icon />
             <a-alert
               v-if="attempt.error"
               type="error"
@@ -88,6 +91,8 @@
               ><span>{{ response.httpVersion }}</span></a-space
             >
             <a-tabs v-model:active-key="tab">
+              <a-tab-pane key="processors" tab="处理器结果"><a-table :data-source="attempt.processorResults || []" :columns="[{title:'名称',dataIndex:'name'},{title:'阶段',dataIndex:'phase'},{title:'结果',dataIndex:'result'},{title:'耗时(ms)',dataIndex:'durationMs'},{title:'结果行',dataIndex:'rowCount'},{title:'说明',dataIndex:'error'}]" :pagination="false" :scroll="{x:780}" :row-key="(r:any)=>r.phase+':'+r.id" size="small" /><div v-for="row in attempt.processorResults || []" :key="row.phase+':'+row.id"><details v-if="row.bindings.length"><summary>{{row.name}} · 变量绑定</summary><div v-for="binding in row.bindings" :key="binding.name">{{binding.name}} = {{binding.value}}<small v-if="binding.truncated">（已截断）</small></div></details></div></a-tab-pane>
+              <a-tab-pane key="timings" tab="阶段耗时"><a-table :data-source="phaseTimings(attempt)" :columns="[{title:'阶段',dataIndex:'name'},{title:'耗时',dataIndex:'value'}]" :pagination="false" row-key="key" size="small" /><p>未采集的阶段显示“未记录”；不推算 DNS、TCP 或 TLS 耗时。</p></a-tab-pane>
               <a-tab-pane key="body" tab="响应内容"
                 ><HttpResultBody
                   v-if="response"
@@ -227,6 +232,7 @@ import { computed, ref, watch } from "vue";
 import type { TableProps } from "ant-design-vue";
 import {
   assertionRows,
+  phaseTimings,
   type NativeHttpReport,
   type HttpAssertion,
 } from "@/api/nativeHttpReport";
