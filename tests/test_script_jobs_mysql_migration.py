@@ -94,5 +94,17 @@ def test_real_mysql_preserves_legacy_queue_and_accepts_independent_script_jobs()
         with engine.connect() as connection:
             assert connection.execute(text('SELECT COUNT(*) FROM task_queue')).scalar_one() == 2
         assert migration.migration_plan(engine) == []
+        # Additive format upgrade preserves literal legacy comments on MySQL.
+        with engine.begin() as connection:
+            connection.execute(text('CREATE TABLE plan_run_comments (id VARCHAR(36) PRIMARY KEY, content TEXT NOT NULL) ENGINE=InnoDB'))
+            connection.execute(text('INSERT INTO plan_run_comments VALUES (:id,:content)'),{'id':'old-comment','content':'<b>literal</b> <empty> & synthetic'})
+        spec=importlib.util.spec_from_file_location('ats_mysql_comment_format',root/'scripts/upgrade_run_comment_format.py')
+        comments=importlib.util.module_from_spec(spec);spec.loader.exec_module(comments)
+        assert comments.upgrade(engine)=='add required'
+        assert not any(c['name']=='content_format' for c in inspect(engine).get_columns('plan_run_comments'))
+        assert comments.upgrade(engine,apply=True)=='added'
+        assert comments.upgrade(engine,apply=True)=='exists'
+        with engine.connect() as connection:
+            assert tuple(connection.execute(text('SELECT content,content_format FROM plan_run_comments')).one())==('<b>literal</b> <empty> & synthetic','plain')
     finally:
         engine.dispose()

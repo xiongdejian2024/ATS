@@ -168,6 +168,8 @@ app.include_router(ai_assistance.router, prefix=settings.API_V1_STR)
 app.include_router(case_governance.router, prefix=settings.API_V1_STR)
 from api.v1 import file_library
 app.include_router(file_library.router, prefix=settings.API_V1_STR)
+from api.v1 import mentions
+app.include_router(mentions.router, prefix=settings.API_V1_STR)
 app.include_router(case_features.router, prefix=settings.API_V1_STR)
 app.include_router(native_case.router, prefix=settings.API_V1_STR)
 app.include_router(native_request_files.router, prefix=settings.API_V1_STR)

@@ -1,7 +1,7 @@
 <template>
 <a-space direction="vertical" style="width:100%">
   <a-space v-if="!hideFollow"><a-button :loading="busy" @click="toggleFollow">{{followed?'取消关注':'关注用例'}}</a-button><span>{{followCount}} 人关注</span></a-space>
-  <CaseRichText v-model="content" :disabled="busy||uploading" label="讨论意见" :upload-image="uploadImage" :select-image="selectImage" @uploading="(value:boolean)=>uploading=value" />
+  <CaseRichText v-model="content" :project-id="projectId" :disabled="busy||uploading" label="讨论意见" :upload-image="uploadImage" :select-image="selectImage" @uploading="(value:boolean)=>uploading=value" />
   <a-space><a-button :disabled="busy||uploading" @click="selectFiles">文件库附件</a-button><a-button type="primary" :loading="busy" :disabled="!content.trim()||uploading||content.length>10000" @click="post">发表评论</a-button></a-space>
   <p v-for="file in files" :key="file.id">{{file.fileName}} <a-button type="link" :disabled="busy||uploading" @click="files=files.filter(f=>f.id!==file.id)">取消选择</a-button></p>
   <a-alert v-if="error" type="error" :message="error" /><a-button v-if="error" @click="load">重试读取</a-button>

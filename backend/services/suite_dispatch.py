@@ -54,7 +54,7 @@ def load_dispatch_suite(db, suite_id, executor_id):
     from core.project_access import require_project_access
     from models import User, TestSuite, TestPlan
 
-    executor = db.query(User).filter_by(id=executor_id).populate_existing().with_for_update().first()
+    executor = db.query(User).filter_by(id=executor_id).populate_existing().with_for_update(read=True).first()
     if not executor or not executor.status:
         raise ValueError("测试套执行人不存在或已被禁用")
     suite = db.query(TestSuite).filter_by(id=suite_id).populate_existing().with_for_update().first()

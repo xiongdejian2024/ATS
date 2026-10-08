@@ -92,6 +92,7 @@ import { useUserStore } from '@/stores/user';
 import { useProjectStore } from '@/stores/project';
 import dayjs from 'dayjs'
 import { notificationApi } from '@/api/notification'
+import {openNotification} from './notificationNavigation'
 import type { Notification } from '@/types';
 
 const router = useRouter()
@@ -132,7 +133,7 @@ const refreshNotifications = async () => {
   try { notifications.value = (await notificationApi.getNotifications({ size: 1000 })).items }
   catch (error) { console.error('加载通知失败', error); notifications.value = [] }
 }
-const readNotification = async (item: Notification) => { await notificationApi.markAsRead(item.id); await refreshNotifications() }
+const readNotification = async (item: Notification) => { try{if(await openNotification(item,router))await refreshNotifications()}catch(error){message.error('提及来源已不可用或当前没有访问权限')} }
 let inboxTimer: ReturnType<typeof setInterval> | undefined
 onMounted(() => { refreshNotifications(); inboxTimer = setInterval(refreshNotifications, 5000) })
 onUnmounted(() => { if (inboxTimer) clearInterval(inboxTimer) })

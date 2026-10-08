@@ -9,6 +9,15 @@ from utils.serializer import serialize_list
 router = APIRouter()
 
 
+@router.get('/{notification_id}/source')
+def mention_source(notification_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    row = db.query(Notification).filter_by(id=notification_id, user_id=str(current_user.id)).first()
+    if not row:
+        raise HTTPException(404, '通知不存在')
+    from services.mentions import source
+    return APIResponse(status='success', message='获取成功', data=source(db, current_user, row))
+
+
 @router.get("")
 async def get_notifications(
     page: int = Query(1, ge=1),

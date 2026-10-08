@@ -511,14 +511,15 @@ def save_view(
     service.project_access(db, user, project_id)
 
     def operation():
-        # 锁定视图所有者，避免并发创建绕过每个项目10个个人视图的上限。
-        db.query(User).filter_by(id=str(user.id)).with_for_update().first()
-        count = (
+        # 项目内串行，当前读避免 MySQL 旧快照绕过配额；不反序锁用户。
+        from core.project_access import require_project_access
+        require_project_access(db,user,project_id,'test_case:read',current_read=True)
+        rows = (
             db.query(CaseSavedView)
             .filter_by(project_id=project_id, owner_id=str(user.id))
-            .count()
+            .populate_existing().with_for_update().limit(10).all()
         )
-        if count >= 10:
+        if len(rows) >= 10:
             raise HTTPException(409, "每个项目最多创建10个个人视图")
         row = CaseSavedView(
             project_id=project_id,

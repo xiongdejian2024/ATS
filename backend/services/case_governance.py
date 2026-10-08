@@ -458,13 +458,20 @@ def refresh_review_status(db, review):
     )
 
 
-def apply_review_vote(db, review, item, user, request, votes):
+def apply_review_vote(db, review, item, user, request, votes, *, mention_recipients=None, notify_mentions=True):
     """共享单条与批量投票规则；调用方已锁定评审并验证全部权限。"""
     from services.file_library import image_ids, reference
+    from services.mentions import prepare, notify
+    if mention_recipients is None:
+        comment, recipients = prepare(db, user, review.project_id, request.comment)
+    else:
+        comment, recipients = request.comment, mention_recipients
     ids = sorted(set(request.fileIds + image_ids(db,review.project_id,request.comment)))
-    event = review_event(db, review, user.id, "评审结论", dict(request.model_dump(),fileIds=ids), item.id)
+    event = review_event(db, review, user.id, "评审结论", dict(request.model_dump(),fileIds=ids,comment=comment), item.id)
     db.flush()
     reference(db,user,review.project_id,ids,'review_event',event.id)
+    if notify_mentions:
+        notify(db,user,recipients,'review_event',event.id)
     if request.decision == "suggestion":
         return
     decision = next((d for d in votes if d.reviewer_id == str(user.id)), None)
@@ -476,7 +483,7 @@ def apply_review_vote(db, review, item, user, request, votes):
         votes.append(decision)
     decision.decision, decision.comment, decision.updated_at = (
         request.decision,
-        request.comment,
+        comment,
         beijing_now(),
     )
     assigned = item.reviewer_ids or review.reviewer_ids
@@ -536,9 +543,12 @@ def vote_reviews(db, user, project_id, review_id, item_ids, request):
         .all()
     ):
         mapping.setdefault(vote.item_id, []).append(vote)
-    for item in items:
+    from services.mentions import prepare
+    canonical, recipients = prepare(db,user,review.project_id,request.comment)
+    request = request.model_copy(update={'comment':canonical})
+    for index, item in enumerate(items):
         apply_review_vote(
-            db, review, item, user, request, mapping.setdefault(item.id, [])
+            db, review, item, user, request, mapping.setdefault(item.id, []), mention_recipients=recipients, notify_mentions=index == 0
         )
     db.flush()
     if request.decision != "suggestion":

@@ -86,7 +86,7 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
     workspace = db.query(PlanWorkspace).filter_by(plan_id=plan_id).populate_existing().with_for_update().one_or_none()
     if workspace and workspace.archived:
         raise ValueError("归档计划不能执行，请先取消归档")
-    actor = db.query(User).filter_by(id=user_id).populate_existing().with_for_update().one_or_none()
+    actor = db.query(User).filter_by(id=user_id).populate_existing().with_for_update(read=True).one_or_none()
     if not actor or not actor.status:
         raise ValueError("执行用户不存在或已停用")
     from services.native_http_execution import COMMAND, configured, freeze, managed_suite
@@ -419,7 +419,7 @@ async def advance_plan_runs(db):
                         db.commit()
                         continue
                     try:
-                        executor = db.query(User).filter_by(id=run.executor_id).populate_existing().with_for_update().first()
+                        executor = db.query(User).filter_by(id=run.executor_id).populate_existing().with_for_update(read=True).first()
                         plan = db.query(TestPlan).filter_by(id=run.plan_id).populate_existing().with_for_update().first()
                         if not executor or not executor.status:
                             raise ValueError("计划执行人不存在或已被禁用")

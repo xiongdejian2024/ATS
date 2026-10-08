@@ -35,6 +35,8 @@
           :model-value="description"
           :disabled="disabled || uploading"
           label="执行描述"
+          :project-id="projectId"
+          mention-context="plan"
           :select-image="projectId ? selectImage : undefined"
           :upload-image="planId ? uploadImage : undefined"
           @uploading="imageUploading"

@@ -19,6 +19,7 @@ const routes = [
       requiresAuth: true
     },
     children: [
+      { path: 'mentions/:notificationId', name: 'MentionSource', component: () => import('@views/MentionSourcePage.vue'), meta: { title: '提及内容' } },
       { path: 'test-cases/create', name: 'CaseCreate', component: () => import('@views/CaseEditorPage.vue'), meta: { title: '新建用例' } },
       { path: 'test-cases/:caseId/edit', name: 'CaseEdit', component: () => import('@views/CaseEditorPage.vue'), meta: { title: '编辑用例' } },
       { path: 'test-cases/:caseId/created', name: 'CaseCreated', component: () => import('@views/CaseCreated.vue'), meta: { title: '创建成功' } },

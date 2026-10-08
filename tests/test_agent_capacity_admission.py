@@ -454,10 +454,15 @@ async def test_process_group_cleanup_kills_child_ignoring_term(tmp_path, leader_
             await process.wait()
         await asyncio.wait_for(terminate_process(process), 5)
         assert process.returncode is not None
-        assert not child.is_running() or child.status() in (
-            psutil.STATUS_ZOMBIE,
-            psutil.STATUS_DEAD,
-        )
+        try:
+            running = child.is_running() and child.status() not in (
+                psutil.STATUS_ZOMBIE,
+                psutil.STATUS_DEAD,
+            )
+        except psutil.NoSuchProcess:
+            # Reaping can happen between is_running() and reading /proc status.
+            running = False
+        assert not running
     finally:
         try:
             os.killpg(process.pid, 9)

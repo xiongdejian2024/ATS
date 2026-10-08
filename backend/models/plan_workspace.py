@@ -51,6 +51,7 @@ class PlanRunComment(Base, BaseModel):
     association_id = Column(String(80), nullable=False)
     author_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
+    content_format = Column(String(16), nullable=False, default='plain', server_default='plain')
 
 
 class PlanRunAttachment(Base, BaseModel):
