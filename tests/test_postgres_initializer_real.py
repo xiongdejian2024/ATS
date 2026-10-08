@@ -18,7 +18,7 @@ def test_exported_sql_creates_exact_schema_and_refuses_reapplication():
         with engine.begin() as connection:
             connection.exec_driver_sql(sql)
             connection.execute(text("INSERT INTO ats.users (id, username, email, password_hash, status) VALUES ('export-sentinel', 'export-sentinel', 'sentinel@example.com', 'synthetic', true)"))
-        assert len(inspect(engine).get_table_names(schema=schema)) == 87
+        assert len(inspect(engine).get_table_names(schema=schema)) == len(Base.metadata.tables)
         assert initialize(False, schema=schema, connection_engine=engine, metadata=Base.metadata)['createTables'] == []
         with pytest.raises(DBAPIError):
             with engine.begin() as connection:
