@@ -106,6 +106,9 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
     policy = get_policy(db, plan_id, current_read=True)
     from services.plan_tree import compile_tree
     tree_entries = compile_tree(db, plan, policy, current_read=True, user=actor) if suite_ids is None else None
+    if suite_ids is not None:
+        from services.plan_execution_compile import compile_selected_suites
+        tree_entries = compile_selected_suites(db, plan, policy, suites, actor)
     if tree_entries is not None:
         suites = [e["suite"] for e in tree_entries if e["suite"]]
         for entry in tree_entries:

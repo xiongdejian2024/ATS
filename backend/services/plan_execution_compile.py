@@ -2,10 +2,123 @@
 
 from copy import deepcopy
 from types import SimpleNamespace
+from uuid import NAMESPACE_URL, uuid5
 from fastapi import HTTPException
 from models import TestCase, TestSuite, Environment
 from services.native_http_execution import configured, freeze, managed_suite
 from services.plan_tree import effective_config
+
+
+def compile_selected_suites(db, plan, policy, suites, user):
+    """Apply the same inherited configuration to the legacy suite selection.
+
+    Temporary leaves use real association/collection IDs. Ordinary commands
+    cannot be safely split by case, so configured selection rejects those
+    instead of running a command repeatedly or ignoring its target settings.
+    Unconfigured suite selection retains its existing behavior.
+    """
+    from models import PlanCaseRelation
+    from services.plan_tree import nodes, compile_tree
+    from services.plan_execution_config import ConfigurationTree
+    from services.suite_dispatch import is_xat_command
+
+    all_nodes = nodes(db, plan.id, current_read=True)
+    configuration = ConfigurationTree(db, plan, policy, all_nodes, current_read=True)
+    selected_ids = {cid for suite in suites for cid in suite.case_ids}
+    cases = {
+        case.id: case
+        for case in db.query(TestCase)
+        .filter(TestCase.id.in_(selected_ids), TestCase.deleted_at.is_(None))
+        .populate_existing()
+        .with_for_update()
+        .all()
+    }
+    category = lambda case: case.type if case.type in {"api", "scenario"} else "api"
+    if not any(configuration.active(category(case)) for case in cases.values()):
+        return None
+    if len(cases) != len(selected_ids):
+        raise HTTPException(409, "所选测试套含已回收或不存在的用例")
+    relations = (
+        db.query(PlanCaseRelation)
+        .filter_by(plan_id=plan.id)
+        .populate_existing()
+        .with_for_update()
+        .all()
+    )
+    relation_map = {row.case_id: row for row in relations}
+    scoped = [node for node in all_nodes if node.node_type == "point"]
+    seen = set()
+    for suite in suites:
+        if not suite.case_ids:
+            raise HTTPException(409, "分类执行配置需要测试套关联明确的用例范围")
+        for cid in suite.case_ids:
+            case = cases[cid]
+            native = configured(db, case)
+            if cid in seen:
+                if native:
+                    continue
+                raise HTTPException(
+                    409, "所选用例关联多个测试套，请在测试规划选择明确实例后执行"
+                )
+            if not native and not is_xat_command(suite.execution_command):
+                raise HTTPException(
+                    409,
+                    "分类配置的测试套选择需要原生HTTP或支持用例过滤的XAT命令，请使用独立脚本入口执行普通脚本",
+                )
+            seen.add(cid)
+            relation = relation_map.get(cid)
+            scoped.append(
+                SimpleNamespace(
+                    id=(
+                        relation.id
+                        if relation
+                        else str(
+                            uuid5(
+                                NAMESPACE_URL,
+                                f"ats:selected:{plan.id}:{suite.id}:{cid}",
+                            )
+                        )
+                    ),
+                    parent_id=relation.collection_id if relation else None,
+                    node_type="case",
+                    category=category(case),
+                    case_id=cid,
+                    suite_id=suite.id,
+                    name=case.name,
+                    assigned_to=relation.assigned_to if relation else None,
+                    linked_functional_id=None,
+                    config={},
+                )
+            )
+    # Legacy suite selection also carries the plan's manual work into the run.
+    for relation in relations:
+        if relation.case_id in seen:
+            continue
+        case = (
+            db.query(TestCase)
+            .filter_by(id=relation.case_id)
+            .populate_existing()
+            .with_for_update()
+            .one_or_none()
+        )
+        if case and not case.deleted_at and not case.is_automated:
+            scoped.append(
+                SimpleNamespace(
+                    id=relation.id,
+                    parent_id=relation.collection_id,
+                    node_type="case",
+                    category="functional",
+                    case_id=case.id,
+                    suite_id=None,
+                    name=case.name,
+                    assigned_to=relation.assigned_to,
+                    linked_functional_id=None,
+                    config={},
+                )
+            )
+    return compile_tree(
+        db, plan, policy, current_read=True, scope_nodes=scoped, user=user
+    )
 
 
 def compile_configured_tree(db, plan, policy, all_nodes, configurations, user):
@@ -22,21 +135,44 @@ def compile_configured_tree(db, plan, policy, all_nodes, configurations, user):
         native_case = None
         active = configurations.active(category)
         ms_config = configurations.effective(scope) if active else None
+        mapped_environment = None
+        if (
+            case
+            and configured(db, case)
+            and user
+            and ms_config
+            and ms_config.get("requestEnvironmentGroupId", "NONE") != "NONE"
+        ):
+            from services.request_environment_group import resolve
+
+            mapped_environment = resolve(
+                db,
+                user,
+                plan.project_id,
+                case.project_id,
+                ms_config["requestEnvironmentGroupId"],
+            )
         if case and configured(db, case) and user:
+            environment_id = (
+                mapped_environment["environmentId"]
+                if mapped_environment
+                else (
+                    ms_config["requestEnvironmentId"]
+                    if ms_config and ms_config["requestEnvironmentId"] != "NONE"
+                    else None
+                )
+            )
             native_case = freeze(
                 db,
                 case,
                 user,
-                environment_id=(
-                    ms_config["requestEnvironmentId"]
-                    if ms_config and ms_config["requestEnvironmentId"] != "NONE"
-                    else None
-                ),
+                environment_id=environment_id,
             )
         if active:
             if not native_case and (
                 ms_config["retryOnFailure"]
                 or ms_config["requestEnvironmentId"] != "NONE"
+                or ms_config.get("requestEnvironmentGroupId", "NONE") != "NONE"
             ):
                 raise HTTPException(
                     409,
@@ -48,6 +184,12 @@ def compile_configured_tree(db, plan, policy, all_nodes, configurations, user):
                 or plan.environment_id
             )
             ms_config, resource_id, members = configurations.runtime(scope, fallback)
+            if mapped_environment:
+                ms_config = dict(
+                    ms_config,
+                    resolvedRequestEnvironmentId=mapped_environment["environmentId"],
+                    requestEnvironmentGroupRevision=mapped_environment["groupRevision"],
+                )
             runtime = dict(
                 executionMode=ms_config["executionMode"],
                 environmentId=resource_id,
