@@ -75,7 +75,7 @@
     :key="identity"
     v-model:visible="visible"
     :available-fields="fields"
-    :initial-fields="['name', 'moduleId']"
+    :initial-fields="initialFields || ['name', 'moduleId']"
     :module-tree-data="moduleTree"
     :conditions="conditions"
     :logic="logic"
@@ -143,6 +143,7 @@ const props = defineProps<{
   projectId: string;
   namespace: string;
   label: string;
+  initialFields?: string[];
   modules: CaseFolder[];
   conditions?: FilterCondition[];
   logic: FilterLogic;
