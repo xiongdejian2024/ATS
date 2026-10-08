@@ -49,6 +49,32 @@ class ReportBatch(BaseModel):
     reports: list[ReportSelection] = Field(min_length=1, max_length=1000)
 
 
+from schemas.report_index_view import ReportIndexViewCreate, ReportIndexViewUpdate
+from services import report_index_view
+from api.v1.case_governance import transact
+
+
+@router.get("/projects/{project_id}/reports/views")
+def report_views(project_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return ok(report_index_view.listing(db,user,project_id))
+
+
+@router.post("/projects/{project_id}/reports/views")
+def create_report_view(project_id: str, body: ReportIndexViewCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return ok(transact(db,lambda:report_index_view.save(db,user,project_id,body)))
+
+
+@router.put("/projects/{project_id}/reports/views/{view_id}")
+def update_report_view(project_id: str, view_id: str, body: ReportIndexViewUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return ok(transact(db,lambda:report_index_view.save(db,user,project_id,body,view_id)))
+
+
+@router.delete("/projects/{project_id}/reports/views/{view_id}")
+def delete_report_view(project_id: str, view_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    transact(db,lambda:report_index_view.remove(db,user,project_id,view_id))
+    return ok()
+
+
 @router.get("/projects/{project_id}/reports")
 def report_list(project_id: str, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=100),
                 search: str | None = Query(None, max_length=255), plan_name: str | None = Query(None, max_length=255),
@@ -57,7 +83,7 @@ def report_list(project_id: str, page: int = Query(1, ge=1), size: int = Query(2
                 start_time: datetime | None = None, end_time: datetime | None = None,
                 min_rate: float | None = Query(None, ge=0, le=100), max_rate: float | None = Query(None, ge=0, le=100),
                 sort: Literal["created_at", "pass_rate", "result_status", "name"] = "created_at",
-                direction: Literal["asc", "desc"] = "desc", db: Session = Depends(get_db), user=Depends(get_current_user)):
+                direction: Literal["asc", "desc"] = "desc", filters: str | None = Query(None,max_length=20000), db: Session = Depends(get_db), user=Depends(get_current_user)):
     from core.project_access import require_project_access, project_allows
     from services.plan_report_workspace import list_reports
     project = require_project_access(db, user, project_id, "test_plan:read")
@@ -70,7 +96,7 @@ def report_list(project_id: str, page: int = Query(1, ge=1), size: int = Query(2
     payload = list_reports(db, project_id, page=page, size=size, search=search, plan_name=plan_name, kind=kind,
                            result_status=result_status, trigger_mode=trigger_mode, operator=operator,
                            start_time=start_time, end_time=end_time, min_rate=min_rate, max_rate=max_rate,
-                           sort=sort, direction=direction)
+                           sort=sort, direction=direction, filters=filters, user_id=str(user.id))
     payload.update(canRename=project_allows(db, user, project, "test_plan:update"), canDelete=project_allows(db, user, project, "test_plan:delete"))
     return ok(payload)
 

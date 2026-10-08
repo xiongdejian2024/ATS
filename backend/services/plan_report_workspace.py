@@ -1,5 +1,5 @@
 """计划及计划组报告目录，筛选和分页在数据库执行，不修改执行批次。"""
-from sqlalchemy import select, union_all, literal, func, case, or_
+from sqlalchemy import select, union_all, literal, func, case, or_, cast, String, DateTime, type_coerce
 from models import TestPlan, User
 from models.plan_orchestration import PlanRun
 from models.plan_group_execution import PlanGroupRun, PlanGroupRunChild
@@ -11,7 +11,7 @@ from core.logger import logger
 TERMINAL = ("completed", "failed", "cancelled", "skipped")
 
 
-def _branch(model, kind, project_id):
+def _branch(model, kind, project_id, dialect_name=None):
     is_plan = kind == "PLAN"
     name = model.plan_name if is_plan else model.group_name
     source_id = model.plan_id if is_plan else model.group_id
@@ -23,6 +23,13 @@ def _branch(model, kind, project_id):
         trigger_match = or_(trigger_match, TaskScheduleRun.group_run_id.in_(parents))
     trigger = select(TaskScheduleRun.trigger_type).where(trigger_match).limit(1).correlate(model).scalar_subquery()
     frozen = model.status.in_(TERMINAL)
+    created_at=model.created_at
+    if not is_plan and dialect_name == "sqlite":
+        # SQLite CURRENT_TIMESTAMP stores UTC for group rows. PlanRun is explicitly
+        # created with beijing_now(); normalize only this legacy group default.
+        raw=cast(model.created_at,String)
+        fraction=func.coalesce(func.nullif(func.substr(raw,20),""),".000000")
+        created_at=type_coerce(func.strftime("%Y-%m-%d %H:%M:%S",model.created_at,"+8 hours") + fraction,DateTime())
     query = select(
         model.id.label("id"), literal(kind).label("kind"), source_id.label("source_id"),
         name.label("plan_name"), func.coalesce(workspace.name, name + literal(" 报告")).label("name"),
@@ -31,7 +38,7 @@ def _branch(model, kind, project_id):
         case((frozen, model.report["passRate"].as_float()), else_=None).label("pass_rate"),
         func.coalesce(trigger, "manual").label("trigger_mode"),
         model.executor_id.label("executor_id"), func.coalesce(User.full_name, User.username).label("operator"),
-        model.created_at.label("created_at"), model.completed_at.label("completed_at"),
+        created_at.label("created_at"), model.completed_at.label("completed_at"),
     ).outerjoin(User, User.id == model.executor_id).outerjoin(workspace, workspace.run_id == model.id).where(or_(workspace.deleted.is_(None), workspace.deleted.is_(False)))
     if is_plan:
         return query.join(TestPlan, TestPlan.id == model.plan_id).where(TestPlan.project_id == project_id)
@@ -40,9 +47,13 @@ def _branch(model, kind, project_id):
 
 def list_reports(db, project_id, *, page=1, size=20, search=None, plan_name=None, kind=None,
                  result_status=None, trigger_mode=None, operator=None, start_time=None, end_time=None,
-                 min_rate=None, max_rate=None, sort="created_at", direction="desc"):
-    rows = union_all(_branch(PlanRun, "PLAN", project_id), _branch(PlanGroupRun, "GROUP", project_id)).subquery()
+                 min_rate=None, max_rate=None, sort="created_at", direction="desc", filters=None, user_id=None):
+    dialect=db.get_bind().dialect.name
+    rows = union_all(_branch(PlanRun, "PLAN", project_id, dialect), _branch(PlanGroupRun, "GROUP", project_id, dialect)).subquery()
     query = select(rows)
+    if filters is not None:
+        from services.report_index_filter import apply
+        query = apply(query, rows.c, filters, user_id)
     for value, column in ((search, rows.c.name), (plan_name, rows.c.plan_name), (operator, rows.c.operator)):
         if value and value.strip():
             query = query.where(column.contains(value.strip(), autoescape=True))
@@ -56,7 +67,11 @@ def list_reports(db, project_id, *, page=1, size=20, search=None, plan_name=None
     total = db.scalar(select(func.count()).select_from(query.subquery()))
     ordering = {"created_at": rows.c.created_at, "pass_rate": rows.c.pass_rate,
                 "result_status": rows.c.result_status, "name": rows.c.name}[sort]
-    query = query.order_by(ordering.asc() if direction == "asc" else ordering.desc(), rows.c.kind, rows.c.id)
+    # Preserve SQLite/MySQL ordering on PostgreSQL as well: NULL first in ASC,
+    # NULL last in DESC, using a portable CASE rather than NULLS LAST syntax.
+    null_rank=case((ordering.is_(None),0),else_=1)
+    query = query.order_by(null_rank.asc() if direction == "asc" else null_rank.desc(),
+                           ordering.asc() if direction == "asc" else ordering.desc(), rows.c.kind, rows.c.id)
     items = []
     for row in db.execute(query.offset((page - 1) * size).limit(size)).mappings():
         items.append(dict(id=row["id"], kind=row["kind"], sourceId=row["source_id"], name=row["name"],
