@@ -40,6 +40,7 @@ export interface CaseTemplate {
 }
 export interface CaseIssue {
   id: string;
+  projectId?: string;
   linkId?: string;
   kind: "requirement" | "defect";
   title: string;

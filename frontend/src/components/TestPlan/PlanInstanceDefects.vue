@@ -66,7 +66,8 @@
       ><h3>{{ view.title }}</h3>
       <a-tag>{{ defectStatusLabels[view.status] || view.status }}</a-tag>
       <p class="description">{{ view.description || "无描述" }}</p>
-      <p>关联实例：{{ view.caseName }}</p></template
+      <p>关联实例：{{ view.caseName }}</p>
+      <router-link v-if="view.projectId" :to="{ path: '/defects', query: { projectId: view.projectId, defectId: view.id } }">打开完整缺陷工作区</router-link></template
     ></a-drawer
   >
 </template>
