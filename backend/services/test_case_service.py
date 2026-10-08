@@ -23,7 +23,7 @@ class TestCaseService:
             data.get("module_id")
             and not db.query(Module)
             .filter_by(id=str(data["module_id"]), project_id=str(project_id))
-            .first()
+            .populate_existing().with_for_update().first()
         ):
             raise HTTPException(422, "用例模块不属于当前项目")
         if data.get("executor_id") and not db.get(User, str(data["executor_id"])):
@@ -100,6 +100,9 @@ class TestCaseService:
         commit: bool = True,
     ) -> TestCase:
         """创建测试用例"""
+        # 在模块当前读/FK写入前按既有写入口顺序取得项目锁。
+        from services.review_workspace import lock_project
+        lock_project(db,str(case_data.project_id))
         TestCaseService.validate_references(
             db, str(case_data.project_id), case_data.model_dump()
         )
@@ -112,6 +115,10 @@ class TestCaseService:
             case_data.model_fields_set,
         )
         case_data = TestCaseCreate(**data)
+        if case_data.module_id:
+            from services.module_service import ModuleService
+            module_id=str(case_data.module_id)
+            case_data.module_path=ModuleService.module_paths(db,str(case_data.project_id),[module_id])[module_id]
         # 生成case_code（如果未提供）- 纯数字格式
         case_code = case_data.case_code
         if not case_code:
@@ -236,6 +243,10 @@ class TestCaseService:
                 case_data.model_fields_set,
                 existing=test_case,
             )
+            if "module_id" in update_data or ("module_path" in update_data and test_case.module_id):
+                from services.module_service import ModuleService
+                module_id=update_data.get("module_id",test_case.module_id)
+                update_data["module_path"]=(ModuleService.module_paths(db,test_case.project_id,[str(module_id)])[str(module_id)] if module_id else None)
             previous_type = test_case.type
             for field, value in update_data.items():
                 setattr(test_case, field, value)

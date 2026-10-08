@@ -736,10 +736,14 @@ def batch_update(db, user, project_id, request):
         module = (
             db.query(Module)
             .filter_by(project_id=project_id, id=changes["moduleId"])
-            .first()
+            .populate_existing().with_for_update().first()
         )
         if not module:
             raise HTTPException(422, "目标模块不属于本项目")
+    module_path=None
+    if module:
+        from services.module_service import ModuleService
+        module_path=ModuleService.module_paths(db,project_id,[module.id])[module.id]
     for case in cases:
         snapshot_case(db, case, str(user.id), "批量修改前保存版本")
         for field, value in changes.items():
@@ -753,7 +757,7 @@ def batch_update(db, user, project_id, request):
             if field == "priority":
                 case.level = value
             if field == "moduleId":
-                case.module_path = module.name if module else None
+                case.module_path = module_path
         case.updated_by = str(user.id)
         case.updated_at = beijing_now()
         snapshot_case(db, case, str(user.id), "批量修改用例")
@@ -773,10 +777,14 @@ def batch_copy(db, user, project_id, request):
         module = (
             db.query(Module)
             .filter_by(project_id=project_id, id=request.moduleId)
-            .first()
+            .populate_existing().with_for_update().first()
         )
         if not module:
             raise HTTPException(422, "目标模块不属于本项目")
+    module_path=None
+    if module:
+        from services.module_service import ModuleService
+        module_path=ModuleService.module_paths(db,project_id,[module.id])[module.id]
     copies = []
     for case in cases:
         data = {field: deepcopy(getattr(case, field)) for field in SNAPSHOT_FIELDS}
@@ -785,7 +793,7 @@ def batch_copy(db, user, project_id, request):
             case_code=None,
             name=case.name[:494] + "（副本）",
             module_id=request.moduleId,
-            module_path=module.name if module else None,
+            module_path=module_path,
         )
         copied = TestCaseService.create_test_case(
             db, TestCaseCreate(**data), str(user.id), commit=False

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildCaseMindMap, copyCaseDraft } from "../caseMindMap";
+import {
+  buildCaseMindMap,
+  copyCaseDraft,
+  mindNodeValue,
+  mindNodePatch,
+} from "../caseMindMap";
 describe("用例脑图内容映射", () => {
   it("保留完整步骤/预期并放在对应模块内", () => {
     const root = buildCaseMindMap(
@@ -60,5 +65,48 @@ describe("用例脑图内容映射", () => {
         ),
       ),
     ).not.toThrow();
+  });
+  it("TEXT 内容节点保留字段和富文本，不显示历史隐藏步骤", () => {
+    const row = {
+      id: "t",
+      name: "文本",
+      caseEditType: "TEXT" as const,
+      textDescription: "<p>描述</p>",
+      expectedResult: "<p>预期</p>",
+      steps: [{ step: 1, action: "旧隐藏步骤", expected: "旧预期" }],
+    };
+    const node = buildCaseMindMap([row]).children![0].children![0];
+    expect(node.children!.map((n) => n.kind)).toEqual([
+      "precondition",
+      "textDescription",
+      "expectedResult",
+    ]);
+    const description = node.children![1];
+    expect(description.name).toContain("描述");
+    expect(description.name).not.toContain("<p>");
+    expect(mindNodeValue(description, row)).toBe("<p>描述</p>");
+    expect(mindNodePatch(description, row, "<p>新描述</p>")).toEqual({
+      textDescription: "<p>新描述</p>",
+    });
+    expect(copyCaseDraft(row).steps).toEqual(row.steps);
+    expect(copyCaseDraft(row).textDescription).toBe(row.textDescription);
+  });
+  it("步骤索引失效时不造出新步骤，编辑只修改目标字段", () => {
+    const row = { steps: [{ step: 1, action: "原操作", expected: "原预期" }] };
+    expect(
+      mindNodePatch(
+        { id: "x", name: "x", kind: "expected", stepIndex: 8 },
+        row,
+        "新预期",
+      ),
+    ).toBeUndefined();
+    expect(
+      mindNodePatch(
+        { id: "x", name: "x", kind: "expected", stepIndex: 0 },
+        row,
+        "新预期",
+      ),
+    ).toEqual({ steps: [{ step: 1, action: "原操作", expected: "新预期" }] });
+    expect(row.steps[0].expected).toBe("原预期");
   });
 });
