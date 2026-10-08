@@ -94,7 +94,7 @@ def start(db, plan, user, data):
         frozen[case.id] = dict(id=case.id, name=case.name, caseCode=case.case_code, isAutomated=True, projectId=case.project_id,
                               versionId=version.id, version=version.version, snapshot=deepcopy(version.snapshot))
     snapshots = [dict(deepcopy(frozen[e['node'].case_id]), associationId=e['node'].id, category=data.category,
-        nodeName=e['node'].name, assignedTo=e['node'].assigned_to, prerequisites=e['prerequisites'], linkedFunctionalId=None) for e in entries]
+        nodeName=e['node'].name, assignedTo=e['node'].assigned_to, prerequisites=e['prerequisites'], linkedFunctionalId=None, testSet=deepcopy(e['testSet'])) for e in entries]
     run = PlanRun(id=str(uuid4()), plan_id=plan.id, executor_id=str(user.id), plan_name=plan.name, created_at=beijing_now(),
         idempotency_key=key, status='queued', case_snapshot=snapshots, manual_results={}, config_snapshot=dict(policy,
             nodeGraph=True, nativeRange=True, category=data.category, selectedCount=len(selected), excludedCount=summary['excludedCount'], requestFingerprint=fingerprint))
@@ -103,7 +103,7 @@ def start(db, plan, user, data):
         node, suite = entry['node'], entry['suite']
         item = PlanRunItem(id=str(uuid4()), run_id=run.id, suite_id=suite.id, execution_id=str(uuid4()), environment_id=suite.environment_id,
             sequence=index, status='waiting', suite_snapshot=dict(name=suite.name, caseIds=[node.case_id], executionCommand=suite.execution_command,
-                environmentId=suite.environment_id, nodeId=node.id, category=data.category, linkedFunctionalId=None,
+                environmentId=suite.environment_id, nodeId=node.id, category=data.category, linkedFunctionalId=None, testSet=deepcopy(entry['testSet']),
                 prerequisites=entry['prerequisites'], resourcePool=entry['config'].get('resourcePool', []),
                 stopPrerequisites=entry.get('stopPrerequisites', []), executionConfig=deepcopy(entry['config'].get('msExecution')),
                 gitEnabled=suite.git_enabled, gitRepoUrl=suite.git_repo_url, gitBranch=suite.git_branch,

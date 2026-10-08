@@ -76,7 +76,9 @@ def attach(db, run, association_id, user_id, data):
 def enriched_report(db, run):
     from services.plan_orchestration import run_data
     from services.plan_report_workspace import report_name
+    from copy import deepcopy
     payload = run_data(db, run)
+    payload["report"] = deepcopy(payload["report"])
     payload["reportName"] = report_name(db, "PLAN", run.id, run.plan_name)
     summary = db.get(PlanReportSummary, run.id)
     payload["summary"] = summary.summary if summary else {}
@@ -88,6 +90,8 @@ def enriched_report(db, run):
         segment["counts"][row["result"]] = segment["counts"].get(row["result"], 0) + 1
     payload["report"]["categories"] = categories
     payload["report"]["bugs"] = list({defect["id"]: defect for row in payload["report"]["cases"] for step in row.get("stepResults", []) for defect in step.get("defects", [])}.values())
+    from services.plan_report_details import details
+    payload["reportDetails"] = details(db, [run], payload["report"])
     return payload
 
 

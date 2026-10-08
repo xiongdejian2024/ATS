@@ -163,12 +163,18 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
     from services.case_governance import snapshot_case
     snapshots = []
     relation_ids = {relation.case_id: relation.id for relation in relations}
+    from services.plan_report_details import freeze_test_sets
+    from services.plan_tree import nodes
+    relation_map = {relation.case_id: relation for relation in relations}
+    legacy_entries = [dict(node=SimpleNamespace(parent_id=relation_map[cid].collection_id if cid in relation_map else None)) for cid in case_ids]
+    freeze_test_sets(legacy_entries, nodes(db, plan.id, current_read=True))
+    frozen_test_sets = {cid: entry['testSet'] for cid, entry in zip(case_ids, legacy_entries)}
     for cid in case_ids:
         case = cases[cid]
         version = snapshot_case(db, case, str(user_id), "计划执行冻结用例版本")
         snapshots.append(dict(id=cid, name=case.name, caseCode=case.case_code, isAutomated=bool(case.is_automated or cid in native), projectId=case.project_id,
                               **(dict(category=case.type, associationId=relation_ids.get(cid, cid)) if cid in native else {}),
-                              versionId=version.id, version=version.version, snapshot=deepcopy(version.snapshot)))
+                              versionId=version.id, version=version.version, snapshot=deepcopy(version.snapshot), testSet=deepcopy(frozen_test_sets[cid])))
     if tree_entries is not None:
         snapshot_map = {c["id"]: c for c in snapshots}
         snapshots = []
@@ -178,7 +184,7 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
                 frozen = deepcopy(snapshot_map[cid])
                 frozen.update(associationId=node.id, nodeName=node.name, category=node.category,
                               assignedTo=node.assigned_to, prerequisites=entry["prerequisites"],
-                              linkedFunctionalId=node.linked_functional_id)
+                              linkedFunctionalId=node.linked_functional_id, testSet=deepcopy(entry["testSet"]))
                 snapshots.append(frozen)
     run = PlanRun(id=str(uuid.uuid4()), plan_id=plan_id, executor_id=str(user_id), created_at=beijing_now(),
                   idempotency_key=idempotency_key, status="group_waiting" if defer else ("queued" if suites else "running"),
@@ -204,7 +210,9 @@ async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None
                                                prerequisites=entry["prerequisites"] if entry else [],
                                                stopPrerequisites=entry.get("stopPrerequisites", []) if entry else [],
                                                executionConfig=deepcopy(entry["config"].get("msExecution")) if entry else None,
-                                               resourcePool=entry["config"].get("resourcePool", []) if entry else []))
+                                               resourcePool=entry["config"].get("resourcePool", []) if entry else [],
+                                               testSet=deepcopy(entry["testSet"]) if entry else None,
+                                               caseTestSets={cid:deepcopy(frozen_test_sets[cid]) for cid in suite.case_ids} if entry is None else {}))
         db.add(item)
         if not defer and ((entry is not None and not entry["prerequisites"]) or (entry is None and (i == 0 or policy["executionMode"] == "parallel"))):
             _enqueue(db, run, item)
@@ -258,7 +266,8 @@ def build_report(db, run, *, current_read=False):
                              result=state, notes=result.error_message if result else item.error_message,
                              duration=result.duration if result else None, snapshot=cases.get(cid, {}).get("snapshot", {}),
                              associationId=item.suite_snapshot.get("nodeId") or cid, category=item.suite_snapshot.get("category", "api"),
-                             linkedFunctionalId=item.suite_snapshot.get("linkedFunctionalId")))
+                             linkedFunctionalId=item.suite_snapshot.get("linkedFunctionalId"),
+                             testSet=deepcopy(item.suite_snapshot.get("testSet") or (item.suite_snapshot.get("caseTestSets") or {}).get(cid))))
     for case in run.case_snapshot:
         if not case["isAutomated"]:
             key = case.get("associationId", case["id"])
@@ -273,7 +282,7 @@ def build_report(db, run, *, current_read=False):
                              executionId=None, result=result.get("result", "cancelled" if run.status == "cancelled" else "pending"),
                              notes=result.get("notes"), duration=None, snapshot=case.get("snapshot", {}), executorId=result.get("executorId"),
                              associationId=key, category=case.get("category", "functional"), assignedTo=case.get("assignedTo"),
-                             stepResults=result.get("stepResults", []), linkedAutomation=bool(linked)))
+                             stepResults=result.get("stepResults", []), linkedAutomation=bool(linked), testSet=deepcopy(case.get("testSet"))))
     counts = {key: sum(r["result"] == key for r in rows)
               for key in ("passed", "failed", "error", "skipped", "cancelled", "pending")}
     total = len(rows)
