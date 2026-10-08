@@ -54,8 +54,16 @@ def require_node(db, user, environment_id, *, current_read=False):
     return node
 
 
+def current_actor(db,user):
+    actor=db.query(User).filter_by(id=user.id).populate_existing().with_for_update(read=True).first()
+    if not actor or not actor.status:
+        raise HTTPException(403,'当前脚本执行人不存在或已禁用')
+    return actor
+
+
 def find_job(db, user, job_id, action="read", *, current_read=False):
     if current_read:
+        user=current_actor(db,user)
         reference=db.query(ScriptJob).filter_by(id=job_id).populate_existing().first()
         if not reference: raise HTTPException(404, "脚本作业不存在")
         require_project_access(db,user,reference.project_id,"test_plan:"+action,current_read=True)
@@ -78,8 +86,9 @@ def find_run(db, user, job_id, execution_id, action="read"):
 
 
 def create_job(db, user, data):
-    require_project_access(db, user, data.project_id, "test_plan:execute")
-    require_node(db, user, data.environment_id)
+    require_node(db, user, data.environment_id,current_read=True)
+    user=current_actor(db,user)
+    require_project_access(db, user, data.project_id, "test_plan:execute",current_read=True)
     now = beijing_now()
     config = data.model_dump(by_alias=True, exclude={"project_id"})
     job = ScriptJob(id=str(uuid.uuid4()), project_id=data.project_id, name=data.name,
@@ -110,11 +119,12 @@ async def trigger(db, user, job_id, request_id):
     preview=db.query(ScriptJobRun).filter_by(request_id=request_id).first()
     if preview and (preview.job_id != job_id or preview.executor_id != str(user.id)):
         raise HTTPException(409, "requestId已被其他执行使用")
-    locked_nodes={reference.environment_id}
-    if preview: locked_nodes.add(preview.environment_id)
+    # A receipt belongs to its frozen node. Retargeting the job must not demand
+    # authority on a different node just to read that original idempotent receipt.
+    locked_nodes={preview.environment_id if preview else reference.environment_id}
     for node_id in sorted(locked_nodes): require_node(db,user,node_id,current_read=True)
     job = find_job(db, user, job_id, "execute", current_read=True)
-    if job.environment_id not in locked_nodes: raise HTTPException(409,"脚本节点已变化，请刷新后重试")
+    if not preview and job.environment_id not in locked_nodes: raise HTTPException(409,"脚本节点已变化，请刷新后重试")
     existing = db.query(ScriptJobRun).filter_by(request_id=request_id).first()
     if existing:
         if existing.job_id != job_id or existing.executor_id != str(user.id):
@@ -123,6 +133,7 @@ async def trigger(db, user, job_id, request_id):
             raise HTTPException(409,"脚本回执节点已变化，请刷新后重试")
         require_node(db, user, existing.environment_id, current_read=True)
         return existing
+    if preview: raise HTTPException(409,"脚本执行回执已变化，请刷新后重试")
     node = require_node(db, user, job.environment_id, current_read=True)
     if not node.status:
         raise HTTPException(409, "节点已禁用")
@@ -146,6 +157,10 @@ async def trigger(db, user, job_id, request_id):
         existing = db.query(ScriptJobRun).filter_by(request_id=request_id).first()
         if not existing or existing.job_id != job_id or existing.executor_id != str(user.id):
             raise HTTPException(409, "requestId冲突")
+        # The rollback ended the original authority locks. A concurrent winning
+        # receipt must pass fresh checks on its frozen node before returning.
+        require_node(db,user,existing.environment_id,current_read=True)
+        find_job(db,user,job_id,'execute',current_read=True)
         return existing
     from services.queued_dispatch import dispatch_pending_suites
     await dispatch_pending_suites(db, node.id)

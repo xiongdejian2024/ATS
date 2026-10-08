@@ -166,3 +166,13 @@ async def test_plan_entrance_keeps_pending_until_capable(native_workspace, monke
     await advance_plan_runs(db)
     db.refresh(task)
     assert task.status == "running" and len(socket.sent) == 1
+
+
+def test_advertised_new_capabilities_on_protocol_one_do_not_admit_extensions(monkeypatch):
+    from api.v1.websocket import manager
+    socket=capable(monkeypatch)
+    session=manager.sessions['node']
+    session.protocol_version=1
+    assert delivery.session_for(manager,'node',{'native_cases':[payload()]}) is None
+    session.protocol_version=2
+    assert delivery.session_for(manager,'node',{'native_cases':[payload()]}) is session

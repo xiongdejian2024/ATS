@@ -46,6 +46,7 @@ def session_for(manager, environment_id, message):
     session = manager.sessions.get(environment_id)
     if (
         session
+        and getattr(session, 'protocol_version', 0) >= 2
         and manager.is_live(session)
         and manager.is_current(session)
         and getattr(session, "auth_received", False)

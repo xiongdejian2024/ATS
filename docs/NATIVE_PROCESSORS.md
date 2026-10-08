@@ -35,7 +35,10 @@ log/result protocol. It does not add an external service or request real credent
   create a child queue or ScriptJobRun. Per-hook files remain unique across cases.
   The complete hook deadline includes startup/output/completion log backpressure.
   Cancellation and timeout complete process-group cleanup before returning a result.
-  Node/project/job locking orders avoid the freezer/updater lock cycle.
+  Node/project/job locking orders avoid the freezer/updater lock cycle. Ordinary
+  script mutations and idempotent receipts refresh and SHARE-lock their enabled
+  actor; old receipts retain frozen-node authority after job retargeting, including
+  fresh authority after a concurrent conflict rollback.
 
 ## Synthetic read-only SQL
 
@@ -62,7 +65,7 @@ its delay respects the explicit response timeout. Disabled Mock remains a real H
 request. The saved/frozen response is used even if configuration subsequently changes.
 
 New extensions require native_http_processors_v1; hooks additionally require
-script_jobs_v1, and variable declarations retain native_http_variables_v1. Unsupported
+script_jobs_v1, and variable declarations retain native_http_variables_v1. Unsupported, protocol-1
 or unauthenticated sessions stay pending without consuming capacity. Old messages
 strip empty declarations and old executions retain strict detail version 1. The final
 native dispatch message remains limited to 12 MiB (Agent receives at most 16 MiB).

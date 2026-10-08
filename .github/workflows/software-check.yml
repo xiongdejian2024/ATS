@@ -70,7 +70,7 @@ jobs:
           tests/test_defect_live_authority.py tests/test_plan_detail.py tests/test_plan_orchestration.py
           tests/test_plan_case_defects.py tests/test_aggregate_defect_entry.py tests/test_case_features.py
           tests/test_native_initial_variables.py tests/test_native_environment_variables.py tests/test_native_variable_delivery.py
-          tests/test_native_processors_hooks.py tests/test_native_processors_e2e.py tests/test_native_hooks_concurrency.py tests/test_native_sql_processors.py tests/test_native_mock_and_timings.py
+          tests/test_native_processors_hooks.py tests/test_native_processors_e2e.py tests/test_native_hooks_concurrency.py tests/test_script_jobs.py tests/test_native_sql_processors.py tests/test_native_mock_and_timings.py
   python:
     name: XAT 集成与 Agent（无硬件）
     runs-on: ubuntu-latest

@@ -1,4 +1,4 @@
-"""声明式请求/断言模型；拒绝未知配置，不执行脚本或shell。"""
+"""声明式请求/断言与有界处理器引用；拒绝未知或未冻结的可执行配置。"""
 
 from typing import Literal, Annotated
 from .response_assertion_models import ResponseAssertion
