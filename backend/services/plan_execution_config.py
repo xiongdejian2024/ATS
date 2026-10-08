@@ -26,6 +26,7 @@ class ExecutionConfig(BaseModel):
     extended: StrictBool = True
     executionMode: Literal["serial", "parallel"] = "serial"
     testResourcePoolId: str = Field("DEFAULT", min_length=1, max_length=36)
+    testResourcePoolScope: Literal["project", "global"] = "project"
     requestEnvironmentId: str = Field("NONE", min_length=1, max_length=36)
     requestEnvironmentGroupId: str = Field("NONE", min_length=1, max_length=36)
     stopOnFailure: StrictBool = False
@@ -35,6 +36,11 @@ class ExecutionConfig(BaseModel):
 
     @model_validator(mode="after")
     def exclusive_environment(self):
+        if (
+            self.testResourcePoolId == "DEFAULT"
+            and self.testResourcePoolScope != "project"
+        ):
+            raise ValueError("默认资源池使用计划本身的执行节点")
         if (
             self.requestEnvironmentId != "NONE"
             and self.requestEnvironmentGroupId != "NONE"
@@ -138,6 +144,13 @@ class ConfigurationTree:
         pool_id = config["testResourcePoolId"]
         if pool_id == "DEFAULT":
             members = [fallback_environment] if fallback_environment else []
+        elif config["testResourcePoolScope"] == "global":
+            from services.global_resource_pool import resolve
+
+            pool, members = resolve(
+                self.db, self.plan.project_id, scope.split(":")[1], pool_id
+            )
+            config = dict(config, testResourcePoolRevision=pool.revision)
         else:
             pool = (
                 self.db.query(PlanResourcePool)
@@ -165,6 +178,8 @@ class ConfigurationTree:
 
 
 def catalog(db, plan, policy, nodes):
+    from services.global_resource_pool import choices
+
     tree = ConfigurationTree(db, plan, policy, nodes)
     scopes = [
         f"{kind}:{category}"
@@ -178,6 +193,7 @@ def catalog(db, plan, policy, nodes):
         for category in ("api", "scenario")
     ]
     return dict(
+        globalPools=choices(db, plan.project_id),
         configurations={scope: tree.data(scope) for scope in scopes},
         pools=[
             dict(
@@ -209,8 +225,15 @@ def catalog(db, plan, policy, nodes):
     )
 
 
-def save(db, plan, scope, data):
+def save(db, plan, scope, data, user=None):
     lock_project(db, plan.project_id)
+    if user is not None:
+        from services.global_resource_pool import actor
+        from core.project_access import require_project_access
+
+        require_project_access(
+            db, actor(db, user), plan.project_id, "test_plan:update", current_read=True
+        )
     ensure_editable(db, plan)
     category, node = scope_node(db, plan, scope)
     config = data.config.model_dump()
@@ -221,7 +244,11 @@ def save(db, plan, scope, data):
             config["testResourcePoolId"],
             config["requestEnvironmentId"],
         )
-        if (
+        if pool_id != "DEFAULT" and config["testResourcePoolScope"] == "global":
+            from services.global_resource_pool import resolve
+
+            resolve(db, plan.project_id, category, pool_id)
+        elif (
             pool_id != "DEFAULT"
             and not db.query(PlanResourcePool)
             .filter_by(id=pool_id, project_id=plan.project_id)
@@ -299,8 +326,15 @@ def save(db, plan, scope, data):
     return row
 
 
-def save_pool(db, plan, data, pool_id=None):
+def save_pool(db, plan, data, pool_id=None, user=None):
     lock_project(db, plan.project_id)
+    if user is not None:
+        from services.global_resource_pool import actor
+        from core.project_access import require_project_access
+
+        require_project_access(
+            db, actor(db, user), plan.project_id, "test_plan:update", current_read=True
+        )
     ensure_editable(db, plan)
     members = data.environmentIds
     if (

@@ -69,26 +69,28 @@ def _enqueue(db, run, item):
 async def start_plan_run(db: Session, plan_id: str, user_id: str, suite_ids=None,
                          notes=None, idempotency_key=None, commit=True, defer=False):
     """先持久化批次与任务，派发由调度循环在事务提交后完成。"""
-    if idempotency_key:
-        existing = db.query(PlanRun).filter_by(idempotency_key=idempotency_key).first()
-        if existing:
-            if existing.plan_id != plan_id or existing.executor_id != str(user_id):
-                raise ValueError("幂等键已被其他计划执行使用")
-            return existing
     from services.plan_candidate_project import lock_run_sources
     locked_sources = lock_run_sources(db, plan_id)
     plan = db.query(TestPlan).filter_by(id=plan_id).populate_existing().with_for_update().first()
     if not plan:
         raise ValueError("测试计划不存在")
-    if db.query(PlanRun).filter(PlanRun.plan_id == plan_id, PlanRun.status.in_(ACTIVE)).first():
+    actor = db.query(User).filter_by(id=user_id).populate_existing().with_for_update(read=True).one_or_none()
+    if not actor or not actor.status:
+        raise ValueError("执行用户不存在或已停用")
+    from core.project_access import require_project_access
+    require_project_access(db, actor, plan.project_id, "test_plan:execute", current_read=True)
+    if idempotency_key:
+        existing = db.query(PlanRun).filter_by(idempotency_key=idempotency_key).populate_existing().with_for_update().first()
+        if existing:
+            if existing.plan_id != plan_id or existing.executor_id != str(user_id):
+                raise ValueError("幂等键已被其他计划执行使用")
+            return existing
+    if db.query(PlanRun).filter(PlanRun.plan_id == plan_id, PlanRun.status.in_(ACTIVE)).with_for_update().first():
         raise ValueError("当前计划已有执行中的批次，请完成或取消后再次执行")
     from models.plan_workspace import PlanWorkspace
     workspace = db.query(PlanWorkspace).filter_by(plan_id=plan_id).populate_existing().with_for_update().one_or_none()
     if workspace and workspace.archived:
         raise ValueError("归档计划不能执行，请先取消归档")
-    actor = db.query(User).filter_by(id=user_id).populate_existing().with_for_update(read=True).one_or_none()
-    if not actor or not actor.status:
-        raise ValueError("执行用户不存在或已停用")
     from services.native_http_execution import COMMAND, configured, freeze, managed_suite
     from types import SimpleNamespace
     def suite_view(suite):

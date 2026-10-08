@@ -65,7 +65,7 @@ jobs:
           tests/test_suite_delivery.py tests/test_attachment_storage.py
           tests/test_file_library.py tests/test_evidence_archive.py tests/test_mentions.py
           tests/test_case_mind_module_authority.py
-          tests/test_request_environment_groups.py
+          tests/test_request_environment_groups.py tests/test_global_resource_pools.py tests/test_global_resource_pool_authority.py
   python:
     name: XAT 集成与 Agent（无硬件）
     runs-on: ubuntu-latest
@@ -125,4 +125,4 @@ jobs:
         env:
           ATS_MYSQL_TEST_URL: mysql+pymysql://ats_test:ci-test-only@127.0.0.1:3306/ats_migration_test
           ATS_MYSQL_ISOLATED: '1'
-        run: python -m pytest tests/test_script_jobs_mysql_migration.py tests/test_request_environment_groups_mysql.py -q -o addopts=''
+        run: python -m pytest tests/test_script_jobs_mysql_migration.py tests/test_request_environment_groups_mysql.py tests/test_global_resource_pools_mysql.py -q -o addopts=''

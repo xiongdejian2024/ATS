@@ -263,7 +263,7 @@ def save_execution_configuration(plan_id: str, scope: str, data: ConfigSave, db:
     from services.plan_execution_config import save
     from api.v1.case_governance import transact
     plan = editable_node_plan(db, user, plan_id)
-    transact(db, lambda: save(db, plan, scope, data))
+    transact(db, lambda: save(db, plan, scope, data, user=user))
     return execution_configurations(plan_id, db, user)
 
 
@@ -272,7 +272,7 @@ def create_execution_pool(plan_id: str, data: PoolSave, db: Session = Depends(ge
     from services.plan_execution_config import save_pool
     from api.v1.case_governance import transact
     plan = editable_node_plan(db, user, plan_id)
-    transact(db, lambda: save_pool(db, plan, data))
+    transact(db, lambda: save_pool(db, plan, data, user=user))
     return execution_configurations(plan_id, db, user)
 
 
@@ -281,7 +281,7 @@ def update_execution_pool(plan_id: str, pool_id: str, data: PoolSave, db: Sessio
     from services.plan_execution_config import save_pool
     from api.v1.case_governance import transact
     plan = editable_node_plan(db, user, plan_id)
-    transact(db, lambda: save_pool(db, plan, data, pool_id))
+    transact(db, lambda: save_pool(db, plan, data, pool_id, user=user))
     return execution_configurations(plan_id, db, user)
 
 

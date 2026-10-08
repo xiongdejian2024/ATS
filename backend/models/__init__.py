@@ -67,3 +67,4 @@ from .attachment_blob import AttachmentBlob
 from .file_library import LibraryFolder, LibraryFile, LibraryReference
 
 from . import request_environment_group
+from . import global_resource_pool
