@@ -359,13 +359,17 @@ def list_reviews(
     creator_id=None,
     sort="createdAt",
     order="desc",
+    filters=None,
 ):
     project = governance.project_access(db, user, project_id)
     modules = module_rows(db, project_id)
     query, state, rate = summary_query(db, project_id)
+    from services.review_index_filter import parse, apply
+    advanced, _ = parse(filters)
+    query = apply(db, query, state, rate, filters, str(user.id))
     if lifecycle:
         query = query.filter(state == lifecycle)
-    else:
+    elif not any(row["field"] == "lifecycle" for row in advanced):
         query = query.filter(
             or_(
                 ReviewWorkspace.archived.is_(False), ReviewWorkspace.review_id.is_(None)

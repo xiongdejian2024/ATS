@@ -7,6 +7,7 @@ from services import plan_case_view
 from services.plan_candidate_filter import parse_candidate_filters
 
 CANDIDATES = "review-candidates"
+INDEX = "review-index"
 
 
 def access(db, user, project_id, *, writing=False):
@@ -25,19 +26,23 @@ def validate(filters):
                                 logic=filters.get("filterLogic", "and")), "functional")
 
 
-def listing(db, user, project_id):
+def listing(db, user, project_id, category=CANDIDATES):
     user, scope = access(db, user, project_id)
-    return [plan_case_view.data(row) for row in plan_case_view.scope(db, user, scope, CANDIDATES)
+    return [plan_case_view.data(row) for row in plan_case_view.scope(db, user, scope, category)
             .order_by(plan_case_view.PlanCaseSavedView.created_at.desc()).all()]
 
 
-def save(db, user, project_id, body, view_id=None):
+def save(db, user, project_id, body, view_id=None, category=CANDIDATES):
     user, scope = access(db, user, project_id, writing=True)
     if not view_id or "filters" in body.model_fields_set:
-        validate(body.filters)
-    return plan_case_view.save(db, user, scope, CANDIDATES, body, view_id)
+        if category == INDEX:
+            from schemas.review_workspace import review_index_view_filters
+            review_index_view_filters(body.filters)
+        else:
+            validate(body.filters)
+    return plan_case_view.save(db, user, scope, category, body, view_id)
 
 
-def remove(db, user, project_id, view_id):
+def remove(db, user, project_id, view_id, category=CANDIDATES):
     user, scope = access(db, user, project_id, writing=True)
-    plan_case_view.remove(db, user, scope, CANDIDATES, view_id)
+    plan_case_view.remove(db, user, scope, category, view_id)
