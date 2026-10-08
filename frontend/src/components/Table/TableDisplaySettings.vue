@@ -5,7 +5,7 @@
     width="min(480px,100vw)"
     :footer="false"
     class="table-display-settings"
-    @close="emit('close', [...fixed, ...movable])"
+    @close="closeDrawer"
   >
     <a-alert
       v-if="error"
@@ -102,6 +102,7 @@ import { VueDraggable } from "vue-draggable-plus";
 import { HolderOutlined, QuestionCircleOutlined } from "@ant-design/icons-vue";
 import {
   pageSizes,
+  normalizeDisplay,
   type DisplayColumn,
   type ColumnVisibility,
 } from "./tableDisplay";
@@ -123,12 +124,16 @@ const emit = defineEmits<{
 const fixed = ref<ColumnVisibility[]>([]),
   movable = ref<ColumnVisibility[]>([]),
   original = ref("");
+let draftCache: ColumnVisibility[] = [],
+  baselineCache: ColumnVisibility[] = [];
 const title = (key: string) =>
   props.definitions.find((column) => column.key === key)?.title || key;
 const changed = computed(
   () => JSON.stringify([...fixed.value, ...movable.value]) !== original.value,
 );
 function resetDraft() {
+  draftCache = props.columns.map((c) => ({ ...c }));
+  baselineCache = props.columns.map((c) => ({ ...c }));
   const locked = new Set(
     props.definitions
       .filter((column) => column.required)
@@ -142,12 +147,54 @@ function resetDraft() {
     .map((column) => ({ ...column }));
   original.value = JSON.stringify([...fixed.value, ...movable.value]);
 }
+function updateDraftCache() {
+  const live = [...fixed.value, ...movable.value].map((c) => ({ ...c }));
+  const cachedKeys = new Set(draftCache.map((c) => c.key)),
+    liveKeys = new Set(live.map((c) => c.key));
+  const reordered = live.filter((c) => cachedKeys.has(c.key));
+  draftCache = draftCache.map((c) =>
+    liveKeys.has(c.key) ? reordered.shift()! : c,
+  );
+  for (const c of [...live, ...props.columns])
+    if (!cachedKeys.has(c.key)) {
+      draftCache.push({ ...c });
+      cachedKeys.add(c.key);
+      baselineCache.push({ ...c });
+    }
+}
+function closeDrawer() {
+  updateDraftCache();
+  emit(
+    "close",
+    draftCache.map((c) => ({ ...c })),
+  );
+}
 watch(
   () => props.open,
   (open) => {
     if (open) resetDraft();
   },
   { immediate: true },
+);
+watch(
+  () => props.definitions,
+  () => {
+    if (!props.open) return;
+    // 同一次打开中保留暂时消失字段的草稿、顺序和基线；重开从新作用域重置。
+    updateDraftCache();
+    const draft = normalizeDisplay(
+      { columns: draftCache },
+      props.definitions,
+    ).columns;
+    original.value = JSON.stringify(
+      normalizeDisplay({ columns: baselineCache }, props.definitions).columns,
+    );
+    const locked = new Set(
+      props.definitions.filter((c) => c.required).map((c) => c.key),
+    );
+    fixed.value = draft.filter((c) => locked.has(c.key));
+    movable.value = draft.filter((c) => !locked.has(c.key));
+  },
 );
 </script>
 <style scoped>
