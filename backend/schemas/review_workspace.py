@@ -3,8 +3,69 @@
 from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
-from schemas.case_governance import StrictRequest, ReviewVote
+from schemas.case_governance import StrictRequest, ReviewVote, SavedViewRename
 from schemas.case_selection import CaseSelection
+
+
+def review_candidate_view_filters(value):
+    from schemas.plan_candidate_view import validate_filters
+    if not isinstance(value, dict) or type(value.get("mine", False)) is not bool:
+        raise ValueError("个人视图范围不合法")
+    validate_filters({key: item for key, item in value.items() if key != "mine"})
+    return value
+
+
+class ReviewCandidateViewCreate(SavedViewRename):
+    filters: dict
+
+    @field_validator("filters")
+    @classmethod
+    def validate_candidate_view(cls, value):
+        return review_candidate_view_filters(value)
+
+
+class ReviewCandidateViewUpdate(SavedViewRename):
+    filters: dict | None = None
+
+    @field_validator("filters")
+    @classmethod
+    def validate_candidate_view(cls, value):
+        return review_candidate_view_filters(value)
+
+
+def review_index_view_filters(value):
+    if not isinstance(value, dict) or set(value) - {"filterConditions", "filterLogic", "scope"}:
+        raise ValueError("评审首页视图结构不合法")
+    if not isinstance(value.get("scope", "all"), str) or value.get("scope", "all") not in {"all", "createByMe", "reviewByMe"}:
+        raise ValueError("评审首页视图范围不合法")
+    import json
+    if len(json.dumps(value, ensure_ascii=False)) > 20000:
+        raise ValueError("个人视图条件过大")
+    from services.review_index_filter import parse
+    from fastapi import HTTPException
+    try:
+        parse(dict(conditions=value.get("filterConditions", []), logic=value.get("filterLogic", "and")))
+    except HTTPException as exc:
+        raise ValueError("评审首页视图条件不合法") from exc
+    return value
+
+
+class ReviewIndexViewCreate(SavedViewRename):
+    filters: dict
+
+    @field_validator("filters")
+    @classmethod
+    def validate_index_view(cls, value):
+        return review_index_view_filters(value)
+
+
+class ReviewIndexViewUpdate(SavedViewRename):
+    filters: dict | None = None
+
+    @field_validator("filters")
+    @classmethod
+    def validate_index_view(cls, value):
+        return review_index_view_filters(value)
 
 
 class ModuleSave(StrictRequest):
@@ -37,6 +98,19 @@ class ReviewCandidateSelection(StrictRequest):
     priority: Literal["P0", "P1", "P2", "P3"] | None = None
     excludeIds: list[str] = Field(default_factory=list, max_length=10000)
     selectionScope: CaseSelection | None = None
+    filters: dict | None = None
+    mine: bool = False
+
+    @field_validator("filters")
+    @classmethod
+    def candidate_filters(cls, value):
+        if value is not None:
+            from services.plan_candidate_filter import parse_candidate_filters
+            import json
+            if len(json.dumps(value, ensure_ascii=False)) > 20000:
+                raise ValueError("筛选条件过大")
+            parse_candidate_filters(value, "functional")
+        return value
 
 
 class ReviewAssociate(StrictRequest):

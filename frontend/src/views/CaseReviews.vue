@@ -84,16 +84,33 @@
       <main class="review-table-panel">
         <div class="toolbar">
           <a-radio-group
-            v-model:value="scope"
+            :value="scope"
             button-style="solid"
-            @change="reload"
+            :disabled="mutating || filterSaving"
+            @change="changeScope($event.target.value)"
           >
             <a-radio-button value="all">全部</a-radio-button
             ><a-radio-button value="reviewByMe">我评审的</a-radio-button
             ><a-radio-button value="createByMe">我创建的</a-radio-button>
           </a-radio-group>
-          <a-space wrap
-            ><a-input-search
+          <a-space wrap>
+            <ReviewCandidateFilters
+              ref="filterEditor"
+              workspace="index"
+              :key="identity"
+              :project-id="projectId"
+              :modules="filterModules"
+              :conditions="conditions"
+              :logic="filterLogic"
+              :scope="scope"
+              :view-id="viewId"
+              :busy="mutating"
+              @apply="applyAdvanced"
+              @saving="filterSaving = $event"
+            />
+            <a-input-search
+              v-if="conditions === undefined"
+              :disabled="mutating || filterSaving"
               v-model:value="search"
               placeholder="通过 ID/名称/标签搜索"
               allow-clear
@@ -113,7 +130,7 @@
             >
           </a-space>
         </div>
-        <a-space class="column-filters" wrap>
+        <a-space v-if="conditions === undefined" class="column-filters" wrap>
           <a-select
             v-model:value="lifecycle"
             allow-clear
@@ -357,8 +374,8 @@
   </section>
 </template>
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
+import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import { message, Modal } from "ant-design-vue";
 import {
   FolderOutlined,
@@ -378,7 +395,13 @@ import {
   reviewWorkspaceApi as api,
   type ReviewSummary,
   type ReviewList,
+  type ReviewViewScope,
 } from "@/api/reviewWorkspace";
+import ReviewCandidateFilters from "@/components/CaseReview/ReviewCandidateFilters.vue";
+import type {
+  FilterCondition,
+  FilterLogic,
+} from "@/components/TestCase/advancedFilter";
 import { resizableColumn } from "@/components/Table/tableDisplay";
 import { useTableColumnResize } from "@/components/Table/useTableColumnResize";
 import TableDisplaySettings from "@/components/Table/TableDisplaySettings.vue";
@@ -399,6 +422,21 @@ const route = useRoute(),
   projects = useProjectStore(),
   user = useUserStore();
 const projectId = computed(() => projects.currentProject?.id || "");
+const identity = computed(() =>
+  JSON.stringify([projectId.value, user.user?.id]),
+);
+let scopeEpoch = 0;
+const scopeSnapshot = () => JSON.stringify([scopeEpoch, identity.value]);
+let live = true;
+onBeforeUnmount(() => {
+  live = false;
+  ++loadSequence;
+});
+const filterEditor = ref<{ beforeClose: () => Promise<boolean> }>();
+const conditions = ref<FilterCondition[]>(),
+  filterLogic = ref<FilterLogic>("and"),
+  viewId = ref<string>(),
+  filterSaving = ref(false);
 const emptyData = (): ReviewList => ({
   items: [],
   total: 0,
@@ -413,7 +451,10 @@ const data = ref(emptyData()),
   busy = ref(false),
   loadError = ref(""),
   mutating = ref(false);
-const scope = ref("all"),
+const filterModules = computed(() =>
+  data.value.modules.map((m) => ({ ...m, parentId: m.parentId || undefined })),
+);
+const scope = ref<ReviewViewScope>("all"),
   search = ref(""),
   moduleSearch = ref(""),
   selectedModule = ref("all"),
@@ -537,7 +578,7 @@ let loadSequence = 0;
 async function load() {
   const p = projectId.value,
     sequence = ++loadSequence;
-  if (!p) return;
+  if (!live || !p) return;
   busy.value = true;
   loadError.value = "";
   try {
@@ -555,6 +596,14 @@ async function load() {
       creatorId: creatorId.value,
       sort: sort.value,
       order: order.value,
+      ...(conditions.value !== undefined
+        ? {
+            filters: JSON.stringify({
+              conditions: conditions.value,
+              logic: filterLogic.value,
+            }),
+          }
+        : {}),
     });
     if (sequence !== loadSequence || p !== projectId.value) return;
     data.value = result;
@@ -587,7 +636,48 @@ function reload() {
   selected.value = [];
   void load();
 }
-function selectModule(key: string) {
+async function changeScope(next: ReviewViewScope) {
+  const current = scopeSnapshot();
+  if (
+    mutating.value ||
+    filterSaving.value ||
+    (filterEditor.value && !(await filterEditor.value.beforeClose()))
+  )
+    return;
+  if (!live || current !== scopeSnapshot()) return;
+  scope.value = next;
+  conditions.value = undefined;
+  filterLogic.value = "and";
+  viewId.value =
+    next === "all"
+      ? undefined
+      : next === "createByMe"
+        ? "system:my"
+        : "system:reviewByMe";
+  reload();
+}
+function applyAdvanced(
+  next: FilterCondition[] | undefined,
+  logic: FilterLogic,
+  nextView?: string,
+  _mine?: boolean,
+  nextScope: ReviewViewScope = "all",
+) {
+  if (mutating.value) return;
+  conditions.value = next;
+  filterLogic.value = logic;
+  viewId.value = nextView;
+  scope.value = nextScope;
+  search.value = "";
+  lifecycle.value = mode.value = reviewerId.value = creatorId.value = undefined;
+  selectedModule.value = "all";
+  reload();
+}
+async function selectModule(key: string) {
+  if (mutating.value || filterSaving.value) return;
+  const current = scopeSnapshot();
+  if (filterEditor.value && !(await filterEditor.value.beforeClose())) return;
+  if (!live || current !== scopeSnapshot()) return;
   selectedModule.value = key;
   reload();
 }
@@ -637,7 +727,15 @@ function saveSize(size: number) {
 function saveDescendants(value: boolean) {
   if (persist({ ...display.value, includeDescendants: value })) reload();
 }
-function openWorkspace(id?: string, action?: string) {
+async function openWorkspace(id?: string, action?: string) {
+  const current = scopeSnapshot();
+  if (
+    mutating.value ||
+    filterSaving.value ||
+    (filterEditor.value && !(await filterEditor.value.beforeClose()))
+  )
+    return;
+  if (!live || current !== scopeSnapshot()) return;
   void router.push({
     name: action ? "CaseReviewEditor" : "CaseReviewWorkspace",
     query: {
@@ -661,21 +759,22 @@ async function mutation(
   operation: (p: string) => Promise<unknown>,
   success: string,
 ) {
-  if (mutating.value) return;
-  const p = projectId.value;
+  if (!live || mutating.value || filterSaving.value) return;
+  const p = projectId.value,
+    current = scopeSnapshot();
   mutating.value = true;
   try {
     await operation(p);
-    if (p === projectId.value) {
+    if (live && current === scopeSnapshot()) {
       message.success(success);
       await load();
     }
-    return true;
+    return live && current === scopeSnapshot();
   } catch (error) {
     console.error("评审首页操作失败", error);
     return false;
   } finally {
-    mutating.value = false;
+    if (live && current === scopeSnapshot()) mutating.value = false;
   }
 }
 const moduleVisible = ref(false),
@@ -782,13 +881,14 @@ async function performDelete() {
   }
 }
 function confirmArchive(row: ReviewSummary) {
-  const p = projectId.value;
+  const current = scopeSnapshot();
   Modal.confirm({
     title: "归档评审",
     content:
       "归档后不在默认列表展示，可通过已归档筛选查看。归档后的评审内容不能修改。",
     async onOk() {
-      if (p !== projectId.value) throw new Error("项目已切换，请重新操作");
+      if (!live || current !== scopeSnapshot())
+        throw new Error("项目或用户已切换，请重新操作");
       if (!(await mutation((id) => api.archive(id, row.id), "评审已归档")))
         throw new Error("归档未成功");
     },
@@ -814,10 +914,18 @@ async function moveReviews() {
   }
 }
 watch(
-  projectId,
-  async (p) => {
+  identity,
+  async () => {
+    ++scopeEpoch;
+    const current = scopeSnapshot();
+    const p = projectId.value;
     ++loadSequence;
     busy.value = false;
+    mutating.value = false;
+    filterSaving.value = false;
+    conditions.value = undefined;
+    filterLogic.value = "and";
+    viewId.value = undefined;
     data.value = emptyData();
     members.value = [];
     scope.value = "all";
@@ -843,19 +951,32 @@ watch(
     );
     settingsError.value = "";
     await load();
-    if (p && p === projectId.value) {
+    if (live && p && current === scopeSnapshot()) {
       try {
         const result = await caseGovernanceApi.reviewers(p);
-        if (p === projectId.value) members.value = result;
+        if (live && current === scopeSnapshot()) members.value = result;
       } catch (error) {
         console.error("加载评审成员失败", error);
       }
     }
   },
-  { immediate: true },
+  { immediate: true, flush: "sync" },
 );
+onBeforeRouteLeave(async () => {
+  const current = scopeSnapshot();
+  if (!live || mutating.value || filterSaving.value) return false;
+  if (filterEditor.value && !(await filterEditor.value.beforeClose()))
+    return false;
+  return (
+    live &&
+    current === scopeSnapshot() &&
+    !mutating.value &&
+    !filterSaving.value
+  );
+});
 onMounted(async () => {
   if (!projects.projects.length) await projects.fetchProjects();
+  if (!live) return;
   const query =
     typeof route.query.projectId === "string"
       ? route.query.projectId

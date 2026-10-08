@@ -254,7 +254,8 @@
   </a-drawer>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onBeforeUnmount, onMounted } from "vue";
+import { Modal } from "ant-design-vue";
 import { cloneDeep } from "lodash-es";
 import {
   EditOutlined,
@@ -289,6 +290,7 @@ const props = withDefaults(
     metadataError?: string;
     metadataLoading?: boolean;
     cannotAdd?: boolean;
+    guardClosing?: boolean;
     saveView?: (
       name: string,
       conditions: FilterCondition[],
@@ -307,6 +309,7 @@ const props = withDefaults(
     metadataError: "",
     metadataLoading: false,
     cannotAdd: false,
+    guardClosing: false,
   },
 );
 const emit = defineEmits<{
@@ -326,11 +329,15 @@ const draft = ref<FilterCondition[]>([]),
 let original: FilterCondition[] = [],
   originalLogic: FilterLogic = "and",
   originalName = "";
+const baselineRevision = ref(0);
 const systemViewName = computed(
   () =>
-    ({ all: "全部数据", my: "我创建的", followed: "我关注的" })[
-      props.systemView
-    ] || "全部数据",
+    ({
+      all: "全部数据",
+      my: "我创建的",
+      followed: "我关注的",
+      reviewByMe: "我评审的",
+    })[props.systemView] || "全部数据",
 );
 const field = (key: string) => props.availableFields.find((f) => f.key === key);
 const disabledValue = (c: FilterCondition) =>
@@ -395,6 +402,7 @@ function apply() {
   emit("apply", effectiveConditions(draft.value), draftLogic.value);
   emit("update:visible", false);
 }
+let live = true;
 async function save(mode: ViewSaveMode) {
   if (saving.value || !props.saveView || !validate()) return;
   const name = (mode === "copy" ? copyName.value : draftName.value).trim();
@@ -422,6 +430,7 @@ async function save(mode: ViewSaveMode) {
       draftLogic.value,
       mode,
     );
+    if (!live) return;
     if (mode === "copy") {
       copyMode.value = false;
       copyName.value = "";
@@ -431,6 +440,7 @@ async function save(mode: ViewSaveMode) {
     original = cloneDeep(draft.value);
     originalLogic = draftLogic.value;
     originalName = name;
+    ++baselineRevision.value;
     draftName.value = name;
     editingName.value = false;
     if (mode === "create") {
@@ -438,15 +448,47 @@ async function save(mode: ViewSaveMode) {
       emit("update:visible", false);
     }
   } catch (failure) {
+    if (!live) return;
     console.error("保存筛选视图失败，保留条件及名称草稿", failure);
     error.value = "保存视图失败，请保留草稿并重试";
   } finally {
-    saving.value = false;
-    emit("saving", false);
+    if (live) {
+      saving.value = false;
+      emit("saving", false);
+    }
   }
 }
-function close() {
-  if (!saving.value) emit("update:visible", false);
+const hasDraft = computed(() => {
+  void baselineRevision.value;
+  return (
+    JSON.stringify(draft.value) !== JSON.stringify(original) ||
+    draftLogic.value !== originalLogic ||
+    draftName.value !== originalName ||
+    !!copyName.value
+  );
+});
+let confirming = false;
+async function beforeClose() {
+  if (saving.value || confirming) return false;
+  if (!props.visible || !props.guardClosing || !hasDraft.value) return true;
+  confirming = true;
+  const accepted = await new Promise<boolean>((resolve) =>
+    Modal.confirm({
+      title: "放弃未应用的筛选草稿？",
+      content: "取消可保留当前条件和视图名称。",
+      onOk: () => resolve(true),
+      onCancel: () => resolve(false),
+    }),
+  );
+  confirming = false;
+  if (!live || !accepted || saving.value) return false;
+  reset();
+  copyName.value = "";
+  copyMode.value = false;
+  return true;
+}
+async function close() {
+  if (await beforeClose()) emit("update:visible", false);
 }
 watch(
   () =>
@@ -472,12 +514,30 @@ watch(
       if (!saved && !props.newView && props.conditions.length) {
         draft.value = cloneDeep(props.conditions);
         draftLogic.value = props.logic;
+        original = cloneDeep(draft.value);
+        originalLogic = draftLogic.value;
       }
+      ++baselineRevision.value;
     }
   },
   { flush: "post" },
 );
-defineExpose({ isSaving: () => saving.value });
+function beforeUnload(event: BeforeUnloadEvent) {
+  if (props.guardClosing && props.visible && (saving.value || hasDraft.value)) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+}
+onMounted(() => {
+  if (typeof window !== "undefined")
+    window.addEventListener("beforeunload", beforeUnload);
+});
+onBeforeUnmount(() => {
+  live = false;
+  if (typeof window !== "undefined")
+    window.removeEventListener("beforeunload", beforeUnload);
+});
+defineExpose({ isSaving: () => saving.value, beforeClose, hasDraft });
 </script>
 <style scoped>
 .filter-tip {
