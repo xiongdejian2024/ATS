@@ -8,13 +8,18 @@ import type {
   FilterCondition,
   FilterLogic,
 } from "@/components/TestCase/advancedFilter";
-type ReviewViewFilters = {
+export type ReviewViewFilters = {
   filterConditions: FilterCondition[];
   filterLogic: FilterLogic;
   mine?: boolean;
+  scope?: ReviewViewScope;
 };
+export type ReviewViewScope = "all" | "createByMe" | "reviewByMe";
 export type ReviewCandidateSavedView = Omit<PlanCaseSavedView, "filters"> & {
-  filters: PlanCaseSavedView["filters"] & { mine?: boolean };
+  filters: PlanCaseSavedView["filters"] & {
+    mine?: boolean;
+    scope?: ReviewViewScope;
+  };
 };
 export interface ReviewModule {
   id: string;
@@ -123,6 +128,25 @@ export interface ReviewSelectionSummary {
 const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
+  indexViews: (p: string) =>
+    apiClient.get<ReviewCandidateSavedView[]>(`${base(p)}/views`),
+  saveIndexView: (p: string, name: string, filters: ReviewViewFilters) =>
+    apiClient.post<ReviewCandidateSavedView>(`${base(p)}/views`, {
+      name,
+      filters,
+    }),
+  updateIndexView: (
+    p: string,
+    id: string,
+    name: string,
+    filters?: ReviewViewFilters,
+  ) =>
+    apiClient.put<ReviewCandidateSavedView>(`${base(p)}/views/${id}`, {
+      name,
+      ...(filters === undefined ? {} : { filters }),
+    }),
+  deleteIndexView: (p: string, id: string) =>
+    apiClient.delete(`${base(p)}/views/${id}`),
   candidateViews: (p: string) =>
     apiClient.get<ReviewCandidateSavedView[]>(`${base(p)}/candidate-views`),
   saveCandidateView: (p: string, name: string, filters: ReviewViewFilters) =>
@@ -136,10 +160,13 @@ export const reviewWorkspaceApi = {
     name: string,
     filters?: ReviewViewFilters,
   ) =>
-    apiClient.put<ReviewCandidateSavedView>(`${base(p)}/candidate-views/${id}`, {
-      name,
-      ...(filters === undefined ? {} : { filters }),
-    }),
+    apiClient.put<ReviewCandidateSavedView>(
+      `${base(p)}/candidate-views/${id}`,
+      {
+        name,
+        ...(filters === undefined ? {} : { filters }),
+      },
+    ),
   deleteCandidateView: (p: string, id: string) =>
     apiClient.delete(`${base(p)}/candidate-views/${id}`),
   selection: (p: string, id: string, body: ReviewItemSelection) =>

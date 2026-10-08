@@ -3,7 +3,7 @@
     <a-select
       :value="viewId || 'system:all'"
       :disabled="busy || saving || viewLoading"
-      aria-label="评审关联用例视图"
+      :aria-label="workspace === 'index' ? '评审首页视图' : '评审关联用例视图'"
       option-label-prop="label"
       :dropdown-match-select-width="280"
       style="width: 145px"
@@ -15,6 +15,12 @@
         >
         <a-select-option value="system:my" label="我创建的"
           >我创建的</a-select-option
+        >
+        <a-select-option
+          v-if="workspace === 'index'"
+          value="system:reviewByMe"
+          label="我评审的"
+          >我评审的</a-select-option
         >
       </a-select-opt-group>
       <a-select-opt-group label="我的视图">
@@ -67,7 +73,7 @@
       v-if="viewError"
       danger
       :loading="viewLoading"
-      aria-label="重试加载评审关联个人视图"
+      aria-label="重试加载个人视图"
       @click="loadViews"
       >视图加载失败，重试</a-button
     >
@@ -78,14 +84,22 @@
     :key="identity"
     v-model:visible="visible"
     :available-fields="fields"
-    :initial-fields="['id', 'name', 'moduleId']"
+    :initial-fields="
+      workspace === 'index' ? ['name', 'moduleId'] : ['id', 'name', 'moduleId']
+    "
     :module-tree-data="moduleTree"
     :conditions="conditions"
     :logic="logic"
     :view="activeView"
     :view-names="viewNames"
     :new-view="newView"
-    :system-view="viewId === 'system:my' ? 'my' : 'all'"
+    :system-view="
+      viewId === 'system:my'
+        ? 'my'
+        : viewId === 'system:reviewByMe'
+          ? 'reviewByMe'
+          : 'all'
+    "
     :metadata-error="metadataError || viewError"
     :metadata-loading="metadataLoading || viewLoading"
     :cannot-add="views.length >= 10 || !!viewError"
@@ -120,7 +134,7 @@
   </a-modal>
 </template>
 <script setup lang="ts">
-import { computed, ref, watch, onBeforeUnmount } from "vue";
+import { computed, ref, watch, onBeforeUnmount, onMounted } from "vue";
 import { Modal, message } from "ant-design-vue";
 import {
   EditOutlined,
@@ -130,6 +144,8 @@ import {
 import { cloneDeep } from "lodash-es";
 import type { CaseFolder } from "@/api/planCaseWorkspace";
 import type { ReviewCandidateSavedView } from "@/api/reviewWorkspace";
+import type { ReviewViewScope, ReviewViewFilters } from "@/api/reviewWorkspace";
+import { reviewIndexFilterFields } from "./reviewIndexFilterFields";
 import { reviewWorkspaceApi as api } from "@/api/reviewWorkspace";
 import { caseFeaturesApi, type CaseTemplate } from "@/api/caseFeatures";
 import { useUserStore } from "@/stores/user";
@@ -149,6 +165,8 @@ const props = defineProps<{
   logic: FilterLogic;
   viewId?: string;
   mine?: boolean;
+  workspace?: "index";
+  scope?: ReviewViewScope;
   busy: boolean;
 }>();
 let live = true;
@@ -156,20 +174,36 @@ onBeforeUnmount(() => {
   live = false;
   ++viewSequence;
   ++metadataSequence;
+  if (typeof window !== "undefined")
+    window.removeEventListener("beforeunload", beforeUnload);
 });
 const user = useUserStore();
 const identity = computed(() =>
-  JSON.stringify([props.projectId, user.user?.id]),
+  JSON.stringify([props.projectId, user.user?.id, props.workspace]),
 );
+let scopeEpoch = 0;
+const scopeSnapshot = () => JSON.stringify([scopeEpoch, identity.value]);
 const emit = defineEmits<{
   apply: [
     conditions: FilterCondition[] | undefined,
     logic: FilterLogic,
     viewId?: string,
     mine?: boolean,
+    scope?: ReviewViewScope,
   ];
   saving: [value: boolean];
 }>();
+function applyValue(
+  conditions: FilterCondition[] | undefined,
+  logic: FilterLogic,
+  viewId?: string,
+  mine?: boolean,
+  scope?: ReviewViewScope,
+) {
+  if (props.workspace === "index")
+    emit("apply", conditions, logic, viewId, mine, scope);
+  else emit("apply", conditions, logic, viewId, mine);
+}
 const visible = ref(false),
   newView = ref(false),
   saving = ref(false),
@@ -187,16 +221,19 @@ const activeView = computed(() =>
 const viewNames = computed(() => [
   "全部数据",
   "我创建的",
+  ...(props.workspace === "index" ? ["我评审的"] : []),
   ...views.value.map((v) => v.name),
 ]);
 const fields = computed(() =>
-  planCandidateFilterFields(
-    { id: props.projectId, name: "当前项目" },
-    [],
-    templates.value,
-    members.value,
-    "functional",
-  ).filter((field) => field.key !== "planIds"),
+  props.workspace === "index"
+    ? reviewIndexFilterFields(members.value)
+    : planCandidateFilterFields(
+        { id: props.projectId, name: "当前项目" },
+        [],
+        templates.value,
+        members.value,
+        "functional",
+      ).filter((field) => field.key !== "planIds"),
 );
 const moduleTree = computed(() => {
   const mark = (nodes: ReturnType<typeof caseFolderTree>): any[] =>
@@ -207,7 +244,11 @@ const moduleTree = computed(() => {
       children: mark(n.children || []),
     }));
   return [
-    { key: "__unassigned__", title: "未分配模块", nodeType: "module" },
+    {
+      key: props.workspace === "index" ? "default" : "__unassigned__",
+      title: props.workspace === "index" ? "默认模块" : "未分配模块",
+      nodeType: "module",
+    },
     ...mark(
       caseFolderTree(
         props.modules.filter((m) => m.nodeType !== "DEFAULT"),
@@ -218,38 +259,55 @@ const moduleTree = computed(() => {
 });
 let viewSequence = 0,
   metadataSequence = 0;
+const viewApi = computed(() =>
+  props.workspace === "index"
+    ? {
+        listing: api.indexViews,
+        save: api.saveIndexView,
+        update: api.updateIndexView,
+        remove: api.deleteIndexView,
+      }
+    : {
+        listing: api.candidateViews,
+        save: api.saveCandidateView,
+        update: api.updateCandidateView,
+        remove: api.deleteCandidateView,
+      },
+);
 function acknowledgeViews() {
   ++viewSequence;
   viewLoading.value = false;
   viewError.value = "";
 }
 async function loadViews() {
-  const scope = identity.value,
+  const scope = scopeSnapshot(),
     sequence = ++viewSequence;
   viewLoading.value = true;
   try {
-    const rows = await api.candidateViews(props.projectId);
-    if (!live || sequence !== viewSequence || scope !== identity.value) return;
+    const rows = await viewApi.value.listing(props.projectId);
+    if (!live || sequence !== viewSequence || scope !== scopeSnapshot()) return;
     views.value = rows;
     viewError.value = "";
   } catch (error) {
     console.error("加载评审关联个人视图失败", error);
-    if (live && sequence === viewSequence && scope === identity.value)
+    if (live && sequence === viewSequence && scope === scopeSnapshot())
       viewError.value = "个人视图加载失败，请重试";
   } finally {
-    if (live && sequence === viewSequence && scope === identity.value)
+    if (live && sequence === viewSequence && scope === scopeSnapshot())
       viewLoading.value = false;
   }
 }
 async function loadMetadata() {
-  const scope = identity.value,
+  const scope = scopeSnapshot(),
     sequence = ++metadataSequence;
   metadataLoading.value = true;
   const results = await Promise.allSettled([
-    caseFeaturesApi.templates(props.projectId),
+    props.workspace === "index"
+      ? Promise.resolve([])
+      : caseFeaturesApi.templates(props.projectId),
     caseGovernanceApi.reviewers(props.projectId),
   ]);
-  if (!live || sequence !== metadataSequence || scope !== identity.value)
+  if (!live || sequence !== metadataSequence || scope !== scopeSnapshot())
     return;
   const errors: string[] = [];
   if (results[0].status === "fulfilled") templates.value = results[0].value;
@@ -280,8 +338,7 @@ async function open(create: boolean) {
 }
 let savedViewId: string | undefined;
 function apply(conditions: FilterCondition[], logic: FilterLogic) {
-  emit(
-    "apply",
+  applyValue(
     conditions.length ||
       activeView.value ||
       savedViewId ||
@@ -292,22 +349,32 @@ function apply(conditions: FilterCondition[], logic: FilterLogic) {
     logic,
     savedViewId || (newView.value ? undefined : props.viewId),
     props.mine || props.viewId === "system:my",
+    props.workspace === "index" ? props.scope : undefined,
   );
 }
 async function selectView(value: string) {
   if (!live || props.busy || saving.value) return;
   if (value === "action:create") return open(true);
   if (!(await beforeClose())) return;
-  if (value === "system:all") return emit("apply", undefined, "and");
-  if (value === "system:my") return emit("apply", [], "and", value);
+  if (value === "system:all") return applyValue(undefined, "and");
+  if (value === "system:my")
+    return applyValue(
+      [],
+      "and",
+      value,
+      props.workspace === "index" ? false : true,
+      props.workspace === "index" ? "createByMe" : undefined,
+    );
+  if (value === "system:reviewByMe" && props.workspace === "index")
+    return applyValue([], "and", value, false, "reviewByMe");
   const view = views.value.find((v) => v.id === value);
   if (view)
-    emit(
-      "apply",
+    applyValue(
       cloneDeep(view.filters.filterConditions || []),
       view.filters.filterLogic || "and",
       view.id,
       view.filters.mine === true,
+      view.filters.scope || "all",
     );
 }
 async function saveView(
@@ -317,34 +384,59 @@ async function saveView(
   mode: ViewSaveMode,
 ) {
   if (!live || props.busy) throw new Error("项目已切换或操作进行中");
-  const scope = identity.value,
+  const scope = scopeSnapshot(),
     selected = props.viewId;
-  const filters = {
+  const filters: ReviewViewFilters = {
     filterConditions: cloneDeep(conditions),
     filterLogic: logic,
-    ...(props.mine || props.viewId === "system:my" ? { mine: true } : {}),
+    ...(props.workspace === "index"
+      ? { scope: props.scope || "all" }
+      : props.mine || props.viewId === "system:my"
+        ? { mine: true }
+        : {}),
   };
   const row =
     mode === "update" && activeView.value
-      ? await api.updateCandidateView(
+      ? await viewApi.value.update(
           props.projectId,
           activeView.value.id,
           name,
           filters,
         )
-      : await api.saveCandidateView(props.projectId, name, filters);
-  if (!live || scope !== identity.value || selected !== props.viewId)
+      : await viewApi.value.save(props.projectId, name, filters);
+  if (!live || scope !== scopeSnapshot() || selected !== props.viewId)
     throw new Error("项目或视图已切换");
   acknowledgeViews();
   views.value = [row, ...views.value.filter((v) => v.id !== row.id)];
   newView.value = false;
   savedViewId = row.id;
-  emit("apply", cloneDeep(conditions), logic, row.id, filters.mine === true);
+  applyValue(
+    cloneDeep(conditions),
+    logic,
+    row.id,
+    filters.mine === true,
+    filters.scope,
+  );
 }
 const renameOpen = ref(false),
   renameName = ref(""),
   renameId = ref(""),
   renameError = ref("");
+function beforeUnload(event: BeforeUnloadEvent) {
+  if (
+    saving.value ||
+    (renameOpen.value &&
+      renameName.value !==
+        views.value.find((v) => v.id === renameId.value)?.name)
+  ) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+}
+onMounted(() => {
+  if (typeof window !== "undefined")
+    window.addEventListener("beforeunload", beforeUnload);
+});
 function rename(view: ReviewCandidateSavedView) {
   if (!live || saving.value || props.busy || visible.value) return;
   renameId.value = view.id;
@@ -355,12 +447,16 @@ function rename(view: ReviewCandidateSavedView) {
 async function saveName() {
   if (!live || saving.value || props.busy) return;
   const name = renameName.value.trim(),
-    scope = identity.value,
+    scope = scopeSnapshot(),
     id = renameId.value;
   if (
     !name ||
     views.value.some((v) => v.name === name && v.id !== id) ||
-    ["全部数据", "我创建的"].includes(name)
+    [
+      "全部数据",
+      "我创建的",
+      ...(props.workspace === "index" ? ["我评审的"] : []),
+    ].includes(name)
   ) {
     renameError.value = "请输入不重复的视图名称";
     return;
@@ -368,17 +464,17 @@ async function saveName() {
   saving.value = true;
   emit("saving", true);
   try {
-    const row = await api.updateCandidateView(props.projectId, id, name);
-    if (!live || scope !== identity.value) return;
+    const row = await viewApi.value.update(props.projectId, id, name);
+    if (!live || scope !== scopeSnapshot()) return;
     acknowledgeViews();
     views.value = views.value.map((v) => (v.id === row.id ? row : v));
     renameOpen.value = false;
   } catch (error) {
     console.error("重命名个人视图失败", error);
-    if (live && scope === identity.value)
+    if (live && scope === scopeSnapshot())
       renameError.value = "保存失败，草稿保留，请重试";
   } finally {
-    if (live && scope === identity.value) {
+    if (live && scope === scopeSnapshot()) {
       saving.value = false;
       emit("saving", false);
     }
@@ -386,31 +482,32 @@ async function saveName() {
 }
 function remove(view: ReviewCandidateSavedView) {
   if (!live || saving.value || props.busy || visible.value) return;
-  const scope = identity.value,
+  const scope = scopeSnapshot(),
     project = props.projectId;
   const confirmation = Modal.confirm({
     title: `删除视图“${view.name}”？`,
     content: "删除后不可恢复。",
     onOk: async () => {
-      if (!live || scope !== identity.value || saving.value || props.busy)
+      if (!live || scope !== scopeSnapshot() || saving.value || props.busy)
         throw new Error("项目已切换或操作进行中");
       saving.value = true;
       emit("saving", true);
       confirmation.update({ cancelButtonProps: { disabled: true } });
       try {
-        await api.deleteCandidateView(project, view.id);
-        if (!live || scope !== identity.value) return;
+        await viewApi.value.remove(project, view.id);
+        if (!live || scope !== scopeSnapshot()) return;
         acknowledgeViews();
         views.value = views.value.filter((v) => v.id !== view.id);
-        if (props.viewId === view.id) emit("apply", undefined, "and");
+        if (props.viewId === view.id) applyValue(undefined, "and");
         message.success("个人视图已删除");
       } catch (error) {
         console.error("删除个人视图失败", error);
-        if (live && scope === identity.value) message.error("删除失败，请重试");
+        if (live && scope === scopeSnapshot())
+          message.error("删除失败，请重试");
         throw error;
       } finally {
         confirmation.update({ cancelButtonProps: { disabled: false } });
-        if (live && scope === identity.value) {
+        if (live && scope === scopeSnapshot()) {
           saving.value = false;
           emit("saving", false);
         }
@@ -421,7 +518,7 @@ function remove(view: ReviewCandidateSavedView) {
 let closing = false;
 async function beforeClose() {
   if (!live || saving.value || closing) return false;
-  const scope = identity.value;
+  const scope = scopeSnapshot();
   closing = true;
   try {
     if (
@@ -436,7 +533,7 @@ async function beforeClose() {
           onCancel: () => resolve(false),
         }),
       );
-      if (!live || !accepted || scope !== identity.value) return false;
+      if (!live || !accepted || scope !== scopeSnapshot()) return false;
     }
     if (
       visible.value &&
@@ -444,7 +541,7 @@ async function beforeClose() {
       !(await filterEditor.value.beforeClose())
     )
       return false;
-    if (!live || scope !== identity.value || saving.value) return false;
+    if (!live || scope !== scopeSnapshot() || saving.value) return false;
     visible.value = false;
     renameOpen.value = false;
     return true;
@@ -456,6 +553,7 @@ defineExpose({ beforeClose });
 watch(
   identity,
   () => {
+    ++scopeEpoch;
     ++viewSequence;
     ++metadataSequence;
     visible.value = false;

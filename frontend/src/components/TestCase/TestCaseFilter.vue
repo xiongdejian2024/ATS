@@ -332,9 +332,12 @@ let original: FilterCondition[] = [],
 const baselineRevision = ref(0);
 const systemViewName = computed(
   () =>
-    ({ all: "全部数据", my: "我创建的", followed: "我关注的" })[
-      props.systemView
-    ] || "全部数据",
+    ({
+      all: "全部数据",
+      my: "我创建的",
+      followed: "我关注的",
+      reviewByMe: "我评审的",
+    })[props.systemView] || "全部数据",
 );
 const field = (key: string) => props.availableFields.find((f) => f.key === key);
 const disabledValue = (c: FilterCondition) =>

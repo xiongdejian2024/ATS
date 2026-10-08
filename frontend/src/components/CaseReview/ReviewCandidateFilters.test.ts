@@ -5,6 +5,10 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   remove: vi.fn(),
   confirm: vi.fn(),
+  indexViews: vi.fn(),
+  indexSave: vi.fn(),
+  indexUpdate: vi.fn(),
+  indexRemove: vi.fn(),
 }));
 vi.mock("@/api/reviewWorkspace", () => ({
   reviewWorkspaceApi: {
@@ -12,6 +16,10 @@ vi.mock("@/api/reviewWorkspace", () => ({
     saveCandidateView: mocks.save,
     updateCandidateView: mocks.update,
     deleteCandidateView: mocks.remove,
+    indexViews: mocks.indexViews,
+    saveIndexView: mocks.indexSave,
+    updateIndexView: mocks.indexUpdate,
+    deleteIndexView: mocks.indexRemove,
   },
 }));
 vi.mock("@/api/caseFeatures", () => ({
@@ -45,6 +53,7 @@ beforeEach(() => {
   mocks.views.mockResolvedValue([view]);
   mocks.save.mockResolvedValue({ ...view, id: "new" });
   mocks.remove.mockResolvedValue(undefined);
+  mocks.indexViews.mockResolvedValue([]);
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -64,6 +73,68 @@ it("unmounted delete confirmations cannot issue requests to the former project",
   host.stop();
   await expect(confirmation.onOk()).rejects.toThrow();
   expect(mocks.remove).not.toHaveBeenCalled();
+});
+it("same-component project round trips invalidate old view-write acknowledgements", async () => {
+  let finish!: (value: any) => void;
+  mocks.save.mockReturnValueOnce(new Promise((r) => (finish = r)));
+  const applied = vi.fn(),
+    host = componentHost(Filters, {
+      projectId: "p",
+      modules: [],
+      logic: "and",
+      busy: false,
+      onApply: applied,
+    });
+  await flush();
+  const s = host.state;
+  const pending = s.saveView("Old", [], "and", "create");
+  await flush();
+  host.props.projectId = "q";
+  await flush();
+  host.props.projectId = "p";
+  await flush();
+  finish({ ...view, id: "stale" });
+  await expect(pending).rejects.toThrow();
+  expect(applied).not.toHaveBeenCalled();
+  expect(s.views.some((v: any) => v.id === "stale")).toBe(false);
+  host.stop();
+});
+it("review-home views use their own endpoints/fields and preserve reviewer scope in OR filters", async () => {
+  const conditions = [{ field: "caseCount", operator: "gt", value: 0 }],
+    filters = {
+      filterConditions: conditions,
+      filterLogic: "or",
+      scope: "reviewByMe",
+    };
+  const saved = { ...view, id: "home-view", filters };
+  mocks.indexViews.mockResolvedValueOnce([saved]);
+  mocks.indexSave.mockResolvedValueOnce(saved);
+  const applied = vi.fn(),
+    host = componentHost(Filters, {
+      workspace: "index",
+      scope: "reviewByMe",
+      projectId: "p",
+      modules: [],
+      logic: "or",
+      busy: false,
+      onApply: applied,
+    });
+  await flush();
+  const s = host.state;
+  expect(s.fields.some((f: any) => f.key === "caseCount")).toBe(true);
+  expect(s.fields.some((f: any) => f.key === "priority")).toBe(false);
+  await s.saveView("Home", conditions, "or", "create");
+  expect(mocks.indexSave.mock.calls[0][2]).toEqual(filters);
+  expect(mocks.save).not.toHaveBeenCalled();
+  await s.selectView("home-view");
+  expect(applied.mock.calls.at(-1)).toEqual([
+    conditions,
+    "or",
+    "home-view",
+    false,
+    "reviewByMe",
+  ]);
+  host.stop();
 });
 it("a pre-write list response cannot replace an acknowledged new personal view", async () => {
   let finish!: (rows: any[]) => void;

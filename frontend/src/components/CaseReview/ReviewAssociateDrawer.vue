@@ -265,6 +265,8 @@ const user = useUserStore();
 const identity = computed(() =>
   JSON.stringify([props.open, props.projectId, user.user?.id]),
 );
+let scopeEpoch = 0;
+const scopeSnapshot = () => JSON.stringify([scopeEpoch, identity.value]);
 const conditions = ref<FilterCondition[]>(),
   logic = ref<FilterLogic>("and"),
   viewId = ref<string>();
@@ -401,7 +403,7 @@ async function load() {
   if (!live || !props.open || !props.projectId) return;
   const current = ++sequence,
     p = props.projectId,
-    scope = identity.value;
+    scope = scopeSnapshot();
   loading.value = true;
   failed.value = false;
   try {
@@ -416,7 +418,7 @@ async function load() {
         ? { filters: JSON.stringify(filterParams().filters) }
         : {}),
     });
-    if (current !== sequence || scope !== identity.value) return;
+    if (current !== sequence || scope !== scopeSnapshot()) return;
     const membership = props.selectionScope
       ? await caseGovernanceApi.selectionMembership(
           p,
@@ -424,18 +426,19 @@ async function load() {
           result.items.map((row) => row.id),
         )
       : { caseIds: [] };
-    if (current === sequence && scope === identity.value && props.open) {
+    if (current === sequence && scope === scopeSnapshot() && props.open) {
       data.value = result;
       scopedIds.value = membership.caseIds;
     }
   } catch (error) {
     console.error("加载评审关联候选失败", error);
-    if (current === sequence && scope === identity.value) {
+    if (current === sequence && scope === scopeSnapshot()) {
       data.value = undefined;
       failed.value = true;
     }
   } finally {
-    if (current === sequence && scope === identity.value) loading.value = false;
+    if (current === sequence && scope === scopeSnapshot())
+      loading.value = false;
   }
 }
 function resetPage() {
@@ -461,7 +464,7 @@ async function selectAll() {
   if (!live || locked.value || loading.value || failed.value) return;
   const p = props.projectId,
     current = sequence,
-    scope = identity.value;
+    scope = scopeSnapshot();
   selecting.value = true;
   try {
     const result = await reviewWorkspaceApi.selectCandidates(p, {
@@ -474,7 +477,7 @@ async function selectAll() {
     });
     if (
       !live ||
-      scope !== identity.value ||
+      scope !== scopeSnapshot() ||
       !props.open ||
       current !== sequence
     )
@@ -487,26 +490,26 @@ async function selectAll() {
   } catch (error) {
     console.error("评审关联全选失败", error);
   } finally {
-    if (live && scope === identity.value) selecting.value = false;
+    if (live && scope === scopeSnapshot()) selecting.value = false;
   }
 }
 async function close() {
   if (!live || locked.value || settingsOpen.value) return;
-  const scope = identity.value;
+  const scope = scopeSnapshot();
   if (filterEditor.value && !(await filterEditor.value.beforeClose())) return;
-  if (!live || locked.value || scope !== identity.value) return;
+  if (!live || locked.value || scope !== scopeSnapshot()) return;
   emit("update:open", false);
 }
 async function confirm() {
   if (!live || !reviewers.value.length || !selected.value.size || locked.value)
     return;
-  const scope = identity.value;
+  const scope = scopeSnapshot();
   if (
     settingsOpen.value ||
     (filterEditor.value && !(await filterEditor.value.beforeClose()))
   )
     return;
-  if (!live || scope !== identity.value || locked.value) return;
+  if (!live || scope !== scopeSnapshot() || locked.value) return;
   const data = {
     caseIds: [...selected.value],
     reviewerIds: [...reviewers.value],
@@ -516,7 +519,7 @@ async function confirm() {
   try {
     if (props.saveSelection) await props.saveSelection(data);
     else emit("confirm", data);
-    if (!live || scope !== identity.value) return;
+    if (!live || scope !== scopeSnapshot()) return;
     emit("update:open", false);
     console.info(
       props.saveSelection ? "评审关联已保存" : "关联选择已加入评审草稿",
@@ -524,15 +527,16 @@ async function confirm() {
     );
   } catch (error) {
     console.error("保存评审关联失败，保留当前选择", error);
-    if (live && scope === identity.value)
+    if (live && scope === scopeSnapshot())
       saveError.value = "关联失败，请根据提示修正后重试，或刷新列表重新选择";
   } finally {
-    if (live && scope === identity.value) saving.value = false;
+    if (live && scope === scopeSnapshot()) saving.value = false;
   }
 }
 watch(
   identity,
   () => {
+    ++scopeEpoch;
     ++sequence;
     selecting.value = false;
     saving.value = false;

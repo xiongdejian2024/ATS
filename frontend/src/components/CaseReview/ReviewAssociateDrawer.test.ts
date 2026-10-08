@@ -154,3 +154,45 @@ it("closing and submission await child draft guards and failed settings do not s
   expect(closed).toHaveBeenCalledWith(false);
   host.stop();
 });
+it("closing/reopening the same drawer cannot let an old save close or unlock a new selection", async () => {
+  let oldDone!: (value: any) => void, newDone!: (value: any) => void;
+  const save = vi
+      .fn()
+      .mockReturnValueOnce(new Promise((r) => (oldDone = r)))
+      .mockReturnValueOnce(new Promise((r) => (newDone = r))),
+    closed = vi.fn();
+  const host = componentHost(Drawer, {
+    open: true,
+    projectId: "p",
+    defaultReviewers: [],
+    excluded: [],
+    availableReviewers: [],
+    saveSelection: save,
+    "onUpdate:open": closed,
+  });
+  await flush();
+  const s = host.state;
+  s.reviewers = ["r"];
+  s.selected = new Set(["old"]);
+  const old = s.confirm();
+  await flush();
+  host.props.open = false;
+  await flush();
+  host.props.open = true;
+  await flush();
+  s.reviewers = ["r"];
+  s.selected = new Set(["new"]);
+  const current = s.confirm();
+  await flush();
+  oldDone({});
+  await old;
+  await flush();
+  expect(s.saving).toBe(true);
+  expect([...s.selected]).toEqual(["new"]);
+  expect(closed).not.toHaveBeenCalled();
+  newDone({});
+  await current;
+  expect(s.saving).toBe(false);
+  expect(closed).toHaveBeenCalledWith(false);
+  host.stop();
+});
