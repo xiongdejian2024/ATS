@@ -23,6 +23,9 @@ if __name__ == "__main__":
     from sat_runner import SATRunner
     from native_http_runner import NativeHTTPRunner
     from execution_admission import admission_for
+    from log_spool import LogSpool, LogDelivery
+    from bounded_output import OutputTail
+    from script_runtime import positive_timeout, text_chunks, prepare_command, stop_script_process
 else:
     # 作为模块运行时，使用相对导入
     from .config import Config, parse_args
@@ -35,6 +38,9 @@ else:
     from .sat_runner import SATRunner
     from .native_http_runner import NativeHTTPRunner
     from .execution_admission import admission_for
+    from .log_spool import LogSpool, LogDelivery
+    from .bounded_output import OutputTail
+    from .script_runtime import positive_timeout, text_chunks, prepare_command, stop_script_process
 
 
 class Agent:
@@ -54,10 +60,12 @@ class Agent:
         self.monitor = SystemMonitor()
         self.ws_client: Optional[WebSocketClient] = None
         self.task_executor: Optional[TaskExecutor] = None
+        self.log_delivery = None
         self.workspace_manager: Optional[WorkspaceManager] = None
         self.monitor_task: Optional[asyncio.Task] = None
+        self._result_replay_task: Optional[asyncio.Task] = None
         self.running = False
-        self.running_suites: Dict[str, subprocess.Popen] = {}  # suite_id -> process
+        self.running_suites: Dict[str, asyncio.subprocess.Process] = {}  # suite_id -> process
         self.sat_runner = SATRunner(self)
         self.native_http_runner = NativeHTTPRunner(self)
         self.suite_execution_ids: Dict[str, str] = {}  # suite_id -> execution_id
@@ -101,7 +109,14 @@ class Agent:
         """WebSocket连接成功回调"""
         if self.logger:
             self.logger.info("已连接到云端平台")
-        await self.sat_runner.flush()
+        # Replay must run alongside receive/ACK, not block the receive loop
+        # during reconnect with a large durable outbox.
+        if self._result_replay_task and not self._result_replay_task.done():
+            self._result_replay_task.cancel()
+            await asyncio.gather(self._result_replay_task, return_exceptions=True)
+        self._result_replay_task = asyncio.create_task(self.sat_runner.flush())
+        if self.log_delivery:
+            self.log_delivery.wake()
 
     async def on_disconnect(self) -> None:
         """WebSocket断开连接回调"""
@@ -117,7 +132,12 @@ class Agent:
         """
         msg_type = message.get("type")
 
-        if msg_type == "welcome":
+        if self.log_delivery and msg_type in {"welcome", "auth_success"}:
+            self.log_delivery.negotiate(message)
+        if msg_type in {"log_batch_ack", "log_batch_nack"}:
+            if self.log_delivery:
+                self.log_delivery.acknowledge(message)
+        elif msg_type == "welcome":
             await self._handle_welcome(message)
         elif msg_type == "auth_success":
             await self._handle_auth_success(message)
@@ -226,12 +246,14 @@ class Agent:
                 self.task_executor = TaskExecutor(
                     self.work_dir,
                     on_log=self._on_task_log,
-                    logger=self.logger
+                    logger=self.logger,
+                    default_timeout=self.config.default_timeout,
+                    max_log_bytes=self.config.task_log_max_bytes,
+                    total_log_bytes=self.config.task_logs_total_bytes,
                 )
 
             # 初始化工作空间管理器
             self.workspace_manager = WorkspaceManager(self.work_dir)
-            await self.sat_runner.flush()
         except Exception as e:
             if self.logger:
                 self.logger.error(f"创建工作目录失败: {e}")
@@ -662,20 +684,29 @@ class Agent:
         case_codes: List[str],  # 添加case_codes参数
         executor_id: str
     ) -> Optional[Dict[str, Any]]:
-        """执行测试套；清理进程后返回待可靠回传的完成消息。"""
-        import subprocess
-        import shutil
+        """Run a trusted script, then durably publish its final checkpoint."""
+        import json
+        import math
         import os
-        from pathlib import Path
+        import shutil
 
         if not self.work_dir or not self.ws_client:
             return
-
         suite_work_dir = self.work_dir / "suites" / suite_id
-        suite_work_dir.mkdir(parents=True, exist_ok=True)
+        process = monitor_task = test_results_file = None
+        start_time = datetime.now()
+        log_preview = OutputTail()
+        status, error = "failed", None
+        reported_case_ids = {}
+        checkpoint_error = None
+        selected_case_ids = set(case_ids)
+        case_code_to_id = (
+            {str(code): str(cid) for code, cid in zip(case_codes, case_ids)}
+            if case_codes and len(case_codes) == len(case_ids) else {}
+        )
 
         # 辅助函数：发送日志（自动包含execution_id和时间戳）
-        async def send_log(level: str, message: str):
+        async def send_log(level: str, message: str, *, raw=False):
             """发送日志消息，自动包含execution_id和时间戳"""
             if self.ws_client:
                 # 为每行日志添加时间戳前缀
@@ -686,7 +717,7 @@ class Agent:
                 # 如果消息包含多行，为每行添加时间戳
                 lines = message.split('\n')
                 formatted_lines = [f"{timestamp_prefix} {line}" for line in lines]
-                formatted_message = '\n'.join(formatted_lines)
+                formatted_message = message if raw else '\n'.join(formatted_lines)
 
                 await self.ws_client.send_message({
                     "type": "test_suite_log",
@@ -694,619 +725,252 @@ class Agent:
                     "execution_id": execution_id,
                     "level": level,
                     "message": formatted_message,
+                    "raw": raw,
                     "timestamp": timestamp.isoformat() + "Z"
                 })
 
-        completion = None
-        try:
-            if self.logger:
-                self.logger.info(f"开始执行测试套: {suite_id}, execution_id={execution_id}")
-                self.logger.info(f"工作目录: {suite_work_dir}")
-
-            # 检查是否有git配置
-            has_git_config = bool(git_repo_url and git_branch)
-
-            if has_git_config:
-                if self.logger:
-                    self.logger.info(f"Git仓库: {git_repo_url}, 分支: {git_branch}")
+        async def report_result(row):
+            if not isinstance(row, dict):
+                return
+            case_id = row.get("case_id") or case_code_to_id.get(str(row.get("case_code", "")))
+            if not isinstance(case_id, str) or case_id not in selected_case_ids or case_id in reported_case_ids:
+                return
+            result = row.get("status", "error")
+            if result not in ("passed", "failed", "skipped", "error"):
+                return
+            duration = row.get("duration", 0)
+            if isinstance(duration, (int, float)):
+                try:
+                    numeric = float(duration)
+                except (ValueError, OverflowError):
+                    return
+                if isinstance(duration, bool) or not math.isfinite(numeric) or numeric < 0:
+                    return
+                duration = f"{numeric:.2f}s"
             else:
+                duration = str(duration) if duration else None
+            # deliver persists before attempting the socket. An offline send is
+            # still reported locally; its stable event ID replays before completion.
+            await self.sat_runner.deliver({
+                "type": "test_suite_result", "execution_id": execution_id,
+                "suite_id": suite_id, "case_id": case_id, "result": result,
+                "duration": duration, "log_output": log_preview.render(),
+                "error_message": row.get("error"), "executor_id": executor_id,
+            })
+            reported_case_ids[case_id] = result
+
+        async def recover_checkpoint():
+            nonlocal checkpoint_error
+            if test_results_file is None or not test_results_file.exists():
+                return
+            try:
+                with test_results_file.open("rb") as source:
+                    contents = source.read(16 * 1024 * 1024 + 1)
+                if len(contents) > 16 * 1024 * 1024:
+                    checkpoint_error = "脚本结果文件超过16MiB，已拒绝读取"
+                    return
+                rows = json.loads(contents)
+            except (ValueError, OSError, RecursionError) as exc:
+                checkpoint_error = "读取脚本结果失败：" + type(exc).__name__
                 if self.logger:
-                    self.logger.info("未配置Git仓库，将直接在工作目录中执行命令")
-                await send_log("info", "未配置Git仓库，将直接在工作目录中执行命令")
+                    self.logger.opt(exception=True).warning("读取脚本结果checkpoint失败：{}", execution_id)
+                return
+            if not isinstance(rows, list):
+                checkpoint_error = "脚本结果必须为列表"
+                return
+            checkpoint_error = None
+            for row in rows:
+                await report_result(row)
 
-            # 1. 克隆或更新代码（仅在配置了git时执行）
-            # 注意：所有git操作（fetch, checkout, pull, clone）都在此if块内
-            # 如果没有git配置，将跳过所有git操作，直接使用工作目录执行命令
-            if has_git_config:
-                repo_dir = suite_work_dir / "repo"
-                if repo_dir.exists():
-                    # 如果已存在，更新代码
-                    log_msg = "代码目录已存在，更新代码..."
-                    await send_log("info", log_msg)
+        async def monitor_results():
+            while True:
+                try:
+                    await recover_checkpoint()
+                except Exception:
                     if self.logger:
-                        self.logger.info(log_msg)
-                    try:
-                        fetch_result = subprocess.run(
-                            ["git", "fetch", "origin"],
-                            cwd=repo_dir,
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                            timeout=60
-                        )
-                        if fetch_result.stdout:
-                            await send_log("info", fetch_result.stdout.strip())
+                        self.logger.exception("脚本结果持久化失败，将重试：{}", execution_id)
+                await asyncio.sleep(0.5)
 
-                        checkout_result = subprocess.run(
-                            ["git", "checkout", git_branch],
-                            cwd=repo_dir,
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                            timeout=30
-                        )
-                        if checkout_result.stdout:
-                            await send_log("info", checkout_result.stdout.strip())
-
-                        pull_result = subprocess.run(
-                            ["git", "pull", "origin", git_branch],
-                            cwd=repo_dir,
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                            timeout=60
-                        )
-                        if pull_result.stdout:
-                            await send_log("info", pull_result.stdout.strip())
-                    except subprocess.CalledProcessError as e:
-                        error_msg = f"更新代码失败，尝试重新克隆: {e}"
-                        await send_log("warning", error_msg)
+        try:
+            timeout = positive_timeout(self.config.default_timeout)
+            async with asyncio.timeout(timeout):
+                suite_work_dir.mkdir(parents=True, exist_ok=True)
+                has_git_config = bool(git_repo_url and git_branch)
+                # 1. 克隆或更新代码（仅在配置了git时执行）
+                # 注意：所有git操作（fetch, checkout, pull, clone）都在此if块内
+                # 如果没有git配置，将跳过所有git操作，直接使用工作目录执行命令
+                if has_git_config:
+                    repo_dir = suite_work_dir / "repo"
+                    if repo_dir.exists():
+                        # 如果已存在，更新代码
+                        log_msg = "代码目录已存在，更新代码..."
+                        await send_log("info", log_msg)
                         if self.logger:
-                            self.logger.warning(error_msg)
-                        shutil.rmtree(repo_dir)
-                        repo_dir.mkdir(parents=True, exist_ok=True)
+                            self.logger.info(log_msg)
+                        try:
+                            fetch_result = await prepare_command(
+                                ["git", "fetch", "origin"],
+                                cwd=repo_dir,
+                                timeout=60
+                            )
+                            if fetch_result.stdout:
+                                await send_log("info", fetch_result.stdout.strip())
 
-                if not repo_dir.exists() or not (repo_dir / ".git").exists():
-                    # 克隆代码
-                    log_msg = f"克隆代码仓库: {git_repo_url} (分支: {git_branch})"
-                    await send_log("info", log_msg)
-                    if self.logger:
-                        self.logger.info(log_msg)
+                            checkout_result = await prepare_command(
+                                ["git", "checkout", git_branch],
+                                cwd=repo_dir,
+                                timeout=30
+                            )
+                            if checkout_result.stdout:
+                                await send_log("info", checkout_result.stdout.strip())
 
-                    # 构建带token的Git URL
-                    if git_token:
-                        # 从URL中提取仓库路径
-                        if "://" in git_repo_url:
-                            # https://github.com/user/repo.git -> https://token@github.com/user/repo.git
-                            url_parts = git_repo_url.split("://")
-                            if len(url_parts) == 2:
-                                git_url_with_token = f"{url_parts[0]}://{git_token}@{url_parts[1]}"
+                            pull_result = await prepare_command(
+                                ["git", "pull", "origin", git_branch],
+                                cwd=repo_dir,
+                                timeout=60
+                            )
+                            if pull_result.stdout:
+                                await send_log("info", pull_result.stdout.strip())
+                        except subprocess.CalledProcessError as e:
+                            error_msg = f"更新代码失败，尝试重新克隆: {e}"
+                            await send_log("warning", error_msg)
+                            if self.logger:
+                                self.logger.warning(error_msg)
+                            shutil.rmtree(repo_dir)
+                            repo_dir.mkdir(parents=True, exist_ok=True)
+
+                    if not repo_dir.exists() or not (repo_dir / ".git").exists():
+                        # 克隆代码
+                        log_msg = f"克隆代码仓库: {git_repo_url} (分支: {git_branch})"
+                        await send_log("info", log_msg)
+                        if self.logger:
+                            self.logger.info(log_msg)
+
+                        # 构建带token的Git URL
+                        if git_token:
+                            # 从URL中提取仓库路径
+                            if "://" in git_repo_url:
+                                # https://github.com/user/repo.git -> https://token@github.com/user/repo.git
+                                url_parts = git_repo_url.split("://")
+                                if len(url_parts) == 2:
+                                    git_url_with_token = f"{url_parts[0]}://{git_token}@{url_parts[1]}"
+                                else:
+                                    git_url_with_token = git_repo_url
                             else:
                                 git_url_with_token = git_repo_url
                         else:
                             git_url_with_token = git_repo_url
-                    else:
-                        git_url_with_token = git_repo_url
 
-                    clone_result = subprocess.run(
-                        ["git", "clone", "-b", git_branch, git_url_with_token, str(repo_dir)],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                        timeout=300
-                    )
-                    if clone_result.stdout:
-                        await send_log("info", clone_result.stdout.strip())
-            else:
-                # 没有git配置，直接使用工作目录
-                repo_dir = suite_work_dir
-
-            # 确定xat根目录（用于生成用例筛选文件）
-            xat_root_dir = repo_dir if has_git_config else suite_work_dir
-
-            # 生成用例筛选JSON文件
-            import json
-            test_cases_file = xat_root_dir / "xat" / "test_cases.json"
-            test_cases_file.parent.mkdir(parents=True, exist_ok=True)
-            stale_results = test_cases_file.parent / "test_results.json"
-            if stale_results.exists():
-                stale_results.unlink()
-
-            if case_codes:
-                test_cases_data = {
-                    "case_codes": case_codes,
-                    "case_ids": case_ids,
-                    "suite_id": suite_id,
-                    "plan_id": plan_id,
-                    "execution_id": execution_id
-                }
-
-                try:
-                    with open(test_cases_file, 'w', encoding='utf-8') as f:
-                        json.dump(test_cases_data, f, ensure_ascii=False, indent=2)
-
-                    log_msg = f"已生成用例筛选文件: {test_cases_file}，包含 {len(case_codes)} 个用例"
-                    await send_log("info", log_msg)
-                    if self.logger:
-                        self.logger.info(log_msg)
-                except Exception as e:
-                    error_msg = f"生成用例筛选文件失败: {str(e)}"
-                    await send_log("error", error_msg)
-                    if self.logger:
-                        self.logger.error(error_msg)
-
-            # 创建case_code到case_id的映射（用于结果上报）
-            case_code_to_id = {}
-            if case_codes and len(case_codes) == len(case_ids):
-                case_code_to_id = {
-                    str(code): str(cid) for code, cid in zip(case_codes, case_ids)
-                }
-                if self.logger:
-                    self.logger.info(f"创建case_code映射: {len(case_code_to_id)} 个用例")
-            else:
-                if self.logger:
-                    self.logger.warning(f"case_codes和case_ids长度不匹配: case_codes={len(case_codes) if case_codes else 0}, case_ids={len(case_ids) if case_ids else 0}")
-
-            # 结果文件路径
-            test_results_file = xat_root_dir / "xat" / "test_results.json"
-
-            # 已上报的结果集合（避免重复上报）
-            reported_results = set()
-
-            # 启动文件监控任务（实时上报结果）
-            async def monitor_test_results():
-                """监控测试结果文件并实时上报"""
-                if not self.ws_client:
-                    return
-
-                wait_interval = 0.5  # 检查间隔（秒）
-
-                while suite_id in self.running_suites:
-                    try:
-                        if not test_results_file.exists():
-                            await asyncio.sleep(wait_interval)
-                            continue
-
-                        # 读取整个JSON数组
-                        try:
-                            with open(test_results_file, 'r', encoding='utf-8') as f:
-                                results = json.load(f)
-                                if not isinstance(results, list):
-                                    results = []
-
-                            # 处理新增的结果
-                            for result_data in results:
-                                test_name = result_data.get("test_name")
-
-                                # 检查是否已上报（避免重复）
-                                if test_name in reported_results:
-                                    continue
-
-                                # 获取case_id
-                                case_id = result_data.get("case_id")
-                                if not case_id:
-                                    # 尝试通过case_code查找
-                                    case_code = result_data.get("case_code")
-                                    if case_code:
-                                        case_id = case_code_to_id.get(case_code)
-                                        if not case_id and self.logger:
-                                            self.logger.warning(f"未找到case_code对应的case_id: case_code={case_code}, 可用映射: {list(case_code_to_id.keys())[:5]}")
-                                else:
-                                    if self.logger:
-                                        self.logger.debug(f"从结果数据中获取到case_id: {case_id}")
-
-                                if case_id:
-                                    status = result_data.get("status", "error")
-                                    duration = result_data.get("duration", 0.0)
-                                    error_message = result_data.get("error")
-
-                                    # 转换duration格式
-                                    if isinstance(duration, (int, float)):
-                                        duration_str = f"{duration:.2f}s"
-                                    else:
-                                        duration_str = str(duration) if duration else None
-
-                                    # 上报结果
-                                    send_success = await self.ws_client.send_message({
-                                        "type": "test_suite_result",
-                                        "execution_id": execution_id,
-                                        "suite_id": suite_id,
-                                        "case_id": case_id,
-                                        "result": status,
-                                        "duration": duration_str,
-                                        "log_output": "",  # 实时上报时可能还没有完整日志
-                                        "error_message": error_message,
-                                        "executor_id": executor_id
-                                    })
-
-                                    if send_success:
-                                        # 标记为已上报
-                                        reported_results.add(test_name)
-                                        if self.logger:
-                                            self.logger.info(f"实时上报用例结果成功: case_id={case_id}, status={status}, test_name={test_name}")
-                                    else:
-                                        if self.logger:
-                                            self.logger.error(f"实时上报用例结果失败: case_id={case_id}, status={status}, test_name={test_name}, WebSocket可能未连接")
-                                else:
-                                    if self.logger:
-                                        self.logger.warning(f"跳过上报结果（未找到case_id）: test_name={test_name}, case_code={result_data.get('case_code')}, case_id={result_data.get('case_id')}")
-
-                        except json.JSONDecodeError as e:
-                            if self.logger:
-                                self.logger.warning(f"解析结果文件失败: {e}")
-                        except Exception as e:
-                            if self.logger:
-                                self.logger.error(f"读取结果文件失败: {e}")
-
-                        # 等待一段时间后再次检查
-                        await asyncio.sleep(wait_interval)
-
-                    except Exception as e:
-                        if self.logger:
-                            self.logger.error(f"监控结果文件出错: {e}")
-                        await asyncio.sleep(wait_interval)
-
-            # 启动监控任务
-            monitor_task = asyncio.create_task(monitor_test_results())
-
-            # 2. 执行命令
-            log_msg = f"开始执行命令: {execution_command}"
-            await send_log("info", log_msg)
-            if self.logger:
-                self.logger.info(log_msg)
-
-            # 在repo目录中执行命令
-            # 使用行缓冲模式，确保实时输出
-            process = subprocess.Popen(
-                execution_command,
-                shell=True,
-                cwd=repo_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,  # 行缓冲
-                universal_newlines=True,
-                start_new_session=(os.name == "posix"),
-            )
-
-            log_output = ""
-            start_time = datetime.now()
-
-            # 存储进程以便取消
-            self.running_suites[suite_id] = process
-            # 使用异步方式读取输出，避免阻塞
-            async def read_stdout():
-                """异步读取进程输出"""
-                nonlocal log_output  # 声明使用外部作用域的log_output变量
-                import select
-                import os
-
-                while True:
-                    # 检查进程是否已被取消（从running_suites中移除）
-                    if suite_id not in self.running_suites:
-                        if self.logger:
-                            self.logger.info(f"测试套 {suite_id} 已被取消，停止读取输出")
-                        break
-
-                    # 检查进程是否已结束（在每次循环中检查）
-                    poll_result = process.poll()
-
-                    # 使用select检查是否有数据可读（避免完全阻塞）
-                    import select
-                    import os
-
-                    line = None
-                    try:
-                        # 检查文件描述符是否有数据可读
-                        if os.name == 'posix':  # Unix/Linux/Mac
-                            # 获取文件描述符
-                            fd = process.stdout.fileno()
-                            ready, _, _ = select.select([fd], [], [], 0.1)
-                            if ready:
-                                # 有数据可读，读取一行
-                                line = process.stdout.readline()
-                            elif poll_result is not None:
-                                # 进程已结束且没有数据可读，退出循环
-                                break
-                        else:  # Windows
-                            # Windows不支持select，使用readline（会短暂阻塞）
-                            # 但通过检查进程状态来避免长时间阻塞
-                            line = process.stdout.readline()
-                            if not line and poll_result is not None:
-                                # 进程已结束且没有更多输出
-                                break
-                    except (ValueError, OSError) as e:
-                        # 文件描述符可能已关闭
-                        if self.logger:
-                            self.logger.debug(f"读取stdout时出错（可能已关闭）: {e}")
-                        break
-
-                    if line:
-                        log_output += line
-                        # 实时发送日志到服务器（使用send_log函数，自动包含execution_id）
-                        await send_log("info", line.rstrip())
-                        if self.logger:
-                            self.logger.debug(f"[测试套执行] {line.strip()}")
-                    elif poll_result is None:
-                        # 没有输出但进程还在运行，短暂休眠避免CPU占用过高
-                        await asyncio.sleep(0.05)
-                    else:
-                        # 进程已结束且没有更多输出，退出循环
-                        break
-
-            # 运行异步读取任务
-            await read_stdout()
-
-            # 进程结束后，读取所有剩余的缓冲区数据（关键修复）
-            # 进程可能已经结束，但缓冲区还有数据
-            import select
-            import os
-            while True:
-                poll_result = process.poll()
-                if poll_result is not None:
-                    # 进程已结束，尝试读取剩余数据
-                    if os.name == 'posix':
-                        fd = process.stdout.fileno()
-                        ready, _, _ = select.select([fd], [], [], 0.05)
-                        if ready:
-                            line = process.stdout.readline()
-                            if line:
-                                log_output += line
-                                await send_log("info", line.rstrip())
-                                if self.logger:
-                                    self.logger.debug(f"[测试套执行-剩余] {line.strip()}")
-                                continue  # 继续读取更多数据
-                        # 没有更多数据，退出
-                        break
-                    else:
-                        # Windows
-                        line = process.stdout.readline()
-                        if line:
-                            log_output += line
-                            await send_log("info", line.rstrip())
-                            continue
-                        break
+                        clone_result = await prepare_command(
+                            ["git", "clone", "-b", git_branch, git_url_with_token, str(repo_dir)],
+                            timeout=300
+                        )
+                        if clone_result.stdout:
+                            await send_log("info", clone_result.stdout.strip())
                 else:
-                    # 进程仍在运行（不应该在这里）
-                    break
+                    # 没有git配置，直接使用工作目录
+                    repo_dir = suite_work_dir
 
-            # 检查是否被取消
-            was_cancelled = suite_id not in self.running_suites
+                # 确定xat根目录（用于生成用例筛选文件）
+                xat_root_dir = repo_dir if has_git_config else suite_work_dir
 
-            # 等待进程结束（如果还没结束且未被取消）
-            # 注意：对于 tail -f 等阻塞命令，需要添加超时机制
-            if not was_cancelled and process.poll() is None:
-                # 等待进程结束，最多等待 10 秒
-                # 如果 10 秒后还没结束，强制终止（说明是 tail -f 这类阻塞命令）
-                try:
-                    process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    if self.logger:
-                        self.logger.warning(f"命令执行超时，强制终止: {execution_command[:50]}...")
-                    process.terminate()
+                # 生成用例筛选JSON文件
+                import json
+                test_cases_file = xat_root_dir / "xat" / "test_cases.json"
+                test_cases_file.parent.mkdir(parents=True, exist_ok=True)
+                stale_results = test_cases_file.parent / "test_results.json"
+                if stale_results.exists():
+                    stale_results.unlink()
+
+                if case_codes:
+                    test_cases_data = {
+                        "case_codes": case_codes,
+                        "case_ids": case_ids,
+                        "suite_id": suite_id,
+                        "plan_id": plan_id,
+                        "execution_id": execution_id
+                    }
+
                     try:
-                        process.wait(timeout=2)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                        process.wait()
+                        with open(test_cases_file, 'w', encoding='utf-8') as f:
+                            json.dump(test_cases_data, f, ensure_ascii=False, indent=2)
 
-            # 如果被取消，不继续上报结果
-            if was_cancelled:
-                if self.logger:
-                    self.logger.info(f"测试套 {suite_id} 已被取消，不上报执行结果")
-                # 取消监控任务
-                monitor_task.cancel()
-                try:
-                    await monitor_task
-                except asyncio.CancelledError:
-                    pass
-                return
+                        log_msg = f"已生成用例筛选文件: {test_cases_file}，包含 {len(case_codes)} 个用例"
+                        await send_log("info", log_msg)
+                        if self.logger:
+                            self.logger.info(log_msg)
+                    except Exception as e:
+                        error_msg = f"生成用例筛选文件失败: {str(e)}"
+                        await send_log("error", error_msg)
+                        if self.logger:
+                            self.logger.error(error_msg)
 
-            self.legacy_finalizing.add(execution_id)
-            # 执行完成后移除
-            if suite_id in self.running_suites:
-                del self.running_suites[suite_id]
-            # 清理execution_id
-            if suite_id in self.suite_execution_ids:
-                del self.suite_execution_ids[suite_id]
-            end_time = datetime.now()
-            duration = str(end_time - start_time)
-
-            # 等待监控任务完成（给一点时间处理最后的结果）
-            await asyncio.sleep(2)
-            monitor_task.cancel()
-            try:
-                await monitor_task
-            except asyncio.CancelledError:
-                pass
-
-            # 最后检查是否有遗漏的结果
-            if test_results_file.exists():
-                self.logger.info(f"test_results_file path is {test_results_file}")
-                try:
-                    with open(test_results_file, 'r', encoding='utf-8') as f:
-                        results = json.load(f)
-                        if not isinstance(results, list):
-                            results = []
-
-                        for result_data in results:
-                            test_name = result_data.get("test_name")
-
-                            if test_name in reported_results:
-                                continue
-
-                            case_id = result_data.get("case_id")
-                            if not case_id:
-                                case_code = result_data.get("case_code")
-                                if case_code:
-                                    case_id = case_code_to_id.get(case_code)
-
-                            if case_id:
-                                status = result_data.get("status", "error")
-                                duration_val = result_data.get("duration", 0.0)
-                                error_message = result_data.get("error")
-
-                                if isinstance(duration_val, (int, float)):
-                                    duration_str = f"{duration_val:.2f}s"
-                                else:
-                                    duration_str = str(duration_val) if duration_val else None
-
-                                send_success = await self.ws_client.send_message({
-                                    "type": "test_suite_result",
-                                    "execution_id": execution_id,
-                                    "suite_id": suite_id,
-                                    "case_id": case_id,
-                                    "result": status,
-                                    "duration": duration_str,
-                                    "log_output": log_output,
-                                    "error_message": error_message,
-                                    "executor_id": executor_id
-                                })
-
-                                if send_success:
-                                    reported_results.add(test_name)
-                                    if self.logger:
-                                        self.logger.info(f"最后检查上报用例结果成功: case_id={case_id}, status={status}, test_name={test_name}")
-                                else:
-                                    if self.logger:
-                                        self.logger.error(f"最后检查上报用例结果失败: case_id={case_id}, status={status}, test_name={test_name}, WebSocket可能未连接")
-
-                except json.JSONDecodeError as e:
-                    if self.logger:
-                        self.logger.warning(f"解析结果文件失败: {e}")
-                except Exception as e:
-                    if self.logger:
-                        self.logger.error(f"最后检查结果文件失败: {e}")
-
-            # 发送执行完成日志
-            result_msg = f"测试套执行完成: 用例数={len(case_ids)}, 耗时={duration}, 已上报结果数={len(reported_results)}"
-            await send_log("info", result_msg)
-
-            # 发送执行完成状态消息给后端（确保状态同步）
-            if self.ws_client:
-                # 检查是否有失败的用例（通过已上报的结果判断）
-                # 注意：这里我们无法直接判断，因为结果已经上报了
-                # 但我们可以发送一个完成消息，让后端根据实际结果更新状态
-                completion = {
-                    "type": "test_suite_completed",
-                    "suite_id": suite_id,
-                    "execution_id": execution_id,
-                    "status": "completed" if process.returncode == 0 and len(reported_results) == len(case_ids) else "failed",
-                    "reported_case_count": len(reported_results),
-                    "total_case_count": len(case_ids),
-                    "duration": duration
-                }
-                if self.logger:
-                    self.logger.info(f"测试套完成消息已准备，等待进程清理: suite_id={suite_id}, execution_id={execution_id}")
-
+                test_results_file = xat_root_dir / "xat" / "test_results.json"
+                await send_log("info", f"开始执行命令: {execution_command}")
+                process = await asyncio.create_subprocess_shell(
+                    execution_command, cwd=repo_dir, stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT, start_new_session=(os.name == "posix"),
+                )
+                self.running_suites[suite_id] = process
+                # Async spawn yields; register before starting the monitor.
+                monitor_task = asyncio.create_task(monitor_results())
+                async for text in text_chunks(process.stdout):
+                    log_preview.append(text)
+                    await send_log("info", text, raw=True)
+                code = await process.wait()
+                status = "completed" if code == 0 else "failed"
+                if code:
+                    error = f"进程退出码: {code}"
+        except (asyncio.TimeoutError, subprocess.TimeoutExpired):
+            error = "执行超时"
+        except asyncio.CancelledError:
+            status, error = "cancelled", "测试套执行已取消"
+        except Exception as exc:
+            error = str(exc)
             if self.logger:
-                self.logger.info(f"测试套执行完成: {suite_id}, 用例数: {len(case_ids)}, 已上报结果数: {len(reported_results)}")
-
-        except subprocess.TimeoutExpired:
-            self.legacy_finalizing.add(execution_id)
-            error_msg = "执行超时"
-            await send_log("error", f"测试套执行超时: {error_msg}")
-            if self.logger:
-                self.logger.error(f"测试套执行超时: {suite_id}")
-
-            # 取消监控任务
-            if 'monitor_task' in locals():
-                monitor_task.cancel()
-                try:
-                    await monitor_task
-                except asyncio.CancelledError:
-                    pass
-
-            # 为所有用例上报超时错误
-            for case_id in case_ids:
-                await self.ws_client.send_message({
-                    "type": "test_suite_result",
-                    "execution_id": execution_id,
-                    "suite_id": suite_id,
-                    "case_id": case_id,
-                    "result": "error",
-                    "duration": None,
-                    "log_output": log_output if 'log_output' in locals() else "",
-                    "error_message": error_msg,
-                    "executor_id": executor_id
-                })
-            
-            # 发送超时完成状态消息
-            if self.ws_client and execution_id:
-                completion = {
-                    "type": "test_suite_completed",
-                    "suite_id": suite_id,
-                    "execution_id": execution_id,
-                    "status": "failed",  # 超时失败
-                    "message": "测试套执行超时"
-                }
-
-        except Exception as e:
-            self.legacy_finalizing.add(execution_id)
-            error_msg = str(e)
-            await send_log("error", f"测试套执行失败: {error_msg}")
-            if self.logger:
-                self.logger.exception(f"测试套执行失败: {suite_id}, 错误: {e}")
-
-            # 取消监控任务
-            if 'monitor_task' in locals():
-                monitor_task.cancel()
-                try:
-                    await monitor_task
-                except asyncio.CancelledError:
-                    pass
-
-            # 为所有用例上报错误
-            for case_id in case_ids:
-                await self.ws_client.send_message({
-                    "type": "test_suite_result",
-                    "execution_id": execution_id,
-                    "suite_id": suite_id,
-                    "case_id": case_id,
-                    "result": "error",
-                    "duration": None,
-                    "log_output": log_output if 'log_output' in locals() else "",
-                    "error_message": error_msg,
-                    "executor_id": executor_id
-                })
-            
-            # 发送执行失败完成状态消息
-            if self.ws_client and execution_id:
-                completion = {
-                    "type": "test_suite_completed",
-                    "suite_id": suite_id,
-                    "execution_id": execution_id,
-                    "status": "failed",  # 执行失败
-                    "message": f"测试套执行失败: {error_msg}"
-                }
-
+                self.logger.exception("测试套执行失败：{}", execution_id)
         finally:
-            # Terminate the entire owned process group before the wrapper
-            # delivers completion or gives this admission slot to a successor.
-            if 'process' in locals():
-                try:
-                    from .sat_runner import terminate_process
-                except ImportError:
-                    from sat_runner import terminate_process
-                await terminate_process(process, blocking=True)
-            # 清理进程引用
-            if suite_id in self.running_suites:
-                del self.running_suites[suite_id]
-            # 清理execution_id
-            if suite_id in self.suite_execution_ids:
-                del self.suite_execution_ids[suite_id]
-            # 确保监控任务已取消
-            if 'monitor_task' in locals():
-                monitor_task.cancel()
-                try:
-                    await monitor_task
-                except asyncio.CancelledError:
-                    pass
-            # 清理临时目录（可选，保留以便调试）
-            # if suite_work_dir.exists():
-            #     shutil.rmtree(suite_work_dir)
-            pass
-        return completion
+            self.legacy_finalizing.add(execution_id)
+            try:
+                # Finalization is outside the execution deadline. Stop the writer
+                # first, then recover completed rows on success, timeout and cancel.
+                if process is not None:
+                    await stop_script_process(process)
+                if monitor_task is not None:
+                    monitor_task.cancel()
+                    await asyncio.gather(monitor_task, return_exceptions=True)
+                await recover_checkpoint()
+                if checkpoint_error:
+                    error = (error + "; " if error else "") + checkpoint_error
+                    if status != "cancelled":
+                        status = "failed"
+                checkpoint_count = len(reported_case_ids)
+                if status != "cancelled":
+                    for case_id in case_ids:
+                        if case_id not in reported_case_ids:
+                            await report_result({
+                                "case_id": case_id, "status": "error", "duration": 0,
+                                "error": error or "脚本未产生对应结果",
+                            })
+                    if status == "completed" and any(
+                        result not in ("passed", "skipped") for result in reported_case_ids.values()
+                    ):
+                        status = "failed"
+                duration = str(datetime.now() - start_time)
+                # Terminal diagnostics use durable result/control delivery.
+                # Waiting for live-log quota here would deadlock cancellation:
+                # the receive loop cannot process ACKs while awaiting this run.
+            finally:
+                self.running_suites.pop(suite_id, None)
+                if self.suite_execution_ids.get(suite_id) == execution_id:
+                    self.suite_execution_ids.pop(suite_id, None)
+        return {
+            "type": "test_suite_completed", "suite_id": suite_id,
+            "execution_id": execution_id, "status": status,
+            "message": error or "测试套执行完成", "duration": duration,
+            "reported_case_count": checkpoint_count, "total_case_count": len(case_ids),
+            "outcome": "timeout" if error == "执行超时" else status,
+        }
 
     async def _monitor_loop(self) -> None:
         """监控循环"""
@@ -1341,13 +1005,17 @@ class Agent:
             logger=self.logger
         )
 
+        self.log_delivery = LogDelivery(
+            LogSpool(self.config.get_work_dir() / "log-spool.sqlite3",
+                     self.config.log_spool_max_bytes, self.config.log_spool_max_records),
+            self.ws_client, self.logger,
+        )
+        self.ws_client.on_log_message = self.log_delivery.enqueue
+
         # 连接到服务器
-        connected = await self.ws_client.connect()
-        if not connected:
-            if self.logger:
-                self.logger.error("无法连接到服务器，退出")
-            await self.stop()
-            sys.exit(1)
+        # Initial controller downtime uses the same retry path as a later flap.
+        # Do not exit the Agent merely because the controller restarts first.
+        await self.ws_client.connect()
 
         # 启动监控任务
         self.monitor_task = asyncio.create_task(self._monitor_loop())
@@ -1400,6 +1068,14 @@ class Agent:
             await self.native_http_runner.cancel(suite_id)
         for suite_id in set(self.sat_runner.suites.values()):
             await self.sat_runner.cancel(suite_id)
+
+        if self._result_replay_task and not self._result_replay_task.done():
+            self._result_replay_task.cancel()
+            await asyncio.gather(self._result_replay_task, return_exceptions=True)
+
+        if self.log_delivery:
+            await self.log_delivery.close()
+            self.log_delivery = None
 
         # 关闭WebSocket连接
         if self.ws_client:

@@ -104,6 +104,48 @@ async def test_duplicate_ids_across_runners_and_legacy_startup_are_deduplicated(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("persistent", [False, True])
+async def test_completed_id_memory_uses_retained_disk_markers(
+    sat_config, monkeypatch, persistent
+):
+    agent, _ = make_agent(sat_config)
+    if not persistent:
+        agent.work_dir = None
+    executed = []
+
+    async def execute(payload):
+        executed.append(payload["execution_id"])
+
+    monkeypatch.setattr(agent.sat_runner, "execute", execute)
+    for index in range(100):
+        payload = message(f"completed-{index}")
+        agent.sat_runner.start(payload)
+        await agent.sat_runner.runs[payload["execution_id"]]
+        agent.sat_runner.start(payload)
+        assert not agent.sat_runner.runs
+    assert len(executed) == 100
+    assert len(agent.execution_admission.seen) == (0 if persistent else 100)
+    assert len(agent.sat_runner.executed) == (0 if persistent else 100)
+    if persistent:
+        markers = list((agent.work_dir / "execution-admission").glob("*.json"))
+        assert len(markers) == 100
+        restarted, _ = make_agent(sat_config)
+        restarted.sat_runner.start(message("completed-0"))
+        assert not restarted.sat_runner.runs
+
+
+@pytest.mark.asyncio
+async def test_missing_admission_marker_keeps_memory_deduplication(sat_config):
+    agent, _ = make_agent(sat_config)
+    admission = agent.execution_admission
+    assert admission.register("missing-marker")
+    (agent.work_dir / "execution-admission/missing-marker.json").unlink()
+    admission.release("missing-marker")
+    assert "missing-marker" in admission.seen
+    assert not admission.register("missing-marker")
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("kind", ["xat", "native", "legacy"])
 async def test_cancel_waiting_runner_does_not_wait_for_active_slot(
     sat_config, monkeypatch, kind
@@ -266,7 +308,7 @@ async def test_real_legacy_subprocess_cancel_stops_before_successor(
     entered = []
 
     async def successor(payload):
-        assert process.poll() is not None
+        assert process.returncode is not None
         entered.append(payload["execution_id"])
 
     monkeypatch.setattr(agent.native_http_runner, "execute", successor)
@@ -278,7 +320,7 @@ async def test_real_legacy_subprocess_cancel_stops_before_successor(
     )
     await successor_task
     assert entered == ["next"]
-    assert process.poll() is not None
+    assert process.returncode is not None
     assert not agent.execution_admission.tickets and not agent.running_suites
     assert any(
         event["type"] == "test_suite_completed" and event["status"] == "cancelled"

@@ -94,6 +94,15 @@ class ExecutionAdmission:
 
     def release(self, execution_id):
         self.tickets.pop(execution_id, None)
+        # Disk markers remain the deduplication authority across reconnects and
+        # restarts. Keep only active IDs in memory when that evidence is present;
+        # embedders without a workspace still need the in-memory tombstone.
+        try:
+            marker = self._marker(execution_id)
+            if marker is not None and marker.is_file():
+                self.seen.discard(execution_id)
+        except OSError:
+            pass  # Uncertain disk evidence must not permit duplicate execution.
         self._pump()
 
     def cancel_unknown_suite(self, suite_id, execution_id):

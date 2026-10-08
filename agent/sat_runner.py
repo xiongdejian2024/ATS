@@ -12,6 +12,11 @@ import uuid
 from pathlib import Path
 from loguru import logger
 
+try:
+    from .script_runtime import positive_timeout, text_chunks, stop_script_process
+except ImportError:
+    from script_runtime import positive_timeout, text_chunks, stop_script_process
+
 
 def parse_command(command):
     import argparse
@@ -109,7 +114,11 @@ def read_results(path, case_ids):
     """Read only complete, selected case rows from XAT's atomic checkpoint."""
     if not path.exists():
         return []
-    rows = json.loads(path.read_text(encoding="utf-8"))
+    with path.open("rb") as source:
+        contents = source.read(16 * 1024 * 1024 + 1)
+    if len(contents) > 16 * 1024 * 1024:
+        raise ValueError("XAT 结果文件超过16MiB，已拒绝读取")
+    rows = json.loads(contents)
     if not isinstance(rows, list):
         raise ValueError("XAT 结果必须为列表")
     seen = set()
@@ -135,9 +144,12 @@ def read_results(path, case_ids):
 async def terminate_process(process, *, blocking=False):
     """Stop an owned session, including children outliving its shell leader."""
     async def wait():
-        if blocking:
-            return await asyncio.to_thread(process.wait)
-        return await process.wait()
+        # asyncio.Process.wait() may also wait for EOF on inherited pipes. An
+        # escaped descendant can hold those pipes after the owned leader exits.
+        # Wait for OS child exit here; stop_script_process bounds pipe draining
+        # separately. Popen.poll() also reaps blocking subprocess children.
+        while (process.poll() if blocking else process.returncode) is None:
+            await asyncio.sleep(0.02)
 
     alive = process.poll() is None if blocking else process.returncode is None
     try:
@@ -200,6 +212,13 @@ class SATRunner:
         return self.agent.work_dir / "sat-outbox"
 
     async def deliver(self, payload):
+        delivery = getattr(self.agent, "log_delivery", None)
+        if delivery and payload.get("type") == "test_suite_completed":
+            diagnostic = delivery.diagnostics()
+            if diagnostic["blocked_reason"] or diagnostic["backpressured"]:
+                payload["log_delivery"] = diagnostic
+                reason = diagnostic["blocked_reason"] or "spool_quota_backpressure"
+                payload["message"] = (payload.get("message") or "") + f"；日志传输受阻：{reason}，未确认记录保留在 Agent"
         self.outbox.mkdir(parents=True, exist_ok=True)
         key = str(
             uuid.uuid5(
@@ -288,6 +307,8 @@ class SATRunner:
             self.runs.pop(execution_id, None)
             self.suites.pop(execution_id, None)
             admission.release(execution_id)
+            if execution_id not in admission.seen:
+                self.executed.discard(execution_id)
 
     async def cancel(self, suite_id, execution_id=None):
         tasks = [
@@ -305,7 +326,7 @@ class SATRunner:
                 task.cancel()
         await asyncio.gather(*(asyncio.shield(task) for _, task in tasks), return_exceptions=True)
 
-    async def log(self, message, text):
+    async def log(self, message, text, *, raw=False):
         await self.agent.ws_client.send_message(
             {
                 "type": "test_suite_log",
@@ -313,6 +334,7 @@ class SATRunner:
                 "execution_id": message["execution_id"],
                 "level": "info",
                 "message": text,
+                "raw": raw,
             }
         )
 
@@ -336,8 +358,7 @@ class SATRunner:
                 if options.timeout is not None
                 else self.agent.config.default_timeout
             )
-            if timeout <= 0:
-                raise ValueError("XAT 超时时间必须大于零")
+            timeout = positive_timeout(timeout)
             command, env = build_invocation(
                 self.agent.config, options, directory, dict(zip(codes, ids))
             )
@@ -347,29 +368,34 @@ class SATRunner:
                 options.mode,
                 len(ids),
             )
-            await self.log(message, "开始 XAT/SAT 执行，模式：" + options.mode)
-            process = await asyncio.create_subprocess_exec(
-                *command,
-                cwd=str(directory),
-                env=env,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                start_new_session=(os.name == "posix"),
-            )
+            async with asyncio.timeout(timeout):
+                await self.log(message, "开始 XAT/SAT 执行，模式：" + options.mode)
+                process = await asyncio.create_subprocess_exec(
+                    *command,
+                    cwd=str(directory),
+                    env=env,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT,
+                    start_new_session=(os.name == "posix"),
+                )
 
-            async def read_output():
-                with (directory / "output.log").open("w", encoding="utf-8") as log:
-                    while True:
-                        chunk = await process.stdout.read(4096)
-                        if not chunk:
-                            break
-                        text = chunk.decode("utf-8", errors="replace")
-                        log.write(text)
-                        log.flush()
-                        await self.log(message, text)
-                return await process.wait()
+                async def read_output():
+                    try:
+                        from .bounded_output import append_local_log
+                    except ImportError:
+                        from bounded_output import append_local_log
+                    async for text in text_chunks(process.stdout):
+                        append_local_log(
+                            directory / "output.log", text,
+                            getattr(self.agent.config, "task_log_max_bytes", 16 * 1024 * 1024),
+                            getattr(self.agent.config, "task_logs_total_bytes", 64 * 1024 * 1024),
+                            quota_root=self.agent.work_dir,
+                            quota_pattern="suites/*/executions/*/output.log",
+                        )
+                        await self.log(message, text, raw=True)
+                    return await process.wait()
 
-            exit_code = await asyncio.wait_for(read_output(), timeout=timeout)
+                exit_code = await read_output()
             if exit_code:
                 error = f"XAT pytest 退出码为 {exit_code}，详情见 output.log"
         except asyncio.CancelledError:
@@ -385,7 +411,7 @@ class SATRunner:
             self.finalizing.add(execution_id)
             try:
                 if process:
-                    await terminate_process(process)
+                    await stop_script_process(process)
                 # XAT checkpoints each completed teardown atomically. Stop the
                 # writer first, then recover the last checkpoint on every exit.
                 if process:

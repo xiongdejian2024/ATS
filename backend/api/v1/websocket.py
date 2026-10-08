@@ -1,314 +1,203 @@
-"""WebSocket服务器 - 用于Agent连接和前端连接"""
-from fastapi import WebSocket, WebSocketDisconnect
-from services.environment_service import EnvironmentService
-from core.logger import logger
-from typing import Dict
-from services.frontend_log_stream import FrontendConnectionManager
-from sqlalchemy.orm import Session
-import json
+"""Agent WebSocket endpoint. Handler admission is fenced to one live session."""
+
 import asyncio
+import json
+import time
 from datetime import datetime
+
+from fastapi import WebSocket, WebSocketDisconnect
+from sqlalchemy.orm import Session
+
+from core.agent_protocol import (
+    AGENT_MESSAGE_TYPES,
+    MAX_FRAME_BYTES,
+    PING_INTERVAL,
+    PROTOCOL_VERSION,
+)
+from core.logger import logger
+from services.agent_connections import ConnectionManager
+from services.environment_service import EnvironmentService
+from services.frontend_log_stream import FrontendConnectionManager
 from utils.datetime_utils import beijing_now
 
-
-class ConnectionManager:
-    """WebSocket连接管理器"""
-    
-    def __init__(self):
-        # 存储活跃连接: {environment_id: websocket}
-        self.active_connections: Dict[str, WebSocket] = {}
-        # 存储token到environment_id的映射: {token: environment_id}
-        self.token_to_env: Dict[str, str] = {}
-    
-    async def connect(self, websocket: WebSocket, environment_id: str, token: str = None):
-        """注册WebSocket连接（连接已在外部accept）"""
-        self.active_connections[environment_id] = websocket
-        # 存储token映射
-        if token:
-            self.token_to_env[token] = environment_id
-        logger.info(f"[WebSocket] 环境 {environment_id} 已连接")
-    
-    def disconnect(self, environment_id: str):
-        """断开WebSocket连接"""
-        if environment_id in self.active_connections:
-            del self.active_connections[environment_id]
-        # 清理token映射
-        self.token_to_env = {k: v for k, v in self.token_to_env.items() if v != environment_id}
-        logger.info(f"[WebSocket] 环境 {environment_id} 已断开")
-    
-    async def disconnect_and_notify(self, environment_id: str, reason: str = "Token已失效，请重新连接"):
-        """断开连接并发送通知消息"""
-        if environment_id in self.active_connections:
-            websocket = self.active_connections[environment_id]
-            try:
-                # 发送token失效通知
-                await websocket.send_json({
-                    "type": "token_invalid",
-                    "message": reason,
-                    "reason": "token_regenerated"
-                })
-                # 关闭连接
-                await websocket.close(code=1008, reason=reason)
-            except Exception as e:
-                logger.error(f"[WebSocket] 断开连接时出错 {environment_id}: {e}")
-            finally:
-                self.disconnect(environment_id)
-    
-    async def send_message(self, environment_id: str, message: dict):
-        """向指定环境发送消息"""
-        if environment_id in self.active_connections:
-            try:
-                await self.active_connections[environment_id].send_json(message)
-                return True
-            except Exception as e:
-                logger.error(f"[WebSocket] 发送消息失败 {environment_id}: {e}")
-                self.disconnect(environment_id)
-                return False
-        return False
-    
-    async def broadcast(self, message: dict):
-        """广播消息到所有连接"""
-        disconnected = []
-        for environment_id, websocket in self.active_connections.items():
-            try:
-                await websocket.send_json(message)
-            except Exception as e:
-                logger.error(f"[WebSocket] 广播失败 {environment_id}: {e}")
-                disconnected.append(environment_id)
-        
-        # 清理断开的连接
-        for env_id in disconnected:
-            self.disconnect(env_id)
-
-
-# 全局连接管理器
 manager = ConnectionManager()
-
-
-# 全局前端连接管理器
 frontend_manager = FrontendConnectionManager()
 
 
-async def websocket_endpoint(
-    websocket: WebSocket,
-    token: str
-):
-    """
-    WebSocket端点 - Agent连接入口
-    
-    连接URL: ws://host:port/ws/agent?token=xxx
-    """
+async def websocket_endpoint(websocket: WebSocket, token: str):
     from database import SessionLocal
-    db = SessionLocal()
-    environment_id = None
-    
-    try:
-        # 必须先accept连接，然后才能关闭或使用
-        try:
-            await websocket.accept()
-        except Exception as e:
-            logger.error(f"[WebSocket] 接受连接失败: {e}")
-            db.close()
-            return
-        
-        # 根据token查找环境
-        environment = EnvironmentService.get_environment_by_token(db, token)
-        
-        if not environment:
-            # 记录token信息用于调试
-            token_preview = token[:20] + "..." if token and len(token) > 20 else (token or "None")
-            logger.warning(f"[WebSocket] 无效的token: {token_preview} (token长度: {len(token) if token else 0})")
-            logger.warning(f"[WebSocket] 提示: Agent应使用环境管理页面生成的token，而不是JWT token")
-            # 已accept，可以关闭连接
-            try:
-                await websocket.close(code=1008, reason="Invalid token - Please use environment token, not JWT token")
-            except Exception as e:
-                logger.error(f"[WebSocket] 关闭连接时出错: {e}")
-            db.close()
-            return
-        
-        environment_id = environment.get("id")
-        if not environment_id:
-            logger.warning(f"[WebSocket] 环境ID不存在")
-            try:
-                await websocket.close(code=1008, reason="Environment not found")
-            except Exception as e:
-                logger.error(f"[WebSocket] 关闭连接时出错: {e}")
-            db.close()
-            return
-        
-        # 建立连接（已经accept了，这里只是注册连接）
-        await manager.connect(websocket, environment_id, token)
-        
-        # 更新在线状态
-        EnvironmentService.update_node_info(
-            db,
-            environment_id,
-            {"is_online": True}  # 仅更新在线状态，其他信息通过心跳更新
-        )
-        
-        try:
-            # 获取重连延迟配置（默认30秒）
-            reconnect_delay = environment.get("reconnect_delay") or environment.get("reconnectDelay") or "30"
-            try:
-                reconnect_delay_int = int(reconnect_delay)
-            except (ValueError, TypeError):
-                reconnect_delay_int = 30
-            
-            # 获取工作目录
-            work_dir = environment.get("remote_work_dir") or environment.get("remoteWorkDir") or ""
-            
-            # 发送欢迎消息（包含配置信息）
-            logger.info(f"[WebSocket] 准备发送欢迎消息，环境ID: {environment_id}")
-            try:
-                await websocket.send_json({
-                    "type": "welcome",
-                    "message": "连接成功",
-                    "environment_id": environment_id,
-                    "environment_name": environment.get("name"),
-                    "work_dir": work_dir,
-                    "reconnect_delay": reconnect_delay_int  # 重连延迟时间（秒）
-                })
-                logger.debug(f"[WebSocket] 欢迎消息已发送")
-            except Exception as e:
-                logger.error(f"[WebSocket] 发送欢迎消息失败: {e}", exc_info=True)
-                raise
-            
-            # 发送认证成功消息（兼容旧版本agent）
-            try:
-                await websocket.send_json({
-                    "type": "auth_success",
-                    "environment_id": environment_id,
-                    "work_dir": work_dir,
-                    "reconnect_delay": reconnect_delay_int  # 重连延迟时间（秒）
-                })
-                logger.debug(f"[WebSocket] 认证成功消息已发送")
-            except Exception as e:
-                logger.error(f"[WebSocket] 发送认证成功消息失败: {e}", exc_info=True)
-                raise
-            
-            from services.queued_dispatch import dispatch_pending_suites
-            await dispatch_pending_suites(db, environment_id)
+    from services.queued_dispatch import dispatch_pending_suites
 
-            # 保持连接，接收消息
-            logger.info(f"[WebSocket] 进入消息接收循环，环境ID: {environment_id}")
-            while True:
-                try:
-                    # 接收消息（超时30秒）
-                    logger.debug(f"[WebSocket] 等待接收消息...")
-                    data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
-                    logger.debug("[WebSocket] 收到消息字节数={}", len(data))
-                    message = json.loads(data)
-                    message_type = message.get('type', 'unknown')
-                    logger.info("[WebSocket] 收到消息：类型={}，执行={}，用例={}", message_type, message.get("execution_id"), message.get("case_id"))
-                    
-                    # 特别记录test_suite_result消息
-                    if message_type == "test_suite_result":
-                        logger.info(f"[WebSocket] ===== 收到test_suite_result消息 ===== suite_id={message.get('suite_id')}, case_id={message.get('case_id')}, result={message.get('result')}")
-                    
-                    # 处理心跳消息
-                    if message.get("type") == "heartbeat":
-                        node_info = message.get("data", {})
-                        # 更新节点信息
-                        EnvironmentService.update_node_info(db, environment_id, node_info)
-                        # 回复心跳确认
-                        try:
-                            await websocket.send_json({
-                                "type": "heartbeat_ack",
-                                "timestamp": beijing_now().isoformat()
-                            })
-                        except (WebSocketDisconnect, Exception) as e:
-                            logger.warning(f"[WebSocket] 发送心跳确认失败，连接可能已断开: {e}")
-                            break  # 退出循环
-                    
-                    # 处理任务结果
-                    elif message.get("type") == "task_result":
-                        # TODO: 处理任务执行结果
-                        logger.info(f"[WebSocket] 收到任务结果: {message}")
-                    
-                    # 处理测试套执行结果
-                    elif message.get("type") == "test_suite_result":
-                        logger.info(f"[WebSocket] 收到测试套执行结果消息: suite_id={message.get('suite_id')}, case_id={message.get('case_id')}, result={message.get('result')}")
-                        accepted = await handle_test_suite_result(db, environment_id, message)
-                        if accepted and message.get("event_id"):
-                            await websocket.send_json({"type": "sat_event_ack", "event_id": message["event_id"]})
-                    
-                    # 处理测试套实时日志
-                    elif message.get("type") == "test_suite_log":
-                        await handle_test_suite_log(db, environment_id, message)
-                    
-                    # 处理测试套执行完成消息
-                    elif message.get("type") == "test_suite_completed":
-                        accepted = await handle_test_suite_completed(db, environment_id, message)
-                        if accepted and message.get("event_id"):
-                            await websocket.send_json({"type": "sat_event_ack", "event_id": message["event_id"]})
-                    
-                    # 处理工作空间响应（从Agent返回）
-                    elif message.get("type") in [
-                        "workspace_list_response",
-                        "workspace_read_response",
-                        "workspace_write_response",
-                        "workspace_delete_response",
-                        "workspace_mkdir_response"
-                    ]:
-                        # 转发响应到workspace API模块
-                        logger.debug(f"[WebSocket] 收到工作空间响应: {message.get('type')}, request_id: {message.get('request_id')}")
-                        from api.v1.workspace import handle_workspace_response
-                        try:
-                            handle_workspace_response(message)
-                        except Exception as e:
-                            logger.exception(f"[WebSocket] 处理工作空间响应时出错: {e}")
-                    
-                    else:
-                        logger.warning(f"[WebSocket] 收到未知消息类型: {message.get('type')}")
-                        
-                except asyncio.TimeoutError:
-                    # 超时，发送ping保持连接
-                    logger.debug(f"[WebSocket] 接收消息超时，发送ping保持连接")
-                    try:
-                        await websocket.send_json({"type": "ping"})
-                    except Exception as e:
-                        logger.warning(f"[WebSocket] 发送ping失败，连接可能已断开: {e}")
-                        break  # 退出循环
-                except json.JSONDecodeError as e:
-                    logger.warning(f"[WebSocket] 收到无效JSON: {data}, 错误: {e}")
-                except WebSocketDisconnect:
-                    # WebSocket断开连接，重新抛出让外层处理
-                    logger.info(f"[WebSocket] 检测到WebSocket断开连接")
-                    raise
-                except Exception as e:
-                    error_msg = str(e)
-                    # 检查是否是断开连接相关的错误
-                    if "disconnect" in error_msg.lower() or "receive" in error_msg.lower():
-                        logger.info(f"[WebSocket] 连接已断开: {error_msg}")
-                        break  # 退出循环
-                    else:
-                        logger.error(f"[WebSocket] 处理消息时出错: {e}", exc_info=True)
-                        # 继续循环，不中断连接
-                    
-        except WebSocketDisconnect:
-            logger.info(f"[WebSocket] 客户端断开连接: {environment_id}")
-        except Exception as e:
-            logger.exception(f"[WebSocket] 连接错误: {e}")
-    except Exception as e:
-        # 处理外层异常（如数据库错误）
-        logger.exception(f"[WebSocket] 初始化连接错误: {e}")
-        try:
-            await websocket.close(code=1011, reason=f"Server error: {str(e)}")
-        except:
-            pass
-    finally:
-        # 断开连接，更新离线状态
-        if environment_id:
+    db = SessionLocal()
+    session = None
+    try:
+        await websocket.accept()
+        environment = EnvironmentService.get_environment_by_token(db, token)
+        if not environment:
+            await websocket.close(code=1008, reason="Invalid environment token")
+            return
+        requested = websocket.query_params.get("protocol_version", "1")
+        if requested not in {"1", str(PROTOCOL_VERSION)}:
+            await websocket.close(code=1002, reason="Unsupported Agent protocol")
+            return
+        environment_id = environment["id"]
+
+        def still_authorized():
+            db.rollback()
+            current = EnvironmentService.get_environment_by_token(db, token)
+            return current is not None and current["id"] == environment_id
+
+        session = await manager.connect(
+            websocket, environment_id, token, int(requested), authorize=still_authorized
+        )
+        if session is None:
+            await websocket.close(code=1008, reason="Environment token revoked")
+            return
+        async with manager.session_lock(environment_id):
+            if not manager.touch(db, session, {}):
+                return
             try:
-                manager.disconnect(environment_id)
-                EnvironmentService.mark_node_offline(db, environment_id)
-            except Exception as e:
-                logger.error(f"[WebSocket] 清理连接时出错: {e}")
-        try:
-            db.close()
-        except:
-            pass
+                reconnect_delay = max(
+                    1,
+                    min(
+                        60,
+                        int(
+                            environment.get("reconnect_delay")
+                            or environment.get("reconnectDelay")
+                            or 30
+                        ),
+                    ),
+                )
+            except (ValueError, TypeError):
+                reconnect_delay = 30
+            config = {
+                "environment_id": environment_id,
+                "environment_name": environment.get("name"),
+                "work_dir": environment.get("remote_work_dir")
+                or environment.get("remoteWorkDir")
+                or "",
+                "reconnect_delay": reconnect_delay,
+                "heartbeat_timeout": manager.heartbeat_timeout,
+                "capabilities": ["log_batch_v1"],
+            }
+            if not await manager.send_session(session, dict(config, type="welcome")):
+                return
+            if not await manager.send_session(
+                session, dict(config, type="auth_success")
+            ):
+                return
+            await dispatch_pending_suites(db, environment_id)
+            db.rollback()  # release read transactions before idle socket waits
+
+        while manager.is_live(session):
+            remaining = manager.heartbeat_timeout - (
+                time.monotonic() - session.last_seen
+            )
+            try:
+                data = await asyncio.wait_for(
+                    websocket.receive_text(), min(PING_INTERVAL, remaining)
+                )
+            except asyncio.TimeoutError:
+                if not manager.is_live(session):
+                    break
+                if not await manager.send_session(session, {"type": "ping"}):
+                    break
+                continue
+            if len(data.encode("utf-8")) > MAX_FRAME_BYTES:
+                await websocket.close(code=1009, reason="Agent frame too large")
+                break
+            try:
+                message = json.loads(data)
+            except (ValueError, RecursionError):
+                await websocket.close(code=1002, reason="Invalid Agent JSON")
+                break
+            if (
+                not isinstance(message, dict)
+                or not isinstance(message.get("type"), str)
+                or message["type"] not in AGENT_MESSAGE_TYPES
+            ):
+                await websocket.close(code=1002, reason="Invalid Agent message type")
+                break
+            if session.protocol_version >= 2 and (
+                message.get("session_id") != session.session_id
+                or type(message.get("protocol_version")) is not int
+                or message["protocol_version"] != PROTOCOL_VERSION
+            ):
+                await websocket.close(
+                    code=1002, reason="Agent session or protocol mismatch"
+                )
+                break
+            if message["type"] == "heartbeat" and not isinstance(
+                message.get("data", {}), dict
+            ):
+                await websocket.close(code=1002, reason="Invalid Agent heartbeat")
+                break
+            # Replacement cannot interleave with an admitted handler's DB writes.
+            # A stale waiting frame does not reach persistence, task release, or ACK.
+            async with manager.session_lock(environment_id):
+                if not manager.touch(
+                    db,
+                    session,
+                    message.get("data", {}) if message["type"] == "heartbeat" else None,
+                ):
+                    break
+                message_type = message["type"]
+                if message_type == "heartbeat":
+                    await manager.send_session(
+                        session,
+                        {
+                            "type": "heartbeat_ack",
+                            "timestamp": beijing_now().isoformat(),
+                        },
+                    )
+                elif message_type in {"auth", "pong"}:
+                    pass
+                elif message_type in {"task_result", "task_log"}:
+                    logger.debug("Received legacy Agent task frame: {}", message_type)
+                elif message_type == "test_suite_result":
+                    accepted = await handle_test_suite_result(
+                        db, environment_id, message
+                    )
+                    db.rollback()
+                    if accepted and message.get("event_id"):
+                        await manager.send_session(
+                            session,
+                            {"type": "sat_event_ack", "event_id": message["event_id"]},
+                        )
+                elif message_type == "log_batch":
+                    from services.agent_log_ingest import persist_log_batch
+
+                    response, deltas = persist_log_batch(db, environment_id, message)
+                    # Persistence and ACK are fenced to this authenticated session.
+                    await manager.send_session(session, response)
+                    for suite_id, delta in deltas:
+                        await frontend_manager.broadcast_log(suite_id, delta)
+                elif message_type == "test_suite_log":
+                    await handle_test_suite_log(db, environment_id, message)
+                elif message_type == "test_suite_completed":
+                    accepted = await handle_test_suite_completed(
+                        db, environment_id, message
+                    )
+                    db.rollback()
+                    if accepted and message.get("event_id"):
+                        await manager.send_session(
+                            session,
+                            {"type": "sat_event_ack", "event_id": message["event_id"]},
+                        )
+                elif message_type.startswith("workspace_"):
+                    from api.v1.workspace import handle_workspace_response
+
+                    handle_workspace_response(message)
+                db.rollback()  # handlers commit accepted events; never hold a DB lease while idle
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        db.rollback()
+        logger.exception("Agent connection failed")
+    finally:
+        if session and manager.disconnect(session.environment_id, session):
+            manager._close_later(session, 1001, "Agent session ended")
+        db.close()
 
 
 async def handle_test_suite_result(db: Session, environment_id: str, message: dict):
@@ -443,7 +332,7 @@ async def handle_test_suite_log(db: Session, environment_id: str, message: dict)
             if log_entry:
                 # 如果已存在，追加日志消息（换行分隔）
                 if log_entry.message:
-                    log_entry.message += "\n" + log_message
+                    log_entry.message += ("" if message.get("raw") else "\n") + log_message
                 else:
                     log_entry.message = log_message
                 log_entry.timestamp = log_timestamp  # 更新最后时间戳
@@ -586,7 +475,7 @@ async def handle_test_suite_completed(db: Session, environment_id: str, message:
         task_status = task_status_map.get(status, "completed")
         from services.inbox import notify
         notify(db, task.executor_id, execution_id, 'execution_completed', '测试任务已结束',
-            f'执行 {execution_id}：{status}', suite_id)
+            f'执行 {execution_id}：{status}' + (f'。{completion_message}' if message.get('log_delivery') else ''), suite_id)
         TaskQueueService.complete_task(db, execution_id, task_status)
         
         # 获取测试套

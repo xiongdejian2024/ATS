@@ -71,6 +71,8 @@ if settings.ENVIRONMENT == "development":
 
 @asynccontextmanager
 async def application_lifespan(app):
+    from api.v1.websocket import manager
+    manager.reset_online_status()
     scheduler_task = None
     if settings.ENVIRONMENT != "test" and settings.TASK_SCHEDULER_ENABLED:
         from services.task_scheduler import scheduler_loop
@@ -79,6 +81,7 @@ async def application_lifespan(app):
     try:
         yield
     finally:
+        await manager.aclose()
         await frontend_manager.aclose()
         if scheduler_task:
             scheduler_task.cancel()

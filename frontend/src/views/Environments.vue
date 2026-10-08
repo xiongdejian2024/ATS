@@ -384,8 +384,10 @@
       width="900px"
       :footer="null"
     >
+      <a-button size="small" :loading="executionLogLoading" @click="executionLogStream.refresh()">刷新日志</a-button>
       <a-spin :spinning="executionLogLoading">
-        <pre class="execution-log">{{ executionLog }}</pre>
+        <a-alert v-if="executionLogStatus" :type="executionLogStatus.type" :message="executionLogStatus.message" show-icon />
+        <BoundedLogViewer :records="executionLogs" height="min(60vh, 600px)" />
       </a-spin>
     </a-modal>
 
@@ -606,11 +608,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined, ReloadOutlined, CopyOutlined, UploadOutlined, FolderAddOutlined, FolderOutlined, FileOutlined, DesktopOutlined, DashboardOutlined } from '@ant-design/icons-vue';
 import { environmentApi } from '@/api/environment';
-import { testSuiteApi } from '@/api/testSuite';
+import BoundedLogViewer from '@/components/ExecutionLogs/BoundedLogViewer.vue';
+import { useSuiteLogStream } from '@/components/ExecutionLogs/useSuiteLogStream';
 
 import type { Environment } from '@/types';
 import type { Dayjs } from 'dayjs';
@@ -634,7 +637,8 @@ const startCommandData = ref<{
 // 执行历史相关
 const executionHistoryDrawerVisible = ref(false)
 const executionHistoryLoading = ref(false)
-const executionLogLoading = ref(false)
+const executionLogStream = useSuiteLogStream()
+const { records: executionLogs, loading: executionLogLoading, status: executionLogStatus } = executionLogStream
 const currentEnvironmentId = ref<string>('')
 const executionHistory = ref<Array<{
   id: string
@@ -649,8 +653,8 @@ const executionHistory = ref<Array<{
   logId?: string | null
   caseCount: number
 }>>([])
-const executionLog = ref('')
 const executionLogModalVisible = ref(false)
+watch(executionLogModalVisible, visible => { if (!visible) executionLogStream.close() })
 const executionSearchValue = ref('')
 const executionResultFilter = ref<string>()
 const executionDateRange = ref<[Dayjs, Dayjs] | null>(null)
@@ -1394,64 +1398,10 @@ const formatExecutionDuration = (duration: string | number | undefined | null): 
   }
 }
 
-const viewExecutionLogs = async (record: any) => {
-  executionLogLoading.value = true
+const viewExecutionLogs = (record: any) => {
   executionLogModalVisible.value = true
-  try {
-    // 优先使用logId获取日志，确保每条记录显示对应的日志
-    if (record.logId) {
-      // 通过logId精确查询日志记录
-      const response = await testSuiteApi.getSuiteLogs(record.suiteId, {
-        logId: record.logId,
-        skip: 0,
-        limit: 1
-      })
-      const logs = response.items || []
-      console.log(logs)
-      // 验证返回的日志ID是否匹配（防止查询错误）
-      if (logs.length > 0 && logs[0].id === record.logId) {
-        // 直接取该日志记录的message
-        executionLog.value = logs[0].message || '暂无日志'
-      } else {
-        console.warn(`日志ID不匹配: 期望 ${record.logId}, 实际 ${logs[0]?.id || '无'}`)
-        executionLog.value = '暂无日志'
-      }
-    } else if (record.executionId) {
-      // 如果没有logId，使用executionId获取日志（每个execution_id只有一条记录）
-      const response = await testSuiteApi.getSuiteLogs(record.suiteId, {
-        executionId: record.executionId,
-        skip: 0,
-        limit: 10000  // 增加到10000，避免日志记录被截断
-      })
-      const logs = response.items || []
-      if (logs.length > 0) {
-        // 每个execution_id只有一条记录，直接取第一条的message
-        // message字段已经包含了所有日志消息（用换行符分隔）
-        executionLog.value = logs[0].message || '暂无日志'
-      } else {
-        executionLog.value = '暂无日志'
-      }
-    } else {
-      // 如果没有logId和executionId，尝试从suiteId获取最新日志
-      const response = await testSuiteApi.getSuiteLogs(record.suiteId, {
-        skip: 0,
-        limit: 1
-      })
-      const logs = response.items || []
-      if (logs.length > 0) {
-        // 只取最新的一条记录的message
-        executionLog.value = logs[0].message || '暂无日志'
-      } else {
-        executionLog.value = '暂无日志'
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load execution logs:', error)
-    message.error('加载执行日志失败')
-    executionLog.value = '加载日志失败'
-  } finally {
-    executionLogLoading.value = false
-  }
+  executionLogStream.open({ suiteId: record.suiteId, logId: record.logId || undefined,
+    executionId: record.executionId || undefined, live: false })
 }
 
 const deleteEnvironment = (id: string) => {

@@ -35,3 +35,9 @@ def live_log_window(log_entry, message):
     """位置以Unicode字符计数；前端用它合并历史快照和实时消息。"""
     return dict(id=log_entry.id, message=message[-MAX_LOG_CHARS:], timestamp=log_entry.timestamp.isoformat(),
                 execution_id=log_entry.execution_id, endOffset=len(log_entry.message), truncated=len(message) > MAX_LOG_CHARS)
+
+
+def log_metadata_query(db):
+    """History/status queries must not materialize the potentially huge body."""
+    from sqlalchemy.orm import defer
+    return db.query(TestSuiteLog).options(defer(TestSuiteLog.message, raiseload=True))

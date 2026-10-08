@@ -183,6 +183,8 @@ class WorkspaceManager:
         """
         try:
             target_path = self._get_absolute_path(path)
+            if target_path.resolve() == self.work_dir.resolve():
+                raise ValueError("不允许删除工作空间根目录")
             
             if not target_path.exists():
                 raise FileNotFoundError(f"路径不存在: {path}")

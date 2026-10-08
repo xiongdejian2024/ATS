@@ -1,4 +1,5 @@
 """环境相关API（节点管理）"""
+from services.bounded_logs import log_metadata_query
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -201,6 +202,7 @@ async def test_environment_connection(
 async def node_heartbeat(
     environment_id: str,
     node_info: dict,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -216,12 +218,22 @@ async def node_heartbeat(
         "cpu_info": {"model": "Intel Core i7", "cores": 8, "frequency": "3.2GHz"}
     }
     """
-    environment = EnvironmentService.update_node_info(
-        db=db,
-        environment_id=str(environment_id),
-        node_info=node_info
-    )
-    
+    # HTTP cannot manufacture online state outside an authenticated WS session.
+    import secrets
+    from api.v1.websocket import manager
+    session = manager.sessions.get(str(environment_id))
+    supplied = request.headers.get("authorization", "")
+    if not session or not supplied.startswith("Bearer ") or not secrets.compare_digest(
+        supplied[7:], session.token or ""
+    ):
+        raise HTTPException(status_code=401, detail="Current Agent token required")
+    if request.headers.get("x-agent-session-id") != session.session_id:
+        raise HTTPException(status_code=409, detail="Current Agent session required")
+    async with manager.session_lock(str(environment_id)):
+        if not manager.touch(db, session, node_info):
+            raise HTTPException(status_code=409, detail="Agent session expired")
+        environment = EnvironmentService.get_environment(db, str(environment_id))
+
     if not environment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -426,7 +438,7 @@ async def get_environment_suite_executions(
         items = []
         for execution_id_val, first_timestamp in unique_execution_ids:
             # 获取这次执行的所有日志记录（每个execution_id只有一条记录）
-            log_record = db.query(TestSuiteLog).filter(
+            log_record = log_metadata_query(db).filter(
                 TestSuiteLog.execution_id == execution_id_val
             ).order_by(TestSuiteLog.timestamp.asc()).first()
             
@@ -449,7 +461,7 @@ async def get_environment_suite_executions(
             if suite.status == "running":
                 # 检查这个execution_id是否是最新的（通过时间戳判断）
                 # 获取该测试套最新的execution_id
-                latest_log = db.query(TestSuiteLog).filter(
+                latest_log = log_metadata_query(db).filter(
                     TestSuiteLog.suite_id == suite_id_val
                 ).order_by(TestSuiteLog.timestamp.desc()).first()
                 
@@ -485,7 +497,7 @@ async def get_environment_suite_executions(
             if not exec_records:
                 # 如果没有执行记录，检查是否有取消相关的日志
                 from models.test_suite import TestSuiteLog
-                cancel_log = db.query(TestSuiteLog).filter(
+                cancel_log = log_metadata_query(db).filter(
                     TestSuiteLog.suite_id == suite_id_val,
                     TestSuiteLog.execution_id == execution_id_val,
                     TestSuiteLog.message.like("%取消%")
@@ -508,7 +520,7 @@ async def get_environment_suite_executions(
                 # 优先级：取消 > 失败/错误 > 跳过 > 通过
                 # 先检查是否有取消相关的日志（即使有执行记录，也可能是被取消的）
                 from models.test_suite import TestSuiteLog
-                cancel_log = db.query(TestSuiteLog).filter(
+                cancel_log = log_metadata_query(db).filter(
                     TestSuiteLog.suite_id == suite_id_val,
                     TestSuiteLog.execution_id == execution_id_val,
                     TestSuiteLog.message.like("%取消%")

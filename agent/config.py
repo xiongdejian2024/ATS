@@ -30,6 +30,10 @@ class Config:
         self.sat_python = sys.executable
         self.sat_allow_hardware = False
         self.log_backup_count: int = 5
+        self.log_spool_max_bytes = 64 * 1024 * 1024
+        self.log_spool_max_records = 8192
+        self.task_log_max_bytes = 16 * 1024 * 1024
+        self.task_logs_total_bytes = 64 * 1024 * 1024
     
     @classmethod
     def from_args(cls, args: argparse.Namespace) -> "Config":
@@ -99,6 +103,12 @@ class Config:
             # 日志配置
             if "logging" in data:
                 log_config = data["logging"]
+                for key in ("log_spool_max_bytes", "log_spool_max_records", "task_log_max_bytes", "task_logs_total_bytes"):
+                    if key in log_config:
+                        value = log_config[key]
+                        if type(value) is not int or value <= 0:
+                            raise ValueError(f"{key} must be a positive integer")
+                        setattr(self, key, value)
                 if "level" in log_config:
                     self.log_level = log_config["level"]
                 if "max_size" in log_config:

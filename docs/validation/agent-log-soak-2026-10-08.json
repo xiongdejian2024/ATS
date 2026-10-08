@@ -1,0 +1,24 @@
+{
+  "duration_seconds": 180.0,
+  "produced_messages": 12200,
+  "produced_utf8_bytes": 2549800,
+  "sent_batches": 1211,
+  "wire_records": 16870,
+  "durable_ack_calls": 1210,
+  "peak_spool_bytes": 39808,
+  "peak_spool_records": 128,
+  "peak_sqlite_bytes": 61440,
+  "heartbeat_ticks": 3066,
+  "longest_heartbeat_gap": 1.221394556996529,
+  "peak_ack_tasks": 3,
+  "final_spool": {
+    "bytes": 0,
+    "records": 0,
+    "max_bytes": 65536,
+    "max_records": 128
+  },
+  "elapsed_seconds": 180.0379936859972,
+  "python_traced_peak_bytes": 996880,
+  "persisted_utf8_bytes": 2561999,
+  "persisted_lines": 12200
+}

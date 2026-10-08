@@ -18,6 +18,13 @@ router = APIRouter()
 pending_requests: Dict[str, tuple] = {}
 
 
+def require_workspace_owner(db: Session, user: User, environment: dict) -> None:
+    """Workspace commands can expose or replace executable Agent state."""
+    from core.permissions import has_global_permission
+    if environment.get('createdBy') != str(user.id) and not has_global_permission(db, user.id, 'system', 'manage'):
+        raise HTTPException(403, '仅节点创建人或系统管理员可以访问工作空间')
+
+
 async def send_workspace_request(
     environment_id: str,
     message_type: str,
@@ -136,6 +143,7 @@ async def list_workspace_files(
         )
     
     # 检查环境是否在线
+    require_workspace_owner(db, current_user, environment)
     if not environment.get("isOnline"):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -180,6 +188,7 @@ async def read_workspace_file(
             detail="环境不存在"
         )
     
+    require_workspace_owner(db, current_user, environment)
     if not environment.get("isOnline"):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -223,6 +232,7 @@ async def delete_workspace_file(
             detail="环境不存在"
         )
     
+    require_workspace_owner(db, current_user, environment)
     if not environment.get("isOnline"):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -266,6 +276,7 @@ async def create_workspace_directory(
             detail="环境不存在"
         )
     
+    require_workspace_owner(db, current_user, environment)
     if not environment.get("isOnline"):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -309,9 +320,7 @@ async def upload_workspace_file(environment_id: str, path: str=Form(''), file: U
     if len(content)>10*1024*1024: raise HTTPException(413,'最大上传10MB')
     environment=EnvironmentService.get_environment(db,environment_id)
     if not environment: raise HTTPException(404,'环境不存在')
-    from core.permissions import has_global_permission
-    if environment.get('createdBy') != str(current_user.id) and not has_global_permission(db,current_user.id,'system','manage'):
-        raise HTTPException(403,'仅节点创建人或系统管理员可以上传文件')
+    require_workspace_owner(db, current_user, environment)
     if not environment.get('isOnline'): raise HTTPException(503,'环境离线')
     target=str(PurePosixPath(path)/name)
     data=await send_workspace_request(environment_id,'workspace_write',dict(path=target,

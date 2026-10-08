@@ -226,13 +226,10 @@ class EnvironmentService:
         if not environment:
             return None
         
-        # 更新节点信息
-        environment.node_ip = node_info.get('node_ip')
-        environment.os_type = node_info.get('os_type')
-        environment.os_version = node_info.get('os_version')
-        environment.disk_info = node_info.get('disk_info')
-        environment.memory_info = node_info.get('memory_info')
-        environment.cpu_info = node_info.get('cpu_info')
+        # Liveness-only frames must not erase the last hardware inventory.
+        for field in ("node_ip", "os_type", "os_version", "disk_info", "memory_info", "cpu_info"):
+            if field in node_info:
+                setattr(environment, field, node_info[field])
         environment.is_online = True
         environment.last_heartbeat = beijing_now()
         
@@ -262,6 +259,17 @@ class EnvironmentService:
         检查并更新节点的在线状态（内部方法）
         如果节点超过一定时间没有心跳，标记为离线
         """
+        # In the supported single-controller process, the monotonic transport
+        # deadline wins over the throttled wall-clock DB heartbeat cache.
+        from api.v1.websocket import manager
+        session = manager.sessions.get(environment.id)
+        if manager.is_current(session):
+            online = manager.is_live(session)
+            if environment.is_online != online:
+                environment.is_online = online
+                db.commit()
+            return
+
         if not environment.last_heartbeat:
             # 如果没有心跳记录，标记为离线
             if environment.is_online:
@@ -275,9 +283,9 @@ class EnvironmentService:
             # 如果是naive datetime，假设它是北京时间
             last_heartbeat = last_heartbeat.replace(tzinfo=BEIJING_TZ)
         
-        # 如果超过5分钟没有心跳，标记为离线
+        from core.agent_protocol import HEARTBEAT_TIMEOUT
         time_diff = beijing_now() - last_heartbeat
-        if time_diff.total_seconds() > 300:  # 5分钟
+        if time_diff.total_seconds() >= HEARTBEAT_TIMEOUT:
             if environment.is_online:
                 environment.is_online = False
                 db.commit()

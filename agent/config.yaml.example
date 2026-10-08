@@ -19,3 +19,10 @@ task:
 monitor:
   interval: 5        # 监控上报间隔（秒）
 
+
+# 日志传输与原始日志副本的默认硬限额（放入现有 logging 节点配置）：
+# logging:
+#   log_spool_max_bytes: 67108864   # 待 ACK 序列化日志，满时反压执行输出
+#   log_spool_max_records: 8192
+#   task_log_max_bytes: 16777216   # 本地单执行副本，满时明确报错并停止执行
+#   task_logs_total_bytes: 67108864 # direct-task / XAT 各自总副本额度

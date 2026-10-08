@@ -1,4 +1,5 @@
 """测试套相关API"""
+from services.bounded_logs import log_metadata_query
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Query
 from sqlalchemy.orm import Session
 from database import get_db
@@ -653,7 +654,7 @@ async def get_suite_suite_executions(
             is_pending = False
             
             # 获取这次执行的所有日志记录（每个execution_id只有一条记录）
-            log_record = db.query(TestSuiteLog).filter(
+            log_record = log_metadata_query(db).filter(
                 TestSuiteLog.execution_id == execution_id_val
             ).order_by(TestSuiteLog.timestamp.asc()).first()
             
@@ -804,7 +805,7 @@ async def get_suite_suite_executions(
                 is_running = suite.status == "running"
                 if is_running:
                     # 检查这个execution_id是否是最新的（通过时间戳判断）
-                    latest_log = db.query(TestSuiteLog).filter(
+                    latest_log = log_metadata_query(db).filter(
                         TestSuiteLog.suite_id == suite_id
                     ).order_by(TestSuiteLog.timestamp.desc()).first()
                     
@@ -819,7 +820,7 @@ async def get_suite_suite_executions(
                     overall_result = "running"
                 else:
                     # 检查是否有取消相关的日志
-                    cancel_log = db.query(TestSuiteLog).filter(
+                    cancel_log = log_metadata_query(db).filter(
                         TestSuiteLog.suite_id == suite_id,
                         TestSuiteLog.execution_id == execution_id_val,
                         TestSuiteLog.message.like("%取消%")
@@ -852,7 +853,7 @@ async def get_suite_suite_executions(
                     overall_result = "pending"
                 else:
                     # 先检查是否有取消相关的日志（即使有执行记录，也可能是被取消的）
-                    cancel_log = db.query(TestSuiteLog).filter(
+                    cancel_log = log_metadata_query(db).filter(
                         TestSuiteLog.suite_id == suite_id,
                         TestSuiteLog.execution_id == execution_id_val,
                         TestSuiteLog.message.like("%取消%")
@@ -965,7 +966,7 @@ async def delete_suite_execution(
             )
         
         # 查找要删除的执行记录（通过execution_id查找日志记录和任务队列记录）
-        log_records = db.query(TestSuiteLog).filter(
+        log_records = log_metadata_query(db).filter(
             TestSuiteLog.suite_id == suite_id,
             TestSuiteLog.execution_id == execution_id
         ).all()

@@ -10,8 +10,10 @@ from pathlib import Path
 
 try:
     from .sat_runner import SATRunner
+    from .script_runtime import positive_timeout
 except ImportError:
     from sat_runner import SATRunner
+    from script_runtime import positive_timeout
 from loguru import logger
 
 
@@ -102,7 +104,10 @@ class NativeHTTPRunner(SATRunner):
                 or len({c.id for c in cases}) != len(cases)
             ):
                 raise ValueError("冻结原生用例与本次选择范围不一致")
-            await self.log(message, f"开始原生HTTP执行，实际用例数：{len(cases)}")
+            # Logging backpressure is not covered by the HTTP engine's request
+            # timeouts. Bound this startup await before invoking any request.
+            async with asyncio.timeout(positive_timeout(self.agent.config.default_timeout)):
+                await self.log(message, f"开始原生HTTP执行，实际用例数：{len(cases)}")
             for case in cases:
                 row = await execute(case, file_loader=load_file)
                 rows.append(row)
@@ -128,6 +133,9 @@ class NativeHTTPRunner(SATRunner):
         except asyncio.CancelledError:
             status, error = "cancelled", "原生HTTP执行已取消"
             logger.opt(exception=True).info("原生HTTP执行已取消：执行={}", execution_id)
+        except asyncio.TimeoutError:
+            error = "原生HTTP启动日志超时"
+            logger.exception("原生HTTP启动日志超时：执行={}", execution_id)
         except Exception as exception:
             error = "原生HTTP执行失败：" + type(exception).__name__
             logger.exception("原生HTTP执行失败：执行={}", execution_id)
