@@ -10,10 +10,10 @@
     <a-form-item label="资源池">
       <a-select
         ref="resourceSelect"
-        :value="value.testResourcePoolId"
+        :value="executionPoolValue(value)"
         :disabled="controlsDisabled"
         :options="poolOptions"
-        @change="set('testResourcePoolId', $event)"
+        @change="selectPool"
       />
       <a-button
         v-if="!disabled"
@@ -86,6 +86,8 @@ import {
   executionEnvironmentValue,
   selectExecutionEnvironment,
   executionPoolOptions,
+  executionPoolValue,
+  selectExecutionPool,
   executionEnvironmentOptions,
 } from "./planMinderTag";
 import type {
@@ -98,6 +100,7 @@ const props = defineProps<{
   root: boolean;
   catalog: ExecutionCatalog;
   disabled: boolean;
+  category?: string;
 }>();
 const emit = defineEmits<{
   "update:value": [value: ExecutionConfig];
@@ -106,7 +109,9 @@ const emit = defineEmits<{
 const controlsDisabled = computed(
   () => props.disabled || (!props.root && props.value.extended),
 );
-const poolOptions = computed(() => executionPoolOptions(props.catalog));
+const poolOptions = computed(() =>
+  executionPoolOptions(props.catalog, props.category),
+);
 const environmentOptions = computed(() =>
   executionEnvironmentOptions(props.catalog),
 );
@@ -120,6 +125,9 @@ function set<K extends keyof ExecutionConfig>(
 }
 function selectEnvironment(value: string) {
   emit("update:value", selectExecutionEnvironment(props.value, value));
+}
+function selectPool(value: string) {
+  emit("update:value", selectExecutionPool(props.value, value));
 }
 function changeInheritance(value: boolean) {
   emit("update:value", {

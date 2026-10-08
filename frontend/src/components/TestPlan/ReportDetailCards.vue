@@ -188,8 +188,17 @@
               ><a-descriptions-item label="资源池">{{
                 record.executionConfig.testResourcePoolId === "DEFAULT"
                   ? "默认资源池"
-                  : record.executionConfig.testResourcePoolId || "未记录"
+                  : (record.executionConfig.testResourcePoolScope === "global"
+                      ? "独立池："
+                      : "") +
+                    (record.executionConfig.testResourcePoolId || "未记录")
               }}</a-descriptions-item
+              ><a-descriptions-item
+                v-if="record.executionConfig.testResourcePoolRevision"
+                label="资源池版本"
+                >{{
+                  record.executionConfig.testResourcePoolRevision
+                }}</a-descriptions-item
               ><a-descriptions-item label="冻结节点范围">{{
                 record.resourcePool.length
                   ? record.resourcePool.join("、")
