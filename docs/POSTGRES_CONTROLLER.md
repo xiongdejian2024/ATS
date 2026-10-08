@@ -55,6 +55,24 @@ backups, restoration and disk monitoring must be provisioned separately.
 access succeeds and all expected model tables/columns exist; otherwise it returns
 503 without connection details. This does not validate external Agent connectivity.
 
+## First administrator
+
+After schema initialization, use the explicit, operator-run
+[first-admin bootstrap](ADMIN_BOOTSTRAP.md) with the same protected database
+configuration and dedicated `DATABASE_SCHEMA`. From the repository root:
+
+```bash
+python backend/scripts/create_admin.py --username your-login --email you@example.com
+```
+
+Replace both identity values; the terminal prompts for and confirms a strong
+password without echoing it. There is no default login or password. This command
+runs only while the user table is empty and commits permissions, the system admin
+role and the new user together. PostgreSQL serializes concurrent attempts with a
+transaction-scoped table lock. It never runs automatically on startup or deploy.
+Real credential entry and any production bootstrap are separate operator actions;
+repository tests use synthetic accounts in disposable databases only.
+
 ## Verification boundaries
 
 Regression tests use a disposable loopback database named `ats_pg_regression` via

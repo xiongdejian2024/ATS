@@ -45,22 +45,20 @@ alembic upgrade head
 
 ### 创建管理员用户
 
-数据库迁移完成后，需要创建管理员用户用于登录：
+初始化 PostgreSQL 专用 schema 后，在尚无任何用户时显式创建第一位管理员：
 
 ```bash
-# 使用默认配置创建管理员用户
-# 默认用户名: admin, 密码: admin123
-uv run python scripts/create_admin.py
-
-# 或使用环境变量自定义管理员信息
-export ADMIN_USERNAME=myadmin
-export ADMIN_EMAIL=admin@mycompany.com
-export ADMIN_PASSWORD=SecurePassword123
-export ADMIN_FULL_NAME="管理员"
-uv run python scripts/create_admin.py
+# 在 backend/ 目录运行；替换用户名和邮箱，密码由隐藏终端提示输入两次
+uv run python scripts/create_admin.py --username your-login --email you@example.com
 ```
 
-**注意**: 首次登录后请及时修改默认密码！
+密码没有默认值，至少 16 个字符、最多 72 个 UTF-8 字节，并须满足脚本的强度检查。
+不要把密码写进命令参数、代码、`.env`、日志或持久部署配置。无交互终端时，只能由
+受保护的机制为这一次进程注入 `ADMIN_PASSWORD`，不从可回显的标准输入读取密码。
+已有任何用户都会拒绝执行，不重置密码、不启用已有账号、不追加管理员授权。
+该安全引导命令支持 PostgreSQL 和隔离测试用 SQLite；MySQL 会明确拒绝且不写入。
+角色、权限和用户在同一个事务中写入，失败则回滚。
+完整输入要求、一次性环境变量示例和验证方式见 [管理员引导说明](../docs/ADMIN_BOOTSTRAP.md)。
 
 ### 运行服务
 
