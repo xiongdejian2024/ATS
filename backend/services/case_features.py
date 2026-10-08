@@ -45,7 +45,10 @@ def validate_custom_values(fields, values):
         elif kind == "number":
             import math
 
-            valid = type(value) in {int, float} and math.isfinite(value)
+            try:
+                valid = type(value) in {int, float} and math.isfinite(value)
+            except (OverflowError, TypeError, ValueError):
+                valid = False
         elif kind == "boolean":
             valid = type(value) is bool
         elif kind == "date":
@@ -163,6 +166,9 @@ def issue_for_project(db, project_id, identifier):
 
 
 def write_issue(db, user, project_id, body, identifier=None):
+    if body.kind == "defect":
+        from services.defect_workspace import legacy_save
+        return legacy_save(db,user,project_id,body,identifier)
     require_project_access(db, user, project_id, "test_case:update")
     row = (
         issue_for_project(db, project_id, identifier)
@@ -171,7 +177,7 @@ def write_issue(db, user, project_id, body, identifier=None):
     )
     if identifier and row.kind != body.kind:
         raise HTTPException(422, "已创建实体不能切换需求或缺陷类型")
-    for key, value in body.model_dump().items():
+    for key, value in body.model_dump(exclude={"expectedRevision"}).items():
         setattr(row, "external_ref" if key == "externalRef" else key, value)
     row.updated_by = str(user.id)
     db.add(row)

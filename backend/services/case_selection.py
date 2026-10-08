@@ -78,7 +78,12 @@ def link_issue(db, user, project_id, body):
     from models.case_features import CaseIssueLink
     from services.case_features import issue_for_project, change
     cases, _ = resolve(db, user, project_id, body, writing=True, action="update")
-    issue_for_project(db, project_id, body.issueId)
+    linked=issue_for_project(db, project_id, body.issueId)
+    if linked.kind == "defect":
+        from services.defect_workspace import require_associable
+        require_associable(db,user,project_id,linked.id)
+        from core.project_access import require_project_access
+        require_project_access(db,user,project_id,'test_case:update',current_read=True)
     existing = {row[0] for row in db.query(CaseIssueLink.case_id).filter(
         CaseIssueLink.issue_id == body.issueId,
         CaseIssueLink.case_id.in_([case.id for case in cases]),

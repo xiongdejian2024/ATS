@@ -31,6 +31,12 @@ SYSTEM_PERMISSIONS = {
     "test_case:import": "导入用例",
     "test_case:export": "导出用例",
     
+    # 独立缺陷权限，不由用例编辑权限替代
+    "defect:create": "创建缺陷",
+    "defect:read": "查看缺陷",
+    "defect:update": "更新缺陷",
+    "defect:delete": "归档缺陷",
+
     # 计划管理
     "test_plan:create": "创建计划",
     "test_plan:read": "查看计划",

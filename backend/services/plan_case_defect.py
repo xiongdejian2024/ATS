@@ -19,7 +19,8 @@ def capabilities(db, plan, user, *, available=True):
     project = db.get(Project, plan.project_id)
     associate = bool(available and not (settings and settings.archived)
         and project_allows(db, user, project, 'test_plan:execute'))
-    return dict(canAssociate=associate, canCreate=associate and project_allows(db, user, project, 'test_case:update'))
+    from services.defect_workspace import allows
+    return dict(canAssociate=associate and allows(db,user,plan.project_id,'read'), canCreate=associate and allows(db,user,plan.project_id,'create') and allows(db,user,plan.project_id,'read'))
 
 
 def preview(db, plan, user, selection):
@@ -34,6 +35,8 @@ def query(db, plan):
 
 
 def listing(db, plan, user, key, page, size, search):
+    from services.defect_workspace import authority
+    user,_=authority(db,user,plan.project_id,'read')
     current = next((row for row in entries(db, plan, 'functional')[0] if row['id'] == key and not row['grouped']), None)
     if not current and not db.query(PlanCaseDefect.id).filter_by(plan_id=plan.id, association_key=key).first() and not db.query(PlanCaseExecution.id).filter_by(plan_id=plan.id, association_key=key).first():
         raise HTTPException(404, '当前计划没有此功能用例关联或历史')
@@ -47,8 +50,15 @@ def listing(db, plan, user, key, page, size, search):
         **capabilities(db, plan, user, available=bool(current and not current['recycled'])))
 
 
-def candidates(db, plan, page, size, search):
+def candidates(db, plan, page, size, search, user=None):
+    from services.defect_workspace import authority
+    if not user:raise HTTPException(403,'缺少当前用户上下文')
+    authority(db,user,plan.project_id,'read')
     rows = db.query(CaseIssue).filter_by(project_id=plan.project_id, kind='defect')
+    from models.defect_workspace import DefectProfile
+    from sqlalchemy import or_
+    rows = rows.outerjoin(DefectProfile, DefectProfile.issue_id == CaseIssue.id).filter(
+        or_(DefectProfile.issue_id.is_(None), DefectProfile.archived.is_(False)))
     if search.strip(): rows = rows.filter(CaseIssue.title.contains(search.strip(), autoescape=True))
     total = rows.count()
     return dict(items=[serialize_model(row, camel_case=True) for row in rows.order_by(CaseIssue.created_at.desc(), CaseIssue.id.desc()).offset((page-1)*size).limit(size)], total=total, page=page, size=size)
@@ -82,6 +92,9 @@ def bind(db, plan, user, selected, issues, *, request=None, digest=None):
 def associate(db, plan, user, data):
     plan, user, rows, _ = resolve(db, plan, user, data, writing=True, action='execute')
     if not rows: raise HTTPException(409, '当前选择范围已为空，请刷新后重新选择')
+    from services.defect_workspace import authority,require_associable
+    authority(db,user,plan.project_id,'read')
+    for identifier in data.issueIds:require_associable(db,user,plan.project_id,identifier)
     issues = db.query(CaseIssue).filter(CaseIssue.id.in_(data.issueIds), CaseIssue.project_id == plan.project_id, CaseIssue.kind == 'defect').populate_existing().with_for_update().all()
     if len(issues) != len(data.issueIds): raise HTTPException(404, '缺陷不存在或不属于计划项目')
     return dict(updated=bind(db, plan, user, rows, issues))
@@ -90,7 +103,8 @@ def associate(db, plan, user, data):
 def create(db, plan, user, data):
     plan, user, rows, _ = resolve(db, plan, user, data, writing=True, action='execute')
     from core.project_access import require_project_access
-    require_project_access(db, user, plan.project_id, 'test_case:update', current_read=True)
+    require_project_access(db, user, plan.project_id, 'defect:create', current_read=True)
+    require_project_access(db, user, plan.project_id, 'defect:read', current_read=True)
     body = dict(payload=data.model_dump(mode='json', exclude={'requestId'}), userId=str(user.id))
     digest = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
     previous = db.query(PlanCaseDefect).filter_by(plan_id=plan.id, create_request_id=str(data.requestId)).populate_existing().with_for_update().all()
@@ -110,7 +124,9 @@ def disassociate(db, plan, user, link_id):
     link = db.query(PlanCaseDefect).filter_by(plan_id=plan.id, id=link_id).first()
     if not link: raise HTTPException(404, '此计划没有该缺陷关联')
     from schemas.plan_functional_minder import FunctionalMinderSelection
-    resolve(db, plan, user, FunctionalMinderSelection(selectIds=[link.association_key]), writing=True, action='execute')
+    plan,user,_,_=resolve(db, plan, user, FunctionalMinderSelection(selectIds=[link.association_key]), writing=True, action='execute')
+    from services.defect_workspace import authority
+    authority(db,user,plan.project_id,'read')
     link = db.query(PlanCaseDefect).filter_by(plan_id=plan.id, id=link_id).populate_existing().with_for_update().one()
     link.active = False
     link.updated_by = str(user.id)

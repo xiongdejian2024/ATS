@@ -25,7 +25,7 @@ def descendants(rows, root):
     return found
 
 
-def entries(db, plan, category, *, current_read=False):
+def entries(db, plan, category, *, current_read=False, user=None):
     def read(query):
         return (query.populate_existing().with_for_update() if current_read else query).all()
     nodes = read(db.query(PlanNode).filter_by(plan_id=plan.id).order_by(PlanNode.position, PlanNode.created_at))
@@ -46,17 +46,23 @@ def entries(db, plan, category, *, current_read=False):
     ids = {item[2] for item in associations}
     cases = {case.id:case for case in read(db.query(TestCase).filter(TestCase.id.in_(ids)))}
     source_ids = {case.project_id for case in cases.values()} or {plan.project_id}
+    if user:
+        # Acquire all source scopes in deterministic order before current
+        # authority reads, matching execution/association writes.
+        db.query(Project.id).filter(Project.id.in_(source_ids | {plan.project_id})).order_by(Project.id).with_for_update().all()
     projects = {p.id:p for p in read(db.query(Project).filter(Project.id.in_(source_ids)))}
     modules = read(db.query(Module).filter(Module.project_id.in_(source_ids)).order_by(Module.sort_order, Module.created_at))
     module_names = {row.id:row.name for row in modules}
     user_ids = {uid for case in cases.values() for uid in (case.created_by,case.executor_id) if uid}
     user_ids.update(row.assigned_to for _,row,_,_,_ in associations if row.assigned_to)
     users = dict(db.query(User.id, User.username).filter(User.id.in_(user_ids)).all())
+    from services.defect_workspace import allows
+    visible_defect_projects={pid for pid in sorted(source_ids) if user and allows(db,user,pid,'read',current_read=True)}
     bugs = {}
-    for link, issue in read(db.query(CaseIssueLink,CaseIssue).join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id).filter(CaseIssueLink.case_id.in_(ids), CaseIssue.project_id.in_(source_ids), CaseIssue.kind == 'defect')):
+    for link, issue in read(db.query(CaseIssueLink,CaseIssue).join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id).filter(CaseIssueLink.case_id.in_(ids), CaseIssue.project_id.in_(visible_defect_projects), CaseIssue.kind == 'defect')):
         bugs.setdefault(link.case_id, set()).add(issue.id)
     instance_bugs = {}
-    if category == 'functional':
+    if category == 'functional' and user and allows(db,user,plan.project_id,'read',current_read=True):
         from models.plan_case_defect import PlanCaseDefect
         for link, issue in read(db.query(PlanCaseDefect, CaseIssue).join(CaseIssue, CaseIssue.id == PlanCaseDefect.issue_id).filter(PlanCaseDefect.plan_id == plan.id, PlanCaseDefect.active.is_(True), CaseIssue.project_id == plan.project_id, CaseIssue.kind == 'defect')):
             instance_bugs.setdefault(link.association_key, set()).add(issue.id)
@@ -156,7 +162,7 @@ def filter_folder(items, points, modules, source_ids, tree_type, folder, include
 def listing(db, plan, category, params, *, current_read=False):
     def read(query):
         return (query.populate_existing().with_for_update() if current_read else query).all()
-    items, points, modules, uses = entries(db,plan,category,current_read=current_read)
+    items, points, modules, uses = entries(db,plan,category,current_read=current_read,user=db.get(User,params.get('user_id')) if params.get('user_id') else None)
     search = (params.get('search') or '').strip().casefold()
     results = set((params.get('result') or '').split(','))
     priorities = set((params.get('priority') or '').split(','))

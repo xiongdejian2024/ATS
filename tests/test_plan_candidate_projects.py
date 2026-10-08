@@ -52,7 +52,12 @@ async def test_source_choices_scope_original_references_counts_and_manual_histor
         assert result.json()['data']['added'] == 2
         listing = (await client.get(BASE, params=dict(tree_type='MODULE'))).json()['data']
         foreign = next(r for r in listing['items'] if r['caseId'] == 'foreign-1')
-        assert foreign['projectId'] == 'source' and foreign['projectName'] == '来源项目' and foreign['moduleName'] == '来源模块' and foreign['bugCount'] == 0 and foreign['caseBugCount'] == 1
+        assert foreign['projectId'] == 'source' and foreign['projectName'] == '来源项目' and foreign['moduleName'] == '来源模块' and foreign['bugCount'] == 0 and foreign['caseBugCount'] == 0
+        from models import Permission, ProjectPermission
+        db.add(Permission(id='source-defect-read',code='defect:read',name='Read',resource='defect',action='read'));db.flush()
+        db.add(ProjectPermission(project_id='source',user_id='owner',permission_id='source-defect-read'));db.commit()
+        refreshed=(await client.get(BASE,params=dict(tree_type='MODULE'))).json()['data']['items']
+        assert next(r for r in refreshed if r['caseId']=='foreign-1')['caseBugCount'] == 1
         assert next(m for m in listing['modules'] if m['id'] == 'source')['count'] == 2
         assert next(m for m in listing['modules'] if m['id'] == 'source-module')['parentId'] == 'source'
         assert (await client.get(BASE, params=dict(tree_type='MODULE', folder='source_default'))).json()['data']['total'] == 1

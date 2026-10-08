@@ -343,11 +343,14 @@ async def test_concurrent_manual_results_merge_without_lost_update(plan_lab):
     db.commit()
     run_id = (await start_plan_run(db, "plan", "owner")).id
     barrier, per_thread = Barrier(2), local()
-    def before_update(conn, cursor, statement, parameters, context, executemany):
-        if statement.startswith("UPDATE plan_runs SET manual_results") and not getattr(per_thread, "waited", False):
+    def after_read(conn, cursor, statement, parameters, context, executemany):
+        # Both requests first observe the same revision. Current authority
+        # locking may serialize them before UPDATE; do not put a barrier
+        # inside that serialized region.
+        if statement.startswith("SELECT ") and "FROM plan_runs" in statement and not getattr(per_thread, "waited", False):
             per_thread.waited = True
             barrier.wait(timeout=5)
-    event.listen(engine, "before_cursor_execute", before_update)
+    event.listen(engine, "after_cursor_execute", after_read)
     def record(cid):
         with SessionLocal() as session:
             record_manual_result(session, run_id, cid, ManualResultInput(result="passed", notes=cid), "owner")
@@ -357,7 +360,7 @@ async def test_concurrent_manual_results_merge_without_lost_update(plan_lab):
             for future in futures:
                 future.result(timeout=15)
     finally:
-        event.remove(engine, "before_cursor_execute", before_update)
+        event.remove(engine, "after_cursor_execute", after_read)
     db.expire_all()
     result = db.get(PlanRun, run_id)
     assert set(result.manual_results) == {"case-2", "case-3"}

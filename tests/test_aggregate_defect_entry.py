@@ -38,6 +38,9 @@ async def test_aggregate_execute_only_capability(workspace_http):
     db.add(ProjectPermission(project_id='project', user_id='stranger', permission_id='aggregate-execute'))
     db.commit(); identity['id'] = 'stranger'
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
+        assert (await client.get('/orchestration/plans/plan/case-workspace/defects/aggregate')).status_code == 403
+        db.add(Permission(id='aggregate-defect-read',code='defect:read',resource='defect',action='read',name='defect read'));db.flush()
+        db.add(ProjectPermission(project_id='project',user_id='stranger',permission_id='aggregate-defect-read'));db.commit()
         data = (await client.get('/orchestration/plans/plan/case-workspace/defects/aggregate')).json()['data']
         assert data['canAssociate'] and not data['canCreate']
         assert not data['canEdit']

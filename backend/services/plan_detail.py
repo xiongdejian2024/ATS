@@ -18,14 +18,19 @@ def category_counts(db, plan_id, legacy_cases):
     return counts
 
 
-def plan_case_ids(db, plan_id):
-    nodes = db.query(PlanNode).filter(PlanNode.plan_id == plan_id, PlanNode.node_type != "point").all()
+def plan_case_ids(db, plan_id, *, current_read=False):
+    def read(query):
+        return (query.populate_existing().with_for_update() if current_read else query).all()
+    nodes = read(db.query(PlanNode).filter(PlanNode.plan_id == plan_id, PlanNode.node_type != "point"))
     from services.plan_tree import uses_tree
-    if not uses_tree(db, plan_id):
-        return {row.case_id for row in db.query(PlanCaseRelation).filter_by(plan_id=plan_id)}
+    from models.plan_workspace import PlanWorkspace
+    workspace = read(db.query(PlanWorkspace).filter_by(plan_id=plan_id)) if current_read else []
+    tree = (bool(workspace and workspace[0].uses_tree) or bool(nodes)) if current_read else uses_tree(db,plan_id)
+    if not tree:
+        return {row.case_id for row in read(db.query(PlanCaseRelation).filter_by(plan_id=plan_id))}
     ids = {node.case_id for node in nodes if node.case_id}
     suite_ids = {node.suite_id for node in nodes if node.suite_id and not node.case_id}
-    for suite in db.query(TestSuite).filter(TestSuite.id.in_(suite_ids)):
+    for suite in read(db.query(TestSuite).filter(TestSuite.id.in_(suite_ids))):
         ids.update(suite.case_ids or [])
     return ids
 

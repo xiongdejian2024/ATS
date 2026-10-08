@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 @router.get('/projects/{project_id}/mention-members')
-def mention_members(project_id: str, context: Literal['case', 'plan'] = 'case',
+def mention_members(project_id: str, context: Literal['case', 'plan', 'defect'] = 'case',
                     search: str = Query('', max_length=100), page: int = Query(1, ge=1),
                     db: Session = Depends(get_db), user=Depends(get_current_user)):
     return APIResponse(status='success', message='获取成功', data=members(db, user, project_id, context, search, page))

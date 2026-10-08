@@ -27,7 +27,7 @@ class ReferenceInput(BaseModel):
 
 @router.get('/folders')
 def folders(project_id: str, db: Session=Depends(get_db), user=Depends(get_current_user)):
-    require_project_access(db,user,project_id,'test_case:read')
+    service.require_library_read(db,user,project_id)
     return result(service.folders(db,project_id))
 
 @router.post('/folders')
@@ -40,7 +40,7 @@ def update_folder(project_id: str, identifier: str, body: FolderInput, db: Sessi
 
 @router.get('/files')
 def files(project_id: str, folderId: str | None=None, search: str=Query('',max_length=255), archived: bool=False, imagesOnly: bool=False, page: int=Query(1,ge=1), db: Session=Depends(get_db), user=Depends(get_current_user)):
-    require_project_access(db,user,project_id,'test_case:read');service.folder(db,project_id,folderId)
+    service.require_library_read(db,user,project_id);service.folder(db,project_id,folderId)
     rows=db.query(LibraryFile).filter_by(project_id=project_id,folder_id=folderId or None,archived=archived).filter(or_(LibraryFile.published.is_(True),LibraryFile.uploaded_by==str(user.id)))
     if imagesOnly: rows=rows.filter(LibraryFile.mime_type.in_(list(service.IMAGE_TYPES.values())))
     if search.strip(): rows=rows.filter(LibraryFile.file_name.contains(search.strip(),autoescape=True))
@@ -57,7 +57,7 @@ def upload(project_id: str, file: UploadFile=File(...), folderId: str | None=For
 def download(project_id: str, identifier: str, operation: str, db: Session=Depends(get_db), user=Depends(get_current_user)):
     from fastapi import HTTPException
     if operation not in {'download','preview'}: raise HTTPException(404,'文件操作不存在')
-    require_project_access(db,user,project_id,'test_case:read')
+    service.require_library_read(db,user,project_id)
     row=service.find(db,project_id,identifier)
     if not row.published and row.uploaded_by != str(user.id): raise HTTPException(403,'此文件尚未发布到项目库')
     return service.download(db,row,operation=='preview')

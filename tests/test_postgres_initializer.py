@@ -114,7 +114,7 @@ def test_complete_metadata_plans_all_82_tables_and_only_selected_schema():
 
     reflection = Reflection(Base.metadata, exists=False, names=[])
     plan = initializer.plan_schema(reflection, Base.metadata, "ats", DIALECT)
-    assert plan["expectedTableCount"] == len(plan["createTables"]) == 92
+    assert plan["expectedTableCount"] == len(plan["createTables"]) == 96
     assert plan["createSchema"] and plan["existingTables"] == []
     assert set(reflection.schemas_read) == {"ats"}
 

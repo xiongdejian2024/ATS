@@ -531,7 +531,19 @@ def record_manual_result(db, run_id, case_id, data, user_id):
             if any(dep not in outcomes or "pending" in outcomes[dep] for dep in case["prerequisites"]):
                 raise ValueError("请先完成串行配置要求的前序测试点")
         from services.plan_collaboration import validate_steps
-        step_results = validate_steps(db, run, case, getattr(data, "step_results", []))
+        step_results = validate_steps(db, run, case, getattr(data, "step_results", []), user_id=user_id)
+        # The API precheck may precede a live defect authority read. Recheck
+        # the result writer after validation, inside the same project lock.
+        from models import Project, User
+        from core.project_access import require_project_access
+        from fastapi import HTTPException
+        project_id = db.get(TestPlan, run.plan_id).project_id
+        db.query(Project.id).filter_by(id=project_id).with_for_update().one()
+        actor = db.query(User).filter_by(id=str(user_id)).populate_existing().with_for_update(read=True).one_or_none()
+        if not actor or not actor.status:
+            raise HTTPException(403, "用户已停用或不存在")
+        require_project_access(db, actor, project_id,
+            "test_plan:read" if case.get("assignedTo") == str(user_id) else "test_plan:execute", current_read=True)
         frozen = case.get("snapshot", {})
         expected_step_count = 0 if frozen.get("case_edit_type") == "TEXT" else len(frozen.get("steps") or [])
         if (step_results or case.get("associationId")) and data.result == "passed" and (len(step_results) != expected_step_count or any(step["result"] != "passed" for step in step_results)):

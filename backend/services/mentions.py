@@ -12,7 +12,7 @@ from models import User, ProjectMember, Notification
 from core.project_access import require_project_access
 
 MAX_RECIPIENTS = 20
-KINDS = {'case_comment', 'review_event', 'case_execution', 'run_comment'}
+KINDS = {'case_comment', 'review_event', 'case_execution', 'run_comment', 'defect_comment', 'defect_event'}
 
 
 def member_query(db, project):
@@ -24,8 +24,19 @@ def member_query(db, project):
 
 
 def members(db, user, project_id, context, search='', page=1):
-    project = require_project_access(db, user, project_id, f'test_{context}:read')
+    if context == 'defect':
+        from services.defect_workspace import authority
+        user,project=authority(db,user,project_id,'read')
+    else:
+        project=require_project_access(db,user,project_id,f'test_{context}:read')
     query = member_query(db, project)
+    if context == 'defect':
+        from models import Permission,RolePermission,UserRole,ProjectPermission
+        from core.project_access import project_allows
+        explicit = db.query(ProjectPermission.user_id).join(Permission,Permission.id==ProjectPermission.permission_id).filter(ProjectPermission.project_id==project_id,Permission.code=='defect:read')
+        global_ids=db.query(UserRole.user_id).join(RolePermission,RolePermission.role_id==UserRole.role_id).join(Permission,Permission.id==RolePermission.permission_id).filter(Permission.code.in_(['defect:read','system:manage']))
+        managers=db.query(ProjectMember.user_id).filter(ProjectMember.project_id==project_id,ProjectMember.role.in_(['admin','owner','manager','maintainer']))
+        query=query.filter(or_(User.id.in_([project.owner_id,project.created_by]),User.id.in_(explicit),User.id.in_(global_ids),User.id.in_(managers)))
     if search:
         # Escaped LIKE gives literal user input, including % and _.
         value = '%' + search.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
@@ -99,7 +110,7 @@ def prepare(db, actor, project_id, content, *, context='case', max_length=10000)
     if not parser.ids:
         return content, []
     # Current locking reads avoid accepting a revoked/disabled cached recipient.
-    project = require_project_access(db, actor, project_id, f'test_{context}:read', current_read=True)
+    project = require_project_access(db, actor, project_id, ('defect:read' if context == 'defect' else f'test_{context}:read'), current_read=True)
     # Shared state locks are compatible with authors' FK checks and other
     # current identity reads. Exclusive user locks cause reciprocal mentions
     # in different projects to wait on each other's author foreign keys.
@@ -112,6 +123,10 @@ def prepare(db, actor, project_id, content, *, context='case', max_length=10000)
     eligible = {r.user_id for r in membership} | {project.owner_id, project.created_by}
     if {r.id for r in recipients} != parser.ids or any(not r.status or r.id not in eligible for r in recipients):
         raise HTTPException(422, '提及成员已停用或不属于当前项目，请重新选择')
+    if context == 'defect':
+        from services.defect_workspace import allows
+        if any(not allows(db,r,project_id,'read',current_read=True) for r in recipients):
+            raise HTTPException(422,'提及成员没有当前缺陷读取权限')
     labels = {r.id: r.full_name or r.username for r in recipients}
     result = ''.join(
         f'<span data-mention-id="{part[1]}" data-mention-label="{escape(labels[part[1]], quote=True)}">@{escape(labels[part[1]])}</span>'
@@ -145,6 +160,24 @@ def source(db, recipient, notification):
         return dict(content=content, contentFormat=content_format, sourceId=row.id, kind=kind, route=route, createdAt=row.created_at)
     if notification.user_id != str(recipient.id) or kind not in KINDS:
         raise HTTPException(404, '提及来源不存在')
+    if kind in {'defect_comment','defect_event'}:
+        from models.defect_workspace import DefectComment, DefectEvent, DefectProfile
+        from models.case_features import CaseIssue
+        from services.defect_workspace import authority
+        row = db.get(DefectComment if kind == 'defect_comment' else DefectEvent, identifier)
+        issue = db.get(CaseIssue,row.issue_id) if row else None
+        meta = db.get(DefectProfile,issue.id) if issue else None
+        if not issue or issue.kind != 'defect' or (kind == 'defect_comment' and row.deleted) or (meta and meta.archived):
+            raise HTTPException(404,'提及来源已不可用')
+        authority(db,recipient,issue.project_id)
+        model = DefectComment if kind == 'defect_comment' else DefectEvent
+        row=db.query(model).filter_by(id=identifier).populate_existing().with_for_update(read=True).one_or_none()
+        issue=db.query(CaseIssue).filter_by(id=row.issue_id if row else None,kind='defect').populate_existing().with_for_update(read=True).one_or_none()
+        meta=db.query(DefectProfile).filter_by(issue_id=issue.id if issue else None).populate_existing().with_for_update(read=True).one_or_none()
+        if not issue or (kind=='defect_comment' and row.deleted) or (meta and meta.archived):
+            raise HTTPException(404,'提及来源已不可用')
+        content=row.content if kind == 'defect_comment' else row.detail.get('snapshot',{}).get('description','')
+        return payload(row,dict(path='/defects',query=dict(projectId=issue.project_id,defectId=issue.id)),content,'rich' if kind == 'defect_comment' else row.detail.get('snapshot',{}).get('descriptionFormat','plain'))
     if kind == 'case_comment':
         row = db.get(CaseComment, identifier)
         case = db.get(TestCase, row.case_id) if row else None
