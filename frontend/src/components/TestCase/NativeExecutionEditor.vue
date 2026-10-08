@@ -20,6 +20,9 @@
         /></a-form-item>
       </a-space>
       <a-tabs>
+        <a-tab-pane key="pre-processors" tab="前置处理器"><NativeProcessorEditor v-model="preProcessors" :project-id="projectId" :disabled="disabled" /></a-tab-pane>
+        <a-tab-pane key="post-processors" tab="后置处理器"><NativeProcessorEditor v-model="postExecutionProcessors" :project-id="projectId" :disabled="disabled" /></a-tab-pane>
+        <a-tab-pane key="mock" tab="Mock"><NativeMockEditor v-model="mockResponse" :disabled="disabled" /></a-tab-pane>
         <a-tab-pane key="variables" tab="初始变量"
           ><NativeVariableEditor
             v-model="initialVariables"
@@ -146,6 +149,7 @@
         </a-tab-pane>
         <a-tab-pane key="setting" tab="其他设置"
           ><a-space wrap>
+            <a-form-item label="记录阶段耗时"><a-checkbox v-model:checked="reportPhases" :disabled="disabled" aria-label="记录HTTP阶段耗时">记录</a-checkbox></a-form-item>
             <a-form-item label="连接超时（毫秒）"
               ><a-input-number
                 v-model:value="connectTimeout"
@@ -246,11 +250,14 @@
       >
     </template>
     <a-alert v-if="error" :message="error" type="error" show-icon />
+    <a-collapse v-if="enabled"><a-collapse-panel key="global" header="用例 / 场景全局前后置（各执行一次）"><p>全局处理器在当前用例或场景开始、结束时各执行一次；场景 API 步骤使用请求前后置配置。</p><a-form-item label="全局前置"><NativeProcessorEditor v-model="globalPreProcessors" :project-id="projectId" :disabled="disabled" /></a-form-item><a-form-item label="全局后置"><NativeProcessorEditor v-model="globalPostProcessors" :project-id="projectId" :disabled="disabled" /></a-form-item></a-collapse-panel></a-collapse>
   </div>
 </template>
 <script setup lang="ts">
 import NativePostProcessorEditor from "./NativePostProcessorEditor.vue";
 import NativeVariableEditor from "./NativeVariableEditor.vue";
+import NativeMockEditor from "./NativeMockEditor.vue";
+import NativeProcessorEditor from "./NativeProcessorEditor.vue";
 import NativeRequestParamTable from "./NativeRequestParamTable.vue";
 import NativeBinaryBodyEditor from "./NativeBinaryBodyEditor.vue";
 import NativeJsonBodyEditor from "./NativeJsonBodyEditor.vue";
@@ -286,6 +293,12 @@ const {
   responseAssertions,
   postProcessors,
   initialVariables,
+  mockResponse,
+  reportPhases,
+  preProcessors,
+  postExecutionProcessors,
+  globalPreProcessors,
+  globalPostProcessors,
   error,
   steps,
   methods,

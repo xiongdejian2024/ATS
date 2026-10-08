@@ -5,6 +5,8 @@ import { requestMethods } from "@/components/TestPlan/planCandidateBasic";
 import { readProcessors } from "./nativeExtractions";
 import { emptySchema, readJsonSchema } from "./nativeJsonSchema";
 import { readNativeVariables } from "./nativeVariables";
+import { readMockResponse } from "./nativeMock";
+import { readNativeProcessors } from "./nativeProcessors";
 export interface ExecutionEditorProps {
   modelValue: string;
   category: string;
@@ -35,6 +37,9 @@ export function useNativeExecutionDraft(
     error = ref("");
   const postProcessors = ref('{"processors":[]}');
   const initialVariables = ref("[]");
+  const mockResponse = ref("{}"), reportPhases = ref(false);
+  const preProcessors=ref('[]'), postExecutionProcessors=ref('[]');
+  const globalPreProcessors=ref('[]'),globalPostProcessors=ref('[]');
   const steps = ref<{ apiCaseId: string; enabled: boolean }[]>([]);
   const jsonSchemaMode = ref(false),
     jsonSchema = ref(JSON.stringify(emptySchema()));
@@ -99,6 +104,16 @@ export function useNativeExecutionDraft(
         enabled.value = !!data;
         initialVariables.value = JSON.stringify(data?.initialVariables ?? []);
         readNativeVariables(initialVariables.value);
+        mockResponse.value = JSON.stringify(data?.mockResponse ?? {});
+        readMockResponse(mockResponse.value);
+        reportPhases.value = data?.reportPhases ?? false;
+        if(typeof reportPhases.value !== 'boolean') throw Error('阶段报告开关无效');
+        preProcessors.value=JSON.stringify(data?.preProcessors??[]);
+        postExecutionProcessors.value=JSON.stringify(data?.postProcessors??[]);
+        readNativeProcessors(preProcessors.value);readNativeProcessors(postExecutionProcessors.value);
+        globalPreProcessors.value=JSON.stringify(data?.globalPreProcessors??[]);
+        globalPostProcessors.value=JSON.stringify(data?.globalPostProcessors??[]);
+        readNativeProcessors(globalPreProcessors.value);readNativeProcessors(globalPostProcessors.value);
         method.value = data?.method ?? "GET";
         timeout.value = data?.timeoutMs ?? 10000;
         redirects.value = data?.followRedirects ?? false;
@@ -184,7 +199,7 @@ export function useNativeExecutionDraft(
     { immediate: true, flush: "sync" },
   );
   function publish() {
-    if (adopting) return;
+    if (adopting || props.disabled) return;
     bodyDrafts[bodyType.value] = body.value;
     events.draft(
       JSON.stringify([
@@ -203,6 +218,12 @@ export function useNativeExecutionDraft(
         responseAssertions.value,
         postProcessors.value,
         initialVariables.value,
+        mockResponse.value,
+        reportPhases.value,
+        preProcessors.value,
+        postExecutionProcessors.value,
+        globalPreProcessors.value,
+        globalPostProcessors.value,
         stop.value,
         steps.value,
         rest.value,
@@ -257,6 +278,12 @@ export function useNativeExecutionDraft(
         const variables = readNativeVariables(initialVariables.value);
         if (variables.length) root.request.initialVariables = variables;
         else delete root.request.initialVariables;
+        const mock = readMockResponse(mockResponse.value);
+        if (Object.keys(JSON.parse(mockResponse.value)).length) root.request.mockResponse = mock;
+        else delete root.request.mockResponse;
+        if (reportPhases.value) root.request.reportPhases = true;
+        else delete root.request.reportPhases;
+        for(const [field,raw] of [['preProcessors',preProcessors.value],['postProcessors',postExecutionProcessors.value]] as const){const processors=readNativeProcessors(raw);if(processors.length)root.request[field]=processors;else delete root.request[field];}
         if (bodyType.value === "json" || root.request.jsonBody)
           root.request.jsonBody = {
             enableJsonSchema: jsonSchemaMode.value,
@@ -317,6 +344,7 @@ export function useNativeExecutionDraft(
           ...(variables.length ? { initialVariables: variables } : {}),
         };
       }
+      if(enabled.value)for(const [field,raw] of [['globalPreProcessors',globalPreProcessors.value],['globalPostProcessors',globalPostProcessors.value]] as const){const processors=readNativeProcessors(raw);if(processors.length)root[key][field]=processors;else delete root[key][field];}
       output = JSON.stringify(root, null, 2);
       events.update(output);
       error.value = "";
@@ -340,6 +368,12 @@ export function useNativeExecutionDraft(
       responseAssertions,
       postProcessors,
       initialVariables,
+      mockResponse,
+      reportPhases,
+      preProcessors,
+      postExecutionProcessors,
+      globalPreProcessors,
+      globalPostProcessors,
       stop,
       steps,
       rest,
@@ -396,6 +430,12 @@ export function useNativeExecutionDraft(
     responseAssertions,
     postProcessors,
     initialVariables,
+    mockResponse,
+    reportPhases,
+    preProcessors,
+    postExecutionProcessors,
+    globalPreProcessors,
+    globalPostProcessors,
     error,
     steps,
     methods,

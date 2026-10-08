@@ -15,7 +15,7 @@ Status vocabulary: **implemented** means code exists, **pending development** id
 | R04 / logs | `agent_log_ingest.py`, spool, `raw_log_export.py`, browser bounded viewer: durable sequence ACK/replay, per-run quota, paged download | Global capacity/policy/safe copy-only gzip archival implemented; no automatic permanent deletion authorized |
 | Script jobs | `script_jobs.py`, `ScriptJobs.vue`, `script_runtime.py`: standalone Python/Shell/argv, frozen runs, idempotent trigger retry, unknown manual closure | Browser and Windows acceptance open; no Groovy/DSL, Cron, auto-upgrade, untrusted-code sandbox or multi-controller scope |
 | D01 | `plan_case_defects.py`, `PlanDefects.vue`: instance-specific create/bind/unbind, aggregate pagination and basic detail | Aggregate create/bind entry implemented with paged instance selection and draft protections; browser acceptance open |
-| D02 | Versioned independent defect detail, typed templates/custom fields, file evidence, rich mentions, comments/history and distinct permissions implemented | Full local Python/frontend/build and independent reviews passed; exact-head push/PR CI passed and merged to main; merged-main CI is being tracked. Browser acceptance open; no outgoing notification service |
+| D02 | Versioned independent defect detail, typed templates/custom fields, file evidence, rich mentions, comments/history and distinct permissions implemented | Full local Python/frontend/build and independent reviews passed; exact-head push/PR and merged-main CI passed. Browser acceptance open; no outgoing notification service |
 | E01 / storage | Case disk attachments, DB execution images and immutable media references; explicit draft cleanup | Persistent local/database/explicit-S3 adapter implemented; shared file-library directories/picker, case/comment/review-event/execution references and expired-known-evidence inventory/copy archive now implemented. Browser acceptance and untracked external-object reconciliation pending. Permanent deletion requires separate authorization |
 | E02 | `PlanFunctionalExecution.vue`: source-case editing and immutable independent histories. `plan_collaboration.py`: active batches already support steps/attachments/comments | Active frozen batch entrance implemented with duplicate-instance matching, paging and report draft protection; structured mentions and exact saved-content notification sources implemented; browser acceptance pending; preserve ambiguity/409 safety |
 | C01 | Case template/custom-field CRUD and validation, table settings and inline edits exist | Dynamic custom-field columns now use stable field keys, safe typed values and existing table settings; preferences survive late metadata and temporarily unavailable fields. Template/menu interaction comparison acceptance remains open |
@@ -28,7 +28,7 @@ Status vocabulary: **implemented** means code exists, **pending development** id
 | P02 | Reports: real filtering/sort/rename/delete/PDF, metrics/category counts/details/summary/share exist | Personal advanced views and configurable columns merged with exact-head and main CI passed. Configurable detail cards, frozen configuration and separate test-set/defect analysis merged with exact-head and main CI passed. Group and single-plan report summary refresh/navigation draft guards exist; browser acceptance remains open |
 | P03 | Separate request environments and project node pools, inherited configuration/freeze/retry/failure-stop exist; project environment-group CRUD and cross-project mapping now implemented with current permissions, revisions, safe create retry and frozen execution | Environment-group exact-head and merged-main CI passed; browser acceptance pending. Independent Node resource-pool lifecycle merged with repaired exact-head and main CI passed |
 | P04 | Three planning layouts, navigator/zoom/drag/fullscreen, transactional drafts and default-collection projection exist | Fine theme/default-collection interaction comparison and acceptance remain open; retain blue UI |
-| A01–A02 | Extraction/variable assertions/request environments exist; standalone scripts belong to the reliable-script row | Persisted literal initial/environment variables now implemented with current authority, frozen execution and old-Agent capability admission; integrated checks pending. Bounded SQL/global hooks/Mock/advanced reports remain; full Groovy/Java-expression compatibility excluded |
+| A01–A02 | Extraction/variable assertions/request environments exist; standalone scripts belong to the reliable-script row | A01 variables merged with full local and exact-head checks passed; main CI tracked. Bounded SQL/global/script hooks, Mock and measured reports implemented/reviewed; A02 final integrated/database/exact-head checks running; browser acceptance open. Full Groovy/Java-expression compatibility excluded |
 | Q01 | Existing permission and request-lifecycle protections | Verify every changed workflow’s errors, readonly states, retries, user/project isolation and narrow screens |
 
 ## External boundaries
@@ -84,8 +84,8 @@ type check and production build passed locally.
 | P02 | Plan report personal views, columns, configuration cards and analysis | Personal views/columns merged with exact-head and main CI passed; detail cards/frozen configuration/test-set defect analysis merged with exact-head and main CI passed; browser acceptance pending | Accurate frozen report data and scoped export/share; top matrix. |
 | P03 | Project environment groups, cross-project mapping and resource-pool management | Environment-group exact-head and main CI passed; browser acceptance pending. Independent Node pool lifecycle implemented/reviewed, SQLite and actual PostgreSQL regressions passed; repaired exact-head CI running | Request targets and Agent execution pools remain separate; no new infrastructure provisioned. Part 56. |
 | P04 | Remaining planning-map themes/default-collection projection | Audit pending | Existing layouts, draft transactions, APIs and selection preserved. Parts 61–64. |
-| A01 | Literal environment/initial variables and existing ${name} expansion | Implemented; final integrated/exact-head checks pending, browser acceptance open | [Limits, frozen scope and compatibility](NATIVE_INITIAL_VARIABLES.md). Full Groovy/Java-expression compatibility excluded. |
-| A02 | Scripts/SQL/global hooks/Mock and advanced HTTP reports | Deferred priority; requires bounded design | No arbitrary production execution, credentials or external sharing implied. Parts 55/71. |
+| A01 | Literal environment/initial variables and existing ${name} expansion | Merged with full local and exact-head CI passed; main CI tracked; browser acceptance open | [Limits, frozen scope and compatibility](NATIVE_INITIAL_VARIABLES.md). Full Groovy/Java-expression compatibility excluded. |
+| A02 | Scripts/SQL/global hooks/Mock and advanced HTTP reports | Bounded implementation and independent reviews passed; final checks running; browser acceptance open | [Finite execution semantics and limits](NATIVE_PROCESSORS.md). Parts 55/71. |
 | Q01 | Common permissions, empty/error/read-only states and narrow-screen interaction | Continuous verification | Apply to each changed workflow, include repeated/interrupted actions and Back/Forward. |
 
 ## Environment-dependent verification and exclusions
@@ -382,3 +382,22 @@ Python/frontend/build and exact published-head CI remain required before merging
 increment. Actual MySQL migration runs only on the dedicated synthetic CI service.
 Browser, Windows, hardware and deployment acceptance remain open. The remaining A02
 SQL/hooks/Mock/report definitions need the finite bounded implementation audit.
+
+## A01 merge and bounded A02 implementation, 2026-10-08
+
+A01 final full Python **1247 passed / 16 skipped**; frontend **490 tests / 87 files**,
+type check and production build passed. Independent backend **32**, frontend **15**
+passed; actual disposable PostgreSQL **40 + 10** passed. PR #16 final head
+`e2f135c2620510f700685c3a6054bdfc57649700` push and PR software/XAT runs
+37853389903, 37853389950, 37853429384 and 37853429467 all succeeded. It merged
+to main `02511f4a6f34318a0f2f2f8972780015a4989a92`; main XAT run 37856636729
+succeeded, software run 37856636819 is being tracked. D02 merged-main run
+37852569067 succeeded.
+
+A02 is the final independent development row of this finite confirmed scope.
+[Its bounded definition](NATIVE_PROCESSORS.md) now has implemented frontend,
+controller, Agent and XAT paths. Independent frontend **14** and backend/real-process
+**19** tests passed; original Mock timeout, SQL allocation, log-backpressure deadline
+and stale-node current-read defects were reproduced and repaired. Final formal full
+checks, physical PostgreSQL/MySQL and published-head CI remain required before merge.
+No real browser, Windows, hardware or deployment check is marked complete.
