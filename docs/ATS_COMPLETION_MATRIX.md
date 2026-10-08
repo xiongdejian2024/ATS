@@ -72,3 +72,12 @@ record actual blockers rather than redefining the requested completion goal.
 ## First functional mind-map increment
 
 Changed behavior has passed 202 frontend unit tests, strict type checking and a production build; five focused backend tests include a 102-instance overlapping-folder union and idempotent replay. Independent review reproduced and fixed a stale preview after awaited cleanup/navigation and added result-only draft protection. The broader backend run passed all628 tests after a test-boundary SQLite pool isolation fix. The two initial reflection failures were reproduced in both independent worktrees and traced to per-connection stale SQLite schema state after DROP/recreate; production behavior and negative schema validators were unchanged. Interactive browser validation remains blocked as described above, so this increment is not a whole-product completion claim.
+
+## Integrated mind-map and log candidate
+
+After combining the independently reviewed mind-map and log-stream changes,
+all **655 Python tests** and **218 frontend tests**, strict type checking and the
+production build passed together in the dot cloud workspace. The pool-isolation
+fix is limited to test teardown. No interactive browser, production database or
+hardware acceptance is implied. Node capacity, aggregate defect actions and the
+remaining rows continue as separate increments.
