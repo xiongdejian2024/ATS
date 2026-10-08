@@ -23,7 +23,14 @@ def isolated_database():
 
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
-    yield
+    try:
+        yield
+    finally:
+        # SQLite caches schema per connection. A pooled handle that observed a
+        # DROP can report missing auto-indexes after another handle recreates the
+        # table. Close idle handles after test fixtures release their sessions,
+        # before the next test's destructive schema reset. Production is untouched.
+        engine.dispose()
 
 
 @pytest.fixture
