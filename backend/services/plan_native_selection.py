@@ -20,7 +20,7 @@ def resolve(db, plan, user, selection, *, writing=False, action="update", allow_
         plan, settings, _, suites, relations = state(db, plan, current_read=True)
         if plan.project_id != target_id:
             raise HTTPException(409, '计划所属项目已改变，请刷新后重新选择')
-        user = db.query(User).filter_by(id=user.id).populate_existing().with_for_update().one_or_none()
+        user = db.query(User).filter_by(id=user.id).populate_existing().with_for_update(read=True).one_or_none()
         if not user or not user.status:
             raise HTTPException(403, '用户不存在或已停用')
         ids = {r.case_id for r in relations}

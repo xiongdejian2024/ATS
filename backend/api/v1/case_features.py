@@ -573,12 +573,15 @@ def add_comment(
     case = service.find_case(db, user, project_id, case_id)
 
     def operation():
-        row = CaseComment(case_id=case_id, author_id=str(user.id), content=body.content)
+        from services.mentions import prepare, notify
+        content, recipients = prepare(db, user, project_id, body.content)
+        row = CaseComment(case_id=case_id, author_id=str(user.id), content=content)
         db.add(row)
         db.flush()
         from services.file_library import image_ids, reference
         ids = body.fileIds + image_ids(db,project_id,body.content)
         reference(db,user,project_id,ids,'comment',row.id)
+        notify(db,user,recipients,'case_comment',row.id)
         service.change(db, case, user.id, "发表评论", {"commentId": row.id,"content":row.content,"fileIds":sorted(set(ids))})
         return row
 

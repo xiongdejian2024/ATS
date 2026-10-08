@@ -6,6 +6,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, Response, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+from pydantic import ConfigDict
 from database import get_db
 from api.deps import get_current_user
 from models.plan_workspace import PlanRunComment, PlanRunAttachment, PlanReportSummary, PlanReportShare
@@ -31,6 +32,12 @@ def access(db, user, run_id, action="read", report_only=False):
 
 class ReportName(BaseModel):
     name: str = Field(min_length=1, max_length=255)
+
+
+class RunCommentInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    content: str = Field(min_length=1,max_length=10000)
+    contentFormat: Literal['plain','rich'] = 'plain'
 
 
 class ReportSelection(BaseModel):
@@ -120,14 +127,21 @@ def native_http_detail(run_id: str, execution_id: str, case_id: str, db: Session
 
 
 @router.post("/runs/{run_id}/cases/{association_id}/comments")
-def comment(run_id: str, association_id: str, data: dict, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def comment(run_id: str, association_id: str, data: RunCommentInput, db: Session = Depends(get_db), user=Depends(get_current_user)):
     run = access(db, user, run_id)
     require_association(run, association_id)
-    content = str(data.get("content", "")).strip()
+    content = data.content.strip()
     if not content or len(content) > 10000:
         raise HTTPException(422, "评论须为1到10000字")
-    row = PlanRunComment(run_id=run.id, association_id=association_id, author_id=user.id, content=content)
+    from models import TestPlan
+    from services.mentions import prepare, notify
+    recipients = []
+    if data.contentFormat == 'rich':
+        content, recipients = prepare(db,user,db.get(TestPlan,run.plan_id).project_id,content,context='plan')
+    row = PlanRunComment(run_id=run.id, association_id=association_id, author_id=user.id, content=content,content_format=data.contentFormat)
     db.add(row)
+    db.flush()
+    notify(db,user,recipients,'run_comment',row.id)
     db.commit()
     return ok(serialize_model(row, camel_case=True))
 

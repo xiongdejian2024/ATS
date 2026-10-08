@@ -165,7 +165,7 @@ def locked_plan(db, user, plan_id, *, writing, extra_project_ids=()):
         db.query(User)
         .filter_by(id=user.id)
         .populate_existing()
-        .with_for_update()
+        .with_for_update(read=True)
         .one_or_none()
     )
     if not current_user or not current_user.status:

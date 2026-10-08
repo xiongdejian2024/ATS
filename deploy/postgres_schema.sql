@@ -735,6 +735,7 @@ BEGIN
         association_id VARCHAR(80) NOT NULL,
         author_id VARCHAR(36) NOT NULL,
         content TEXT NOT NULL,
+        content_format VARCHAR(16) DEFAULT 'plain' NOT NULL,
         id VARCHAR(36) NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,

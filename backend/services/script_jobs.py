@@ -140,7 +140,7 @@ def prepare_dispatch(db, task):
     if not capable(session, manager):
         return None
     run = db.query(ScriptJobRun).filter_by(execution_id=task.execution_id).populate_existing().with_for_update().one()
-    user = db.query(User).filter_by(id=task.executor_id).populate_existing().with_for_update().first()
+    user = db.query(User).filter_by(id=task.executor_id).populate_existing().with_for_update(read=True).first()
     if not user or not user.status:
         raise ValueError("执行人已停用")
     if (run.job_id != task.script_job_id or run.environment_id != task.environment_id

@@ -14,7 +14,7 @@ def source_scope(db, user, plan, project_id=None, *, writing=False):
             project = db.query(Project).filter_by(id=identifier).populate_existing().with_for_update().one_or_none()
             if not project:
                 raise HTTPException(404, '项目不存在')
-        current_user = db.query(User).filter_by(id=user.id).populate_existing().with_for_update().one_or_none()
+        current_user = db.query(User).filter_by(id=user.id).populate_existing().with_for_update(read=True).one_or_none()
         if not current_user or not current_user.status:
             raise HTTPException(403, '用户不存在或已停用')
         user = current_user
@@ -38,7 +38,7 @@ def require_case_sources(db, user_id, cases, *, current_read=False):
     if current_read:
         for identifier in sorted({case.project_id for case in cases}):
             db.query(Project).filter_by(id=identifier).populate_existing().with_for_update().one_or_none()
-    user = (db.query(User).filter_by(id=str(user_id)).populate_existing().with_for_update().one_or_none()
+    user = (db.query(User).filter_by(id=str(user_id)).populate_existing().with_for_update(read=True).one_or_none()
             if current_read else db.get(User, str(user_id)))
     if not user or not user.status:
         raise HTTPException(403, '用户不存在或已停用')

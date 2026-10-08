@@ -1,10 +1,10 @@
 import { createRenderer, nextTick, ssrContextKey } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ report: vi.fn(), result: vi.fn(), comment: vi.fn(), collaboration: vi.fn(), issues: vi.fn(), confirm: vi.fn(), summary: vi.fn(), shares: vi.fn(), warning: vi.fn() }))
+const mocks = vi.hoisted(() => ({ report: vi.fn(), result: vi.fn(), comment: vi.fn(), collaboration: vi.fn(), issues: vi.fn(), confirm: vi.fn(), summary: vi.fn(), shares: vi.fn(), warning: vi.fn(),attachment:vi.fn(),saveIssue:vi.fn(),share:vi.fn(),revoke:vi.fn() }))
 vi.mock('ant-design-vue', () => ({ message: { warning: mocks.warning, error: vi.fn(), success: vi.fn() }, Modal: { confirm: mocks.confirm } }))
 vi.mock('vue-router', () => ({ onBeforeRouteLeave: vi.fn(), onBeforeRouteUpdate: vi.fn() }))
 vi.mock('@/api/planCollaboration', () => ({ planCollaborationApi: mocks, downloadPlanFile: vi.fn() }))
-vi.mock('@/api/caseFeatures', () => ({ caseFeaturesApi: { issues: mocks.issues } }))
+vi.mock('@/api/caseFeatures', () => ({ caseFeaturesApi: { issues: mocks.issues,saveIssue:mocks.saveIssue } }))
 vi.mock('@/api/nativeHttpReport', () => ({ nativeHttpReportApi: { detail: vi.fn() } }))
 vi.mock('@/components/TestCase/CaseMindMap.vue', () => ({ default: { render: () => null } }))
 vi.mock('@/components/TestCase/CaseRichText.vue', () => ({ default: { render: () => null } }))
@@ -27,6 +27,7 @@ beforeEach(() => {
   mocks.confirm.mockImplementation(options => options.onCancel())
 })
 describe('冻结批次报告回填保护', () => {
+  it('选择提及成员时拦住所有写入和切换',async()=>{const {state:s,stop}=mount();await flush();await s.openCase(row);s.comment='pending';s.defectTitle='pending defect';s.mentionBusy=true;await s.saveSummary();await s.saveResult();await s.upload({size:1} as File);await s.createDefect();await s.createShare();await s.revoke('share');await s.sendComment();await s.closeCase();for(const action of [mocks.summary,mocks.result,mocks.attachment,mocks.saveIssue,mocks.share,mocks.revoke,mocks.comment])expect(action).not.toHaveBeenCalled();expect(s.caseOpen).toBe(true);expect(s.comment).toBe('pending');stop()})
   it('发布评论成功后仍保护未保存步骤，取消关闭保留内容', async () => {
     const { state:s, stop } = mount(); await flush(); await s.openCase(row)
     s.stepRows[0].actual = 'unsaved'; s.comment = 'posted'; await s.sendComment()

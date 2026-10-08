@@ -1,7 +1,10 @@
 import { apiClient } from '@/utils/api'
 import type { Notification, PaginationResponse } from '@/types'
+import type {RouteLocationRaw} from 'vue-router'
+export interface MentionSource {content:string;contentFormat:'plain'|'rich';sourceId:string;kind:string;createdAt:string;route:RouteLocationRaw}
 
 export const notificationApi = {
+  source:(notificationId:string)=>apiClient.get<MentionSource>(`/notifications/${notificationId}/source`),
   getNotifications: async (params?: {
     page?: number
     size?: number

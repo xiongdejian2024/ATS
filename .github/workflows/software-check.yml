@@ -63,7 +63,7 @@ jobs:
           tests/test_auth_error_redaction.py tests/test_postgres_ddl_export.py
           tests/test_user_id_compatibility.py tests/test_log_archive.py
           tests/test_suite_delivery.py tests/test_attachment_storage.py
-          tests/test_file_library.py tests/test_evidence_archive.py
+          tests/test_file_library.py tests/test_evidence_archive.py tests/test_mentions.py
   python:
     name: XAT 集成与 Agent（无硬件）
     runs-on: ubuntu-latest
@@ -95,7 +95,7 @@ jobs:
       - run: npm run build
 
   mysql-migration:
-    name: MySQL 8 脚本作业迁移（临时合成数据）
+    name: MySQL 8 脚本和评论格式迁移（临时合成数据）
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:

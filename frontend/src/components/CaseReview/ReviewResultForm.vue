@@ -17,7 +17,7 @@
       <p class="reason-label">
         评审理由<span v-if="decision !== 'approved'">（必填）</span>
       </p>
-      <CaseRichText v-model="reason" :disabled="locked" label="批量评审理由" :upload-image="projectId ? uploadImage : undefined" :select-image="projectId ? selectImage : undefined" @uploading="setUploading" />
+      <CaseRichText v-model="reason" :project-id="projectId" :disabled="locked" label="批量评审理由" :upload-image="projectId ? uploadImage : undefined" :select-image="projectId ? selectImage : undefined" @uploading="setUploading" />
     </template>
     <a-button
       v-else
@@ -55,7 +55,7 @@
       destroy-on-close
       @ok="submit"
     >
-      <CaseRichText v-model="reason" :disabled="locked" label="评审理由" :upload-image="projectId ? uploadImage : undefined" :select-image="projectId ? selectImage : undefined" @uploading="setUploading" />
+      <CaseRichText v-model="reason" :project-id="projectId" :disabled="locked" label="评审理由" :upload-image="projectId ? uploadImage : undefined" :select-image="projectId ? selectImage : undefined" @uploading="setUploading" />
       <p v-if="decision !== 'approved'" class="reason-label">
         不通过或建议必须填写评审理由
       </p>

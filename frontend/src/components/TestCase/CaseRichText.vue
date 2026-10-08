@@ -33,8 +33,10 @@
         ></a-upload
       >
       <a-button v-if="selectImage" size="small" :disabled="disabled || uploading" @click="insertLibraryImage">文件库图片</a-button>
+      <a-button v-if="projectId" size="small" :disabled="disabled || uploading" @click="insertMention">@ 提及</a-button>
     </div>
     <EditorContent :editor="editor" />
+    <MentionMemberPicker v-if="projectId && !readonly" ref="mentionPicker" :project-id="projectId" :context="mentionContext || 'case'" />
   </div>
 </template>
 <script setup lang="ts">
@@ -44,11 +46,15 @@ import Image from "@tiptap/extension-image";
 import RichTextImage from "./RichTextImage.vue";
 import { useEditor, EditorContent, VueNodeViewRenderer } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
+import MentionMemberPicker from './MentionMemberPicker.vue';
+import {StructuredMention} from './structuredMention';
 const props = defineProps<{
   modelValue?: string;
   readonly?: boolean;
   disabled?: boolean;
   label?: string;
+  projectId?: string;
+  mentionContext?: 'case'|'plan';
   selectImage?: () => Promise<{src:string;fileName:string} | undefined>;
   uploadImage?: (file: File) => Promise<{ src: string; fileName: string }>;
 }>();
@@ -70,6 +76,7 @@ function content(value = "") {
 const editor = useEditor({
   extensions: [
     StarterKit.configure({ link: { openOnClick: false } }),
+    StructuredMention,
     Image.extend({
       addNodeView() {
         return VueNodeViewRenderer(RichTextImage);
@@ -90,6 +97,7 @@ const editor = useEditor({
 });
 defineExpose({ focus: () => editor.value?.commands.focus("end") });
 const uploading = ref(false);
+const mentionPicker=ref<InstanceType<typeof MentionMemberPicker>>();
 let closed = false;
 onBeforeUnmount(() => {
   closed = true;
@@ -121,6 +129,13 @@ async function insertLibraryImage() {
   uploading.value=true;emit('uploading',true);
   try { const image=await props.selectImage();if(image&&!closed&&editor.value&&!editor.value.isDestroyed)editor.value.chain().focus().setImage({src:image.src,alt:image.fileName}).run() }
   catch(error){message.error('选择文件库图片失败，请重试')}
+  finally{uploading.value=false;if(!closed)emit('uploading',false)}
+}
+async function insertMention(){
+  if(!props.projectId||props.disabled||uploading.value)return;
+  uploading.value=true;emit('uploading',true);
+  const project=props.projectId;
+  try{const member=await mentionPicker.value?.pick();if(member&&!closed&&project===props.projectId&&editor.value&&!editor.value.isDestroyed)editor.value.chain().focus().insertContent([{type:'structuredMention',attrs:{id:member.id,label:member.label}},{type:'text',text:' '}]).run()}
   finally{uploading.value=false;if(!closed)emit('uploading',false)}
 }
 const actions = [
@@ -234,6 +249,7 @@ watch(
 .case-rich-text :deep(.tiptap p) {
   margin: 0 0 8px;
 }
+.case-rich-text :deep(.structured-mention){color:var(--primary-color);background:var(--ms-primary-soft);border-radius:3px;padding:1px 3px;white-space:nowrap}
 .case-rich-text :deep(.tiptap p:last-child) {
   margin-bottom: 0;
 }
