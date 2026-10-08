@@ -182,6 +182,34 @@ def test_partial_reject_is_underway_archive_is_real_and_immutable(governance):
     assert copied.status_code == 200 and copied.json()["data"]["archived"] is False
 
 
+def test_decimal_database_pass_rate_remains_json_number(governance, monkeypatch):
+    """PostgreSQL NUMERIC results must preserve the existing API field type."""
+    from decimal import Decimal
+    from sqlalchemy import Numeric, literal
+    from models.case_governance import CaseReview
+    from models.review_workspace import ReviewWorkspace
+    from services import review_workspace
+
+    g = governance
+    request_review(g)
+    original = review_workspace.summary_query
+
+    def decimal_summary(db, project_id):
+        query, lifecycle, _rate = original(db, project_id)
+        rate = literal(Decimal("33.00"), type_=Numeric)
+        return (
+            query.with_entities(
+                CaseReview, ReviewWorkspace, literal(3), literal(1), lifecycle, rate
+            ),
+            lifecycle,
+            rate,
+        )
+
+    monkeypatch.setattr(review_workspace, "summary_query", decimal_summary)
+    rate = listing(g)["items"][0]["passRate"]
+    assert rate == 33.0 and isinstance(rate, (int, float))
+
+
 def test_batch_move_atomic_and_delete_preserves_cases_and_versions(governance):
     g = governance
     parent = module(g, "父模块")

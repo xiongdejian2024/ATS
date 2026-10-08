@@ -6,7 +6,7 @@
       <a-result v-if="failed" status="error" title="报告不可用" sub-title="请检查当前项目、报告链接及访问权限。"><template #extra><a-button @click="load">重试</a-button></template></a-result>
       <template v-else-if="detail">
         <p class="report-meta">{{detail.kind==='GROUP'?'集成报告':'普通报告'}} · {{detail.kind==='GROUP'?detail.payload.groupName:detail.payload.planName}} · {{dayjs(detail.payload.startedAt).format('YYYY-MM-DD HH:mm:ss')}}</p>
-        <PlanRunReport v-if="detail.kind==='PLAN'" :key="`${projectId}:${runId}`" :run-id="runId" :project-id="projectId" />
+        <PlanRunReport v-if="detail.kind==='PLAN'" :key="`${projectId}:${runId}`" :run-id="runId" :project-id="projectId" :association-id="typeof route.query.associationId === 'string' ? route.query.associationId : undefined" />
         <PlanGroupReport v-else :key="`${projectId}:${runId}`" :run="detail.payload" :project-id="projectId" @refresh="load" />
       </template>
     </a-spin>

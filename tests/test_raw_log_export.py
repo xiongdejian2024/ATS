@@ -2,7 +2,7 @@
 import gc
 import hashlib
 import tracemalloc
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import httpx
 import pytest
@@ -30,7 +30,9 @@ def put(db, id='log', body='原始\n\t空格  \r\n', execution='execution', suit
 
 
 def record_text(id, body, execution='execution', suite='suite-0'):
-    return f'[{STAMP}] [suite={suite} execution={execution or "-"} log={id}]\n{body}\n'
+    from database import engine
+    stamp = STAMP.replace(tzinfo=timezone(timedelta(hours=8))) if engine.dialect.name == 'postgresql' else STAMP
+    return f'[{stamp}] [suite={suite} execution={execution or "-"} log={id}]\n{body}\n'
 
 
 def run(db):
@@ -107,7 +109,7 @@ def test_giant_log_memory_and_database_projection_are_bounded(plan_lab):
     assert all('LIMIT' in sql for sql in reads)
     for sql, parameters in statements:
         if 'substr(' in sql:
-            assert parameters[1] <= MAX_CHUNK_CHARS
+            assert (parameters['substr_3'] if isinstance(parameters, dict) else parameters[1]) <= MAX_CHUNK_CHARS
     # Production must count characters, not MySQL LENGTH's byte count.
     class MySQLSession:
         class bind:
@@ -230,7 +232,12 @@ async def test_legacy_growth_after_preflight_is_bounded_and_explicit(workspace_h
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
             response = await client.get(SUITE_PATH)
             assert response.status_code == 409
-        assert statements and statements[-1][1][1] == len('small')
+        assert statements
+        parameters = statements[-1][1]
+        if isinstance(parameters, dict):
+            assert parameters['substr_3'] == len('small')
+        else:
+            assert parameters[1] == len('small')
         assert 'test_suite_logs.message AS' not in statements[-1][0]
     finally:
         event.remove(db.bind, 'before_cursor_execute', capture)
@@ -239,6 +246,8 @@ async def test_legacy_growth_after_preflight_is_bounded_and_explicit(workspace_h
 @pytest.mark.asyncio
 async def test_legacy_sqlite_nul_is_rejected_without_claiming_complete(workspace_http):
     db, app, _ = workspace_http
+    if db.bind.dialect.name != 'sqlite':
+        pytest.skip('Legacy SQLite NUL corruption is SQLite-specific')
     put(db, body='before\x00after')
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
         for method, path in [('get', SUITE_PATH), ('post', SUITE_PATH + '/export')]:

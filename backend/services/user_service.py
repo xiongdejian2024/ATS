@@ -48,7 +48,9 @@ async def create_user(db: Session, user_data: UserCreate) -> User:
 
 async def get_user(db: Session, user_id: UUID) -> Optional[User]:
     """获取用户"""
-    return db.query(User).filter(User.id == user_id).first()
+    # IDs are VARCHAR on all supported engines. psycopg binds Python UUID as
+    # PostgreSQL UUID, which cannot be compared directly to this text column.
+    return db.query(User).filter(User.id == str(user_id)).first()
 
 
 async def get_users(

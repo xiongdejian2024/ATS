@@ -19,6 +19,8 @@ export interface PlanRun {
     items: { suiteId: string; suiteName: string; status: string; executionId: string }[] }
 }
 export const planOrchestrationApi = {
+  activeRuns: (planId: string, params: { source?: string; associationId?: string; caseId?: string; page?: number }) =>
+    apiClient.get<{ items: { id: string; status: string; createdAt: string; associationId: string | null; caseName: string | null; frozenSelection: boolean }[]; total: number; page: number; size: number }>(`/plan-orchestration/plans/${planId}/active-execution-context`, { params }),
   groups: (projectId: string, archived=false): Promise<PlanGroup[]> => apiClient.get(`/plan-orchestration/projects/${projectId}/groups`, {params:{archived}}),
   cloneGroup: (id: string): Promise<PlanGroup> => apiClient.post(`/plan-orchestration/groups/${id}/clone`),
   createGroup: (projectId: string, data: { name: string; description?: string; tags?: string[]; archived?: boolean; moduleId?: string|null }): Promise<PlanGroup> => apiClient.post(`/plan-orchestration/projects/${projectId}/groups`, data),

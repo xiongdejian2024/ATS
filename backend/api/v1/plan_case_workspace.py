@@ -362,10 +362,12 @@ def functional_minder_batch_preview(plan_id: str, data: FunctionalMinderBatch, d
 @router.get('/plans/{plan_id}/case-workspace/defects/aggregate')
 def aggregate_instance_defects(plan_id: str, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=100), search: str = Query('', max_length=255), db: Session = Depends(get_db), user=Depends(get_current_user)):
     from services.plan_detail import defects
-    payload = defects(db, view_access(db, user, plan_id))
+    plan = view_access(db, user, plan_id)
+    payload = defects(db, plan)
     items = [item for item in payload['items'] if search.strip().casefold() in item['title'].casefold()]
     items.sort(key=lambda item: (str(item.get('createdAt', '')), item['id']), reverse=True)
     selected = []
     for item in items[(page-1)*size:page*size]:
         selected.append(dict(item, caseCount=len(item['cases']), cases=item['cases'][:20]))
-    return ok(dict(items=selected, total=len(items), page=page, size=size, canEdit=False, cases=[]))
+    from services.plan_case_defect import capabilities
+    return ok(dict(items=selected, total=len(items), page=page, size=size, canEdit=False, cases=[], **capabilities(db, plan, user)))

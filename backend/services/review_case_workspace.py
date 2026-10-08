@@ -14,13 +14,15 @@ from services import case_governance as governance
 from services.case_candidates import descendants
 from services.review_workspace import metadata
 from services.review_progress import count_metrics
+from services.sql_dialect import text_position
 
 
 def approved_vote(db, review, current_read=False):
     query = db.query(CaseReviewDecision.id).filter(
         CaseReviewDecision.item_id == CaseReviewItem.id,
         CaseReviewDecision.decision == "approved",
-        func.instr(
+        text_position(
+            db,
             assigned_expression(review),
             literal('"') + CaseReviewDecision.reviewer_id + literal('"'),
         )

@@ -658,15 +658,8 @@ def download(
     user=Depends(get_current_user),
 ):
     row, _ = service.find_attachment(db, user, project_id, attachment_id)
-    path = service.attachment_path(row)
-    if not path.is_file():
-        raise HTTPException(404, "附件文件不存在")
-    return FileResponse(
-        path,
-        filename=row.file_name,
-        media_type="application/octet-stream",
-        headers={"X-Content-Type-Options": "nosniff"},
-    )
+    from services.attachment_storage import download as storage_download
+    return storage_download(db, row)
 
 
 @router.delete("/attachments/{attachment_id}")
@@ -680,6 +673,8 @@ def delete_attachment(
     path = service.attachment_path(row)
 
     def operation():
+        from services.attachment_storage import delete_blob
+        delete_blob(db, row.file_path)
         service.change(
             db,
             case,

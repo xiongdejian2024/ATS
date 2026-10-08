@@ -1,5 +1,6 @@
 """应用配置"""
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from typing import List
 import json
 
@@ -14,6 +15,11 @@ class Settings(BaseSettings):
     
     # 数据库配置
     DATABASE_URL: str = "mysql+pymysql://ats_user:ats_password@localhost:3306/ats_db"
+    DATABASE_POOL_SIZE: int = Field(default=10, ge=1, le=100)
+    DATABASE_MAX_OVERFLOW: int = Field(default=20, ge=0, le=100)
+    DATABASE_POOL_TIMEOUT: int = Field(default=30, ge=1, le=300)
+    DATABASE_CONNECT_TIMEOUT: int = Field(default=10, ge=1, le=120)
+    DATABASE_SCHEMA: str = Field(default="", pattern=r"^(?:[a-z][a-z0-9_]{0,62})?$")
     
     # Redis配置
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -45,6 +51,8 @@ class Settings(BaseSettings):
     
     # 环境
     ENVIRONMENT: str = "development"
+    ATS_REQUIRE_ORIGIN_AUTH: bool = False
+    ATS_ORIGIN_SERVICE_KEY: str = ""
     TASK_SCHEDULER_ENABLED: bool = True
     
     # 文件上传配置

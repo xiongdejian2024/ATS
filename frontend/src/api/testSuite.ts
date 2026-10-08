@@ -46,7 +46,25 @@ export interface TestSuiteCreate {
   caseIds: string[]
 }
 
+export interface SuiteDeliveryState {
+  executionId: string
+  suiteId: string
+  environmentId: string
+  status: string
+  deliveryState: string
+  canResolve: boolean
+  managedBy: string
+  result?: string | null
+  closedBy?: string | null
+  closedAt?: string | null
+  reason?: string | null
+}
+
 export const testSuiteApi = {
+  getDeliveryState: (suiteId: string, executionId: string): Promise<SuiteDeliveryState> =>
+    apiClient.get(`/test-plans/suites/${suiteId}/runs/${executionId}/delivery`),
+  resolveDelivery: (suiteId: string, executionId: string, reason: string): Promise<SuiteDeliveryState> =>
+    apiClient.post(`/test-plans/suites/${suiteId}/runs/${executionId}/resolve`, { confirmedStopped: true, reason }),
   // 获取测试套列表
   getTestSuites: async (planId: string, params?: { skip?: number; limit?: number }): Promise<PaginationResponse<TestSuite>> => {
     const queryParams = new URLSearchParams()

@@ -1,14 +1,68 @@
 name: 软件功能检查
 on:
   push:
-    branches: [main, 'codex/**']
-    paths: ['backend/**', 'agent/**', 'frontend/**', 'tests/**', 'scripts/**', 'xat/framework/**', 'requirements-integration.txt', '.github/workflows/software-check.yml']
+    branches: [main, 'codex/**', 'dot/postgres-controller']
+    paths: ['backend/**', 'agent/**', 'frontend/**', 'tests/**', 'scripts/**', 'deploy/**', 'render.yaml', '.dockerignore', 'xat/framework/**', 'requirements-integration.txt', '.github/workflows/software-check.yml']
   pull_request:
-    paths: ['backend/**', 'agent/**', 'frontend/**', 'tests/**', 'scripts/**', 'xat/framework/**', 'requirements-integration.txt', '.github/workflows/software-check.yml']
+    paths: ['backend/**', 'agent/**', 'frontend/**', 'tests/**', 'scripts/**', 'deploy/**', 'render.yaml', '.dockerignore', 'xat/framework/**', 'requirements-integration.txt', '.github/workflows/software-check.yml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
+  controller-image:
+    name: Render controller 容器导入检查（512MB）
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f deploy/Dockerfile.controller -t ats-controller-check .
+      - name: 无数据库凭据导入完整API与framework
+        run: >-
+          docker run --rm --memory=512m --workdir=/app/backend
+          -e ENVIRONMENT=test -e DATABASE_URL=sqlite:////tmp/controller-check.sqlite
+          ats-controller-check python -c "import main; assert len(main.app.routes) > 20"
+  postgres:
+    name: PostgreSQL 17 原版登录、Agent、脚本和日志
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ats_test
+          POSTGRES_PASSWORD: ci-synthetic-only
+          POSTGRES_DB: ats_pg_regression
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd="pg_isready -U ats_test -d ats_pg_regression"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements-integration.txt
+      - name: 真实 PostgreSQL 协议与并发回归（只使用可销毁合成库）
+        env:
+          ATS_POSTGRES_TEST_URL: postgresql+psycopg://ats_test:ci-synthetic-only@127.0.0.1:5432/ats_pg_regression
+        run: >-
+          python -m pytest -q -o addopts=''
+          tests/test_http_agent_e2e.py tests/test_script_jobs_e2e.py
+          tests/test_script_job_http.py tests/test_bounded_functional_logs.py
+          tests/test_agent_log_delivery.py tests/test_review_workspace.py
+          tests/test_review_case_workspace.py tests/test_sql_dialect_compatibility.py
+          tests/test_raw_log_export.py tests/test_node_capacity_admission.py
+          tests/test_node_capacity_e2e.py tests/test_database_readiness.py
+          tests/test_postgres_configuration.py
+          tests/test_postgres_transactions.py
+          tests/test_postgres_initializer.py tests/test_postgres_initializer_real.py
+          tests/test_origin_access.py
+          tests/test_render_entrypoint.py
+          tests/test_render_controller_smoke.py tests/test_admin_bootstrap.py
+          tests/test_auth_error_redaction.py tests/test_postgres_ddl_export.py
+          tests/test_user_id_compatibility.py tests/test_log_archive.py
+          tests/test_suite_delivery.py tests/test_attachment_storage.py
   python:
     name: XAT 集成与 Agent（无硬件）
     runs-on: ubuntu-latest

@@ -31,9 +31,10 @@ async def test_history_tail_database_projection_and_latest_order(workspace_http)
             assert data['total'] == 25 and data['limit'] == 20
             assert [r['id'] for r in data['items']] == [f'日志{i:02d}' for i in range(5,25)]
             assert all(r['message'] == text[-7:] and r['totalChars'] == len(text) and r['truncated'] for r in data['items'])
-            sql = [s for s in statements if 'substr(' in s.lower()]
+            tail_function = 'right(' if db.bind.dialect.name == 'postgresql' else 'substr('
+            sql = [s for s in statements if tail_function in s.lower()]
             assert len(sql) == 1
-            assert 'test_suite_logs.message,' not in sql[0].split('substr(')[0]
+            assert 'test_suite_logs.message,' not in sql[0].split(tail_function)[0]
             assert not any(isinstance(o, SuiteLog) for o in db.identity_map.values())
             assert db.query(SuiteLog.message).filter_by(id='日志24').scalar() == text
             result = await client.get('/test-plans/suites/suite-0/logs', params=dict(executionId='执行3', tailChars=3, latest=True))

@@ -472,7 +472,8 @@ async def handle_test_suite_completed(db: Session, environment_id: str, message:
             logger.warning(f"[WebSocket] 测试套完成消息缺少必要字段: {message}")
             return
         
-        task = db.query(TaskQueue).filter(TaskQueue.execution_id == execution_id).first()
+        TaskQueueService.lock_environment(db, environment_id)
+        task = db.query(TaskQueue).filter(TaskQueue.execution_id == execution_id).populate_existing().with_for_update().first()
         if not task or task.kind != "suite" or task.suite_id != suite_id or task.environment_id != environment_id:
             return False
         if task.status in ["completed", "failed", "cancelled"]:
@@ -496,10 +497,15 @@ async def handle_test_suite_completed(db: Session, environment_id: str, message:
             "cancelled": "cancelled"
         }
         task_status = task_status_map.get(status, "completed")
+        changed = TaskQueueService.complete_task(db, execution_id, task_status)
+        if changed is None:
+            # An operator/other terminal event won. ACK replay without changing
+            # its outcome, emitting a contradictory notification or releasing
+            # another slot. complete_task re-reads the authoritative row.
+            return True
         from services.inbox import notify
         notify(db, task.executor_id, execution_id, 'execution_completed', '测试任务已结束',
             f'执行 {execution_id}：{status}' + (f'。{completion_message}' if message.get('log_delivery') else ''), suite_id)
-        TaskQueueService.complete_task(db, execution_id, task_status)
         
         # 获取测试套
         suite = db.query(TestSuite).filter(TestSuite.id == suite_id).first()

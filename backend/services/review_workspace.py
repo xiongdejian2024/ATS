@@ -1,6 +1,6 @@
 """评审首页：独立目录、分页摘要和受权限保护的原子操作。"""
 
-from sqlalchemy import case, cast, String, func, or_, and_
+from sqlalchemy import case, cast, Numeric, String, func, or_, and_
 from fastapi import HTTPException
 from models import Project, User
 from models.case_governance import (
@@ -319,7 +319,11 @@ def summary_query(db, project_id):
         (started, "underway"),
         else_="prepared",
     ).label("lifecycle")
-    rate = (func.round(passed * 1.0 / func.nullif(total, 0), 2) * 100).label(
+    ratio = passed * 1.0 / func.nullif(total, 0)
+    if db.get_bind().dialect.name == "postgresql":
+        # PostgreSQL round(value, places) accepts NUMERIC, not DOUBLE PRECISION.
+        ratio = cast(ratio, Numeric)
+    rate = (func.round(ratio, 2) * 100).label(
         "pass_rate"
     )
     query = (
@@ -471,7 +475,9 @@ def list_reviews(
                 name=review.name,
                 caseCount=total,
                 passedCount=passed,
-                passRate=round(percent or 0, 2),
+                # NUMERIC aggregates arrive as Decimal on PostgreSQL; keep the
+                # public JSON field numeric rather than Pydantic's Decimal string.
+                passRate=float(round(percent or 0, 2)),
                 lifecycle=status,
                 mode=review.mode,
                 reviewerIds=ids,
