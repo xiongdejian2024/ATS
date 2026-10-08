@@ -9,6 +9,7 @@
     :mask-closable="!saving"
     @close="close"
     ><NativeCaseConfig
+      ref="configRef"
       v-if="open"
       :project-id="projectId"
       :case-id="caseId"
@@ -24,10 +25,11 @@
   /></a-drawer>
 </template>
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch, onBeforeUnmount } from "vue";
+import { useUserStore } from "@/stores/user";
 import { Modal } from "ant-design-vue";
 import NativeCaseConfig from "./NativeCaseConfig.vue";
-defineProps<{
+const props = defineProps<{
   open: boolean;
   projectId: string;
   caseId: string;
@@ -40,8 +42,32 @@ const emit = defineEmits<{
 }>();
 const saving = ref(false),
   dirty = ref(false);
-function close() {
+const configRef = ref<{ canLeave(): boolean | Promise<boolean> }>();
+const user = useUserStore();
+let epoch = 0,
+  live = true;
+watch(
+  () => [props.projectId, props.caseId, props.open, user.user?.id],
+  () => {
+    epoch++;
+    saving.value = false;
+    dirty.value = false;
+  },
+  { flush: "sync" },
+);
+onBeforeUnmount(() => {
+  live = false;
+  epoch++;
+});
+async function close() {
   if (saving.value) return;
+  const context = epoch;
+  if (configRef.value) {
+    const allowed = await configRef.value.canLeave();
+    if (allowed && live && context === epoch && !saving.value)
+      emit("update:open", false);
+    return;
+  }
   if (!dirty.value) {
     emit("update:open", false);
     return;
@@ -52,6 +78,7 @@ function close() {
     okText: "关闭",
     cancelText: "继续编辑",
     onOk: () => {
+      if (!live || context !== epoch || saving.value) return;
       dirty.value = false;
       emit("update:open", false);
     },

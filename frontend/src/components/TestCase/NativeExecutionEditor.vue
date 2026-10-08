@@ -20,6 +20,11 @@
         /></a-form-item>
       </a-space>
       <a-tabs>
+        <a-tab-pane key="variables" tab="初始变量"
+          ><NativeVariableEditor
+            v-model="initialVariables"
+            :disabled="disabled"
+        /></a-tab-pane>
         <a-tab-pane key="headers" :tab="tabTitle('Headers', headers)"
           ><NativeRequestParamTable
             v-model="headers"
@@ -196,6 +201,9 @@
       </a-tabs>
     </template>
     <template v-else-if="enabled">
+      <a-form-item label="场景初始变量"
+        ><NativeVariableEditor v-model="initialVariables" :disabled="disabled"
+      /></a-form-item>
       <a-form-item label="步骤失败时停止"
         ><a-switch
           v-model:checked="stop"
@@ -242,6 +250,7 @@
 </template>
 <script setup lang="ts">
 import NativePostProcessorEditor from "./NativePostProcessorEditor.vue";
+import NativeVariableEditor from "./NativeVariableEditor.vue";
 import NativeRequestParamTable from "./NativeRequestParamTable.vue";
 import NativeBinaryBodyEditor from "./NativeBinaryBodyEditor.vue";
 import NativeJsonBodyEditor from "./NativeJsonBodyEditor.vue";
@@ -276,6 +285,7 @@ const {
   assertions,
   responseAssertions,
   postProcessors,
+  initialVariables,
   error,
   steps,
   methods,
