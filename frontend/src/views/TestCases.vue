@@ -79,7 +79,7 @@
           </a-menu>
         </div>
         </div>
-        <button class="recycle-module-entry" :class="{ active: recycleVisible }" @click="recycleVisible = true"><DeleteOutlined /><span>回收站</span><span class="recycle-total">{{ recycleTotal }}</span></button>
+        <button class="recycle-module-entry" :class="{ active: recycleVisible }" @click="openRecycle"><DeleteOutlined /><span>回收站</span><span class="recycle-total">{{ recycleTotal }}</span></button>
       </a-layout-sider>
 
       <!-- 右侧主内容区 -->
@@ -96,8 +96,8 @@
             <a-button aria-label="高级筛选" :type="isAdvancedSearchMode ? 'primary' : 'default'" @click="openFilter(false)"><FilterOutlined /> 筛选</a-button>
             <a-button v-if="isAdvancedSearchMode" aria-label="清空高级筛选" type="link" @click="clearAdvancedFilters">清空筛选</a-button>
             <a-button-group>
-              <a-button :type="viewLayout === 'list' ? 'primary' : 'default'" aria-label="列表视图" title="列表视图" @click="viewLayout='list'"><UnorderedListOutlined /></a-button>
-              <a-button :type="viewLayout === 'mind' ? 'primary' : 'default'" aria-label="脑图视图" title="脑图视图" @click="viewLayout='mind'"><AppstoreOutlined /></a-button>
+              <a-button :type="viewLayout === 'list' ? 'primary' : 'default'" aria-label="列表视图" title="列表视图" @click="changeViewLayout('list')"><UnorderedListOutlined /></a-button>
+              <a-button :type="viewLayout === 'mind' ? 'primary' : 'default'" aria-label="脑图视图" title="脑图视图" @click="changeViewLayout('mind')"><AppstoreOutlined /></a-button>
             </a-button-group>
             <a-button aria-label="刷新用例" title="刷新" @click="refreshGovernedCases"><ReloadOutlined /></a-button>
           </div>
@@ -114,7 +114,7 @@
         <div class="scrollable-table-content">
           <!-- 表格 -->
           <CaseRecycleBin v-if="recycleVisible" :project-id="projectId" :open="true" embedded @changed="refreshGovernedCases" @total="recycleTotal = $event" @close="recycleVisible = false" />
-          <CaseMindMap v-else-if="viewLayout === 'mind'" :cases="testCases" :modules="modules" :saving="mindSaving" @edit="saveMindNode" @create="createMindCase" @rename-module="renameMindModule" @select="handleViewCase($event as TestCase)" />
+          <CaseMindMap v-else-if="viewLayout === 'mind'" ref="mindMap" :scope-key="mindScope" :cases="testCases" :modules="modules" :saving="mindSaving" :persist-edit="saveMindNode" :persist-create="createMindCase" :persist-rename="renameMindModule" :persist-create-module="createMindModule" :persist-move="moveMindNode" :persist-delete="deleteMindNode" @create="createMindCase" @select="handleViewCase($event as TestCase)" />
           <a-card v-else class="table-card">
             <a-table
               :columns="columns"
@@ -464,13 +464,19 @@ const selectedRowKeys = ref<string[]>([])
 const searchValue = ref(''), appliedSearchValue = ref('')
 const viewMode = ref('all')
 const viewLayout = ref<'list' | 'mind'>('list')
+const mindMap = ref<InstanceType<typeof CaseMindMap>>()
+const mindScope = computed(() => JSON.stringify([projectId.value,userStore.user?.id]))
+let mindGeneration = 0
+watch(mindScope, () => { mindGeneration++; mindSaving.value=false }, {flush:'sync'})
+async function changeViewLayout(value:'list'|'mind') { if(value!==viewLayout.value && await mindMap.value?.beforeClose()!==false) viewLayout.value=value }
+async function openRecycle() { if(await mindMap.value?.beforeClose()!==false)recycleVisible.value=true }
 const exportVisible=ref(false),exportBusy=ref(false),exportFormat=ref('xlsx')
 const recycleVisible = ref(route.query.view === 'recycle'), templateVisible = ref(false), mindSaving = ref(false)
 const sortBy = ref('updated_at'), sortOrder = ref('desc')
 const filterDrawerVisible = ref(false)
 const newFilterView = ref(false), filterSaving = ref(false)
-onBeforeRouteLeave(async () => !filterSaving.value && !selection.working.value && !exportBusy.value && (await detailPanel.value?.beforeClose()??true))
-onBeforeRouteUpdate(async () => !filterSaving.value && !selection.working.value && !exportBusy.value && (await detailPanel.value?.beforeClose()??true))
+onBeforeRouteLeave(async () => !filterSaving.value && !selection.working.value && !exportBusy.value && (await mindMap.value?.beforeClose()??true) && (await detailPanel.value?.beforeClose()??true))
+onBeforeRouteUpdate(async () => !filterSaving.value && !selection.working.value && !exportBusy.value && (await mindMap.value?.beforeClose()??true) && (await detailPanel.value?.beforeClose()??true))
 function openFilter(isNew: boolean) {
   if (filterSaving.value) return
   newFilterView.value = isNew
@@ -676,7 +682,7 @@ async function saveFilterView(name: string, conditions: any[], logic: 'and' | 'o
   if (!governancePanel.value) throw new Error('项目视图尚未加载')
   await governancePanel.value.persistFilterView(name, { filterConditions: conditions, filterLogic: logic }, mode)
 }
-const refreshGovernedCases = async () => { await loadTestCases(); await loadModuleTree() }
+const refreshGovernedCases = async () => { const casesLoaded=await loadTestCases(); await loadModuleTree(); return casesLoaded }
 const clearAdvancedFilters = async () => {
   governancePanel.value?.resetViewSelection(); viewMode.value='all'; advancedFilters.value=[]; filterLogic.value='and'; newFilterView.value=false
   resetSearchSelection(); await loadTestCases()
@@ -937,17 +943,21 @@ const importModalVisible = ref(false)
 const allCasesForTree = ref<any[]>([])
 
 // 加载模块树
+let moduleListSequence=0
 const loadModuleTree = async () => {
-  if (!projectId.value) return
+  const currentProject=projectId.value, scope=mindScope.value, request=++moduleListSequence
+  const current=()=>request===moduleListSequence && scope===mindScope.value
+  if (!currentProject) return
   try {
     // 先获取所有用例（用于在模块树中显示用例节点）
-    const allCasesResponse = await testCaseApi.getTestCases(projectId.value, {
+    const allCasesResponse = await testCaseApi.getTestCases(currentProject, {
       page: 1,
       size: 9999  // 获取所有用例
     })
+    if(!current())return
+    const response = await projectApi.getModules(currentProject)
+    if(!current())return
     allCasesForTree.value = allCasesResponse.items || []
-
-    const response = await projectApi.getModules(projectId.value)
     // 新的响应格式包含 modules 和 totalCaseCount
     const moduleList = response.modules || response
     const totalCaseCount = response.totalCaseCount ?? allCasesForTree.value.length
@@ -967,7 +977,8 @@ const loadModuleTree = async () => {
       ...treeData
     ]
     rebuildFlatModuleKeys()
-    recycleTotal.value = (await caseFeaturesApi.recycle(projectId.value, { page: 1, size: 1 })).total
+    const recycled=await caseFeaturesApi.recycle(currentProject, { page: 1, size: 1 })
+    if(current())recycleTotal.value = recycled.total
   } catch (error) {
     console.error('加载模块树与回收站计数失败', error)
   }
@@ -1095,7 +1106,7 @@ function getModuleAndChildrenIds(moduleId: string): string[] {
 // 加载测试用例列表，旧项目响应不能覆盖当前项目。
 let caseListSequence = 0
 const loadTestCases = async () => {
-  const currentProject=projectId.value, request=++caseListSequence
+  const currentProject=projectId.value, scope=mindScope.value, request=++caseListSequence
   if (!currentProject) return
 
     loading.value = true
@@ -1104,13 +1115,14 @@ const loadTestCases = async () => {
 
     console.log('调用 getTestCases API，参数:', params)
     const response = await testCaseApi.getTestCases(currentProject, params)
-    if(request!==caseListSequence || currentProject!==projectId.value)return
+    if(request!==caseListSequence || scope!==mindScope.value)return
     console.log('API 返回结果:', { total: response.total, itemsCount: response.items?.length })
     testCases.value = response.items || []
     pagination.total = response.total || 0
+    return true
   } catch (error) {
     console.error('加载测试用例失败', error)
-    if(request===caseListSequence && currentProject===projectId.value) message.error('加载测试用例失败')
+    if(request===caseListSequence && scope===mindScope.value) message.error('加载测试用例失败')
   } finally {
     if(request===caseListSequence) loading.value = false
   }
@@ -1230,21 +1242,39 @@ const handleCreateCase = () => { void router.push({path:'/test-cases/create',que
 
 const saveInline=async(record:TestCase,field:string,value:unknown)=>{if(field==='name'&&!String(value).trim())return message.warning('用例名称不能为空');try{await testCaseApi.updateTestCase(projectId.value,record.id,{[field]:value});await refreshGovernedCases();message.success('用例已保存')}catch(error){console.error('行内编辑失败',error)}}
 const saveMindNode = async (id: string, patch: Partial<TestCase>) => {
-  mindSaving.value = true
-  try { await testCaseApi.updateTestCase(projectId.value,id,patch); await refreshGovernedCases(); message.success('脑图节点已保存') }
-  catch(error){ console.error('保存脑图节点失败',error) }
-  finally { mindSaving.value = false }
+  let saved:TestCase|undefined
+  const ok=await mindOperation(async p=>{saved=await testCaseApi.updateTestCase(p,id,patch)},'脑图节点已保存',loaded=>{if(loaded)saved=testCases.value.find(c=>c.id===id)||saved})
+  return ok ? saved || true : false
+}
+const mindOperation = async (action:(project:string)=>Promise<unknown>,success:string,afterRefresh?:(loaded:boolean)=>void):Promise<boolean> => {
+  if(mindSaving.value || !projectId.value)return false
+  const p=projectId.value, scope=mindScope.value, generation=mindGeneration
+  const current=()=>generation===mindGeneration && scope===mindScope.value
+  mindSaving.value=true
+  try {
+    await action(p)
+    if(!current())return false
+    message.success(success)
+    try { const loaded=await refreshGovernedCases(); if(current()){afterRefresh?.(Boolean(loaded));if(!loaded)message.warning('已保存，请刷新列表查看最新内容')} } catch { if(current())message.warning('已保存，请刷新列表查看最新内容') }
+    return current()
+  } catch(error){if(current())message.error('操作未确认，编辑内容已保留；请刷新核验结果后再重试');return false}
+  finally { if(current())mindSaving.value=false }
 }
 const createMindCase = async (moduleId?: string, draft?: Partial<TestCase>) => {
-  if (!draft) { await router.push({path:'/test-cases/create',query:{projectId:projectId.value,moduleId}});return }
-  mindSaving.value=true
-  try { await testCaseApi.createTestCase(projectId.value,draft); await refreshGovernedCases(); message.success('已粘贴为新用例') }
-  catch(error){console.error('粘贴脑图用例失败',error)} finally{mindSaving.value=false}
+  if (!draft) { await router.push({path:'/test-cases/create',query:{projectId:projectId.value,moduleId}});return true }
+  return mindOperation(p=>testCaseApi.createTestCase(p,draft),'已粘贴为新用例')
 }
 const renameMindModule = async (id:string,name:string) => {
-  if(!name.trim())return message.warning('请输入模块名称')
-  try{await projectApi.updateModule(projectId.value,id,{name:name.trim(),sortOrder:modules.value.find(m=>m.id===id)?.sortOrder || 0});await refreshGovernedCases();message.success('模块名称已保存')}catch(error){console.error('保存脑图模块失败',error)}
+  if(!name.trim())return false
+  return mindOperation(p=>projectApi.updateModule(p,id,{name:name.trim(),sortOrder:modules.value.find(m=>m.id===id)?.sortOrder || 0}),'模块名称已保存')
 }
+const createMindModule = (parentId:string|null,name:string) => mindOperation(p=>projectApi.createModule(p,{name,parentId,sortOrder:0}),'模块已创建')
+const moveMindNode = (kind:'case'|'module',id:string,parentId:string|null) => {
+  const module=modules.value.find(m=>m.id===id)
+  if(kind==='module'&&!module)return Promise.resolve(false)
+  return mindOperation(p=>kind==='case' ? caseGovernanceApi.batch(p,{caseIds:[id],moduleId:parentId}) : projectApi.updateModule(p,id,{name:module.name,parentId,sortOrder:module.sortOrder||0}),'节点已移动')
+}
+const deleteMindNode = (kind:'case'|'module',id:string) => mindOperation(p=>kind==='case' ? testCaseApi.deleteTestCase(p,id) : projectApi.deleteModule(p,id),'节点已删除')
 
 // 编辑用例
 const handleEditCase = (record: TestCase) => { void router.push({path:`/test-cases/${record.id}/edit`,query:{projectId:projectId.value}}) }
@@ -1871,8 +1901,9 @@ const getDisplayName = (userId: string) => {
 // 生命周期
 watch(viewLayout, () => { selection.clear() }, { flush:'sync' })
 watch(
-  () => projectId.value,
+  () => mindScope.value,
   () => {
+    testCases.value=[];modules.value=[];allCasesForTree.value=[];moduleTreeData.value=[];recycleTotal.value=0
     if (projectId.value) {
       if (!filterSaving.value) filterDrawerVisible.value = false
       advancedFilters.value = []; filterLogic.value = 'and'; viewMode.value='all'; resetBasicSearch()

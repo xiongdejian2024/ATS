@@ -16,7 +16,9 @@ export interface CaseMindNode {
     | "precondition"
     | "step"
     | "action"
-    | "expected";
+    | "expected"
+    | "textDescription"
+    | "expectedResult";
   caseId?: string;
   moduleId?: string;
   stepIndex?: number;
@@ -83,31 +85,44 @@ export function buildCaseMindMap(
         caseId: c.id,
       },
     ];
-    (c.steps || []).forEach((s, i) =>
-      children.push({
-        id: `${prefix}:step:${i}`,
-        name: `步骤 ${i + 1}`,
-        kind: "step",
-        caseId: c.id,
-        stepIndex: i,
-        children: [
-          {
-            id: `${prefix}:action:${i}`,
-            name: `操作：${s.action || "未填写"}`,
-            kind: "action",
-            caseId: c.id,
-            stepIndex: i,
-          },
-          {
-            id: `${prefix}:expected:${i}`,
-            name: `预期：${s.expected || "未填写"}`,
-            kind: "expected",
-            caseId: c.id,
-            stepIndex: i,
-          },
-        ],
-      }),
-    );
+    if (c.caseEditType === "TEXT") {
+      for (const [kind, label] of [
+        ["textDescription", "描述"],
+        ["expectedResult", "预期结果"],
+      ] as const) {
+        children.push({
+          id: `${prefix}:${kind}`,
+          name: `${label}：${mindText(c[kind] || "未填写")}`,
+          kind,
+          caseId: c.id,
+        });
+      }
+    } else
+      (c.steps || []).forEach((s, i) =>
+        children.push({
+          id: `${prefix}:step:${i}`,
+          name: `步骤 ${i + 1}`,
+          kind: "step",
+          caseId: c.id,
+          stepIndex: i,
+          children: [
+            {
+              id: `${prefix}:action:${i}`,
+              name: `操作：${s.action || "未填写"}`,
+              kind: "action",
+              caseId: c.id,
+              stepIndex: i,
+            },
+            {
+              id: `${prefix}:expected:${i}`,
+              name: `预期：${s.expected || "未填写"}`,
+              kind: "expected",
+              caseId: c.id,
+              stepIndex: i,
+            },
+          ],
+        }),
+      );
     const color =
       c.status === "passed"
         ? "#389e0d"
@@ -128,6 +143,58 @@ export function buildCaseMindMap(
   return root;
 }
 
+/** 图上只展示文本，编辑及复制仍保留原富文本，不改写 HTML 或身份。 */
+export function mindText(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 500);
+}
+
+export function mindNodeValue(
+  node: CaseMindNode,
+  testCase?: Partial<TestCase>,
+): string {
+  if (node.kind === "module") return node.name;
+  if (!testCase) return "";
+  if (node.kind === "case") return testCase.name || "";
+  if (["precondition", "textDescription", "expectedResult"].includes(node.kind))
+    return String(
+      testCase[
+        node.kind as "precondition" | "textDescription" | "expectedResult"
+      ] || "",
+    );
+  const step = testCase.steps?.[node.stepIndex ?? -1];
+  return (node.kind === "expected" ? step?.expected : step?.action) || "";
+}
+
+export function mindNodePatch(
+  node: CaseMindNode,
+  testCase: Partial<TestCase>,
+  value: string,
+): Partial<TestCase> | undefined {
+  if (node.kind === "case")
+    return value.trim() ? { name: value.trim() } : undefined;
+  if (["precondition", "textDescription", "expectedResult"].includes(node.kind))
+    return { [node.kind]: value };
+  const index = node.stepIndex;
+  if (
+    index === undefined ||
+    index < 0 ||
+    !Number.isInteger(index) ||
+    !testCase.steps?.[index] ||
+    testCase.caseEditType === "TEXT"
+  )
+    return undefined;
+  const steps = testCase.steps.map((step) => ({ ...step }));
+  steps[index] = {
+    ...steps[index],
+    [node.kind === "expected" ? "expected" : "action"]: value,
+  };
+  return { steps };
+}
+
 /** 只复制可编辑内容，剥离用例/步骤身份、审计字段和执行结果。 */
 export function copyCaseDraft(
   c: Partial<TestCase>,
@@ -141,10 +208,10 @@ export function copyCaseDraft(
     priority: c.priority || "P2",
     moduleId: moduleId || c.moduleId || undefined,
     precondition: c.precondition || "",
-    caseEditType: c.caseEditType || 'STEP',
-    textDescription: c.textDescription || '',
-    expectedResult: c.expectedResult || '',
-    description: c.description || '',
+    caseEditType: c.caseEditType || "STEP",
+    textDescription: c.textDescription || "",
+    expectedResult: c.expectedResult || "",
+    description: c.description || "",
     executorId: c.executorId,
     requirementRef: c.requirementRef || "",
     tags: [...(c.tags || [])],
