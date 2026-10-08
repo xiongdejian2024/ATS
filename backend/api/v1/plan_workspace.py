@@ -20,6 +20,39 @@ def ok(data=None):
     return APIResponse(status=ResponseStatus.SUCCESS, message="操作成功", data=data)
 
 
+from schemas.plan_index_view import PlanIndexViewCreate, PlanIndexViewUpdate
+from services import plan_index_view
+from api.v1.case_governance import transact
+
+
+@router.get("/projects/{project_id}/members")
+def index_members(project_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    require_project_access(db,user,project_id,"test_plan:read")
+    from services.case_governance import reviewers
+    return ok(reviewers(db,project_id))
+
+
+@router.get("/projects/{project_id}/index-views")
+def index_views(project_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return ok(plan_index_view.listing(db,user,project_id))
+
+
+@router.post("/projects/{project_id}/index-views")
+def create_index_view(project_id: str, body: PlanIndexViewCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return ok(transact(db,lambda:plan_index_view.save(db,user,project_id,body)))
+
+
+@router.put("/projects/{project_id}/index-views/{view_id}")
+def update_index_view(project_id: str, view_id: str, body: PlanIndexViewUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return ok(transact(db,lambda:plan_index_view.save(db,user,project_id,body,view_id)))
+
+
+@router.delete("/projects/{project_id}/index-views/{view_id}")
+def delete_index_view(project_id: str, view_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    transact(db,lambda:plan_index_view.remove(db,user,project_id,view_id))
+    return ok()
+
+
 def plan_access(db, user, plan_id, action="read"):
     plan = db.get(TestPlan, plan_id)
     if not plan:

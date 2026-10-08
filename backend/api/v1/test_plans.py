@@ -59,8 +59,8 @@ async def get_test_plans(
     project_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    page: int = 1,
-    size: int = 20,
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
     status: Optional[str] = None,
     type: Optional[str] = None,  # 前端使用的参数名
@@ -74,6 +74,7 @@ async def get_test_plans(
     archived: Optional[bool] = False,
     followed: bool = False,
     tag: Optional[str] = None,
+    filters: Optional[str] = Query(None, max_length=20000),
 ):
     """获取测试计划列表（按项目过滤）"""
     try:
@@ -115,7 +116,7 @@ async def get_test_plans(
             owner_id=owner_id,
             group_id=group_id, start_date=start_date, end_date=end_date, module_id=module_id,
             archived=archived, followed_by=current_user.id if followed else None, tag=tag,
-            include_descendants=include_descendants,
+            include_descendants=include_descendants, filters=filters, user_id=str(current_user.id),
         )
 
         logger.debug(f"Service返回结果 - 总数: {result['total']}, 项目数: {len(result['items'])}")
@@ -127,6 +128,8 @@ async def get_test_plans(
         # 为每个计划添加统计信息
         for item in items:
             plan_id = item.get("id")
+            if plan_id in result.get("projectedStatuses", {}):
+                item["status"] = result["projectedStatuses"][plan_id]
             item["executionPolicy"] = get_policy(db, plan_id)
             from services.plan_workspace import metadata
             item.update(metadata(db, plan_id, current_user.id))
