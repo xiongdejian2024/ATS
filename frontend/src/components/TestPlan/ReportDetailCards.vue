@@ -161,6 +161,25 @@
               ><a-descriptions-item label="重试间隔（毫秒）">{{
                 record.executionConfig.retryInterval ?? "未记录"
               }}</a-descriptions-item>
+              <a-descriptions-item
+                v-if="
+                  record.executionConfig.requestEnvironmentGroupId &&
+                  record.executionConfig.requestEnvironmentGroupId !== 'NONE'
+                "
+                label="请求环境组"
+                >{{ record.executionConfig.requestEnvironmentGroupId }} · 版本
+                {{
+                  record.executionConfig.requestEnvironmentGroupRevision ??
+                  "未记录"
+                }}</a-descriptions-item
+              >
+              <a-descriptions-item
+                v-if="record.executionConfig.resolvedRequestEnvironmentId"
+                label="映射请求环境"
+                >{{
+                  record.executionConfig.resolvedRequestEnvironmentId
+                }}</a-descriptions-item
+              >
               <a-descriptions-item label="请求环境">{{
                 record.executionConfig.requestEnvironmentId === "NONE"
                   ? "无"

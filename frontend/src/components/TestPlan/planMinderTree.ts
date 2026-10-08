@@ -46,15 +46,19 @@ export function buildPlanMinder(
   ): PlanMinderNode[] {
     if (category === "functional") return [];
     const ms = options.executionCatalog?.configurations[scope]?.effectiveConfig;
-    const environmentName = ms
-      ? ms.requestEnvironmentId === "NONE"
-        ? "默认环境"
-        : options.executionCatalog?.requestEnvironments.find(
-            (item) => item.id === ms.requestEnvironmentId,
-          )?.name || "已指定请求环境"
-      : effective.environmentId
-        ? options.environmentNames?.[effective.environmentId] || "已指定环境"
-        : "默认环境";
+    const environmentName =
+      ms?.requestEnvironmentGroupId && ms.requestEnvironmentGroupId !== "NONE"
+        ? `环境组：${options.executionCatalog?.requestEnvironmentGroups?.find((g) => g.id === ms.requestEnvironmentGroupId)?.name || "已指定环境组"}`
+        : ms
+          ? ms.requestEnvironmentId === "NONE"
+            ? "默认环境"
+            : options.executionCatalog?.requestEnvironments.find(
+                (item) => item.id === ms.requestEnvironmentId,
+              )?.name || "已指定请求环境"
+          : effective.environmentId
+            ? options.environmentNames?.[effective.environmentId] ||
+              "已指定环境"
+            : "默认环境";
     const pool = effective.resourcePool || [];
     const poolName = ms
       ? ms.testResourcePoolId === "DEFAULT"

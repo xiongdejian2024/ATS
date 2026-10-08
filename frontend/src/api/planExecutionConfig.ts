@@ -4,6 +4,7 @@ export interface ExecutionConfig {
   executionMode: "serial" | "parallel";
   testResourcePoolId: string;
   requestEnvironmentId: string;
+  requestEnvironmentGroupId?: string;
   stopOnFailure: boolean;
   retryOnFailure: boolean;
   retryTimes: number;
@@ -23,6 +24,7 @@ export interface ExecutionCatalog {
     environmentIds: string[];
     revision: number;
   }[];
+  requestEnvironmentGroups?: { id: string; name: string }[];
   requestEnvironments: { id: string; name: string }[];
   resources: { id: string; name: string; enabled: boolean }[];
 }

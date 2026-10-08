@@ -26,10 +26,10 @@
     <a-form-item label="接口请求环境">
       <a-select
         ref="environmentSelect"
-        :value="value.requestEnvironmentId"
+        :value="executionEnvironmentValue(value)"
         :disabled="controlsDisabled"
         :options="environmentOptions"
-        @change="set('requestEnvironmentId', $event)"
+        @change="selectEnvironment"
       />
     </a-form-item>
     <a-form-item label="执行方式">
@@ -83,6 +83,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import {
+  executionEnvironmentValue,
+  selectExecutionEnvironment,
   executionPoolOptions,
   executionEnvironmentOptions,
 } from "./planMinderTag";
@@ -115,6 +117,9 @@ function set<K extends keyof ExecutionConfig>(
   value: ExecutionConfig[K],
 ) {
   emit("update:value", { ...props.value, [key]: value });
+}
+function selectEnvironment(value: string) {
+  emit("update:value", selectExecutionEnvironment(props.value, value));
 }
 function changeInheritance(value: boolean) {
   emit("update:value", {
