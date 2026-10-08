@@ -51,7 +51,7 @@ jobs:
           tests/test_http_agent_e2e.py tests/test_script_jobs_e2e.py
           tests/test_script_job_http.py tests/test_bounded_functional_logs.py
           tests/test_agent_log_delivery.py tests/test_review_workspace.py
-          tests/test_review_case_workspace.py tests/test_review_candidate_views.py tests/test_review_index_filter.py tests/test_plan_index_views.py tests/test_report_index_views.py tests/test_plan_report_workspace.py tests/test_sql_dialect_compatibility.py
+          tests/test_review_case_workspace.py tests/test_review_candidate_views.py tests/test_review_index_filter.py tests/test_plan_index_views.py tests/test_report_index_views.py tests/test_plan_report_workspace.py tests/test_plan_report_details.py tests/test_plan_tree.py tests/test_plan_native_run.py tests/test_plan_execution_configuration.py tests/test_plan_group_execution.py tests/test_sql_dialect_compatibility.py
           tests/test_raw_log_export.py tests/test_node_capacity_admission.py
           tests/test_node_capacity_e2e.py tests/test_database_readiness.py
           tests/test_postgres_configuration.py

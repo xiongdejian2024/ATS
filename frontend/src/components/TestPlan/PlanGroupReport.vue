@@ -12,23 +12,15 @@
         >分享报告</a-button
       ></a-space
     >
-    <a-row :gutter="16" class="stats"
-      ><a-col :xs="12" :md="6"
-        ><a-statistic title="执行项" :value="run.report.total" /></a-col
-      ><a-col :xs="12" :md="6"
-        ><a-statistic title="通过" :value="run.report.counts.passed" /></a-col
-      ><a-col :xs="12" :md="6"
-        ><a-statistic
-          title="失败 / 错误"
-          :value="
-            (run.report.counts.failed || 0) + (run.report.counts.error || 0)
-          " /></a-col
-      ><a-col :xs="12" :md="6"
-        ><a-statistic
-          title="通过率"
-          :value="run.report.passRate"
-          suffix="%" /></a-col
-    ></a-row>
+    <ReportDetailCards
+      ref="detailCards"
+      :project-id="projectId"
+      kind="GROUP"
+      :run-id="run.id"
+      :status="run.status"
+      :report="run.report"
+      :details="run.reportDetails"
+    />
     <a-tabs>
       <a-tab-pane key="plans" tab="计划结果"
         ><a-table
@@ -140,6 +132,7 @@ import { useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
 import { message, Modal } from "ant-design-vue";
 import { planGroupApi, type GroupRun } from "@/api/planGroup";
 import { reportResultLabel, reportResultColor } from "@/api/planReports";
+import ReportDetailCards from "./ReportDetailCards.vue";
 import { useUserStore } from "@/stores/user";
 const props = defineProps<{ run: GroupRun; projectId: string }>(),
   emit = defineEmits<{ refresh: [] }>(),
@@ -160,9 +153,12 @@ const normalized = (value: GroupRun["summary"]) => ({
 const dirty = computed(
   () => !!savedSummary.value && JSON.stringify(summary) !== savedSummary.value,
 );
-let generation = 0;
+let generation = 0,
+  live = true,
+  closing = false;
 function reset() {
   ++generation;
+  closing = false;
   busy.value = false;
   shareOpen.value = false;
   shareLink.value = "";
@@ -175,6 +171,7 @@ watch(
   reset,
   {
     immediate: true,
+    flush: "sync",
   },
 );
 watch(
@@ -216,49 +213,70 @@ const childHref = (id: string) =>
     params: { runId: id },
     query: { projectId: props.projectId, kind: "PLAN" },
   }).href;
+const detailCards = ref<{ beforeClose: () => Promise<boolean> }>();
 async function beforeClose() {
-  if (busy.value) {
+  if (!live || busy.value || closing) {
     message.warning("请等待本次报告操作完成");
     return false;
   }
-  if (!dirty.value) return true;
   const mine = generation;
-  return new Promise<boolean>((resolve) =>
-    Modal.confirm({
-      title: "放弃未保存的报告总结？",
-      okText: "丢弃草稿",
-      cancelText: "继续编辑",
-      onOk() {
-        if (mine !== generation || busy.value) {
+  closing = true;
+  try {
+    if (detailCards.value && !(await detailCards.value.beforeClose()))
+      return false;
+    if (!live || mine !== generation || busy.value) return false;
+    if (!dirty.value) return true;
+    const submitted = JSON.stringify(summary);
+    return await new Promise<boolean>((resolve) =>
+      Modal.confirm({
+        title: "放弃未保存的报告总结？",
+        okText: "丢弃草稿",
+        cancelText: "继续编辑",
+        onOk() {
+          if (
+            !live ||
+            mine !== generation ||
+            busy.value ||
+            submitted !== JSON.stringify(summary)
+          ) {
+            resolve(false);
+            return;
+          }
+          Object.assign(summary, JSON.parse(savedSummary.value));
+          resolve(true);
+        },
+        onCancel() {
           resolve(false);
-          return;
-        }
-        Object.assign(summary, JSON.parse(savedSummary.value));
-        resolve(true);
-      },
-      onCancel() {
-        resolve(false);
-      },
-    }),
-  );
+        },
+      }),
+    );
+  } finally {
+    if (live && mine === generation) closing = false;
+  }
 }
 async function refresh() {
-  if (await beforeClose()) emit("refresh");
+  const mine = generation;
+  if ((await beforeClose()) && live && mine === generation && !busy.value)
+    emit("refresh");
 }
 async function openChild(id: string) {
-  if (await beforeClose()) await router.push(childHref(id));
+  const mine = generation,
+    href = childHref(id);
+  if ((await beforeClose()) && live && mine === generation && !busy.value)
+    await router.push(href);
 }
 onBeforeRouteLeave(beforeClose);
 onBeforeRouteUpdate(beforeClose);
 async function operation(
   task: (runId: string, current: () => boolean) => Promise<void>,
 ) {
-  if (busy.value) return;
+  if (busy.value || closing || !live) return;
   const mine = generation,
     runId = props.run.id,
     project = props.projectId,
     actor = user.user?.id;
   const current = () =>
+    live &&
     mine === generation &&
     runId === props.run.id &&
     project === props.projectId &&
@@ -329,6 +347,7 @@ function beforeUnload(event: BeforeUnloadEvent) {
 }
 onMounted(() => window.addEventListener("beforeunload", beforeUnload));
 onBeforeUnmount(() => {
+  live = false;
   ++generation;
   window.removeEventListener("beforeunload", beforeUnload);
 });

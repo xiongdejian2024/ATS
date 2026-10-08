@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ report: vi.fn(), result: vi.fn(), comment: vi.fn(), collaboration: vi.fn(), issues: vi.fn(), confirm: vi.fn(), summary: vi.fn(), shares: vi.fn(), warning: vi.fn(),attachment:vi.fn(),saveIssue:vi.fn(),share:vi.fn(),revoke:vi.fn() }))
 vi.mock('ant-design-vue', () => ({ message: { warning: mocks.warning, error: vi.fn(), success: vi.fn() }, Modal: { confirm: mocks.confirm } }))
 vi.mock('vue-router', () => ({ onBeforeRouteLeave: vi.fn(), onBeforeRouteUpdate: vi.fn() }))
+vi.mock('@/stores/user',()=>({useUserStore:()=>({user:{id:'user'}})}))
+vi.mock('./ReportDetailCards.vue',()=>({default:{render:()=>null}}))
 vi.mock('@/api/planCollaboration', () => ({ planCollaborationApi: mocks, downloadPlanFile: vi.fn() }))
 vi.mock('@/api/caseFeatures', () => ({ caseFeaturesApi: { issues: mocks.issues,saveIssue:mocks.saveIssue } }))
 vi.mock('@/api/nativeHttpReport', () => ({ nativeHttpReportApi: { detail: vi.fn() } }))

@@ -182,7 +182,8 @@ def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None, user
                     raise HTTPException(409, "分类执行配置要求用例关联唯一测试套或原生HTTP请求")
                 all_nodes.append(SimpleNamespace(id=relation.id, parent_id=relation.collection_id, node_type="case", category=case.type if case and case.type in {"api", "scenario"} else "functional", case_id=relation.case_id, suite_id=compatible[0].id if len(compatible) == 1 else None, name=case.name if case else "已删除用例", assigned_to=relation.assigned_to, linked_functional_id=None, config={}))
         from services.plan_execution_compile import compile_configured_tree
-        return compile_configured_tree(db, plan, policy, all_nodes, configurations, user)
+        from services.plan_report_details import freeze_test_sets
+        return freeze_test_sets(compile_configured_tree(db, plan, policy, all_nodes, configurations, user), all_nodes)
     node_map = {node.id: node for node in all_nodes}
     if scope_nodes is None and not uses_tree(db, plan.id):
         return None
@@ -240,4 +241,5 @@ def compile_tree(db, plan, policy, *, current_read=False, scope_nodes=None, user
     driven = {e["node"].linked_functional_id for e in entries if e["node"].linked_functional_id}
     for entry in entries:
         entry["prerequisites"] = [dep for dep in entry["prerequisites"] if dep not in driven]
-    return entries
+    from services.plan_report_details import freeze_test_sets
+    return freeze_test_sets(entries, all_nodes)

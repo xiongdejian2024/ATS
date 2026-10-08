@@ -62,10 +62,12 @@ def aggregate(db, run):
 def run_data(db, run):
     from services.plan_report_workspace import report_name
     report = run.report if run.status in TERMINAL and run.report else aggregate(db, run)
+    from services.plan_report_details import details
+    report_details = details(db, children(db, run), report, group_policy=run.config_snapshot, group_name=run.group_name)
     return dict(id=run.id, groupId=run.group_id, groupName=run.group_name, projectId=run.project_id,
                 status=run.status, startedAt=run.created_at.isoformat() if run.created_at else None,
                 completedAt=run.completed_at.isoformat() if run.completed_at else None,
-                configSnapshot=run.config_snapshot, summary=run.summary or {}, report=report,
+                configSnapshot=run.config_snapshot, summary=run.summary or {}, report=report, reportDetails=report_details,
                 children=report.get("plans", []), reportName=report_name(db, "GROUP", run.id, run.group_name))
 
 
