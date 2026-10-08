@@ -128,7 +128,8 @@ import {
   PlusOutlined,
 } from "@ant-design/icons-vue";
 import { cloneDeep } from "lodash-es";
-import type { CaseFolder, PlanCaseSavedView } from "@/api/planCaseWorkspace";
+import type { CaseFolder } from "@/api/planCaseWorkspace";
+import type { ReviewCandidateSavedView } from "@/api/reviewWorkspace";
 import { reviewWorkspaceApi as api } from "@/api/reviewWorkspace";
 import { caseFeaturesApi, type CaseTemplate } from "@/api/caseFeatures";
 import { useUserStore } from "@/stores/user";
@@ -147,6 +148,7 @@ const props = defineProps<{
   conditions?: FilterCondition[];
   logic: FilterLogic;
   viewId?: string;
+  mine?: boolean;
   busy: boolean;
 }>();
 let live = true;
@@ -164,13 +166,14 @@ const emit = defineEmits<{
     conditions: FilterCondition[] | undefined,
     logic: FilterLogic,
     viewId?: string,
+    mine?: boolean,
   ];
   saving: [value: boolean];
 }>();
 const visible = ref(false),
   newView = ref(false),
   saving = ref(false),
-  views = ref<PlanCaseSavedView[]>([]),
+  views = ref<ReviewCandidateSavedView[]>([]),
   viewLoading = ref(false),
   viewError = ref(""),
   metadataLoading = ref(false),
@@ -282,11 +285,13 @@ function apply(conditions: FilterCondition[], logic: FilterLogic) {
     conditions.length ||
       activeView.value ||
       savedViewId ||
+      props.mine ||
       props.viewId === "system:my"
       ? conditions
       : undefined,
     logic,
     savedViewId || (newView.value ? undefined : props.viewId),
+    props.mine || props.viewId === "system:my",
   );
 }
 async function selectView(value: string) {
@@ -302,6 +307,7 @@ async function selectView(value: string) {
       cloneDeep(view.filters.filterConditions || []),
       view.filters.filterLogic || "and",
       view.id,
+      view.filters.mine === true,
     );
 }
 async function saveView(
@@ -316,6 +322,7 @@ async function saveView(
   const filters = {
     filterConditions: cloneDeep(conditions),
     filterLogic: logic,
+    ...(props.mine || props.viewId === "system:my" ? { mine: true } : {}),
   };
   const row =
     mode === "update" && activeView.value
@@ -332,13 +339,13 @@ async function saveView(
   views.value = [row, ...views.value.filter((v) => v.id !== row.id)];
   newView.value = false;
   savedViewId = row.id;
-  emit("apply", cloneDeep(conditions), logic, row.id);
+  emit("apply", cloneDeep(conditions), logic, row.id, filters.mine === true);
 }
 const renameOpen = ref(false),
   renameName = ref(""),
   renameId = ref(""),
   renameError = ref("");
-function rename(view: PlanCaseSavedView) {
+function rename(view: ReviewCandidateSavedView) {
   if (!live || saving.value || props.busy || visible.value) return;
   renameId.value = view.id;
   renameName.value = view.name;
@@ -377,7 +384,7 @@ async function saveName() {
     }
   }
 }
-function remove(view: PlanCaseSavedView) {
+function remove(view: ReviewCandidateSavedView) {
   if (!live || saving.value || props.busy || visible.value) return;
   const scope = identity.value,
     project = props.projectId;

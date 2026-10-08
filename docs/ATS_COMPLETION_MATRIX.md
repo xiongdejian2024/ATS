@@ -198,7 +198,7 @@ Case lists now derive custom columns from the current project field catalog. Sta
 Final full frontend suite: **344 passed across 71 files**; production build and strict type checks passed (30.12 seconds). Focused helper/component/actual-parent state regressions: **9 passed**. Independent review also exercised shared-table compatibility and controlled late metadata/scope/error responses without finding a remaining blocker. These are component-state tests, not real browser acceptance; exact-final-head CI remains required before merge.
 
 
-C01 final commit `962a3c028368548d99b53b2dc887530ab5aee8ba` passed push/PR CI `37819500664` / `37819512093`; PR #8 merged as `716788711de79be009fc5e296450f3a371aecd72`. C03 main CI `37818399016` succeeded. The subsequent main run `37824403887` is still pending at this record.
+C01 final commit `962a3c028368548d99b53b2dc887530ab5aee8ba` passed push/PR CI `37819500664` / `37819512093`; PR #8 merged as `716788711de79be009fc5e296450f3a371aecd72`. C03 main CI `37818399016` succeeded. The subsequent main run `37824403887` succeeded.
 
 ## Review association advanced views (2026-10-08)
 
@@ -209,3 +209,5 @@ The association table supports scoped persisted columns, widths and page size. F
 Focused backend: **11 passed** (candidate views and existing review workspaces); focused frontend: **8 passed** (actual component state with controlled responses). PostgreSQL CI explicitly includes the new candidate-view regressions and remains required before dialect acceptance. Review-home advanced personal views are still development work. These checks do not claim real browser/blue-UI interaction acceptance.
 
 Final frontend suite: **352 passed across 74 files**, strict type checks and production build passed (32.17 seconds). Independent backend review additionally exercised unknown system fields and disabled/revoked actors retained by old sessions: all rejected without writes. Exact-head CI remains required before this association increment is merged.
+
+PR #9 first commit `dd5c788c2f8bed0ff0e1cb4ebafed4cf78a0cb6a` is published. A follow-up preserves the mandatory current-creator scope when saving/reopening personal OR views; review-only types and strict boolean validation keep plan-view contracts compatible. Follow-up backend **12 passed**, focused frontend **9 passed**, full frontend **353 passed** and independent strict types passed. Earlier-head CI cannot qualify the follow-up source.

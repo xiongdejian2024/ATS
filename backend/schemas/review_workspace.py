@@ -3,8 +3,34 @@
 from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
-from schemas.case_governance import StrictRequest, ReviewVote
+from schemas.case_governance import StrictRequest, ReviewVote, SavedViewRename
 from schemas.case_selection import CaseSelection
+
+
+def review_candidate_view_filters(value):
+    from schemas.plan_candidate_view import validate_filters
+    if not isinstance(value, dict) or type(value.get("mine", False)) is not bool:
+        raise ValueError("个人视图范围不合法")
+    validate_filters({key: item for key, item in value.items() if key != "mine"})
+    return value
+
+
+class ReviewCandidateViewCreate(SavedViewRename):
+    filters: dict
+
+    @field_validator("filters")
+    @classmethod
+    def validate_candidate_view(cls, value):
+        return review_candidate_view_filters(value)
+
+
+class ReviewCandidateViewUpdate(SavedViewRename):
+    filters: dict | None = None
+
+    @field_validator("filters")
+    @classmethod
+    def validate_candidate_view(cls, value):
+        return review_candidate_view_filters(value)
 
 
 class ModuleSave(StrictRequest):

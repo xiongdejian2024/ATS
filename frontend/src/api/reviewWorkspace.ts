@@ -11,6 +11,10 @@ import type {
 type ReviewViewFilters = {
   filterConditions: FilterCondition[];
   filterLogic: FilterLogic;
+  mine?: boolean;
+};
+export type ReviewCandidateSavedView = Omit<PlanCaseSavedView, "filters"> & {
+  filters: PlanCaseSavedView["filters"] & { mine?: boolean };
 };
 export interface ReviewModule {
   id: string;
@@ -120,9 +124,9 @@ const base = (project: string) =>
   `/projects/${project}/case-governance/review-workspace`;
 export const reviewWorkspaceApi = {
   candidateViews: (p: string) =>
-    apiClient.get<PlanCaseSavedView[]>(`${base(p)}/candidate-views`),
+    apiClient.get<ReviewCandidateSavedView[]>(`${base(p)}/candidate-views`),
   saveCandidateView: (p: string, name: string, filters: ReviewViewFilters) =>
-    apiClient.post<PlanCaseSavedView>(`${base(p)}/candidate-views`, {
+    apiClient.post<ReviewCandidateSavedView>(`${base(p)}/candidate-views`, {
       name,
       filters,
     }),
@@ -132,7 +136,7 @@ export const reviewWorkspaceApi = {
     name: string,
     filters?: ReviewViewFilters,
   ) =>
-    apiClient.put<PlanCaseSavedView>(`${base(p)}/candidate-views/${id}`, {
+    apiClient.put<ReviewCandidateSavedView>(`${base(p)}/candidate-views/${id}`, {
       name,
       ...(filters === undefined ? {} : { filters }),
     }),

@@ -97,6 +97,7 @@
             :conditions="conditions"
             :logic="logic"
             :view-id="viewId"
+            :mine="mine"
             :busy="locked"
             @apply="applyFilters"
             @saving="filterSaving = $event"
@@ -267,6 +268,7 @@ const identity = computed(() =>
 const conditions = ref<FilterCondition[]>(),
   logic = ref<FilterLogic>("and"),
   viewId = ref<string>();
+const mine = ref(false);
 const advanced = computed(
   () => conditions.value !== undefined || viewId.value === "system:my",
 );
@@ -281,7 +283,7 @@ function filterParams() {
   return advanced.value
     ? {
         filters: { conditions: conditions.value || [], logic: logic.value },
-        mine: viewId.value === "system:my",
+        mine: mine.value || viewId.value === "system:my",
       }
     : {};
 }
@@ -289,11 +291,13 @@ function applyFilters(
   next: FilterCondition[] | undefined,
   nextLogic: FilterLogic,
   nextView?: string,
+  nextMine = false,
 ) {
   if (selecting.value || saving.value) return;
   conditions.value = next;
   logic.value = nextLogic;
   viewId.value = nextView;
+  mine.value = nextMine || nextView === "system:my";
   resetPage();
 }
 const moduleTree = computed(() =>
@@ -536,6 +540,7 @@ watch(
     conditions.value = undefined;
     logic.value = "and";
     viewId.value = undefined;
+    mine.value = false;
     settingsOpen.value = false;
     data.value = undefined;
     scopedIds.value = [];

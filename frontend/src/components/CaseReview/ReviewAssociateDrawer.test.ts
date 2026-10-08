@@ -44,7 +44,9 @@ beforeEach(() => {
   mocks.candidates.mockResolvedValue(result("initial"));
   mocks.select.mockResolvedValue({ caseIds: ["found"] });
 });
-afterEach(() => { vi.unstubAllGlobals(); });
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 it("advanced paged read and select-all carry identical conditions while selection stays explicit", async () => {
   const host = componentHost(Drawer, {
     open: true,
@@ -72,6 +74,11 @@ it("advanced paged read and select-all carry identical conditions while selectio
     excludeIds: ["existing", "selected"],
   });
   expect([...s.selected]).toEqual(["selected", "found"]);
+  s.applyFilters(conditions, "or", "mine-view", true);
+  await flush();
+  await s.selectAll();
+  expect(mocks.candidates.mock.calls.at(-1)![1].mine).toBe(true);
+  expect(mocks.select.mock.calls.at(-1)![1].mine).toBe(true);
   host.stop();
 });
 it("late project reads/selections and save failures preserve only the current draft", async () => {

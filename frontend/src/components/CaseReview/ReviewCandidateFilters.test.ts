@@ -83,6 +83,37 @@ it("a pre-write list response cannot replace an acknowledged new personal view",
   expect(s.viewLoading).toBe(false);
   host.stop();
 });
+it("saving and reopening a current-creator view preserves its mandatory scope with OR conditions", async () => {
+  const applied = vi.fn(),
+    conditions = [{ field: "tags", operator: "contains", value: "回归" }];
+  const filters = {
+    filterConditions: conditions,
+    filterLogic: "or",
+    mine: true,
+  };
+  mocks.save.mockResolvedValueOnce({ ...view, id: "mine-view", filters });
+  const host = componentHost(Filters, {
+    projectId: "p",
+    modules: [],
+    logic: "or",
+    busy: false,
+    viewId: "system:my",
+    mine: true,
+    onApply: applied,
+  });
+  await flush();
+  const s = host.state;
+  await s.saveView("Mine", conditions, "or", "create");
+  expect(mocks.save.mock.calls[0][2]).toEqual(filters);
+  await s.selectView("mine-view");
+  expect(applied.mock.calls.at(-1)).toEqual([
+    conditions,
+    "or",
+    "mine-view",
+    true,
+  ]);
+  host.stop();
+});
 it("reset and project changes cannot silently discard filter drafts or apply late saved views", async () => {
   const applied = vi.fn(),
     host = componentHost(Filters, {

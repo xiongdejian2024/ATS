@@ -73,3 +73,24 @@ def test_candidate_views_crud_owner_project_namespace_and_quota(governance):
     assert client.delete(url+"/"+row["id"]).status_code == 200
     assert create("恢复额度").status_code == 200
     assert client.post(url,json=dict(name="接口字段", filters=dict(filterConditions=[condition("apiChange",True)]))).status_code == 422
+
+
+def test_saved_mine_scope_round_trip_and_identical_selection(governance):
+    g = governance
+    client, db, base = g["client"], g["db"], endpoint(g)
+    first, second = g["cases"]
+    first.created_by = g["users"][0].id
+    second.created_by = g["users"][1].id
+    first.tags = ["回归"]; second.tags = ["回归"]
+    db.commit()
+    filters = dict(filterConditions=[condition("tags", "回归", "contains")],filterLogic="or",mine=True)
+    response = client.post(base+"/candidate-views",json=dict(name="我的回归",filters=filters))
+    assert response.status_code == 200, response.text
+    saved = client.get(base+"/candidate-views").json()["data"][0]["filters"]
+    assert saved == filters
+    raw = dict(conditions=saved["filterConditions"],logic=saved["filterLogic"])
+    rows = client.get(base+"/candidates",params=dict(filters=json.dumps(raw),mine=saved["mine"])).json()["data"]
+    selected = client.post(base+"/candidate-selection",json=dict(filters=raw,mine=saved["mine"])).json()["data"]
+    assert [row["id"] for row in rows["items"]] == selected["caseIds"] == [first.id]
+    invalid = client.post(base+"/candidate-views",json=dict(name="非法范围",filters={**filters,"mine":"true"}))
+    assert invalid.status_code == 422

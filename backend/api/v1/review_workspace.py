@@ -23,7 +23,7 @@ from schemas.case_governance import ReviewHeader
 router = APIRouter(prefix="/review-workspace", tags=["评审首页"])
 
 
-from schemas.plan_candidate_view import CandidateViewCreate, CandidateViewUpdate
+from schemas.review_workspace import ReviewCandidateViewCreate, ReviewCandidateViewUpdate
 from services import review_saved_view
 
 
@@ -33,12 +33,12 @@ def candidate_views(project_id: str, db: Session = Depends(get_db), user=Depends
 
 
 @router.post("/candidate-views")
-def create_candidate_view(project_id: str, body: CandidateViewCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def create_candidate_view(project_id: str, body: ReviewCandidateViewCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     return result(transact(db, lambda: review_saved_view.save(db, user, project_id, body)))
 
 
 @router.put("/candidate-views/{view_id}")
-def update_candidate_view(project_id: str, view_id: str, body: CandidateViewUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_candidate_view(project_id: str, view_id: str, body: ReviewCandidateViewUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     return result(transact(db, lambda: review_saved_view.save(db, user, project_id, body, view_id)))
 
 
