@@ -31,6 +31,7 @@ const routes = [
       { path: 'test-plan-reports', name: 'TestPlanReports', component: () => import('@views/TestPlanReports.vue'), meta: { title: '计划报告' } },
       { path: 'test-plan-reports/:runId', name: 'TestPlanReportDetail', component: () => import('@views/TestPlanReportDetail.vue'), meta: { title: '计划报告详情' } },
       { path: 'task-center', name: 'TaskCenter', component: () => import('@views/TaskCenter.vue'), meta: { title: '测试任务' } },
+      { path: 'script-jobs', name: 'ScriptJobs', component: () => import('@views/ScriptJobs.vue'), meta: { title: '脚本作业' } },
       { path: 'ai-assistant', name: 'AIAssistant', component: () => import('@views/AIAssistant.vue'), meta: { title: 'AI 辅助' } },
       {
         path: 'dashboard',

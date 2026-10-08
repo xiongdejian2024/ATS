@@ -16,6 +16,8 @@ AGENT_MESSAGE_TYPES = frozenset(
         "test_suite_result",
         "test_suite_log",
         "test_suite_completed",
+        "script_job_completed",
+        "script_job_state",
         "log_batch",
         "workspace_list_response",
         "workspace_read_response",

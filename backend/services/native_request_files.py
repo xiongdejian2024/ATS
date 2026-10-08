@@ -127,7 +127,7 @@ def get_agent_file(db, execution_id, identifier, token):
         raise HTTPException(401, "执行节点认证无效")
     task = (
         db.query(TaskQueue)
-        .filter_by(execution_id=execution_id, environment_id=env.id)
+        .filter_by(execution_id=execution_id, environment_id=env.id, kind="suite")
         .first()
     )
     item = db.query(PlanRunItem).filter_by(execution_id=execution_id).first()

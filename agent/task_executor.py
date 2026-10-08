@@ -2,6 +2,7 @@
 import asyncio
 import os
 import subprocess
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable, Awaitable
@@ -97,7 +98,7 @@ class TaskExecutor:
     async def execute_task(self, task_config: Dict[str, Any]) -> Dict[str, Any]:
         """Execute asynchronously so silent commands cannot block heartbeat/cancel."""
         task_id, command = task_config.get("task_id"), task_config.get("command")
-        started, output, process = datetime.now(), OutputTail(), None
+        started, output, process = time.monotonic(), OutputTail(), None
         status, error = "error", None
         timeout = task_config.get("timeout", self.default_timeout)
         self.runners[task_id] = asyncio.current_task()
@@ -147,7 +148,7 @@ class TaskExecutor:
         return {"task_id": task_id, "status": status,
                 "exit_code": process.returncode if process else -1,
                 "output": output.render(), "error": error,
-                "duration": (datetime.now() - started).total_seconds()}
+                "duration": max(0.0, time.monotonic() - started)}
 
     async def cancel_task(self, task_id: str) -> bool:
         try:

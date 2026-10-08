@@ -156,6 +156,7 @@ class LogDelivery:
         self.spool, self.client, self.logger = spool, client, logger
         self.retry_seconds = retry_seconds
         self.capable = None
+        self.script_capable = False
         self.blocked_reason = None
         self.backpressured = False
         self.changed = asyncio.Event()
@@ -173,6 +174,9 @@ class LogDelivery:
 
     def negotiate(self, message):
         self.capable = "log_batch_v1" in message.get("capabilities", [])
+        self.script_capable = "script_jobs_v1" in message.get("capabilities", [])
+        if self.blocked_reason == "script_controller_upgrade_required" and self.script_capable:
+            self.blocked_reason = None
         if not self.capable and self.logger:
             self.logger.warning(
                 "Controller has no durable log ACK capability; legacy delivery is best-effort after socket send"
@@ -187,6 +191,7 @@ class LogDelivery:
             for key in (
                 "type",
                 "suite_id",
+                "script_job_id",
                 "execution_id",
                 "task_id",
                 "level",
@@ -282,6 +287,9 @@ class LogDelivery:
             batch = self.spool.batch()
             if not batch["records"]:
                 await self._wait()
+                continue
+            if not self.script_capable and any(r["payload"].get("type") == "script_job_log" for r in batch["records"]):
+                self.blocked_reason = "script_controller_upgrade_required"
                 continue
             try:
                 if self.capable:

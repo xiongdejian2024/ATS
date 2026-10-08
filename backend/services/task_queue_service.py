@@ -159,12 +159,13 @@ class TaskQueueService:
         return None
 
     @staticmethod
-    def get_next_pending_task(db: Session, environment_id: str) -> Optional[TaskQueue]:
+    def get_next_pending_task(db: Session, environment_id: str, *, kinds=("suite",)) -> Optional[TaskQueue]:
         """获取下一个待执行的任务（按优先级和创建时间排序）"""
         # 计划项由编排调度统一领取，避免旧完成回调绕过失败停止与派发确认。
         from models.plan_orchestration import PlanRunItem
         from models.task_schedule import TaskScheduleRun
         task = db.query(TaskQueue).filter(
+            TaskQueue.kind.in_(kinds),
             ~TaskQueue.execution_id.in_(db.query(PlanRunItem.execution_id)),
             ~TaskQueue.execution_id.in_(db.query(TaskScheduleRun.execution_id).filter(
                 TaskScheduleRun.execution_id.isnot(None)

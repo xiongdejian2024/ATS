@@ -32,9 +32,9 @@ class LogExportRequest(BaseModel):
     log_id: str | None = Field(None, alias="logId", max_length=36)
 
 
-def character_length(query):
-    return (func.length(TestSuiteLog.message) if query.session.bind.dialect.name == "sqlite"
-            else func.char_length(TestSuiteLog.message))
+def character_length(query, model=TestSuiteLog):
+    return (func.length(model.message) if query.session.bind.dialect.name == "sqlite"
+            else func.char_length(model.message))
 
 
 def run_log_query(db, run_id):
@@ -47,9 +47,9 @@ def run_log_query(db, run_id):
     return db.query(TestSuiteLog).filter(membership)
 
 
-def _nul_position(query):
+def _nul_position(query, model=TestSuiteLog):
     # SQLite text LENGTH/SUBSTR stop at NUL. MySQL supports the full string.
-    return (func.instr(TestSuiteLog.message, "\x00") if query.session.bind.dialect.name == "sqlite"
+    return (func.instr(model.message, "\x00") if query.session.bind.dialect.name == "sqlite"
             else func.coalesce(None, 0))
 
 
@@ -116,7 +116,7 @@ def _read(cursor, scope, user_id):
         raise HTTPException(400, "日志下载游标无效或不属于当前用户/选择。") from exc
 
 
-def export_log_chunk(query, scope, user_id, request):
+def export_log_chunk(query, scope, user_id, request, *, model=TestSuiteLog, subject="suite_id", label="suite"):
     """At most 1001 metadata rows at start and 32 SUBSTR reads per response.
 
     A fixed manifest avoids time-based pagination skipping tied timestamps or
@@ -125,6 +125,7 @@ def export_log_chunk(query, scope, user_id, request):
     a seemingly complete file with a gap. Metadata over the explicit limit asks
     the caller to split by execution, never silently drops evidence.
     """
+    subject_column = getattr(model, subject)
     if request.cursor:
         state = _read(request.cursor, scope, user_id)
         if ((request.execution_id and request.execution_id != state["execution"])
@@ -133,12 +134,12 @@ def export_log_chunk(query, scope, user_id, request):
     else:
         selected = query
         if request.execution_id:
-            selected = selected.filter(TestSuiteLog.execution_id == request.execution_id)
+            selected = selected.filter(model.execution_id == request.execution_id)
         if request.log_id:
-            selected = selected.filter(TestSuiteLog.id == request.log_id)
-        rows = selected.with_entities(TestSuiteLog.id, TestSuiteLog.suite_id,
-            TestSuiteLog.execution_id, TestSuiteLog.timestamp, character_length(selected), _nul_position(selected)).order_by(
-                TestSuiteLog.timestamp, TestSuiteLog.id).limit(MAX_SNAPSHOT_RECORDS + 1).all()
+            selected = selected.filter(model.id == request.log_id)
+        rows = selected.with_entities(model.id, subject_column,
+            model.execution_id, model.timestamp, character_length(selected, model), _nul_position(selected, model)).order_by(
+                model.timestamp, model.id).limit(MAX_SNAPSHOT_RECORDS + 1).all()
         if len(rows) > MAX_SNAPSHOT_RECORDS:
             raise HTTPException(413, {
                 "code": "LOG_SELECTION_TOO_LARGE", "maxRecords": MAX_SNAPSHOT_RECORDS,
@@ -154,16 +155,16 @@ def export_log_chunk(query, scope, user_id, request):
     records = state["records"]
     while state["index"] < len(records) and remaining and visited < MAX_CHUNK_RECORDS:
         log_id, suite_id, execution_id, timestamp, end = records[state["index"]]
-        header = f"[{timestamp}] [suite={suite_id} execution={execution_id or '-'} log={log_id}]\n"
+        header = f"[{timestamp}] [{label}={suite_id} execution={execution_id or '-'} log={log_id}]\n"
         offset = state["offset"]
         prefix = header[offset:offset + remaining] if offset < len(header) else ""
         offset += len(prefix)
         body_start = max(0, offset - len(header))
         take = min(remaining - len(prefix), max(0, end - body_start))
         # This scalar projection never constructs a TestSuiteLog ORM entity.
-        row = query.filter(TestSuiteLog.id == log_id, TestSuiteLog.suite_id == suite_id,
-            TestSuiteLog.execution_id == execution_id).with_entities(character_length(query),
-                func.substr(TestSuiteLog.message, body_start + 1, take), _nul_position(query)).first()
+        row = query.filter(model.id == log_id, subject_column == suite_id,
+            model.execution_id == execution_id).with_entities(character_length(query, model),
+                func.substr(model.message, body_start + 1, take), _nul_position(query, model)).first()
         if row is None or row[0] < end or len(row[1]) != take:
             raise HTTPException(409, {"code": "LOG_EXPORT_GAP", "logId": log_id,
                 "message": "快照中的日志已删除或缩短，下载中止。请保留已下载部分并重新选择日志。"})

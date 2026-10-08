@@ -14,6 +14,7 @@ from sqlalchemy.orm import load_only
 from models.agent_log import AgentLogCursor, AgentTaskLog
 from models.task_queue import TaskQueue
 from models.test_suite import TestSuiteLog
+from models.script_job import ScriptJobLog
 from utils.datetime_utils import beijing_now
 
 MAX_BATCH_RECORDS = 64
@@ -82,7 +83,7 @@ def validate_batch(message):
         payload = record.get("payload")
         if (
             not isinstance(payload, dict)
-            or payload.get("type") not in {"test_suite_log", "task_log"}
+            or payload.get("type") not in {"test_suite_log", "task_log", "script_job_log"}
             or not isinstance(payload.get("message"), str)
         ):
             raise ValueError("invalid_payload")
@@ -100,6 +101,9 @@ def validate_batch(message):
                 payload.get("execution_id")
             ):
                 raise ValueError("invalid_execution")
+        elif payload["type"] == "script_job_log":
+            if not _identifier(payload.get("script_job_id")) or not _identifier(payload.get("execution_id")):
+                raise ValueError("invalid_execution")
         elif not _identifier(payload.get("task_id"), 255):
             raise ValueError("invalid_task")
         size = len(
@@ -116,12 +120,27 @@ def validate_batch(message):
 def _append(db, environment_id, payload):
     """Return bounded live delta after SQL append, without fetching raw history."""
     is_suite = payload["type"] == "test_suite_log"
-    model = TestSuiteLog if is_suite else AgentTaskLog
-    if is_suite:
+    is_script = payload["type"] == "script_job_log"
+    model = ScriptJobLog if is_script else TestSuiteLog if is_suite else AgentTaskLog
+    if is_script:
+        task = db.query(TaskQueue).filter_by(kind="script", script_job_id=payload["script_job_id"],
+            execution_id=payload["execution_id"], environment_id=environment_id).first()
+        if not task:
+            raise ValueError("execution_not_owned")
+        from models.script_job import ScriptJobRun
+        run = db.get(ScriptJobRun, payload["execution_id"])
+        if not run or run.job_id != payload["script_job_id"] or run.environment_id != environment_id:
+            raise ValueError("execution_not_owned")
+        log_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "ats-script-log:" + payload["execution_id"]))
+        row = db.query(model).options(load_only(model.id, model.timestamp)).filter_by(id=log_id).first()
+        if not row:
+            row = model(id=log_id, script_job_id=payload["script_job_id"], execution_id=payload["execution_id"], message="", timestamp=beijing_now())
+            db.add(row); db.flush()
+    elif is_suite:
         task = (
             db.query(TaskQueue.id)
             .filter_by(
-                execution_id=payload["execution_id"],
+                execution_id=payload["execution_id"], kind="suite",
                 suite_id=payload["suite_id"],
                 environment_id=environment_id,
             )
@@ -202,6 +221,10 @@ def _append(db, environment_id, payload):
         .values(message=model.message + suffix, timestamp=timestamp),
         execution_options={"synchronize_session": False},
     )
+    if is_script:
+        return ("script:" + payload["execution_id"], dict(id=row.id, message=suffix[-32768:],
+            timestamp=timestamp.isoformat(), execution_id=payload["execution_id"],
+            script_job_id=payload["script_job_id"], endOffset=length + len(suffix), truncated=len(suffix) > 32768))
     if is_suite:
         return (
             payload["suite_id"],
@@ -246,8 +269,11 @@ def _notify_blocked(db, environment_id, message, reason):
             and _identifier(entry.get("execution_id"))
             else None
         )
+        if entry.get("type") == "script_job_log" and _identifier(entry.get("script_job_id")) and _identifier(entry.get("execution_id")):
+            task = db.query(TaskQueue).filter_by(kind="script", script_job_id=entry["script_job_id"],
+                execution_id=entry["execution_id"], environment_id=environment_id).first()
         if task:
-            recipients[task.executor_id] = (task.suite_id, task.execution_id)
+            recipients[task.executor_id] = (task.suite_id or task.script_job_id, task.execution_id)
     if not recipients:
         environment = db.get(Environment, environment_id)
         if environment and environment.created_by:

@@ -28,6 +28,7 @@ def handle_run_result(db, environment_id, message):
     if (
         not suite
         or not task
+        or task.kind != "suite"
         or task.suite_id != suite.id
         or task.environment_id != environment_id
     ):

@@ -23,6 +23,8 @@ class AgentSession:
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     last_seen: float = field(default_factory=time.monotonic)
     last_status_write: float = 0.0
+    capabilities: frozenset = field(default_factory=frozenset)
+    auth_received: bool = False
     send_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
@@ -106,6 +108,8 @@ class ConnectionManager:
         with SessionLocal() as db:
             try:
                 EnvironmentService.mark_node_offline(db, environment_id)
+                from services.script_jobs import mark_disconnected
+                mark_disconnected(db, environment_id)
             except Exception:
                 db.rollback()
                 logger.exception(
@@ -219,4 +223,9 @@ class ConnectionManager:
             db.query(Environment).filter(Environment.is_online.is_(True)).update(
                 {"is_online": False}
             )
+            from models.script_job import ScriptJobRun
+            from models.task_queue import TaskQueue
+            active = db.query(TaskQueue.execution_id).filter_by(kind="script", status="running")
+            db.query(ScriptJobRun).filter(ScriptJobRun.execution_id.in_(active), ScriptJobRun.result.is_(None)).update(
+                {"delivery_state": "unknown", "error_message": "控制器已重启，执行状态待核对；系统不会自动重派"}, synchronize_session=False)
             db.commit()

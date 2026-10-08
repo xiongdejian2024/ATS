@@ -61,3 +61,4 @@ from . import plan_execution_config
 from . import plan_case_defect
 
 from .agent_log import AgentLogCursor, AgentTaskLog
+from .script_job import ScriptJob, ScriptJobRun, ScriptJobLog

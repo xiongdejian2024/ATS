@@ -78,7 +78,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 or "",
                 "reconnect_delay": reconnect_delay,
                 "heartbeat_timeout": manager.heartbeat_timeout,
-                "capabilities": ["log_batch_v1"],
+                "capabilities": ["log_batch_v1", "script_jobs_v1"],
             }
             if not await manager.send_session(session, dict(config, type="welcome")):
                 return
@@ -150,8 +150,31 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                             "timestamp": beijing_now().isoformat(),
                         },
                     )
-                elif message_type in {"auth", "pong"}:
+                elif message_type == "auth":
+                    capabilities = message.get("capabilities", [])
+                    if not isinstance(capabilities, list) or len(capabilities) > 32 or any(not isinstance(c, str) or len(c) > 64 for c in capabilities):
+                        await websocket.close(code=1002, reason="Invalid Agent capabilities")
+                        break
+                    # This exact authenticated session owns capability state.
+                    first_auth = not session.auth_received
+                    session.capabilities = frozenset(capabilities)
+                    session.auth_received = True
+                    from services.script_jobs import reconcile_session
+                    if first_auth:
+                        await reconcile_session(db, session)
+                    await dispatch_pending_suites(db, environment_id)
+                elif message_type == "pong":
                     pass
+                elif message_type in {"script_job_completed", "script_job_state"}:
+                    from services import script_jobs
+                    if not script_jobs.capable(session, manager):
+                        continue
+                    accepted = (script_jobs.complete(db, environment_id, message)
+                                if message_type == "script_job_completed" else script_jobs.accept_state(db, environment_id, message))
+                    db.rollback()
+                    if accepted and message_type == "script_job_completed" and message.get("event_id"):
+                        await manager.send_session(session, {"type": "sat_event_ack", "event_id": message["event_id"]})
+                        await dispatch_pending_suites(db, environment_id)
                 elif message_type in {"task_result", "task_log"}:
                     logger.debug("Received legacy Agent task frame: {}", message_type)
                 elif message_type == "test_suite_result":
@@ -450,7 +473,7 @@ async def handle_test_suite_completed(db: Session, environment_id: str, message:
             return
         
         task = db.query(TaskQueue).filter(TaskQueue.execution_id == execution_id).first()
-        if not task or task.suite_id != suite_id or task.environment_id != environment_id:
+        if not task or task.kind != "suite" or task.suite_id != suite_id or task.environment_id != environment_id:
             return False
         if task.status in ["completed", "failed", "cancelled"]:
             return True

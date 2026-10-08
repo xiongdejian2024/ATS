@@ -8,12 +8,14 @@ MAX_LOG_RECORDS = 20
 MAX_LOG_CHARS = 32768
 
 
-def log_window(query, skip, limit, tail_chars=None, latest=False):
-    total = query.with_entities(func.count(TestSuiteLog.id)).scalar()
+def log_window(query, skip, limit, tail_chars=None, latest=False, *, model=TestSuiteLog):
+    total = query.with_entities(func.count(model.id)).scalar()
     if tail_chars is not None:
         limit = min(limit, MAX_LOG_RECORDS)
-    order = [TestSuiteLog.timestamp.desc(), TestSuiteLog.id.desc()] if latest else [TestSuiteLog.timestamp.asc(), TestSuiteLog.id.asc()]
+    order = [model.timestamp.desc(), model.id.desc()] if latest else [model.timestamp.asc(), model.id.asc()]
     query = query.order_by(*order)
+    if tail_chars is None and model is not TestSuiteLog:
+        raise ValueError("Non-suite log reads require a bounded tail")
     if tail_chars is None:
         from services.raw_log_export import legacy_log_rows
         items = [{to_camel_case(key): value.isoformat() if isinstance(value, (date, datetime)) else value
@@ -21,9 +23,9 @@ def log_window(query, skip, limit, tail_chars=None, latest=False):
     else:
         query = query.offset(skip).limit(limit)
         # 避免ORM序列化触发完整message的惰性加载；SQLite/MySQL均支持substr和char_length。
-        length = func.length(TestSuiteLog.message) if query.session.bind.dialect.name == 'sqlite' else func.char_length(TestSuiteLog.message)
-        columns = [c for c in TestSuiteLog.__table__.columns if c.name != 'message']
-        rows = query.with_entities(*columns, func.substr(TestSuiteLog.message, -tail_chars).label('message'), length.label('total_chars')).all()
+        length = func.length(model.message) if query.session.bind.dialect.name == 'sqlite' else func.char_length(model.message)
+        columns = [c for c in model.__table__.columns if c.name != 'message']
+        rows = query.with_entities(*columns, func.substr(model.message, -tail_chars).label('message'), length.label('total_chars')).all()
         items = []
         for row in rows:
             item = {to_camel_case(key): value.isoformat() if isinstance(value, (date, datetime)) else value for key, value in row._mapping.items()}

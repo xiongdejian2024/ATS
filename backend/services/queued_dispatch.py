@@ -10,7 +10,10 @@ async def dispatch_pending_suites(db, environment_id):
     from api.v1.websocket import manager
 
     while environment_id in manager.active_connections:
-        pending = TaskQueueService.get_next_pending_task(db, environment_id)
+        from services import script_jobs
+        session = manager.sessions.get(environment_id)
+        kinds = ("suite", "script") if script_jobs.capable(session, manager) else ("suite",)
+        pending = TaskQueueService.get_next_pending_task(db, environment_id, kinds=kinds)
         if not pending:
             return
         execution_id = pending.execution_id
@@ -31,13 +34,23 @@ async def dispatch_pending_suites(db, environment_id):
             db.rollback()
             continue
         try:
-            suite = load_dispatch_suite(db, pending.suite_id, pending.executor_id)
-            payload = build_suite_message(
-                db, suite, execution_id, pending.executor_id, current_read=True
-            )
+            if pending.kind == "script":
+                prepared = script_jobs.prepare_dispatch(db, pending)
+                if prepared is None:
+                    db.rollback()
+                    return
+                run, session, payload = prepared
+            else:
+                suite = load_dispatch_suite(db, pending.suite_id, pending.executor_id)
+                payload = build_suite_message(
+                    db, suite, execution_id, pending.executor_id, current_read=True
+                )
         except Exception:
             logger.exception("排队测试套派发前校验失败：执行={}", execution_id)
-            TaskQueueService.complete_task(db, execution_id, "failed")
+            if pending.kind == "script":
+                script_jobs.fail_pending(db, pending)
+            else:
+                TaskQueueService.complete_task(db, execution_id, "failed")
             continue
         claimed = TaskQueueService.start_task(
             db, execution_id, environment_id=environment_id, commit=False
@@ -45,13 +58,24 @@ async def dispatch_pending_suites(db, environment_id):
         if not claimed:
             db.rollback()
             return
-        suite.status = "running"
+        if pending.kind == "script":
+            from utils.datetime_utils import beijing_now
+            run.delivery_state, run.dispatch_attempted_at = "dispatching", beijing_now()
+            run.dispatch_session_id = session.session_id
+        else:
+            suite.status = "running"
         db.commit()
         try:
-            sent = await manager.send_message(environment_id, payload)
+            sent = (await manager.send_session(session, payload) if pending.kind == "script"
+                    else await manager.send_message(environment_id, payload))
         except Exception:
             logger.exception("排队测试套派发异常：执行={}", execution_id)
             sent = False
+        if pending.kind == "script":
+            from models.script_job import ScriptJobRun
+            db.query(ScriptJobRun).filter_by(execution_id=execution_id, delivery_state="dispatching").update(
+                {"delivery_state": "sent" if sent else "unknown"}, synchronize_session=False)
+            db.commit()
         if not sent:
             # As with plans/schedules, a write failure is an uncertain delivery,
             # never permission to release the slot or automatically resend.

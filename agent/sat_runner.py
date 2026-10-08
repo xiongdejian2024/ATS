@@ -213,7 +213,7 @@ class SATRunner:
 
     async def deliver(self, payload):
         delivery = getattr(self.agent, "log_delivery", None)
-        if delivery and payload.get("type") == "test_suite_completed":
+        if delivery and payload.get("type") in {"test_suite_completed", "script_job_completed"}:
             diagnostic = delivery.diagnostics()
             if diagnostic["blocked_reason"] or diagnostic["backpressured"]:
                 payload["log_delivery"] = diagnostic
@@ -237,6 +237,8 @@ class SATRunner:
         ) as output:
             os.fchmod(output.fileno(), 0o600)
             output.write(json.dumps(payload))
+            output.flush()
+            os.fsync(output.fileno())
         os.replace(temporary, path)
         await self.flush()
 
@@ -264,6 +266,8 @@ class SATRunner:
                 )
             )
             for path, payload in pending:
+                if payload["type"] == "script_job_completed" and "script_jobs_v1" not in getattr(self.agent.ws_client, "server_capabilities", ()):
+                    continue
                 if not await self.agent.ws_client.send_message(payload):
                     break
 

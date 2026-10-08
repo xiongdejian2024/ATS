@@ -87,7 +87,7 @@ import { ref, computed, h, onMounted, onUnmounted, watch } from 'vue';
 import { useWindowSize } from '@vueuse/core';
 import { useRouter, useRoute, isNavigationFailure } from 'vue-router';
 import { message } from 'ant-design-vue';
-import { MenuFoldOutlined, MenuUnfoldOutlined, DashboardOutlined, ProjectOutlined, ExperimentOutlined, ScheduleOutlined, AppstoreOutlined, SettingOutlined, BellOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons-vue';
+import { MenuFoldOutlined, MenuUnfoldOutlined, DashboardOutlined, ProjectOutlined, ExperimentOutlined, ScheduleOutlined, AppstoreOutlined, SettingOutlined, BellOutlined, UserOutlined, LogoutOutlined, CodeOutlined } from '@ant-design/icons-vue';
 import { useUserStore } from '@/stores/user';
 import { useProjectStore } from '@/stores/project';
 import dayjs from 'dayjs'
@@ -173,6 +173,7 @@ const menuItems = [
     path: '/test-suites'
   },
   { key: 'task-center', title: '测试任务', icon: ScheduleOutlined, path: '/task-center' },
+  { key: 'script-jobs', title: '脚本作业', icon: CodeOutlined, path: '/script-jobs' },
   { key: 'ai-assistant', title: 'AI 辅助', icon: ExperimentOutlined, path: '/ai-assistant' },
   {
     key: 'executions', title: '执行记录', icon: ScheduleOutlined, path: '/executions'

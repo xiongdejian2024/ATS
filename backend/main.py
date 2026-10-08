@@ -15,7 +15,7 @@ from api.v1.websocket import websocket_endpoint, frontend_manager
 from core.security import verify_token
 from models import User
 from api.v1 import ai_assistance
-from api.v1 import case_governance, plan_orchestration, task_center
+from api.v1 import case_governance, plan_orchestration, task_center, script_jobs
 from api.v1 import native_case
 from api.v1 import native_request_files
 from api.v1 import case_features
@@ -187,6 +187,9 @@ app.include_router(executions.router, prefix=f"{settings.API_V1_STR}/executions"
 app.include_router(environments.router, prefix=f"{settings.API_V1_STR}/environments", tags=["环境管理"])
 app.include_router(workspace.router, prefix=f"{settings.API_V1_STR}/environments", tags=["工作空间"])
 app.include_router(test_suites.router, prefix=f"{settings.API_V1_STR}/test-plans", tags=["测试套"])
+
+app.include_router(script_jobs.router, prefix=f"{settings.API_V1_STR}/script-jobs", tags=["脚本作业"])
+app.websocket("/ws/script-jobs")(script_jobs.script_log_websocket)
 
 # WebSocket路由
 @app.websocket("/ws/agent")

@@ -207,7 +207,7 @@ async def dispatch_pending(db):
     from api.v1.websocket import manager
     rows = db.query(TaskQueue).join(
         TaskScheduleRun, TaskScheduleRun.execution_id == TaskQueue.execution_id,
-    ).filter(TaskQueue.status == "pending", TaskScheduleRun.status != "cancelling").order_by(
+    ).filter(TaskQueue.kind == "suite", TaskQueue.status == "pending", TaskScheduleRun.status != "cancelling").order_by(
         TaskQueue.priority.desc(), TaskQueue.created_at,
     ).all()
     for task in rows:

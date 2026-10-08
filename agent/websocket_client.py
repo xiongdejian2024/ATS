@@ -52,6 +52,7 @@ class WebSocketClient:
         self.on_log_message = None
         self.session_id: Optional[str] = None
         self.protocol_version = 2
+        self.server_capabilities = frozenset()
         self.handshake_timeout = 10.0
         self.heartbeat_timeout = 90.0
         self.send_timeout = 5.0
@@ -135,6 +136,7 @@ class WebSocketClient:
                 self._generation += 1
                 self.websocket = connection
                 self.session_id = welcome["session_id"]
+                self.server_capabilities = frozenset(welcome.get("capabilities", []))
                 self.heartbeat_timeout = max(
                     1.0, min(300.0, float(welcome.get("heartbeat_timeout", 90)))
                 )
@@ -176,6 +178,7 @@ class WebSocketClient:
         platform_info = get_platform_info()
         auth_message = {
             "type": "auth",
+            "capabilities": ["log_batch_v1", "script_jobs_v1"],
             "token": self.token,
             "agent_info": {
                 "version": "1.0.0",
@@ -201,7 +204,7 @@ class WebSocketClient:
         if (
             not _log_replay
             and self.on_log_message
-            and message.get("type") in {"test_suite_log", "task_log"}
+            and message.get("type") in {"test_suite_log", "task_log", "script_job_log"}
         ):
             return await self.on_log_message(message)
         connection, session_id = self.websocket, self.session_id

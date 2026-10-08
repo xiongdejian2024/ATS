@@ -185,7 +185,8 @@ class FrontendConnectionManager:
         if not connections:
             return
         payload = json.dumps(
-            {"type": "test_suite_log", "suite_id": suite_id, "data": log_data},
+            ({"type": "script_job_log", "job_id": log_data["script_job_id"], "execution_id": log_data["execution_id"], "data": log_data}
+             if "script_job_id" in log_data else {"type": "test_suite_log", "suite_id": suite_id, "data": log_data}),
             ensure_ascii=False,
             separators=(",", ":"),
         )

@@ -19,6 +19,7 @@ if __name__ == "__main__":
     from system_monitor import SystemMonitor
     from websocket_client import WebSocketClient
     from task_executor import TaskExecutor
+    from script_job_runner import ScriptJobRunner
     from workspace_manager import WorkspaceManager
     from sat_runner import SATRunner
     from native_http_runner import NativeHTTPRunner
@@ -34,6 +35,7 @@ else:
     from .system_monitor import SystemMonitor
     from .websocket_client import WebSocketClient
     from .task_executor import TaskExecutor
+    from .script_job_runner import ScriptJobRunner
     from .workspace_manager import WorkspaceManager
     from .sat_runner import SATRunner
     from .native_http_runner import NativeHTTPRunner
@@ -67,6 +69,7 @@ class Agent:
         self.running = False
         self.running_suites: Dict[str, asyncio.subprocess.Process] = {}  # suite_id -> process
         self.sat_runner = SATRunner(self)
+        self.script_job_runner = ScriptJobRunner(self)
         self.native_http_runner = NativeHTTPRunner(self)
         self.suite_execution_ids: Dict[str, str] = {}  # suite_id -> execution_id
         admission_for(self)
@@ -159,6 +162,13 @@ class Agent:
             await self._handle_workspace_delete(message)
         elif msg_type == "workspace_mkdir":
             await self._handle_workspace_mkdir(message)
+        elif msg_type == "execute_script_job":
+            if "script_jobs_v1" in getattr(self.ws_client, "server_capabilities", ()):
+                self.script_job_runner.start(message)
+        elif msg_type == "cancel_script_job":
+            await self.script_job_runner.cancel(message.get("script_job_id"), message.get("execution_id"), message.get("dispatch_session_id"))
+        elif msg_type == "query_script_job":
+            await self.script_job_runner.state(message.get("script_job_id"), message.get("execution_id"), message.get("dispatch_session_id"))
         elif msg_type == "execute_test_suite":
             await self._handle_execute_test_suite(message)
         elif msg_type == "sat_event_ack":
@@ -1061,6 +1071,7 @@ class Agent:
         self.execution_admission.close()
         for suite_id in set(self.legacy_suites.values()):
             await self._cancel_legacy(suite_id)
+        await self.script_job_runner.close()
         for task_id in list(self.task_runs):
             await self._handle_cancel_task({"task_id": task_id})
         await asyncio.gather(*list(self.task_runs.values()), return_exceptions=True)
