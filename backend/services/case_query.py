@@ -22,6 +22,7 @@ FIELDS = {
     "templateId": "template_id",
     "createdAt": "created_at",
     "updatedAt": "updated_at",
+    "deletedAt": "deleted_at",
 }
 OPERATORS = {
     "equals",
@@ -101,7 +102,7 @@ def parse_filters(raw, *, extra_fields=()):
             from services.filter_values import comparable, temporal
 
             try:
-                if field in {"createdAt", "updatedAt"}:
+                if field in {"createdAt", "updatedAt", "deletedAt"}:
                     lower, upper = temporal(value[0]), temporal(value[1])
                 else:
                     lower, upper = comparable(value[0], value[1], date_text=True)
@@ -256,11 +257,12 @@ def query_cases(db, project_id, **options):
     from sqlalchemy import or_
 
     page, size = options.get("page", 1), options.get("size", 20)
+    recycled = bool(options.get("recycled", False))
     if page < 1 or not 1 <= size <= 100000:
         raise HTTPException(422, "分页参数不合法")
     sort_by = options.get("sort_by", "created_at")
     sort_by = FIELDS.get(sort_by, sort_by)
-    if sort_by not in {
+    sortable = {
         "case_code",
         "name",
         "priority",
@@ -269,16 +271,20 @@ def query_cases(db, project_id, **options):
         "created_at",
         "updated_at",
         "module_id",
-    } or options.get("sort_order", "desc") not in {"asc", "desc"}:
+    }
+    if recycled:
+        sortable.add("deleted_at")
+    if sort_by not in sortable or options.get("sort_order", "desc") not in {"asc", "desc"}:
         raise HTTPException(422, "不支持的排序字段或方向")
     conditions, logic = parse_filters(options.get("filters"))
     from services.case_filter_context import CaseFilterContext
 
     current_read = bool(options.get("current_read"))
-    context = CaseFilterContext(db, project_id, conditions, options.get("user_id"), current_read=current_read)
+    context = CaseFilterContext(db, project_id, conditions, options.get("user_id"), current_read=current_read, include_recycled=recycled)
     conditions = context.conditions
     query = db.query(TestCase).filter(
-        TestCase.project_id == project_id, TestCase.deleted_at.is_(None)
+        TestCase.project_id == project_id,
+        TestCase.deleted_at.is_not(None) if recycled else TestCase.deleted_at.is_(None),
     )
     if options.get("case_ids"):
         ids = list(
@@ -325,14 +331,25 @@ def query_cases(db, project_id, **options):
     # JSON 数组及自定义字段在筛选候选集上统一计算，避免 MySQL/SQLite JSON 运算差异。
     if current_read:
         query = query.populate_existing().with_for_update()
-    cases = query.order_by(
+    ordered = query.order_by(
         (
             getattr(TestCase, sort_by).desc()
             if options.get("sort_order", "desc") == "desc"
             else getattr(TestCase, sort_by).asc()
         ),
         TestCase.id,
-    ).all()
+    )
+    # 回收站默认列表保留数据库计数和分页，不因复用高级筛选而加载整个历史库。
+    if recycled and not conditions and not any(options.get(key) for key in ('search', 'tags', 'review_status')):
+        total = query.count()
+        cases = ordered.offset((page - 1) * size).limit(size).all()
+        return {
+            'items': cases, 'total': total, 'page': page, 'size': size,
+            'pages': (total + size - 1) // size, 'hasNext': page * size < total,
+            'hasPrev': page > 1,
+            'reviewStatuses': {},
+        }
+    cases = ordered.all()
     if options.get("search"):
         word = options["search"].casefold()
         cases = [

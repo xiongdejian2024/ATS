@@ -157,7 +157,7 @@ export const caseFeaturesApi = {
     apiClient.delete(`${base(p)}/attachments/${id}`),
   recycle: (
     p: string,
-    params: { page: number; size: number; search?: string },
+    params: { page: number; size: number; search?: string; filters?: string; sort_by?: string; sort_order?: string },
   ) =>
     apiClient.get<{ items: TestCase[]; total: number }>(
       `${base(p)}/recycle-bin`,

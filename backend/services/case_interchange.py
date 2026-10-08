@@ -11,6 +11,29 @@ from core.logger import logger
 MAX_ARCHIVE = 10 * 1024 * 1024
 MAX_EXPANDED = 20 * 1024 * 1024
 
+XMIND_FIELDS = {
+    'caseCode':('case_code','ID'),'name':('name','用例名称'),
+    'priority':('priority','用例等级'),'type':('type','用例类型'),
+    'modulePath':('module_path','所属模块'),'tags':('tags','标签'),
+    'isAutomated':('is_automated','是否自动化'),'precondition':('precondition','前置条件'),
+    'steps':('steps','测试步骤'),'requirementRef':('requirement_ref','需求关联'),
+    'caseEditType':('case_edit_type','描述方式'),'textDescription':('text_description','文本描述'),
+    'expectedResult':('expected_result','文本预期结果'),'description':('description','备注'),
+    'templateId':('template_id','模板ID'),'customFields':('custom_fields','自定义字段'),
+}
+
+
+def xmind_fields(value):
+    if value is None or value == '':
+        return None
+    if not isinstance(value,str) or len(value)>2000:
+        raise HTTPException(422,'XMind导出字段不合法')
+    aliases={label:key for key,(_,label) in XMIND_FIELDS.items()}
+    selected=list(dict.fromkeys(aliases.get(key.strip(),key.strip()) for key in value.split(',') if key.strip()))
+    if not selected or set(selected)-set(XMIND_FIELDS) or 'name' not in selected:
+        raise HTTPException(422,'XMind导出须包含名称，且仅使用支持的字段')
+    return selected
+
 
 def topic(title, children=None, **extra):
     row = {"id": str(uuid.uuid4()), "class": "topic", "title": title, **extra}
@@ -19,7 +42,9 @@ def topic(title, children=None, **extra):
     return row
 
 
-def export_xmind(cases, module_paths=None):
+def export_xmind(cases, module_paths=None, *, fields=None):
+    selected=xmind_fields(fields)
+    included=set(selected or XMIND_FIELDS)
     branches = []
     groups = {(): branches}
     for case in cases:
@@ -30,13 +55,11 @@ def export_xmind(cases, module_paths=None):
             )
             for step in (case.steps or [])
         ]
-        fields = [
-            topic("前置条件", [topic(case.precondition or "")]),
-            topic("步骤", steps),
-            *([topic("文本描述", [topic(case.text_description or "")]), topic("预期结果", [topic(case.expected_result or "")])] if case.case_edit_type == "TEXT" else []),
-            topic("备注", [topic(case.description or "")]),
-            topic("需求关联", [topic(case.requirement_ref or "")]),
-        ]
+        content = []
+        for key,label in [('precondition','前置条件'),('textDescription','文本描述'),('expectedResult','预期结果'),('description','备注'),('requirementRef','需求关联')]:
+            if key in included and (key not in {'textDescription','expectedResult'} or case.case_edit_type=='TEXT'):
+                content.append(topic(label,[topic(getattr(case,XMIND_FIELDS[key][0]) or '')]))
+        if 'steps' in included:content.insert(1 if 'precondition' in included else 0,topic('步骤',steps))
         # 核心用例名、前置、步骤和预期为普通标准节点；ATS 属性只用于无损补充。
         metadata = {
             key: getattr(case, key)
@@ -57,13 +80,15 @@ def export_xmind(cases, module_paths=None):
                 "description",
             ]
         }
+        if selected is not None:
+            metadata={attribute:getattr(case,attribute) for key,(attribute,_) in XMIND_FIELDS.items() if key in included and key!='name'}
         parts = tuple(
             part
             for part in (module_paths or {})
             .get(case.module_id, case.module_path or "")
             .split("/")
             if part
-        )
+        ) if 'modulePath' in included else ()
         for index in range(1, len(parts) + 1):
             key = parts[:index]
             if key not in groups:
@@ -74,10 +99,11 @@ def export_xmind(cases, module_paths=None):
         groups[parts].append(
             topic(
                 case.name,
-                fields,
+                content,
                 labels=["用例"],
-                markers=[{"markerId": "priority-" + str(int(case.priority[1]) + 1)}],
+                markers=[{"markerId": "priority-" + str(int(case.priority[1]) + 1)}] if 'priority' in included else [],
                 atsCase=metadata,
+                **({'atsExportFields':selected} if selected is not None else {}),
             )
         )
     sheet = {
@@ -234,6 +260,13 @@ def read_xmind(content):
                     }
                 )
                 rows[-1]["所属模块"] = "/".join(path[1:])
+                if 'atsExportFields' in node:
+                    selection=node['atsExportFields']
+                    if not isinstance(selection,list) or len(selection)>len(XMIND_FIELDS) or any(not isinstance(v,str) for v in selection):
+                        raise HTTPException(422,'XMind字段选择格式无效')
+                    xmind_fields(','.join(selection))
+                    allowed={XMIND_FIELDS[key][1] for key in selection}
+                    rows[-1]={key:value for key,value in rows[-1].items() if key in allowed}
             else:
                 for child in nested:
                     walk(child, path + [node["title"]], depth + 1)
