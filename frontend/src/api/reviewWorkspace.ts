@@ -123,7 +123,7 @@ export const reviewWorkspaceApi = {
   batchVote: (
     p: string,
     id: string,
-    body: ReviewItemSelection & { decision: string; comment: string },
+    body: ReviewItemSelection & { decision: string; comment: string; fileIds?: string[] },
   ) => apiClient.post<CaseReview>(`${base(p)}/${id}/batch-decision`, body),
   reading: (p: string, id: string, item: string) =>
     apiClient.get<ReviewReading>(`${base(p)}/${id}/items/${item}/reading`),

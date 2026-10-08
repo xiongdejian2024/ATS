@@ -230,6 +230,7 @@
                     ref="defectPanel"
                     :key="selectedKey"
                     :plan-id="planId"
+                  :project-id="projectId"
                     :association-key="selectedKey"
                     :editable="
                       !!plan.capabilities?.edit &&
@@ -287,6 +288,7 @@
                   v-model:description="description"
                   :disabled="saving || detailLoading"
                   :plan-id="planId"
+                  :project-id="projectId"
                   v-model:uploading="mediaUploading"
                   v-model:dialog-dirty="dialogDirty"
                   :on-submit="submit"
@@ -319,9 +321,10 @@
       title="用例详情"
       width="min(1200px, 100vw)"
       destroy-on-close
-      @close="mainCaseOpen = false"
+      @close="closeMainCase"
     >
       <TestCaseDetail
+        ref="mainCaseDetail"
         v-if="mainCaseOpen && detail?.entry"
         :case-id="caseId"
         :project-id="detail.entry.projectId"
@@ -509,7 +512,10 @@ async function confirmExecutionDiscard(edit = false): Promise<boolean> {
   );
 }
 const defectPanel = ref<InstanceType<typeof PlanDefects>>();
+const mainCaseDetail=ref<InstanceType<typeof TestCaseDetail>>()
+async function closeMainCase(){if(await mainCaseDetail.value?.beforeClose()??true)mainCaseOpen.value=false}
 async function confirmLeave(): Promise<boolean> {
+  if(!((await mainCaseDetail.value?.beforeClose())??true))return false;
   if (!((await defectPanel.value?.beforeClose()) ?? true)) return false;
   if (caseEditOpen.value && !(await caseEditDrawer.value?.confirmClose()))
     return false;

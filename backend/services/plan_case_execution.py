@@ -79,6 +79,8 @@ def execute(db, user, plan, data, *, resolved_rows=None, request_body=None):
     from services.plan_case_media import description_media
     from models.plan_case_media import PlanCaseMediaLink
     media_ids=description_media(db,user,plan,data.description)
+    from services.file_library import image_ids, reference
+    library_ids=image_ids(db,plan.project_id,data.description)
     timestamp = beijing_now()
     for row in rows:
         case = db.get(TestCase, row['caseId'])
@@ -86,6 +88,7 @@ def execute(db, user, plan, data, *, resolved_rows=None, request_body=None):
             payload_hash=digest, executor_id=str(user.id), executor_name=user.username, result=data.result,
             description=data.description, step_results=steps, case_snapshot=serialize_model(case, camel_case=True), created_at=timestamp)
         db.add(record);db.flush()
+        reference(db,user,plan.project_id,library_ids,'case_execution',record.id)
         for media_id in media_ids:db.add(PlanCaseMediaLink(execution_id=record.id,media_id=media_id))
         if row['source'] == 'legacy':
             relation = db.get(PlanCaseRelation, row['associationId'])

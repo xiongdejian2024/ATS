@@ -63,6 +63,8 @@ export interface CaseAutomation {
   externalRef?: string;
 }
 export interface CaseComment {
+  canDelete?: boolean;
+  files?: import("./fileLibrary").LibraryFile[];
   id: string;
   authorId: string;
   content: string;
@@ -130,8 +132,8 @@ export const caseFeaturesApi = {
       : apiClient.delete(`${base(p)}/cases/${c}/follow`),
   comments: (p: string, c: string) =>
     apiClient.get<CaseComment[]>(`${base(p)}/cases/${c}/comments`),
-  comment: (p: string, c: string, content: string) =>
-    apiClient.post<CaseComment>(`${base(p)}/cases/${c}/comments`, { content }),
+  comment: (p: string, c: string, content: string, fileIds: string[] = []) =>
+    apiClient.post<CaseComment>(`${base(p)}/cases/${c}/comments`, { content, fileIds }),
   deleteComment: (p: string, c: string, id: string) =>
     apiClient.delete(`${base(p)}/cases/${c}/comments/${id}`),
   attachments: (p: string, c: string) =>

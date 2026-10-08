@@ -386,7 +386,14 @@ def review_data(db, review, *, include_items=True):
         if event["action"] == "重新提审"
         for identifier in (event["detail"] or {}).get("invalidatedEventIds", [])
     }
+    from models.file_library import LibraryFile, LibraryReference
+    from services.file_library import data as library_data
+    evidence = {}
+    if events:
+        for link,file in db.query(LibraryReference,LibraryFile).join(LibraryFile,LibraryFile.id==LibraryReference.file_id).filter(LibraryReference.entity_kind=='review_event',LibraryReference.entity_id.in_([e['id'] for e in events]),LibraryFile.project_id==review.project_id).all():
+            evidence.setdefault(link.entity_id,[]).append(library_data(file))
     for event in events:
+        event['files'] = evidence.get(event['id'],[])
         event["abandoned"] = event["id"] in abandoned
     info = metadata(db, review)
     started = any(e["action"] == "评审结论" for e in events)
@@ -428,16 +435,9 @@ def review_data(db, review, *, include_items=True):
 
 
 def review_event(db, review, actor_id, action, detail, item_id=None):
-    db.add(
-        CaseReviewEvent(
-            review_id=review.id,
-            item_id=item_id,
-            actor_id=str(actor_id),
-            action=action,
-            detail=detail,
-            created_at=beijing_now(),
-        )
-    )
+    event = CaseReviewEvent(review_id=review.id,item_id=item_id,actor_id=str(actor_id),action=action,detail=detail,created_at=beijing_now())
+    db.add(event)
+    return event
 
 
 def refresh_review_status(db, review):
@@ -460,7 +460,11 @@ def refresh_review_status(db, review):
 
 def apply_review_vote(db, review, item, user, request, votes):
     """共享单条与批量投票规则；调用方已锁定评审并验证全部权限。"""
-    review_event(db, review, user.id, "评审结论", request.model_dump(), item.id)
+    from services.file_library import image_ids, reference
+    ids = sorted(set(request.fileIds + image_ids(db,review.project_id,request.comment)))
+    event = review_event(db, review, user.id, "评审结论", dict(request.model_dump(),fileIds=ids), item.id)
+    db.flush()
+    reference(db,user,review.project_id,ids,'review_event',event.id)
     if request.decision == "suggestion":
         return
     decision = next((d for d in votes if d.reviewer_id == str(user.id)), None)

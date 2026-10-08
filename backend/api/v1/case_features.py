@@ -7,7 +7,8 @@ from database import get_db
 from api.deps import get_current_user
 from api.v1.case_governance import result, transact
 from core.logger import logger
-from core.project_access import require_project_access
+from core.project_access import require_project_access, project_allows
+from models import Project
 from models.test_case import TestCase, CaseAttachment
 from models.case_features import CaseChange
 from services import case_features as service
@@ -556,15 +557,9 @@ def comments(
     user=Depends(get_current_user),
 ):
     service.find_case(db, user, project_id, case_id)
-    return result(
-        serialize_list(
-            db.query(CaseComment)
-            .filter_by(case_id=case_id)
-            .order_by(CaseComment.created_at)
-            .all(),
-            camel_case=True,
-        )
-    )
+    from services.file_library import references
+    rows = db.query(CaseComment).filter_by(case_id=case_id).order_by(CaseComment.created_at).all()
+    return result([dict(**serialize_model(row, camel_case=True), files=references(db,project_id,'comment',row.id),canDelete=row.author_id==str(user.id) or project_allows(db,user,db.get(Project,project_id),'test_case:update')) for row in rows])
 
 
 @router.post("/cases/{case_id}/comments")
@@ -581,7 +576,10 @@ def add_comment(
         row = CaseComment(case_id=case_id, author_id=str(user.id), content=body.content)
         db.add(row)
         db.flush()
-        service.change(db, case, user.id, "发表评论", {"commentId": row.id})
+        from services.file_library import image_ids, reference
+        ids = body.fileIds + image_ids(db,project_id,body.content)
+        reference(db,user,project_id,ids,'comment',row.id)
+        service.change(db, case, user.id, "发表评论", {"commentId": row.id,"content":row.content,"fileIds":sorted(set(ids))})
         return row
 
     return result(serialize_model(transact(db, operation), camel_case=True))

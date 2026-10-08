@@ -8,6 +8,9 @@
         ><a-button :loading="busy">上传附件</a-button></a-upload
       ></template
     >
+    <a-space v-if="caseId" style="margin-bottom:12px"><a-button v-if="!readOnly" :disabled="busy" @click="associateLibrary">关联文件库</a-button></a-space>
+    <a-list v-if="libraryFiles.length" :data-source="libraryFiles" size="small"><template #renderItem="{item}"><a-list-item><span>文件库 · {{item.fileName}} <a-tag v-if="item.archived">已归档，历史可读</a-tag></span><template #actions><a-button type="link" @click="downloadLibrary(item)">下载</a-button><a-button v-if="!readOnly" type="link" :disabled="busy" @click="unlinkLibrary(item)">取消关联</a-button></template></a-list-item></template></a-list>
+    <FileLibraryPicker ref="picker" :project-id="projectId" />
     <a-alert
       v-if="!caseId"
       message="请先保存用例，再上传附件。"
@@ -71,6 +74,9 @@ import {
   saveCaseBlob,
   type CaseFile,
 } from "@/api/caseFeatures";
+import FileLibraryPicker from './FileLibraryPicker.vue';
+import {fileLibraryApi as library,type LibraryFile} from '@/api/fileLibrary';
+const libraryFiles=ref<LibraryFile[]>([]),picker=ref<InstanceType<typeof FileLibraryPicker>>();
 const props = defineProps<{
   projectId: string;
   caseId?: string;
@@ -96,7 +102,7 @@ function closePreview() {
 }
 async function load() {
   const current = ++sequence;
-  files.value = [];
+  files.value = [];libraryFiles.value=[];
   closePreview();
   previewBusy.value = "";
   failed.value = false;
@@ -104,8 +110,8 @@ async function load() {
   if (!props.caseId) return;
   loading.value = true;
   try {
-    const items = await api.attachments(props.projectId, props.caseId);
-    if (current === sequence) files.value = items;
+    const [items,shared] = await Promise.all([api.attachments(props.projectId, props.caseId),library.references(props.projectId,props.caseId)]);
+    if (current === sequence){files.value = items;libraryFiles.value=shared}
   } catch (error) {
     console.error("加载用例附件失败", error);
     if (current === sequence) failed.value = true;
@@ -174,6 +180,9 @@ async function remove(item: CaseFile) {
     message.error("附件删除失败");
   }
 }
+async function associateLibrary(){if(!props.caseId||props.readOnly||busy.value)return;const expected=scope(),p=props.projectId,c=props.caseId;busy.value=true;try{const rows=await picker.value?.pick();if(rows?.length&&scope()===expected){const result=await library.associate(p,c,rows.map(f=>f.id));if(scope()===expected)libraryFiles.value=result}}catch(error){message.error('文件库关联失败，请重试')}finally{busy.value=false}}
+async function downloadLibrary(file:LibraryFile){const p=props.projectId;try{saveCaseBlob(await library.download(p,file.id),file.fileName)}catch(error){message.error('下载文件库附件失败')}}
+async function unlinkLibrary(file:LibraryFile){if(!props.caseId||props.readOnly||busy.value)return;const expected=scope(),p=props.projectId,c=props.caseId;busy.value=true;try{await library.unlink(p,c,file.id);if(scope()===expected)libraryFiles.value=libraryFiles.value.filter(r=>r.id!==file.id)}catch(error){message.error('取消关联失败')}finally{busy.value=false}}
 watch(() => [props.projectId, props.caseId], load, { immediate: true });
 onBeforeUnmount(() => {
   ++sequence;

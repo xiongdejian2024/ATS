@@ -244,7 +244,7 @@
                           v-if="event.detail?.comment"
                           :model-value="event.detail.comment"
                           readonly
-                        /><small>{{ formatTime(event.createdAt) }}</small>
+                        /><p v-for="file in event.files" :key="file.id"><a @click="downloadLibrary(file)">{{file.fileName}}</a></p><small>{{ formatTime(event.createdAt) }}</small>
                       </div>
                     </div>
                     <a-empty
@@ -267,6 +267,9 @@
                   ></a-space>
                 </div>
                 <ReviewResultForm
+                  ref="resultForm"
+                  :project-id="projectId"
+                  @uploading="(value:boolean)=>reasonUploading=value"
                   v-if="record.item.canVote"
                   :key="`${reviewId}:${itemId}`"
                   :disabled="locked || detailLoading || listLoading"
@@ -337,6 +340,8 @@ import {
   type CaseFile,
 } from "@/api/caseFeatures";
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
+import {fileLibraryApi,type LibraryFile} from '@/api/fileLibrary';
+async function downloadLibrary(file:LibraryFile){const p=projectId.value;try{saveCaseBlob(await fileLibraryApi.download(p,file.id),file.fileName)}catch(error){message.error('下载评审附件失败')}}
 import ReviewResultForm, {
   type ReviewDecision,
 } from "@/components/CaseReview/ReviewResultForm.vue";
@@ -377,9 +382,10 @@ const contextLoading = ref(false),
   tab = ref("detail"),
   requirementKeyword = ref(""),
   editOpen = ref(false);
+const resultForm=ref<InstanceType<typeof ReviewResultForm>>(),reasonUploading=ref(false);
 const editor = ref<InstanceType<typeof TestCaseEdit>>(),
   editorSaving = computed(() => !!editor.value?.isSaving()),
-  locked = computed(() => saving.value || editorSaving.value),
+  locked = computed(() => saving.value || editorSaving.value || reasonUploading.value),
   canEdit = computed(
     () =>
       canManage.value &&
@@ -501,6 +507,7 @@ async function loadReading(id: string) {
 let navigationTarget = "";
 async function choose(id: string, internal = false) {
   if ((locked.value && !internal) || !id) return;
+  if(!internal&&resultForm.value&&!(await resultForm.value.beforeClose()))return;
   navigationTarget = id;
   try {
     await router.replace({
@@ -586,7 +593,7 @@ async function pageChanged() {
   await loadList();
   if (list.value?.items[0]) await choose(list.value.items[0].id);
 }
-async function submitVote(decision: ReviewDecision, reason: string) {
+async function submitVote(decision: ReviewDecision, reason: string, fileIds: string[] = []) {
   if (locked.value || !record.value?.item.canVote)
     throw new Error("当前用例不能提交评审");
   const previous = (list.value?.items || []).map((i) => i.id),
@@ -596,7 +603,7 @@ async function submitVote(decision: ReviewDecision, reason: string) {
   saving.value = true;
   try {
     try {
-      await caseGovernanceApi.vote(p, r, id, decision, reason);
+      await caseGovernanceApi.vote(p, r, id, decision, reason, fileIds);
     } catch (error) {
       console.error("独立审阅结论保存失败", error);
       throw error;
@@ -687,7 +694,7 @@ function back() {
     },
   });
 }
-function canLeave(to: any) {
+async function canLeave(to: any) {
   if (
     navigationTarget &&
     to.name === "CaseReviewReading" &&
@@ -700,7 +707,7 @@ function canLeave(to: any) {
     message.info("正在保存，请稍候");
     return false;
   }
-  return true;
+  return await resultForm.value?.beforeClose() ?? true;
 }
 onBeforeRouteLeave(canLeave);
 onBeforeRouteUpdate(canLeave);

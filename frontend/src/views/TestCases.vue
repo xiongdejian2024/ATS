@@ -291,7 +291,8 @@
 
     <!-- 详情抽屉 -->
     <a-drawer
-      v-model:visible="detailCaseVisible"
+      :open="detailCaseVisible"
+      @close="closeDetail"
       :title="viewingCaseId ? '用例详情' : ''"
       :width="detailFullscreen ? '100vw' : 'min(860px, 96vw)'"
       :body-style="{padding:'16px'}"
@@ -303,13 +304,14 @@
     >
       <template #extra><a-space><a-button aria-label="上一条用例" :disabled="!canPreviousCase" @click="navigateDetail(-1)"><LeftOutlined /></a-button><a-button aria-label="下一条用例" :disabled="!canNextCase" @click="navigateDetail(1)"><RightOutlined /></a-button><a-button @click="detailFullscreen=!detailFullscreen">{{detailFullscreen ? '退出全屏':'全屏'}}</a-button></a-space></template>
       <TestCaseDetail
+        ref="detailPanel"
         v-if="viewingCaseId"
         :case-id="viewingCaseId"
         :project-id="projectId"
         @edit="handleEditFromDetail"
         @copy="copyFromDetail"
         @delete="deleteFromDetail"
-        @navigate="viewingCaseId=$event"
+        @navigate="navigateDetailTo"
       />
     </a-drawer>
 
@@ -467,8 +469,8 @@ const recycleVisible = ref(route.query.view === 'recycle'), templateVisible = re
 const sortBy = ref('updated_at'), sortOrder = ref('desc')
 const filterDrawerVisible = ref(false)
 const newFilterView = ref(false), filterSaving = ref(false)
-onBeforeRouteLeave(() => !filterSaving.value && !selection.working.value && !exportBusy.value)
-onBeforeRouteUpdate(() => !filterSaving.value && !selection.working.value && !exportBusy.value)
+onBeforeRouteLeave(async () => !filterSaving.value && !selection.working.value && !exportBusy.value && (await detailPanel.value?.beforeClose()??true))
+onBeforeRouteUpdate(async () => !filterSaving.value && !selection.working.value && !exportBusy.value && (await detailPanel.value?.beforeClose()??true))
 function openFilter(isNew: boolean) {
   if (filterSaving.value) return
   newFilterView.value = isNew
@@ -920,6 +922,9 @@ const rowSelection = computed(() => ({
 }))
 
 // 详情用例
+const detailPanel=ref<InstanceType<typeof TestCaseDetail>>();
+async function closeDetail(){if(await detailPanel.value?.beforeClose()??true)detailCaseVisible.value=false}
+async function navigateDetailTo(id:string){if(await detailPanel.value?.beforeClose()??true)viewingCaseId.value=id}
 const detailCaseVisible = ref(false)
 const viewingCaseId = ref<string>('')
 
@@ -1245,7 +1250,8 @@ const renameMindModule = async (id:string,name:string) => {
 const handleEditCase = (record: TestCase) => { void router.push({path:`/test-cases/${record.id}/edit`,query:{projectId:projectId.value}}) }
 
 // 查看用例（打开详情页面）
-const handleViewCase = (record: TestCase) => {
+const handleViewCase = async (record: TestCase) => {
+  if(detailPanel.value&&!(await detailPanel.value.beforeClose()))return;
   viewingCaseId.value = record.id
   detailCaseVisible.value = true
 }
@@ -1256,6 +1262,7 @@ const detailIndex = computed(()=>testCases.value.findIndex(c=>c.id===viewingCase
 const canPreviousCase = computed(()=>detailIndex.value>0 || pagination.current>1)
 const canNextCase = computed(()=>detailIndex.value>=0 && (detailIndex.value<testCases.value.length-1 || pagination.current*pagination.pageSize<pagination.total))
 const navigateDetail = async (direction: number) => {
+  if(detailPanel.value&&!(await detailPanel.value.beforeClose()))return;
   const next=detailIndex.value+direction
   if (next>=0 && next<testCases.value.length) { viewingCaseId.value=testCases.value[next].id; return }
   if (direction<0 && pagination.current>1 || direction>0 && pagination.current*pagination.pageSize<pagination.total) {
@@ -1264,9 +1271,10 @@ const navigateDetail = async (direction: number) => {
     if(row)viewingCaseId.value=row.id
   }
 }
-const copyFromDetail = async () => { try { const row=testCases.value.find(c=>c.id===viewingCaseId.value) || await testCaseApi.getTestCase(projectId.value,viewingCaseId.value);detailCaseVisible.value=false;await handleCopyCase(row) } catch(error) { console.error('复制详情用例失败',error) } }
-const deleteFromDetail = async () => { try { const row=await testCaseApi.getTestCase(projectId.value,viewingCaseId.value); await handleDeleteCase(row) } catch(error) { console.error('加载待删除用例失败',error) } }
-const handleEditFromDetail = () => {
+const copyFromDetail = async () => { if(detailPanel.value&&!(await detailPanel.value.beforeClose()))return;try { const row=testCases.value.find(c=>c.id===viewingCaseId.value) || await testCaseApi.getTestCase(projectId.value,viewingCaseId.value);detailCaseVisible.value=false;await handleCopyCase(row) } catch(error) { console.error('复制详情用例失败',error) } }
+const deleteFromDetail = async () => { if(detailPanel.value&&!(await detailPanel.value.beforeClose()))return;try { const row=await testCaseApi.getTestCase(projectId.value,viewingCaseId.value); await handleDeleteCase(row) } catch(error) { console.error('加载待删除用例失败',error) } }
+const handleEditFromDetail = async () => {
+  if(detailPanel.value&&!(await detailPanel.value.beforeClose()))return;
   detailCaseVisible.value = false
   void router.push({path:`/test-cases/${viewingCaseId.value}/edit`,query:{projectId:projectId.value}})
 }
@@ -1277,6 +1285,7 @@ const handleDeleteCase = async (record: TestCase) => {
     title: '确认删除',
     content: `确定要删除用例"${record.name}"吗？`,
     onOk: async () => {
+      if(viewingCaseId.value===record.id&&detailPanel.value&&!(await detailPanel.value.beforeClose()))return;
       try {
         await testCaseApi.deleteTestCase(projectId.value, record.id)
         message.success('删除成功')

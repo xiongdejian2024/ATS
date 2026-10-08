@@ -187,6 +187,7 @@
               ></a-list
             >
             <CaseDiscussion
+              ref="discussion"
               v-else-if="tab.key === 'comments'"
               :project-id="projectId"
               :case-id="caseId"
@@ -276,6 +277,9 @@ const emit = defineEmits<{
   execute: [];
   navigate: [caseId: string];
 }>();
+const discussion=ref<InstanceType<typeof CaseDiscussion>[]>();
+async function beforeClose(){for(const item of discussion.value||[])if(!(await item.beforeClose()))return false;return true}
+defineExpose({beforeClose})
 const nativeConfigOpen = ref(false),
   nativeConfigurationSequence = ref(0);
 const template = ref<CaseTemplate>();

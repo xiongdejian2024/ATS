@@ -158,11 +158,13 @@ export const caseGovernanceApi = {
     itemIds: string[],
     decision: string,
     comment: string,
+    fileIds: string[] = [],
   ) =>
     apiClient.post<CaseReview>(`${base(p)}/reviews/${id}/batch-decision`, {
       itemIds,
       decision,
       comment,
+      ...(fileIds.length ? {fileIds} : {}),
     }),
   reviewFollowState: (p: string, id: string) =>
     apiClient.get<{ followed: boolean; count: number }>(
@@ -178,10 +180,11 @@ export const caseGovernanceApi = {
     item: string,
     decision: string,
     comment: string,
+    fileIds: string[] = [],
   ) =>
     apiClient.post<CaseReview>(
       `${base(p)}/reviews/${review}/items/${item}/decision`,
-      { decision, comment },
+      { decision, comment, ...(fileIds.length ? {fileIds} : {}) },
     ),
   comment: (p: string, review: string, content: string) =>
     apiClient.post<CaseReview>(`${base(p)}/reviews/${review}/comments`, {

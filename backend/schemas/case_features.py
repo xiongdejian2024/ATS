@@ -81,6 +81,7 @@ class AutomationWrite(StrictRequest):
 
 
 class CommentWrite(StrictRequest):
+    fileIds: list[str] = Field(default_factory=list, max_length=50)
     content: str = Field(min_length=1, max_length=10000)
 
 

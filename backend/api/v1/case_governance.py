@@ -257,7 +257,7 @@ def batch_vote(
             project_id,
             review_id,
             body.itemIds,
-            ReviewVote(decision=body.decision, comment=body.comment),
+            ReviewVote(decision=body.decision, comment=body.comment, fileIds=body.fileIds),
         )
         return service.review_data(db, review)
 
