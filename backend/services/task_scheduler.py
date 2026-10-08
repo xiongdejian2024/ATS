@@ -239,6 +239,13 @@ async def dispatch_pending(db):
             run.error_message = "派发前校验失败，请检查目标和执行人权限"
             db.commit()
             continue
+        from services import native_variable_delivery
+        variable_session = None
+        if native_variable_delivery.requires_variables(payload):
+            variable_session = native_variable_delivery.session_for(manager, task.environment_id, payload)
+            if variable_session is None:
+                db.rollback()
+                continue
         eligible_runs = db.query(TaskScheduleRun.execution_id).filter(
             TaskScheduleRun.status.notin_((*TERMINAL, "cancelling", "needs_confirmation"))
         )
@@ -253,7 +260,7 @@ async def dispatch_pending(db):
         run.delivery_state, run.dispatch_attempted_at = "dispatching", utc_now()
         db.commit()
         try:
-            sent = await manager.send_message(task.environment_id, payload)
+            sent = await native_variable_delivery.send(manager, task.environment_id, payload, variable_session)
         except Exception:
             logger.exception("派发消息异常：执行={}", task.execution_id)
             sent = False

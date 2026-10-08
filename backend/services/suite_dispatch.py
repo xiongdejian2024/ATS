@@ -24,11 +24,12 @@ def build_suite_message(db, suite, execution_id, executor_id, case_snapshots=Non
     native_cases = None
     if suite.execution_command == 'ats-native-http':
         from framework.native_http.models import FrozenCase
-        native_cases = [FrozenCase.model_validate(c).model_dump() for c in getattr(suite, 'native_cases', None) or []]
+        from framework.native_http.variable_models import wire_case
+        native_cases = [wire_case(FrozenCase.model_validate(c)) for c in getattr(suite, 'native_cases', None) or []]
         if [c['id'] for c in native_cases] != suite.case_ids:
             raise ValueError('冻结原生HTTP请求与派发范围不一致')
     git_enabled = suite.git_enabled == "true"
-    return {
+    message = {
         "type": "execute_test_suite",
         "suite_id": suite.id,
         "plan_id": suite.plan_id,
@@ -42,6 +43,10 @@ def build_suite_message(db, suite, execution_id, executor_id, case_snapshots=Non
         "executor_id": executor_id,
         **({"native_cases": native_cases} if native_cases is not None else {}),
     }
+    if native_cases is not None:
+        from services.native_variable_delivery import validate_budget
+        validate_budget(message)
+    return message
 
 
 def is_xat_command(command):

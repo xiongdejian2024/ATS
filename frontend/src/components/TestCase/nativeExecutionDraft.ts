@@ -4,6 +4,7 @@ import { readResponseAssertions } from "./nativeResponseAssertions";
 import { requestMethods } from "@/components/TestPlan/planCandidateBasic";
 import { readProcessors } from "./nativeExtractions";
 import { emptySchema, readJsonSchema } from "./nativeJsonSchema";
+import { readNativeVariables } from "./nativeVariables";
 export interface ExecutionEditorProps {
   modelValue: string;
   category: string;
@@ -33,6 +34,7 @@ export function useNativeExecutionDraft(
     responseAssertions = ref("[]"),
     error = ref("");
   const postProcessors = ref('{"processors":[]}');
+  const initialVariables = ref("[]");
   const steps = ref<{ apiCaseId: string; enabled: boolean }[]>([]);
   const jsonSchemaMode = ref(false),
     jsonSchema = ref(JSON.stringify(emptySchema()));
@@ -95,6 +97,8 @@ export function useNativeExecutionDraft(
         const root = object(value),
           data = root[props.category === "api" ? "request" : "scenario"];
         enabled.value = !!data;
+        initialVariables.value = JSON.stringify(data?.initialVariables ?? []);
+        readNativeVariables(initialVariables.value);
         method.value = data?.method ?? "GET";
         timeout.value = data?.timeoutMs ?? 10000;
         redirects.value = data?.followRedirects ?? false;
@@ -198,6 +202,7 @@ export function useNativeExecutionDraft(
         assertions.value,
         responseAssertions.value,
         postProcessors.value,
+        initialVariables.value,
         stop.value,
         steps.value,
         rest.value,
@@ -249,6 +254,9 @@ export function useNativeExecutionDraft(
             processors: readProcessors(postProcessors.value),
           },
         };
+        const variables = readNativeVariables(initialVariables.value);
+        if (variables.length) root.request.initialVariables = variables;
+        else delete root.request.initialVariables;
         if (bodyType.value === "json" || root.request.jsonBody)
           root.request.jsonBody = {
             enableJsonSchema: jsonSchemaMode.value,
@@ -302,7 +310,12 @@ export function useNativeExecutionDraft(
           !steps.value.some((s) => s.enabled)
         )
           throw new Error("场景须选择并启用至少一个API步骤");
-        root.scenario = { steps: steps.value, stopOnFailure: stop.value };
+        const variables = readNativeVariables(initialVariables.value);
+        root.scenario = {
+          steps: steps.value,
+          stopOnFailure: stop.value,
+          ...(variables.length ? { initialVariables: variables } : {}),
+        };
       }
       output = JSON.stringify(root, null, 2);
       events.update(output);
@@ -326,6 +339,7 @@ export function useNativeExecutionDraft(
       assertions,
       responseAssertions,
       postProcessors,
+      initialVariables,
       stop,
       steps,
       rest,
@@ -381,6 +395,7 @@ export function useNativeExecutionDraft(
     assertions,
     responseAssertions,
     postProcessors,
+    initialVariables,
     error,
     steps,
     methods,

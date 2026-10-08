@@ -417,9 +417,13 @@ async def advance_plan_runs(db):
                     if item.status != "pending":
                         continue
                     pool = item.suite_snapshot.get("resourcePool", [])
+                    from services import native_variable_delivery
+                    variable_payload = {"native_cases": item.suite_snapshot.get("nativeCases") or []}
                     if pool:
                         candidates = db.query(Environment).filter(Environment.id.in_(pool), Environment.status.is_(True)).all()
                         for candidate in sorted(candidates, key=lambda env: db.query(TaskQueue).filter_by(environment_id=env.id, status="running").count()):
+                            if native_variable_delivery.requires_variables(variable_payload) and native_variable_delivery.session_for(manager, candidate.id, variable_payload) is None:
+                                continue
                             if candidate.id in manager.active_connections and TaskQueueService.can_execute_immediately(db, candidate.id):
                                 moved = db.query(TaskQueue).filter_by(execution_id=item.execution_id, status="pending").update({"environment_id": candidate.id})
                                 if not moved:
@@ -457,6 +461,12 @@ async def advance_plan_runs(db):
                         db.query(TaskQueue).filter_by(execution_id=item.execution_id, status="cancelled").update({"status": "failed"})
                         db.commit()
                         continue
+                    variable_session = None
+                    if native_variable_delivery.requires_variables(message):
+                        variable_session = native_variable_delivery.session_for(manager, item.environment_id, message)
+                        if variable_session is None:
+                            db.rollback()
+                            continue
                     runnable_items = db.query(PlanRunItem.execution_id).join(PlanRun, PlanRun.id == PlanRunItem.run_id).filter(
                         PlanRun.status.in_(("queued", "running")))
                     task = TaskQueueService.start_task(
@@ -474,7 +484,7 @@ async def advance_plan_runs(db):
                     db.commit()
                     db.refresh(run)
                     try:
-                        sent = await manager.send_message(item.environment_id, message)
+                        sent = await native_variable_delivery.send(manager, item.environment_id, message, variable_session)
                     except Exception:
                         logger.exception("计划派发消息异常：批次={}，执行={}", run.id, item.execution_id)
                         sent = False

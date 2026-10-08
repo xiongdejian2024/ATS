@@ -12,6 +12,7 @@ export interface NativeDefinition {
   revision: number;
 }
 export interface NativeEnvironment {
+  variables?: import("@/components/TestCase/nativeVariables").NativeVariable[];
   id: string;
   name: string;
   address: string;

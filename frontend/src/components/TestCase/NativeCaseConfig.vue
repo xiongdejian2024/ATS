@@ -93,7 +93,7 @@
           category === 'scenario' ||
           ['HTTP', 'HTTPS'].includes(definition?.protocol || '')
         "
-        :key="projectId + ':' + caseId + ':' + config.revision"
+        :key="projectId + ':' + caseId + ':' + configEditorSequence"
         v-model="parametersText"
         :category="category"
         :api-cases="catalog.apiCases || []"
@@ -133,7 +133,7 @@
       >
     </a-form>
     <a-modal
-      v-model:open="entityOpen"
+      :open="entityOpen"
       :title="
         entityKind === 'definition'
           ? entityId
@@ -153,6 +153,7 @@
         entityKind === 'definition' ? 'min(800px,100vw)' : 'min(520px,100vw)'
       "
       @ok="saveEntity"
+      @cancel="closeEntity"
     >
       <a-form layout="vertical" :disabled="saving"
         ><a-form-item label="名称" required
@@ -179,6 +180,7 @@
             category="api"
             :api-cases="[]"
             :disabled="saving"
+            @draft="entityEditorDraft = $event"
             @error="entityEditorError = $event" />
           <details>
             <summary>高级配置</summary>
@@ -188,11 +190,16 @@
                 aria-label="接口参数结构"
                 :rows="5"
             /></a-form-item></details></template
-        ><a-form-item v-else label="环境地址" required
-          ><a-input
-            v-model:value="address"
-            aria-label="接口环境地址"
-            :maxlength="500" /></a-form-item></a-form
+        ><template v-else
+          ><a-form-item label="环境地址" required
+            ><a-input
+              v-model:value="address"
+              aria-label="接口环境地址"
+              :maxlength="500" /></a-form-item
+          ><a-form-item label="环境变量"
+            ><NativeVariableEditor
+              v-model="environmentVariables"
+              :disabled="saving || readonly" /></a-form-item></template></a-form
       ><a-alert v-if="entityError" :message="entityError" type="error" show-icon
         ><template #action
           ><a-button :disabled="saving" @click="retryEntity"
@@ -204,7 +211,10 @@
   </a-spin>
 </template>
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, onBeforeUnmount, onMounted } from "vue";
+import { useUserStore } from "@/stores/user";
+import NativeVariableEditor from "./NativeVariableEditor.vue";
+import { readNativeVariables } from "./nativeVariables";
 import { message, Modal } from "ant-design-vue";
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
 import NativeExecutionEditor from "./NativeExecutionEditor.vue";
@@ -247,8 +257,13 @@ const definition = computed(() =>
 const environment = computed(() =>
   catalog.value?.environments.find((e) => e.id === environmentId.value),
 );
-let sequence = 0;
+let sequence = 0,
+  epoch = 0,
+  live = true;
+const user = useUserStore();
+const validContext = (value: number) => live && value === epoch;
 const original = ref("");
+const configEditorSequence = ref(0);
 const draftSignature = () =>
   JSON.stringify([
     state.value,
@@ -258,11 +273,11 @@ const draftSignature = () =>
     sync.value,
     editorDraft.value,
   ]);
-const dirty = computed(
+const configDirty = computed(
   () => !!config.value && original.value !== draftSignature(),
 );
-watch(dirty, (value) => emit("dirty", value));
 function adopt(value: NativeConfig) {
+  configEditorSequence.value++;
   editorDraft.value = "";
   editorError.value = "";
   config.value = value;
@@ -274,16 +289,8 @@ function adopt(value: NativeConfig) {
   original.value = draftSignature();
 }
 async function load(keepDraft = false) {
-  const draft =
-    keepDraft && config.value
-      ? {
-          state: state.value,
-          definitionId: definitionId.value,
-          environmentId: environmentId.value,
-          parameters: parametersText.value,
-          sync: sync.value,
-        }
-      : undefined;
+  if (saving.value) return;
+  const context = epoch;
   const current = ++sequence;
   loading.value = true;
   error.value = "";
@@ -293,25 +300,28 @@ async function load(keepDraft = false) {
       api.catalog(props.projectId),
       api.config(props.projectId, props.caseId),
     ]);
-    if (current === sequence) {
+    if (validContext(context) && current === sequence) {
       catalog.value = cat;
-      adopt(value);
-      if (draft) {
-        state.value = draft.state;
-        definitionId.value = draft.definitionId;
-        environmentId.value = draft.environmentId;
-        parametersText.value = draft.parameters;
-        sync.value = draft.sync;
-      }
+      if (keepDraft && config.value) {
+        config.value = value;
+        original.value = JSON.stringify([
+          value.state || undefined,
+          value.apiDefinitionId || undefined,
+          value.environmentId || undefined,
+          JSON.stringify(value.parameters, null, 2),
+          false,
+          "",
+        ]);
+      } else adopt(value);
     }
   } catch (failure) {
     console.error("加载原生用例配置失败", failure);
-    if (current === sequence) {
+    if (validContext(context) && current === sequence) {
       error.value = "配置加载失败，请重试；编辑草稿保留";
       loadError.value = true;
     }
   } finally {
-    if (current === sequence) loading.value = false;
+    if (validContext(context) && current === sequence) loading.value = false;
   }
 }
 function selectDefinition() {
@@ -338,11 +348,14 @@ async function save() {
   if (
     !config.value?.canEdit ||
     saving.value ||
+    loading.value ||
     props.readonly ||
+    editorError.value ||
     loadError.value
   )
     return;
-  const context = props.projectId + ":" + props.caseId;
+  const context = epoch,
+    submitted = draftSignature();
   setSaving(true);
   error.value = "";
   try {
@@ -356,15 +369,20 @@ async function save() {
       expectedDefinitionRevision:
         props.category === "api" ? definition.value?.revision : null,
     });
-    if (context !== props.projectId + ":" + props.caseId) return;
-    adopt(value);
+    if (!validContext(context)) return;
+    if (submitted === draftSignature()) adopt(value);
+    else {
+      config.value = value;
+      original.value = submitted;
+    }
     message.success("原生用例配置已保存");
     emit("saved");
   } catch (failure) {
     console.error("保存原生用例配置失败，保留草稿", failure);
+    if (!validContext(context)) return;
     error.value = "保存失败，请核对状态、参数和配置版本；草稿保留";
   } finally {
-    setSaving(false);
+    if (validContext(context)) setSaving(false);
   }
 }
 const entityOpen = ref(false),
@@ -376,13 +394,34 @@ const entityOpen = ref(false),
   path = ref(""),
   address = ref(""),
   definitionParameters = ref("{}"),
+  environmentVariables = ref("[]"),
   entityError = ref(""),
   entityEditorError = ref(""),
+  entityEditorDraft = ref(""),
   entityEditorSequence = ref(0);
+const entityOriginal = ref("");
+const entitySignature = () =>
+  JSON.stringify([
+    entityKind.value,
+    entityId.value,
+    entityName.value,
+    protocol.value,
+    path.value,
+    address.value,
+    definitionParameters.value,
+    environmentVariables.value,
+    entityEditorDraft.value,
+  ]);
+const entityDirty = computed(
+  () => entityOpen.value && entityOriginal.value !== entitySignature(),
+);
+const dirty = computed(() => configDirty.value || entityDirty.value);
+watch(dirty, (value) => emit("dirty", value), { flush: "sync" });
 function editEntity(
   kind: "definition" | "environment",
   value?: NativeDefinition | NativeEnvironment,
 ) {
+  if (saving.value || loading.value || props.readonly) return;
   entityKind.value = kind;
   entityId.value = value?.id;
   entityRevision.value = value?.revision || 0;
@@ -390,6 +429,9 @@ function editEntity(
   protocol.value = (value as NativeDefinition)?.protocol || "HTTP";
   path.value = (value as NativeDefinition)?.path || "";
   address.value = (value as NativeEnvironment)?.address || "";
+  environmentVariables.value = JSON.stringify(
+    (value as NativeEnvironment)?.variables || [],
+  );
   definitionParameters.value = JSON.stringify(
     (value as NativeDefinition)?.parameters || {},
     null,
@@ -397,15 +439,19 @@ function editEntity(
   );
   entityError.value = "";
   entityEditorError.value = "";
+  entityEditorDraft.value = "";
   entityEditorSequence.value++;
   entityOpen.value = true;
+  entityOriginal.value = entitySignature();
 }
 async function retryEntity() {
-  const context = props.projectId + ":" + props.caseId;
+  if (saving.value || props.readonly) return;
+  const context = epoch,
+    editor = entityEditorSequence.value;
   setSaving(true);
   try {
     const value = await api.catalog(props.projectId);
-    if (context !== props.projectId + ":" + props.caseId) return;
+    if (!validContext(context) || editor !== entityEditorSequence.value) return;
     const current = (
       entityKind.value === "definition" ? value.definitions : value.environments
     ).find((row) => row.id === entityId.value);
@@ -416,14 +462,33 @@ async function retryEntity() {
     message.info("配置版本已刷新，编辑草稿保留");
   } catch (failure) {
     console.error("重载原生配置版本失败", failure);
+    if (!validContext(context) || editor !== entityEditorSequence.value) return;
     entityError.value = "重新加载失败，草稿保留，请重试";
   } finally {
-    setSaving(false);
+    if (validContext(context) && editor === entityEditorSequence.value)
+      setSaving(false);
   }
 }
 async function saveEntity() {
-  if (saving.value || entityEditorError.value) return;
-  const context = props.projectId + ":" + props.caseId;
+  if (
+    saving.value ||
+    loading.value ||
+    entityEditorError.value ||
+    props.readonly ||
+    !entityOpen.value ||
+    !(entityId.value ? catalog.value?.canEdit : catalog.value?.canCreate)
+  )
+    return;
+  const context = epoch,
+    editor = entityEditorSequence.value,
+    submitted = entitySignature(),
+    submittedId = entityId.value;
+  const previousIds = new Set(
+    (entityKind.value === "definition"
+      ? catalog.value?.definitions
+      : catalog.value?.environments
+    )?.map((row) => row.id) || [],
+  );
   setSaving(true);
   entityError.value = "";
   try {
@@ -445,51 +510,126 @@ async function saveEntity() {
           )
         : await api.saveEnvironment(
             props.projectId,
-            { ...common, address: address.value.trim() },
+            {
+              ...common,
+              address: address.value.trim(),
+              variables: readNativeVariables(environmentVariables.value),
+            },
             entityId.value,
           );
-    if (context !== props.projectId + ":" + props.caseId) return;
+    if (!validContext(context) || editor !== entityEditorSequence.value) return;
     catalog.value = value;
-    const current = await api.config(props.projectId, props.caseId);
-    if (context !== props.projectId + ":" + props.caseId) return;
-    if (config.value) config.value.apiChange = current.apiChange;
-    entityOpen.value = false;
+    const savedRows =
+      entityKind.value === "definition"
+        ? value.definitions
+        : value.environments;
+    const receipts = savedRows.filter((row) =>
+      submittedId ? row.id === submittedId : !previousIds.has(row.id),
+    );
+    if (receipts.length === 1) {
+      entityId.value = receipts[0].id;
+      entityRevision.value = receipts[0].revision;
+    }
+    const submittedState = JSON.parse(submitted);
+    submittedState[1] = entityId.value;
+    const savedSignature = JSON.stringify(submittedState);
+    if (savedSignature === entitySignature()) entityOpen.value = false;
+    else entityOriginal.value = savedSignature;
     message.success("配置已保存");
     emit("saved");
+    try {
+      const current = await api.config(props.projectId, props.caseId);
+      if (
+        validContext(context) &&
+        editor === entityEditorSequence.value &&
+        config.value
+      )
+        config.value.apiChange = current.apiChange;
+    } catch (failure) {
+      console.error("配置已保存，但关联状态刷新失败", failure);
+      if (validContext(context) && editor === entityEditorSequence.value)
+        message.warning("配置已保存，关联状态暂未刷新；可重新加载");
+    }
   } catch (failure) {
     console.error("保存接口或环境配置失败，保留草稿", failure);
+    if (!validContext(context) || editor !== entityEditorSequence.value) return;
     entityError.value = "保存失败，请核对名称、参数或配置版本；草稿保留";
   } finally {
-    setSaving(false);
+    if (validContext(context) && editor === entityEditorSequence.value)
+      setSaving(false);
   }
 }
 watch(
-  () => [props.projectId, props.caseId],
+  () => [props.projectId, props.caseId, user.user?.id],
   () => {
     ++sequence;
+    ++epoch;
     config.value = undefined;
     catalog.value = undefined;
     entityOpen.value = false;
+    entityEditorSequence.value++;
+    setSaving(false);
     void load();
   },
-  { immediate: true },
+  { immediate: true, flush: "sync" },
 );
-function canLeave() {
+async function closeEntity() {
+  if (saving.value) return;
+  const context = epoch,
+    editor = entityEditorSequence.value;
+  if (entityDirty.value && !(await canLeave())) return;
+  if (validContext(context) && editor === entityEditorSequence.value)
+    entityOpen.value = false;
+}
+async function canLeave() {
   if (saving.value) return false;
   if (!dirty.value) return true;
-  return new Promise<boolean>((resolve) =>
+  const context = epoch,
+    editor = entityEditorSequence.value,
+    currentDraft = draftSignature(),
+    currentEntity = entitySignature();
+  const allowed = await new Promise<boolean>((resolve) =>
     Modal.confirm({
       title: "配置尚未保存",
       content: "离开后将丢失编辑草稿，是否继续？",
       okText: "离开",
       cancelText: "继续编辑",
-      onOk: () => resolve(true),
+      onOk: () =>
+        resolve(
+          validContext(context) &&
+            !saving.value &&
+            editor === entityEditorSequence.value &&
+            currentDraft === draftSignature() &&
+            currentEntity === entitySignature(),
+        ),
       onCancel: () => resolve(false),
     }),
+  );
+  return (
+    allowed &&
+    validContext(context) &&
+    !saving.value &&
+    editor === entityEditorSequence.value &&
+    currentDraft === draftSignature() &&
+    currentEntity === entitySignature()
   );
 }
 onBeforeRouteLeave(canLeave);
 onBeforeRouteUpdate(canLeave);
+defineExpose({ canLeave });
+function beforeUnload(event: BeforeUnloadEvent) {
+  if (dirty.value || saving.value) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+}
+onMounted(() => window.addEventListener("beforeunload", beforeUnload));
+onBeforeUnmount(() => {
+  live = false;
+  epoch++;
+  sequence++;
+  window.removeEventListener("beforeunload", beforeUnload);
+});
 </script>
 
 <style scoped>

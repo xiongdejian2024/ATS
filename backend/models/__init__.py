@@ -70,3 +70,4 @@ from . import request_environment_group
 from . import global_resource_pool
 
 from . import defect_workspace
+from . import native_environment_variables

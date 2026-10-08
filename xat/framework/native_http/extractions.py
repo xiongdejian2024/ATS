@@ -163,7 +163,22 @@ def bind(rule, found, variables):
     )
 
 
-def evaluate(config, response, variables):
+class RecordedBindings(dict):
+    """Track equal-value writes and deleted extraction aliases, not value diffs."""
+    def __init__(self, source):
+        super().__init__(source)
+        self.touched = set()
+
+    def __setitem__(self, key, value):
+        self.touched.add(key)
+        super().__setitem__(key, value)
+
+    def pop(self, key, *default):
+        self.touched.add(key)
+        return super().pop(key, *default)
+
+
+def evaluate(config, response, variables, temporary=None):
     results = []
     for processor in config.processors:
         if not processor.enable:
@@ -191,8 +206,14 @@ def evaluate(config, response, variables):
                     }
                 )
                 found = matches(rule, response)
-                next_variables = dict(variables)
+                next_variables = RecordedBindings(variables)
                 picked = bind(rule, found, next_variables)
+                if temporary is not None:
+                    for key in next_variables.touched:
+                        if key in next_variables:
+                            temporary[key] = next_variables[key]
+                        else:
+                            temporary.pop(key, None)
                 variables.clear()
                 variables.update(next_variables)
                 row.update(

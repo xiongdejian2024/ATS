@@ -274,7 +274,11 @@ async def execute_test_suite(
         except Exception:
             TaskQueueService.complete_task(db, execution_id, "failed")
             raise
-        claimed = TaskQueueService.start_task(db, execution_id, commit=False)
+        from api.v1.websocket import manager
+        from services import native_variable_delivery
+        variable_session = native_variable_delivery.session_for(manager, target_environment_id, task_message) if native_variable_delivery.requires_variables(task_message) else None
+        compatible = not native_variable_delivery.requires_variables(task_message) or variable_session is not None
+        claimed = TaskQueueService.start_task(db, execution_id, commit=False) if compatible else None
         if claimed:
             # 更新测试套状态：如果有正在运行的任务，状态为running
             from models.task_queue import TaskQueue
@@ -290,7 +294,7 @@ async def execute_test_suite(
             
             # 发送到Agent
             from api.v1.websocket import manager
-            success = await manager.send_message(claimed.environment_id, task_message)
+            success = await native_variable_delivery.send(manager, claimed.environment_id, task_message, variable_session)
             from services.suite_delivery import dispatched
             dispatched(db, execution_id, success)
             if not success:
