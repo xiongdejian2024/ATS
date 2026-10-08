@@ -518,46 +518,57 @@ async function loadAdvancedFields(id: string) {
   ]);
   return planIndexFilterFields(members, [...active, ...archived]);
 }
+let closing = false;
+const navigationCurrent = (scope: string) =>
+  live &&
+  scope === scopeSnapshot() &&
+  !filterSaving.value &&
+  !groupSaving.value;
 async function beforeNavigation() {
-  const scope = scopeSnapshot();
-  if (!live || filterSaving.value || groupSaving.value) return false;
-  const allowed = (await advancedEditor.value?.beforeClose()) ?? true;
-  if (
-    !allowed ||
-    !live ||
-    scope !== scopeSnapshot() ||
-    filterSaving.value ||
-    groupSaving.value
-  )
-    return false;
-  if (
-    groupModal.value &&
-    JSON.stringify(groupForm.value) !== groupBaseline.value
-  ) {
-    const accepted = await new Promise<boolean>((resolve) =>
-      Modal.confirm({
-        title: "放弃计划组草稿？",
-        onOk: () => resolve(true),
-        onCancel: () => resolve(false),
-      }),
-    );
+  const scope = scopeSnapshot(),
+    draft = JSON.stringify([
+      groupModal.value,
+      groupForm.value,
+      groupBaseline.value,
+    ]);
+  if (!navigationCurrent(scope) || closing) return false;
+  closing = true;
+  try {
     if (
-      !accepted ||
-      !live ||
-      scope !== scopeSnapshot() ||
-      filterSaving.value ||
-      groupSaving.value
+      !((await advancedEditor.value?.beforeClose()) ?? true) ||
+      !navigationCurrent(scope) ||
+      draft !==
+        JSON.stringify([groupModal.value, groupForm.value, groupBaseline.value])
     )
       return false;
-    groupModal.value = false;
+    if (
+      groupModal.value &&
+      JSON.stringify(groupForm.value) !== groupBaseline.value
+    ) {
+      const accepted = await new Promise<boolean>((resolve) =>
+        Modal.confirm({
+          title: "放弃计划组草稿？",
+          onOk: () => resolve(true),
+          onCancel: () => resolve(false),
+        }),
+      );
+      if (
+        !accepted ||
+        !navigationCurrent(scope) ||
+        draft !==
+          JSON.stringify([
+            groupModal.value,
+            groupForm.value,
+            groupBaseline.value,
+          ])
+      )
+        return false;
+      groupModal.value = false;
+    }
+    return navigationCurrent(scope);
+  } finally {
+    if (live && scope === scopeSnapshot()) closing = false;
   }
-  return (
-    allowed &&
-    live &&
-    scope === scopeSnapshot() &&
-    !filterSaving.value &&
-    !groupSaving.value
-  );
 }
 onBeforeRouteLeave(beforeNavigation);
 onBeforeRouteUpdate(beforeNavigation);
@@ -603,7 +614,8 @@ const workspaceFilter = ref<{
   archived: false,
 });
 async function applyWorkspaceFilter(value: typeof workspaceFilter.value) {
-  if (!(await beforeNavigation())) return;
+  const scope = scopeSnapshot();
+  if (!(await beforeNavigation()) || !navigationCurrent(scope)) return;
   advancedConditions.value = undefined;
   advancedViewId.value = undefined;
   advancedLogic.value = "and";
@@ -734,7 +746,8 @@ const groupForm = ref({
   moduleId: null as string | null,
 });
 async function openGroup(group?: PlanGroup) {
-  if (!(await beforeNavigation())) return;
+  const scope = scopeSnapshot();
+  if (!(await beforeNavigation()) || !navigationCurrent(scope)) return;
   groupId.value = group?.id || "";
   groupForm.value = {
     name: group?.name || "",
@@ -747,7 +760,9 @@ async function openGroup(group?: PlanGroup) {
   groupModal.value = true;
 }
 async function closeGroup() {
-  if (await beforeNavigation()) groupModal.value = false;
+  const scope = scopeSnapshot();
+  if ((await beforeNavigation()) && navigationCurrent(scope))
+    groupModal.value = false;
 }
 async function saveGroup() {
   if (!live || !projectId.value || groupSaving.value || filterSaving.value)
@@ -973,7 +988,7 @@ const navigationTitle = computed(() =>
 );
 async function selectNavigation(key: string) {
   const scope = scopeSnapshot();
-  if (!(await beforeNavigation())) return false;
+  if (!(await beforeNavigation()) || !navigationCurrent(scope)) return false;
   if (key.startsWith("plan:")) {
     return await viewPlanDetail(key.slice(5));
   }
@@ -996,7 +1011,7 @@ async function selectNavigation(key: string) {
 }
 async function moduleAction(action: string, id?: string) {
   const scope = scopeSnapshot();
-  if (!(await beforeNavigation())) return;
+  if (!(await beforeNavigation()) || !navigationCurrent(scope)) return;
   if (action === "create") workspaceToolbar.value?.editModule(undefined, id);
   else if (action === "edit")
     workspaceToolbar.value?.editModule(
@@ -1009,7 +1024,12 @@ async function moduleAction(action: string, id?: string) {
       okText: "删除",
       cancelText: "取消",
       onOk: async () => {
-        if (!live || scope !== scopeSnapshot() || !(await beforeNavigation()))
+        if (
+          !live ||
+          scope !== scopeSnapshot() ||
+          !(await beforeNavigation()) ||
+          !navigationCurrent(scope)
+        )
           throw new Error("项目已切换或操作进行中");
         await workspaceToolbar.value?.removeModule(id);
         if (live && scope === scopeSnapshot()) await selectNavigation("all");
@@ -1034,7 +1054,12 @@ async function groupAction(action: string, id: string) {
       okText: "删除",
       cancelText: "取消",
       onOk: async () => {
-        if (!live || scope !== scopeSnapshot() || !(await beforeNavigation()))
+        if (
+          !live ||
+          scope !== scopeSnapshot() ||
+          !(await beforeNavigation()) ||
+          !navigationCurrent(scope)
+        )
           throw new Error("项目已切换或操作进行中");
         await deleteGroup(id);
       },
@@ -1108,7 +1133,8 @@ const editPlan = (planId: string) => {
 };
 
 const viewPlanDetail = async (planId: string) => {
-  if (!(await beforeNavigation())) return false;
+  const scope = scopeSnapshot();
+  if (!(await beforeNavigation()) || !navigationCurrent(scope)) return false;
   await router.push({
     name: "TestPlanDetailPage",
     params: { planId },
@@ -1471,6 +1497,7 @@ watch(
   scopeIdentity,
   () => {
     ++scopeEpoch;
+    closing = false;
     ++groupOperation;
     ++planLoadSequence;
     groupFilter.value =

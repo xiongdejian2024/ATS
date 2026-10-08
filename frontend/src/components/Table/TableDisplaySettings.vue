@@ -27,9 +27,12 @@
       button-style="solid"
       @change="emit('pageSizeChange', $event.target.value)"
     >
-      <a-radio-button v-for="size in pageSizes" :key="size" :value="size">{{
-        size
-      }}</a-radio-button>
+      <a-radio-button
+        v-for="size in availablePageSizes || pageSizes"
+        :key="size"
+        :value="size"
+        >{{ size }}</a-radio-button
+      >
     </a-radio-group>
     <div v-if="showDescendants !== false" class="subdirectory-setting">
       <a-switch
@@ -108,6 +111,7 @@ import {
 } from "./tableDisplay";
 const props = defineProps<{
   open: boolean;
+  availablePageSizes?: number[];
   definitions: DisplayColumn[];
   columns: ColumnVisibility[];
   pageSize: number;

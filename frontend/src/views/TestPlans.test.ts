@@ -271,3 +271,37 @@ it("a completed copy cannot unlock a new group save begun during its navigation"
   await saving;
   h.stop();
 });
+
+it.each([1, 2, 3, 4, 5])(
+  "group deletion closing tail with %s microtasks cannot send under a different actor",
+  async (n) => {
+    const h = componentHost(Plans, {});
+    await flush();
+    const s = h.state;
+    await s.groupAction("delete", "clicked");
+    const confirmation = mocks.confirm.mock.calls[0][0],
+      actors: string[] = [];
+    mocks.remove.mockImplementation(() => {
+      actors.push(user.user.id);
+      return Promise.resolve();
+    });
+    s.advancedEditor = {
+      beforeClose: vi.fn(() =>
+        Promise.resolve().then(() => {
+          const step = (left: number): void =>
+            queueMicrotask(() =>
+              left > 1 ? step(left - 1) : (user.user = { id: "new" }),
+            );
+          step(n);
+          return true;
+        }),
+      ),
+    };
+    try {
+      await confirmation.onOk();
+    } catch {}
+    await flush();
+    expect(actors.every((id) => id === "u")).toBe(true);
+    h.stop();
+  },
+);
