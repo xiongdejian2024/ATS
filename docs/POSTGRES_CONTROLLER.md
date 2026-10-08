@@ -96,6 +96,9 @@ independent, explicitly configured JWT and origin service secrets; it generates
 none and never runs migrations automatically. Initialize/inspect the dedicated
 schema separately before deployment, using `scripts/init_postgres.py` (read-only)
 and its explicit `--apply` action only after approval.
+For a fresh schema applied through an admin migration API, the deterministic
+[PostgreSQL schema export](POSTGRES_SCHEMA_EXPORT.md) provides the same 82-model
+structure as one atomic SQL statement and refuses an existing `ats` schema.
 
 Sites must add `X-ATS-Origin-Authorization: Bearer <ATS_ORIGIN_SERVICE_KEY>` on the
 server, removing any browser-supplied value. Every HTTP and WebSocket route,

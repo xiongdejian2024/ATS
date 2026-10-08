@@ -6,6 +6,11 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
+from fastapi.exception_handlers import http_exception_handler
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from core.auth_errors import (
+    CredentialErrorBoundaryMiddleware, is_auth_path, is_credential_path, safe_error_response,
+)
 from fastapi import WebSocket, WebSocketDisconnect
 import traceback
 from config import settings
@@ -102,6 +107,9 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
+# Auth failures must not escape to the ASGI server's traceback logger.
+app.add_middleware(CredentialErrorBoundaryMiddleware)
+
 # 配置CORS
 app.add_middleware(
     CORSMiddleware,
@@ -111,36 +119,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 添加验证错误处理器，显示详细的验证错误信息
+# Validation errors may contain entire bodies, tokens, or custom validator messages.
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """处理请求验证错误，返回详细的错误信息"""
-    logger.exception(f"请求验证失败: {request.method} {request.url.path}")
-    errors = []
-    for error in exc.errors():
-        field = " -> ".join(str(loc) for loc in error["loc"])
-        errors.append({
-            "field": field,
-            "message": error["msg"],
-            "type": error["type"],
-            "input": error.get("input")
-        })
-    
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={
-            "status": "error",
-            "message": "请求数据验证失败",
-            "errors": errors,
-            "detail": str(exc)
-        }
-    )
+    return safe_error_response(422, auth=is_auth_path(request.url.path))
+
+
+@app.exception_handler(StarletteHTTPException)
+async def safe_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if is_credential_path(request.url.path):
+        return safe_error_response(exc.status_code, auth=is_auth_path(request.url.path))
+    return await http_exception_handler(request, exc)
 
 
 # 添加全局异常处理器，捕获所有未处理的异常
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """全局异常处理器，捕获所有未处理的异常"""
+    if is_credential_path(request.url.path):
+        return safe_error_response(500, auth=is_auth_path(request.url.path))
     # 记录异常详细信息
     logger.exception(f"未处理的异常: {request.method} {request.url.path}")
     

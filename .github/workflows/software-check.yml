@@ -60,6 +60,7 @@ jobs:
           tests/test_origin_access.py
           tests/test_render_entrypoint.py
           tests/test_render_controller_smoke.py tests/test_admin_bootstrap.py
+          tests/test_auth_error_redaction.py tests/test_postgres_ddl_export.py
   python:
     name: XAT 集成与 Agent（无硬件）
     runs-on: ubuntu-latest
