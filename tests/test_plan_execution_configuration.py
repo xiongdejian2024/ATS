@@ -234,6 +234,9 @@ async def test_failure_stop_obeys_collection_and_category_boundaries(
                 created_by="owner",
             )
         )
+        # No ORM relationship declares this dependency: persist the parent
+        # before its native config so PostgreSQL's immediate FK is respected.
+        db.flush()
         original = db.get(NativeCaseConfig, "case-0")
         db.add(
             NativeCaseConfig(
