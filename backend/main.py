@@ -22,6 +22,7 @@ from core.security import verify_token
 from models import User
 from api.v1 import ai_assistance
 from api.v1 import case_governance, plan_orchestration, task_center, script_jobs
+from api.v1 import request_environment_group
 from api.v1 import native_case
 from api.v1 import native_request_files
 from api.v1 import case_features
@@ -172,6 +173,7 @@ from api.v1 import mentions
 app.include_router(mentions.router, prefix=settings.API_V1_STR)
 app.include_router(case_features.router, prefix=settings.API_V1_STR)
 app.include_router(native_case.router, prefix=settings.API_V1_STR)
+app.include_router(request_environment_group.router, prefix=settings.API_V1_STR)
 app.include_router(native_request_files.router, prefix=settings.API_V1_STR)
 app.include_router(native_request_files.agent_router, prefix=settings.API_V1_STR)
 app.include_router(plan_group_execution.router, prefix=settings.API_V1_STR)

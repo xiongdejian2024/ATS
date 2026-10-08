@@ -31,11 +31,11 @@ def _policy(snapshot):
     for key in ('stopOnFailure', 'extended', 'retryOnFailure'):
         if isinstance(source.get(key), bool):
             result[key] = source[key]
-    for key in ('passThreshold', 'retryTimes', 'retryInterval'):
+    for key in ('passThreshold', 'retryTimes', 'retryInterval', 'requestEnvironmentGroupRevision'):
         value = source.get(key)
         if isinstance(value, (int, float)) and not isinstance(value, bool) and isfinite(value):
             result[key] = value
-    for key in ('testResourcePoolId', 'requestEnvironmentId'):
+    for key in ('testResourcePoolId', 'requestEnvironmentId', 'requestEnvironmentGroupId', 'resolvedRequestEnvironmentId'):
         if isinstance(source.get(key), str):
             result[key] = source[key]
     return result

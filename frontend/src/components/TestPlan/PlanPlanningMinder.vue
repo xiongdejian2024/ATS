@@ -383,7 +383,7 @@ import PlanningMinderTagMenu from "./PlanningMinderTagMenu.vue";
 import PlanningMinderBatchMenu from "./PlanningMinderBatchMenu.vue";
 import { minderDeletionTargets } from "./planMinderSelection";
 import { useMinderMarquee } from "./useMinderMarquee";
-import { planMinderTag } from "./planMinderTag";
+import { planMinderTag, selectExecutionEnvironment } from "./planMinderTag";
 import { planMinderActions, type MinderAction } from "./planMinderActions";
 import {
   buildPlanMinder,
@@ -627,7 +627,12 @@ async function saveTag(value: string) {
   if (!tag.options.some((option) => option.value === value)) return;
   try {
     const id = selected.value?.id;
-    draft.configure(tag.scope, { ...tag.config, [tag.field]: value });
+    draft.configure(
+      tag.scope,
+      tag.field === "requestEnvironmentId"
+        ? selectExecutionEnvironment(tag.config, value)
+        : { ...tag.config, [tag.field]: value },
+    );
     selected.value = flatNodes.value.find((n) => n.id === id);
     resetPoint();
     console.info("脑图标签选择已进入整体保存", {

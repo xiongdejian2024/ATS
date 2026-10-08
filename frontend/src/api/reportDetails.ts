@@ -16,6 +16,9 @@ export interface FrozenPolicy {
   retryInterval?: number;
   testResourcePoolId?: string;
   requestEnvironmentId?: string;
+  requestEnvironmentGroupId?: string;
+  resolvedRequestEnvironmentId?: string;
+  requestEnvironmentGroupRevision?: number;
 }
 export interface FrozenOccurrence {
   key: string;

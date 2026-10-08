@@ -3,11 +3,19 @@
 from copy import deepcopy
 from typing import Literal
 from fastapi import HTTPException
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    model_validator,
+)
 from models import Environment
 from models.plan_workspace import PlanNode
 from models.plan_workspace import PlanWorkspace
 from models.plan_execution_config import PlanExecutionConfig, PlanResourcePool
+from models.request_environment_group import RequestEnvironmentGroup
 from models.native_case import ApiTestEnvironment
 from services.review_workspace import lock_project
 from core.logger import logger
@@ -19,10 +27,20 @@ class ExecutionConfig(BaseModel):
     executionMode: Literal["serial", "parallel"] = "serial"
     testResourcePoolId: str = Field("DEFAULT", min_length=1, max_length=36)
     requestEnvironmentId: str = Field("NONE", min_length=1, max_length=36)
+    requestEnvironmentGroupId: str = Field("NONE", min_length=1, max_length=36)
     stopOnFailure: StrictBool = False
     retryOnFailure: StrictBool = False
     retryTimes: StrictInt = Field(1, ge=1, le=10)
     retryInterval: StrictInt = Field(0, ge=0, le=2147483647)
+
+    @model_validator(mode="after")
+    def exclusive_environment(self):
+        if (
+            self.requestEnvironmentId != "NONE"
+            and self.requestEnvironmentGroupId != "NONE"
+        ):
+            raise ValueError("请求环境和环境组只能选择一种")
+        return self
 
 
 class ConfigSave(BaseModel):
@@ -172,6 +190,12 @@ def catalog(db, plan, policy, nodes):
             .filter_by(project_id=plan.project_id)
             .order_by(PlanResourcePool.name, PlanResourcePool.id)
         ],
+        requestEnvironmentGroups=[
+            dict(id=g.id, name=g.name)
+            for g in db.query(RequestEnvironmentGroup)
+            .filter_by(project_id=plan.project_id)
+            .order_by(RequestEnvironmentGroup.name, RequestEnvironmentGroup.id)
+        ],
         requestEnvironments=[
             dict(id=e.id, name=e.name)
             for e in db.query(ApiTestEnvironment)
@@ -206,6 +230,18 @@ def save(db, plan, scope, data):
             .one_or_none()
         ):
             raise HTTPException(422, "资源池不属于当前项目")
+        group_id = config["requestEnvironmentGroupId"]
+        if group_id != "NONE":
+            from models.request_environment_group import RequestEnvironmentGroup
+
+            if (
+                not db.query(RequestEnvironmentGroup)
+                .filter_by(id=group_id, project_id=plan.project_id)
+                .populate_existing()
+                .with_for_update()
+                .one_or_none()
+            ):
+                raise HTTPException(422, "请求环境组不属于当前计划项目")
         if (
             target_id != "NONE"
             and not db.query(ApiTestEnvironment)

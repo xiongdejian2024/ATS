@@ -1,6 +1,6 @@
 # Fresh PostgreSQL schema export
 
-`deploy/postgres_schema.sql` creates the original ATS controller's 87 model tables
+`deploy/postgres_schema.sql` creates the original ATS controller's 89 model tables
 in the fixed `ats` schema. It is a fresh initialization artifact, not an upgrade or
 data migration. It refuses **any existing `ats` schema**, including an empty or
 already compatible one, before creating a table. It does not create database roles,
@@ -8,7 +8,7 @@ passwords, extensions, or application users; insert data; issue grants; or drop 
 replace existing objects.
 
 The artifact preserves model column order, PostgreSQL types, nullability, primary
-keys, unique/check/foreign-key constraints and delete actions, 203 model indexes
+keys, unique/check/foreign-key constraints and delete actions, 215 model indexes
 with their original names, 52 model comments, and all server defaults. The
 `review_workspaces.number` SERIAL primary key creates the owned
 `ats.review_workspaces_number_seq` sequence. Python-side defaults, UUID generation,
