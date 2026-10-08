@@ -482,8 +482,25 @@ async def cancel_test_suite(
                     "suite_id": suite_id,
                     "execution_id": task.execution_id
                 }
-                await manager.send_message(suite.environment_id, cancel_message)
-                TaskQueueService.complete_task(db, task.execution_id, "cancelled")
+                success = await manager.send_message(suite.environment_id, cancel_message)
+                if not success:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="无法发送取消指令到Agent，请确保环境在线"
+                    )
+                if not is_xat_command(suite.execution_command):
+                    TaskQueueService.complete_task(db, task.execution_id, "cancelled")
+                # XAT must deliver preserved case results before its completion
+                # event marks the task cancelled and releases the running slot.
+
+            if is_xat_command(suite.execution_command):
+                # Completion may already have arrived while sending a cancel;
+                # leave all suite-status changes to that event as well.
+                return APIResponse(
+                    status=ResponseStatus.SUCCESS,
+                    message="取消请求已发送",
+                    data=serialize_model(suite, camel_case=True)
+                )
             
             # 更新测试套状态
             pending_tasks = db.query(TaskQueue).filter(

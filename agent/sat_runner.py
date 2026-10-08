@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import math
 import os
 import shlex
 import signal
@@ -104,6 +105,33 @@ def build_invocation(config, options, directory, selection):
     return command, env
 
 
+def read_results(path, case_ids):
+    """Read only complete, selected case rows from XAT's atomic checkpoint."""
+    if not path.exists():
+        return []
+    rows = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(rows, list):
+        raise ValueError("XAT 结果必须为列表")
+    seen = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("XAT 结果行格式无效")
+        case_id, duration = row.get("case_id"), row.get("duration")
+        if (
+            not isinstance(case_id, str)
+            or case_id not in case_ids
+            or case_id in seen
+            or row.get("status") not in ("passed", "failed", "skipped", "error")
+            or isinstance(duration, bool)
+            or not isinstance(duration, (int, float))
+            or not math.isfinite(duration)
+            or duration < 0
+        ):
+            raise ValueError("XAT 结果包含无效或重复的用例数据")
+        seen.add(case_id)
+    return rows
+
+
 async def terminate_process(process):
     """Terminate the runner and its children without blocking the event loop."""
     if process.returncode is not None:
@@ -130,6 +158,9 @@ class SATRunner:
         self.runs = {}
         self.suites = {}
         self.executed = set()
+        self.started = set()
+        self.cancel_requested = set()
+        self.finalizing = set()
         self.delivery_lock = asyncio.Lock()
 
     @property
@@ -148,7 +179,10 @@ class SATRunner:
         path = self.outbox / (key + ".json")
         temporary = path.with_suffix(".tmp")
         with open(
-            temporary, "w", encoding="utf-8", opener=lambda path, flags: os.open(path, flags, 0o600)
+            temporary,
+            "w",
+            encoding="utf-8",
+            opener=lambda path, flags: os.open(path, flags, 0o600),
         ) as output:
             os.fchmod(output.fileno(), 0o600)
             output.write(json.dumps(payload))
@@ -202,13 +236,18 @@ class SATRunner:
 
     async def cancel(self, suite_id, execution_id=None):
         tasks = [
-            task
+            (key, task)
             for key, task in self.runs.items()
             if self.suites[key] == suite_id and (execution_id is None or key == execution_id)
         ]
-        for task in tasks:
-            task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
+        for key, task in tasks:
+            self.cancel_requested.add(key)
+            # A task cancelled before its first turn never enters its finally.
+            # Let execute consume that request; once finalizing, cancellation
+            # waits for durable results/completion instead of interrupting them.
+            if key in self.started and key not in self.finalizing and not task.cancelling():
+                task.cancel()
+        await asyncio.gather(*(asyncio.shield(task) for _, task in tasks), return_exceptions=True)
 
     async def log(self, message, text):
         await self.agent.ws_client.send_message(
@@ -224,10 +263,14 @@ class SATRunner:
     async def execute(self, message):
         suite_id, execution_id = message["suite_id"], message["execution_id"]
         process, rows, error, status = None, [], None, "failed"
+        exit_code = None
         started = time.monotonic()
         directory = self.agent.work_dir / "suites" / suite_id / "executions" / execution_id
         directory.mkdir(parents=True, exist_ok=True)
+        self.started.add(execution_id)
         try:
+            if execution_id in self.cancel_requested:
+                raise asyncio.CancelledError
             options = parse_command(message["execution_command"])
             ids, codes = message["case_ids"], message.get("case_codes", [])
             if len(ids) != len(codes) or len(set(codes)) != len(codes) or not all(codes):
@@ -271,16 +314,6 @@ class SATRunner:
                 return await process.wait()
 
             exit_code = await asyncio.wait_for(read_output(), timeout=timeout)
-            result_file = directory / "results.json"
-            if result_file.exists():
-                rows = json.loads(result_file.read_text(encoding="utf-8"))
-            status = (
-                "completed"
-                if exit_code == 0
-                and len(rows) == len(ids)
-                and all(row["status"] in ["passed", "skipped"] for row in rows)
-                else "failed"
-            )
             if exit_code:
                 error = f"XAT pytest 退出码为 {exit_code}，详情见 output.log"
         except asyncio.CancelledError:
@@ -293,33 +326,54 @@ class SATRunner:
             error = str(exc)
             logger.exception("XAT/SAT 执行失败：{}", execution_id)
         finally:
-            if process:
-                await terminate_process(process)
+            self.finalizing.add(execution_id)
             try:
+                if process:
+                    await terminate_process(process)
+                # XAT checkpoints each completed teardown atomically. Stop the
+                # writer first, then recover the last checkpoint on every exit.
+                if process:
+                    try:
+                        rows = read_results(directory / "results.json", message["case_ids"])
+                    except (ValueError, OSError) as exc:
+                        error = error or f"读取 XAT 结果失败：{exc}"
+                        logger.exception("读取 XAT 执行结果失败：{}", execution_id)
                 if status != "cancelled":
-                    row_by_id = {row["case_id"]: row for row in rows}
-                    for case_id in message["case_ids"]:
-                        row = row_by_id.get(
-                            case_id,
-                            {
-                                "status": "error",
-                                "duration": 0,
-                                "error": error or "XAT 未产生对应结果",
-                            },
-                        )
-                        await self.deliver(
-                            {
-                                "type": "test_suite_result",
-                                "suite_id": suite_id,
-                                "execution_id": execution_id,
-                                "case_id": case_id,
-                                "result": row["status"],
-                                "duration": f'{row["duration"]:.3f}s',
-                                "error_message": row.get("error"),
-                                "log_output": row.get("log") or row.get("error"),
-                                "executor_id": message.get("executor_id", "system"),
-                            }
-                        )
+                    status = (
+                        "completed"
+                        if exit_code == 0
+                        and error is None
+                        and len(rows) == len(message["case_ids"])
+                        and all(row["status"] in {"passed", "skipped"} for row in rows)
+                        else "failed"
+                    )
+                row_by_id = {row["case_id"]: row for row in rows}
+                for case_id in message["case_ids"]:
+                    # Cancellation is intentional: retain finished cases without
+                    # synthesizing failures for work that never completed.
+                    if status == "cancelled" and case_id not in row_by_id:
+                        continue
+                    row = row_by_id.get(
+                        case_id,
+                        {
+                            "status": "error",
+                            "duration": 0,
+                            "error": error or "XAT 未产生对应结果",
+                        },
+                    )
+                    await self.deliver(
+                        {
+                            "type": "test_suite_result",
+                            "suite_id": suite_id,
+                            "execution_id": execution_id,
+                            "case_id": case_id,
+                            "result": row["status"],
+                            "duration": f'{row["duration"]:.3f}s',
+                            "error_message": row.get("error"),
+                            "log_output": row.get("log") or row.get("error"),
+                            "executor_id": message.get("executor_id", "system"),
+                        }
+                    )
                 (directory / "run.json").write_text(
                     json.dumps(
                         {
@@ -336,8 +390,6 @@ class SATRunner:
                     ),
                     encoding="utf-8",
                 )
-                self.runs.pop(execution_id, None)
-                self.suites.pop(execution_id, None)
                 await self.deliver(
                     {
                         "type": "test_suite_completed",
@@ -363,6 +415,9 @@ class SATRunner:
                     len(rows),
                 )
             finally:
+                self.started.discard(execution_id)
+                self.cancel_requested.discard(execution_id)
+                self.finalizing.discard(execution_id)
                 if self.runs.get(execution_id) is asyncio.current_task():
                     self.runs.pop(execution_id, None)
                     self.suites.pop(execution_id, None)

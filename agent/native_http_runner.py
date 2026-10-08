@@ -49,7 +49,10 @@ class NativeHTTPRunner(SATRunner):
             self.agent.work_dir / "suites" / suite_id / "executions" / execution_id
         )
         directory.mkdir(parents=True, exist_ok=True)
+        self.started.add(execution_id)
         try:
+            if execution_id in self.cancel_requested:
+                raise asyncio.CancelledError
             # 与现有SAT适配器同样从工作区加载自有XAT，httpx/Pydantic均为XAT已有依赖。
             xat_path = str(Path(__file__).resolve().parents[1] / "xat")
             if xat_path not in sys.path:
@@ -129,6 +132,7 @@ class NativeHTTPRunner(SATRunner):
             error = "原生HTTP执行失败：" + type(exception).__name__
             logger.exception("原生HTTP执行失败：执行={}", execution_id)
         finally:
+            self.finalizing.add(execution_id)
             try:
                 if status != "cancelled":
                     reported = {row["case_id"] for row in rows}
@@ -150,8 +154,6 @@ class NativeHTTPRunner(SATRunner):
                 record = dict(
                     execution_id=execution_id, status=status, error=error, rows=rows
                 )
-                self.runs.pop(execution_id, None)
-                self.suites.pop(execution_id, None)
                 await self.deliver(
                     dict(
                         type="test_suite_completed",
@@ -186,6 +188,9 @@ class NativeHTTPRunner(SATRunner):
                 logger.exception("原生HTTP终态持久化或回传失败：执行={}", execution_id)
                 raise
             finally:
+                self.started.discard(execution_id)
+                self.cancel_requested.discard(execution_id)
+                self.finalizing.discard(execution_id)
                 if self.runs.get(execution_id) is asyncio.current_task():
                     self.runs.pop(execution_id, None)
                     self.suites.pop(execution_id, None)
