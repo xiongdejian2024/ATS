@@ -270,14 +270,14 @@ async def execute_test_suite(
             suite = load_dispatch_suite(db, suite_id, str(current_user.id))
             if suite.environment_id != target_environment_id:
                 raise ValueError("测试套节点在派发前已改变，请核对配置后重新提交")
-            task_message = build_suite_message(db, suite, execution_id, str(current_user.id), current_read=True)
+            task_message = build_suite_message(db, suite, execution_id, str(current_user.id), current_read=True, node_current=True)
         except Exception:
             TaskQueueService.complete_task(db, execution_id, "failed")
             raise
         from api.v1.websocket import manager
         from services import native_variable_delivery
-        variable_session = native_variable_delivery.session_for(manager, target_environment_id, task_message) if native_variable_delivery.requires_variables(task_message) else None
-        compatible = not native_variable_delivery.requires_variables(task_message) or variable_session is not None
+        variable_session = native_variable_delivery.session_for(manager, target_environment_id, task_message) if native_variable_delivery.requires_extensions(task_message) else None
+        compatible = not native_variable_delivery.requires_extensions(task_message) or variable_session is not None
         claimed = TaskQueueService.start_task(db, execution_id, commit=False) if compatible else None
         if claimed:
             # 更新测试套状态：如果有正在运行的任务，状态为running

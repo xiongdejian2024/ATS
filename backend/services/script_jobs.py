@@ -55,6 +55,10 @@ def require_node(db, user, environment_id, *, current_read=False):
 
 
 def find_job(db, user, job_id, action="read", *, current_read=False):
+    if current_read:
+        reference=db.query(ScriptJob).filter_by(id=job_id).populate_existing().first()
+        if not reference: raise HTTPException(404, "脚本作业不存在")
+        require_project_access(db,user,reference.project_id,"test_plan:"+action,current_read=True)
     job = (db.query(ScriptJob).filter_by(id=job_id).populate_existing().with_for_update().first()
            if current_read else db.get(ScriptJob, job_id))
     if not job:
@@ -85,8 +89,12 @@ def create_job(db, user, data):
 
 
 def update_job(db, user, job_id, data):
-    require_node(db, user, data.environment_id, current_read=True)
+    reference=db.query(ScriptJob).filter_by(id=job_id).populate_existing().first()
+    if not reference: raise HTTPException(404, "脚本作业不存在")
+    locked_nodes={reference.environment_id,data.environment_id}
+    for node_id in sorted(locked_nodes): require_node(db,user,node_id,current_read=True)
     job = find_job(db, user, job_id, "execute", current_read=True)
+    if job.environment_id not in locked_nodes: raise HTTPException(409,"脚本节点已变化，请刷新后重试")
     require_node(db, user, job.environment_id, current_read=True)
     job.name, job.environment_id = data.name, data.environment_id
     job.config = data.model_dump(by_alias=True)
@@ -97,11 +105,22 @@ def update_job(db, user, job_id, data):
 
 async def trigger(db, user, job_id, request_id):
     from api.v1.websocket import manager
+    reference=db.query(ScriptJob).filter_by(id=job_id).populate_existing().first()
+    if not reference: raise HTTPException(404, "脚本作业不存在")
+    preview=db.query(ScriptJobRun).filter_by(request_id=request_id).first()
+    if preview and (preview.job_id != job_id or preview.executor_id != str(user.id)):
+        raise HTTPException(409, "requestId已被其他执行使用")
+    locked_nodes={reference.environment_id}
+    if preview: locked_nodes.add(preview.environment_id)
+    for node_id in sorted(locked_nodes): require_node(db,user,node_id,current_read=True)
     job = find_job(db, user, job_id, "execute", current_read=True)
+    if job.environment_id not in locked_nodes: raise HTTPException(409,"脚本节点已变化，请刷新后重试")
     existing = db.query(ScriptJobRun).filter_by(request_id=request_id).first()
     if existing:
         if existing.job_id != job_id or existing.executor_id != str(user.id):
             raise HTTPException(409, "requestId已被其他执行使用")
+        if existing.environment_id not in locked_nodes:
+            raise HTTPException(409,"脚本回执节点已变化，请刷新后重试")
         require_node(db, user, existing.environment_id, current_read=True)
         return existing
     node = require_node(db, user, job.environment_id, current_read=True)

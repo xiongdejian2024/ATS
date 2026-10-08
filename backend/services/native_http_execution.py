@@ -15,6 +15,7 @@ from framework.native_http.models import (
     FrozenCase,
     ScenarioSpec,
 )
+from services.native_hooks import freeze_processors, required_node
 
 COMMAND = "ats-native-http"
 
@@ -48,7 +49,7 @@ def freeze(db, case, user, *, environment_id=None):
         if not config:
             raise ValueError("原生用例缺少请求配置")
         if case.type == "api":
-            requests = [_request(db, case, config, environment_id)]
+            requests = [_request(db, case, config, environment_id, user)]
             stopped = True
         elif case.type == "scenario":
             scenario = ScenarioSpec.model_validate(config.parameters.get("scenario"))
@@ -70,7 +71,7 @@ def freeze(db, case, user, *, environment_id=None):
                     raise ValueError("场景步骤API缺少请求配置")
                 requests.append(
                     _request(
-                        db, child, child_config, environment_id or config.environment_id
+                        db, child, child_config, environment_id or config.environment_id, user
                     )
                 )
             if not requests:
@@ -78,10 +79,15 @@ def freeze(db, case, user, *, environment_id=None):
             stopped = scenario.stopOnFailure
         else:
             raise ValueError("原生HTTP执行只支持API用例或场景")
-        return FrozenCase(
+        globals_source = scenario if case.type == 'scenario' else RequestSpec.model_validate(config.parameters.get('request'))
+        value = FrozenCase(
             id=case.id, category=case.type, requests=requests, stopOnFailure=stopped,
             initialVariables=scenario.initialVariables if case.type == 'scenario' else [],
+            globalPreProcessors=freeze_processors(db,user,case.project_id,globals_source.globalPreProcessors),
+            globalPostProcessors=freeze_processors(db,user,case.project_id,globals_source.globalPostProcessors),
         ).model_dump()
+        required_node({'native_cases':[value]})
+        return value
     except ValueError as exception:
         logger.exception("原生HTTP冻结校验失败：用例={}", case.id)
         raise HTTPException(
@@ -89,7 +95,7 @@ def freeze(db, case, user, *, environment_id=None):
         ) from exception
 
 
-def _request(db, case, config, override_environment):
+def _request(db, case, config, override_environment, user=None):
     definition = (
         read(db, ApiDefinition, config.api_definition_id)
         if config.api_definition_id
@@ -127,7 +133,9 @@ def _request(db, case, config, override_environment):
     declarations = (db.query(NativeEnvironmentVariables).filter_by(environment_id=target.id).populate_existing().with_for_update().first() if target else None)
 
     return FrozenRequest(
-        **request.model_dump(exclude={"bodyDrafts", "jsonBody"}),
+        **request.model_dump(exclude={"bodyDrafts", "jsonBody", "preProcessors", "postProcessors", "globalPreProcessors", "globalPostProcessors"}),
+        preProcessors=freeze_processors(db,user,case.project_id,request.preProcessors),
+        postProcessors=freeze_processors(db,user,case.project_id,request.postProcessors),
         files=frozen_files(db, case.project_id, request),
         environmentVariables=deepcopy(declarations.variables) if declarations else [],
         name=case.name,

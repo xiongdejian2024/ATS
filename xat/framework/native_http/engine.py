@@ -16,22 +16,46 @@ from .result_details import exchange, bounded_detail, request_detail
 from .parameters import arguments as request_arguments, request_url
 from .request_bodies import load_files, arguments as body_arguments
 from .variable_models import values
+from .processor_runtime import evaluate as process
 
 
-async def execute(case: FrozenCase, *, transport=None, file_loader=None):
+class ProcessorFailure(Exception):
+    pass
+
+
+async def execute(case: FrozenCase, *, transport=None, file_loader=None, extended_details=False, hook_executor=None):
     started = time.monotonic()
     rows = []
     details = []
     temporary = {}
+    global_variables = {**values(case.requests[0].environmentVariables), **values(case.initialVariables)}
+    if case.category == 'api':
+        global_variables.update(values(case.requests[0].initialVariables))
+    global_rows, global_success = await process('global_pre',case.globalPreProcessors,global_variables,temporary,hook_executor=hook_executor)
 
     async def capture_request(value):
         await value.aread()
         actual["request"] = request_detail(value)
 
+    async def send_request(client, request, arguments):
+        async def mock_handler(value):
+            mock = request.mockResponse
+            await asyncio.sleep(mock.delayMs / 1000)
+            return httpx.Response(mock.statusCode, headers=mock.headers, content=mock.body.encode('utf-8'), request=value)
+        if request.mockResponse and request.mockResponse.enable:
+            async with httpx.AsyncClient(transport=httpx.MockTransport(mock_handler), trust_env=False, event_hooks={"request": [capture_request]}) as mocked:
+                return await mocked.request(request.method, request_url(request), **arguments)
+        return await client.request(request.method, request_url(request), **arguments)
+
     async with httpx.AsyncClient(
         transport=transport, trust_env=False, event_hooks={"request": [capture_request]}
     ) as client:
         for index, template in enumerate(case.requests):
+            if not global_success:
+                row = dict(index=index,name=template.name,method=template.method,result='skipped',duration=0,statusCode=None,assertions=[],error='全局前置处理器失败')
+                rows.append(row)
+                details.append(dict(index=index,name=template.name,method=template.method,result='skipped',duration=0,attempts=[],error=row['error']))
+                continue
             request = template
             attempts = []
             detail_attempts = []
@@ -71,7 +95,24 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                     assertions=[],
                 )
                 actual = dict(attempt=attempt + 1, assertions=[], console=[])
+                timings = {}
+                phase, phase_started = None, None
+                retry_allowed = True
+                if extended_details:
+                    actual['source'] = 'mock' if template.mockResponse and template.mockResponse.enable else 'http'
+                    actual['timings'] = timings
+                    actual['processorResults'] = []
                 try:
+                    if template.preProcessors:
+                        phase, phase_started = 'preProcessorsMs', time.monotonic()
+                        processor_rows, succeeded = await process('pre', template.preProcessors, variables, temporary, hook_executor=hook_executor)
+                        if extended_details: actual['processorResults'].extend(processor_rows)
+                        timings[phase] = (time.monotonic() - phase_started) * 1000
+                        if not succeeded:
+                            retry_allowed = False
+                            raise ProcessorFailure('前置处理器失败')
+                    preparation_started = time.monotonic()
+                    phase, phase_started = 'preparationMs', preparation_started
                     request = resolve_request(template, variables)
                     arguments = request_arguments(request)
                     arguments.update(
@@ -111,13 +152,15 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                     actual["console"].append(
                         f"原生HTTP请求开始：步骤={index + 1}，方法={request.method}，尝试={attempt + 1}"
                     )
+                    timings['preparationMs'] = (time.monotonic() - preparation_started) * 1000
                     network_started = time.monotonic()
+                    phase, phase_started = 'httpMs', network_started
                     response = await asyncio.wait_for(
-                        client.request(
-                            request.method, request_url(request), **arguments
-                        ),
+                        send_request(client, request, arguments),
                         timeout=(
-                            request.timeoutMs / 1000
+                            ((request.timeoutMs if request.responseTimeoutMs is None else request.responseTimeoutMs) / 1000 or None)
+                            if request.mockResponse and request.mockResponse.enable
+                            else request.timeoutMs / 1000
                             if request.connectTimeoutMs is None
                             and request.responseTimeoutMs is None
                             else None
@@ -125,10 +168,22 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                     )
                     row["statusCode"] = response.status_code
                     elapsed_ms = (time.monotonic() - network_started) * 1000
+                    timings['httpMs'] = elapsed_ms
                     actual.update(exchange(response, elapsed_ms))
+                    extraction_started = time.monotonic()
+                    phase, phase_started = 'extractionMs', extraction_started
                     actual["extractResults"] = await asyncio.to_thread(
                         extract, request.postProcessorConfig, response, variables, temporary
                     )
+                    timings['extractionMs'] = (time.monotonic() - extraction_started) * 1000
+                    if template.postProcessors:
+                        phase, phase_started = 'postProcessorsMs', time.monotonic()
+                        processor_rows, succeeded = await process('post', template.postProcessors, variables, temporary, hook_executor=hook_executor)
+                        if extended_details: actual['processorResults'].extend(processor_rows)
+                        timings[phase] = (time.monotonic() - phase_started) * 1000
+                        if not succeeded:
+                            retry_allowed = False
+                            raise ProcessorFailure('后置处理器失败，HTTP已经完成，不自动重发')
                     logger.info(
                         "后置参数提取完成：用例=%s，步骤=%s，执行项数=%s",
                         case.id,
@@ -138,6 +193,8 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                     actual["console"].append(
                         f"后置参数提取完成：执行{len(actual['extractResults'])}项"
                     )
+                    assertion_started = time.monotonic()
+                    phase, phase_started = 'assertionMs', assertion_started
                     request.assertions = [
                         type(a).model_validate(render_value(a.model_dump(), variables))
                         for a in template.assertions
@@ -168,6 +225,7 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                         else 200 <= response.status_code < 400
                     )
                     row["result"] = "passed" if passed else "failed"
+                    timings['assertionMs'] = (time.monotonic() - assertion_started) * 1000
                     if not passed:
                         row["error"] = "响应未满足预期状态或断言"
                 except asyncio.CancelledError:
@@ -183,6 +241,8 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                         "原生HTTP请求失败：用例=%s，步骤=%s", case.id, index + 1
                     )
                     row["error"] = "请求执行失败：" + type(exception).__name__
+                if phase is not None and phase not in timings:
+                    timings[phase] = (time.monotonic() - phase_started) * 1000
                 row["duration"] = round(time.monotonic() - before, 6)
                 actual.update(
                     result=row["result"],
@@ -203,7 +263,7 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                     row["statusCode"],
                 )
                 attempts.append(deepcopy(row))
-                if row["result"] == "passed":
+                if row["result"] == "passed" or not retry_allowed:
                     break
             if case.retryTimes:
                 row["attempts"] = attempts
@@ -247,9 +307,11 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
                     for i, r in enumerate(case.requests[index + 1 :], index + 1)
                 )
                 break
+    global_after, after_success = await process('global_post',case.globalPostProcessors,{**global_variables,**temporary},temporary,hook_executor=hook_executor,skip_reason=None if global_success else '全局前置处理器失败')
+    global_rows.extend(global_after)
     result = (
         "error"
-        if any(r["result"] == "error" for r in rows)
+        if not global_success or not after_success or any(r["result"] == "error" for r in rows)
         else "failed" if any(r["result"] == "failed" for r in rows) else "passed"
     )
     return dict(
@@ -259,5 +321,5 @@ async def execute(case: FrozenCase, *, transport=None, file_loader=None):
         steps=rows,
         error=None if result == "passed" else "原生HTTP请求或断言未通过",
         log=json.dumps(dict(步骤=rows), ensure_ascii=False),
-        native_detail=bounded_detail(details),
+        native_detail=bounded_detail(details, extended=extended_details, global_processors=global_rows),
     )

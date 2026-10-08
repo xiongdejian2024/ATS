@@ -49,7 +49,7 @@ def capable(monkeypatch):
         None,
         2,
         auth_received=True,
-        capabilities=frozenset({delivery.CAPABILITY}),
+        capabilities=frozenset({delivery.CAPABILITY,delivery.PROCESSORS_CAPABILITY,"script_jobs_v1"}),
     )
     monkeypatch.setattr(manager, "sessions", {"node": session})
     monkeypatch.setattr(manager, "active_connections", {"node": socket})
@@ -57,9 +57,10 @@ def capable(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("feature", ["variables", "sql", "mock", "report", "script"])
 @pytest.mark.parametrize("entrance", ["ordinary", "queued", "schedule"])
 async def test_three_suite_entrances_wait_before_claim_and_send_same_session(
-    plan_lab, monkeypatch, entrance
+    plan_lab, monkeypatch, entrance, feature
 ):
     from api.v1.websocket import manager
     from api.v1.test_suites import execute_test_suite
@@ -73,7 +74,18 @@ async def test_three_suite_entrances_wait_before_claim_and_send_same_session(
     monkeypatch.setattr(manager, "sessions", {})
     suite = db.get(Suite, "suite-0")
     suite.execution_command = "ats-native-http"
-    suite.native_cases = [payload()]
+    frozen=payload()
+    request=frozen['requests'][0]
+    if feature=='sql':request['preProcessors']=[dict(type='sql',id='sql',query='SELECT 1')]
+    elif feature=='mock':request['mockResponse']={'enable':True}
+    elif feature=='report':request['reportPhases']=True
+    elif feature=='script':
+        from services.script_jobs import create_job
+        from schemas.script_job import ScriptJobCreate
+        db.get(Environment,'node').created_by='owner';db.commit()
+        job=create_job(db,db.get(User,'owner'),ScriptJobCreate(projectId='project',name='hook',environmentId='node',mode='python',script='print("fixture")',timeoutSeconds=2))
+        request['preProcessors']=[dict(type='script',id='script',jobId=job.id,projectId='project',revision=1,config=job.config)]
+    suite.native_cases = [frozen]
     db.commit()
     if entrance == "ordinary":
         await execute_test_suite(

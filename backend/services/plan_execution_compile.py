@@ -222,6 +222,9 @@ def compile_configured_tree(db, plan, policy, all_nodes, configurations, user):
                 or plan.environment_id
             )
         if native_case:
+            from services.native_hooks import bind_node
+            resource_id=bind_node(native_case,resource_id,members if active or not old.get('environmentId') else None)
+            runtime['environmentId']=resource_id
             suite = managed_suite(db, plan, case, resource_id, user.id)
         if suite:
             suite = SimpleNamespace(

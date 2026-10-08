@@ -190,7 +190,37 @@ class Extraction(Model):
     message: str = Field(max_length=1000)
 
 
+class Timings(Model):
+    preProcessorsMs: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    postProcessorsMs: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    preparationMs: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    httpMs: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    extractionMs: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    assertionMs: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+
+
+class ProcessorBinding(Model):
+    name: str = Field(max_length=255)
+    value: str = Field(max_length=4096)
+    truncated: StrictBool = False
+
+
+class ProcessorResult(Model):
+    id: str = Field(max_length=36)
+    name: str = Field(max_length=255)
+    type: Literal['sql','script']
+    phase: Literal['pre','post','global_pre','global_post']
+    result: Literal['passed','error','skipped']
+    durationMs: float = Field(ge=0,allow_inf_nan=False)
+    error: str | None = Field(default=None,max_length=1000)
+    rowCount: StrictInt | None = Field(default=None,ge=0,le=1000)
+    bindings: list[ProcessorBinding] = Field(default_factory=list,max_length=100)
+
+
 class Attempt(Model):
+    processorResults: list[ProcessorResult] | None = Field(default=None,max_length=20)
+    source: Literal['http', 'mock'] | None = None
+    timings: Timings | None = None
     attempt: StrictInt = Field(ge=1, le=11)
     result: Literal["passed", "failed", "error", "skipped"]
     duration: float = Field(ge=0, allow_inf_nan=False)
@@ -214,7 +244,9 @@ class Step(Model):
 
 
 class NativeDetail(Model):
-    version: Literal[1] = 1
+    globalProcessorResults: list[ProcessorResult] = Field(default_factory=list,max_length=20)
+    omittedGlobalProcessors: StrictInt = Field(default=0,ge=0,le=20)
+    version: Literal[1, 2] = 1
     totalSteps: StrictInt = Field(ge=0, le=1000)
     omittedSteps: StrictInt = Field(ge=0, le=1000)
     steps: list[Step] = Field(max_length=1000)
@@ -233,17 +265,40 @@ class NativeDetail(Model):
         return self
 
 
-def bounded_detail(steps):
+def bounded_detail(steps, *, extended=False, global_processors=None):
     """实际捕获量超过协议上限时明确标记，绝不伪装成完整内容。"""
     selected, size = [], 256
+    global_selected=[]
+    for row in global_processors or []:
+        row=ProcessorResult.model_validate(row).model_dump()
+        needed=len(json.dumps(row,ensure_ascii=True).encode())+2
+        if size+needed>DETAIL_LIMIT: break
+        global_selected.append(row);size+=needed
     for step in steps:
         step = Step.model_validate(step).model_dump()
+        for attempt in step['attempts']:
+            if not extended or attempt['processorResults'] is None:
+                attempt.pop('processorResults')
+            if not extended or attempt['source'] is None:
+                attempt.pop('source')
+            if not extended or attempt['timings'] is None:
+                attempt.pop('timings')
         # 可靠回传沿现有JSON协议转义非ASCII，按实际线上编码计量。
         needed = len(json.dumps(step, ensure_ascii=True).encode("utf-8")) + 2
         if size + needed > DETAIL_LIMIT:
             break
         selected.append(step)
         size += needed
-    return NativeDetail(
+    payload = NativeDetail(
+        version=2 if extended else 1,
         totalSteps=len(steps), omittedSteps=len(steps) - len(selected), steps=selected
+        ,globalProcessorResults=global_selected,omittedGlobalProcessors=len(global_processors or [])-len(global_selected)
     ).model_dump()
+    for step in payload['steps']:
+        for attempt in step['attempts']:
+            for field in ('source', 'timings', 'processorResults'):
+                if not extended or attempt[field] is None:
+                    attempt.pop(field)
+    if not extended:
+        payload.pop('globalProcessorResults');payload.pop('omittedGlobalProcessors')
+    return payload

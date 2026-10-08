@@ -228,10 +228,12 @@ async def dispatch_pending(db):
         try:
             schedule = db.query(TaskSchedule).filter_by(id=run.schedule_id).populate_existing().with_for_update().first()
             suite = load_dispatch_suite(db, task.suite_id, task.executor_id)
+            if suite.environment_id != task.environment_id:
+                raise ValueError('测试套节点在排队后已改变，拒绝跨节点派发')
             plan = db.query(TestPlan).filter_by(id=suite.plan_id).populate_existing().with_for_update().one()
             if not schedule or plan.project_id != schedule.project_id:
                 raise ValueError("定时任务与测试套项目不一致")
-            payload = build_suite_message(db, suite, task.execution_id, task.executor_id, current_read=True)
+            payload = build_suite_message(db, suite, task.execution_id, task.executor_id, current_read=True, node_current=True)
         except Exception:
             logger.exception("派发前校验失败：执行={}", task.execution_id)
             task.status, run.status = "failed", "failed"
@@ -241,7 +243,7 @@ async def dispatch_pending(db):
             continue
         from services import native_variable_delivery
         variable_session = None
-        if native_variable_delivery.requires_variables(payload):
+        if native_variable_delivery.requires_extensions(payload):
             variable_session = native_variable_delivery.session_for(manager, task.environment_id, payload)
             if variable_session is None:
                 db.rollback()

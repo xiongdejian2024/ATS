@@ -46,7 +46,7 @@ async def dispatch_pending_suites(db, environment_id):
                 if suite.environment_id != pending.environment_id:
                     raise ValueError("测试套节点在排队后已改变，拒绝跨节点派发")
                 payload = build_suite_message(
-                    db, suite, execution_id, pending.executor_id, current_read=True
+                    db, suite, execution_id, pending.executor_id, current_read=True, node_current=True
                 )
         except Exception:
             logger.exception("排队测试套派发前校验失败：执行={}", execution_id)
@@ -56,7 +56,7 @@ async def dispatch_pending_suites(db, environment_id):
                 TaskQueueService.complete_task(db, execution_id, "failed")
             continue
         variable_session = None
-        if pending.kind != 'script' and native_variable_delivery.requires_variables(payload):
+        if pending.kind != 'script' and native_variable_delivery.requires_extensions(payload):
             variable_session = native_variable_delivery.session_for(manager, environment_id, payload)
             if variable_session is None:
                 db.rollback()
