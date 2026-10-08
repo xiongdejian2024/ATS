@@ -1,6 +1,44 @@
-# Historical ATS UI implementation and acceptance matrix
+# ATS confirmed implementation and acceptance matrix
 
-> Superseded as the active completion scope on 2026-10-08 by the user’s explicit communication/script/log priority. See [Reliable Agent plan](RELIABLE_AGENT_PLAN.md). The former 23 feature groups are historical backlog, not a current promise to implement all groups. Unpublished review/report/media/aggregate-defect work is preserved separately and deferred.
+> Active scope corrected on 2026-10-08: the user confirmed that earlier unfinished business features remain in scope. Controller/Agent/scripts/logs have priority, followed by the finite historical rows below. Lower API-testing priority does not cancel previously confirmed work. Groovy is excluded. Blue ATS UI supersedes the old purple-theme entry in the historical reference. Do not infer an unlimited third-party feature roadmap.
+
+## Current source audit (2026-10-08)
+
+Baseline: main `ee7424ad5d61a4d6edc1a713d7edd7460d5641a1`; reviewed PostgreSQL candidate `36757100a45f0ff30bf049defaf5dfbf471c058d`. No `AGENTS.md` or `.agents/skills` exists in this checkout or its workspace parent. Existing source, workflow tests and the two recorded scope documents are the evidence; historical prose alone cannot close a row.
+
+Status vocabulary: **implemented** means code exists, **pending development** identifies actual missing behavior, **pending acceptance** identifies missing runtime/interaction proof, **excluded** means explicitly outside scope, **external blocker** requires unavailable equipment/service/authority. A row may contain both implemented and pending portions.
+
+| IDs | Source-verified implementation | Actual remainder / acceptance |
+|---|---|---|
+| F76–F78 | `FunctionalCaseMinder.vue`: multi-select one submission, full-folder server scope, enter/return/breadcrumb/minimap, case number/priority/instance defect counts | Pending browser acceptance; do not reimplement these features |
+| R01–R03 | `suite_results.py`, `agent_connections.py`, `task_queue_service.py`, Agent outboxes: interrupted XAT results, bounded viewers, current-session fencing, shared atomic slots, permission recheck | Ordinary suite unknown-execution operator closure still missing; Windows process-tree and real platform acceptance open |
+| R04 / logs | `agent_log_ingest.py`, spool, `raw_log_export.py`, browser bounded viewer: durable sequence ACK/replay, per-run quota, paged download | Global capacity/policy/safe archival missing at baseline; no automatic permanent deletion authorized |
+| Script jobs | `script_jobs.py`, `ScriptJobs.vue`, `script_runtime.py`: standalone Python/Shell/argv, frozen runs, idempotent trigger retry, unknown manual closure | Browser and Windows acceptance open; no Groovy/DSL, Cron, auto-upgrade, untrusted-code sandbox or multi-controller scope |
+| D01 | `plan_case_defects.py`, `PlanDefects.vue`: instance-specific create/bind/unbind, aggregate pagination and basic detail | Aggregate-page create/bind entrance missing |
+| D02 | Existing defect state/entity/relations | Defect template/custom fields/files/mentions/distinct permissions and detail remain pending development; do not count case templates as defect templates |
+| E01 / storage | Case disk attachments, DB execution images and immutable media references; explicit draft cleanup | Shared file-library directory/picker and persistent attachment adapter missing; expired orphan inventory/safe archive pending. Permanent deletion requires separate authorization |
+| E02 | `PlanFunctionalExecution.vue`: source-case editing and immutable independent histories. `plan_collaboration.py`: active batches already support steps/attachments/comments | Structured mentions and independent execution → active frozen batch entrance missing; preserve ambiguity/409 safety |
+| C01 | Case template/custom-field CRUD and validation, table settings and inline edits exist | Complete template interaction/custom-field columns/menu conditions pending development or comparison acceptance |
+| C02 | Independent detail tabs, relationships/history and attachment upload/download exist | Rich comments and file-library links missing; full detail/table interaction acceptance open |
+| C03 | `CaseMindMap.vue`: case copy/paste, module rename, name/precondition/steps editing | Text nodes, full module creation/cut/shortcuts missing; separate from F76–F78 |
+| C04 | Actual Excel/CSV/XMind imports, validation/cover, two Excel layouts/XMind export and recycle lifecycle | XMind template, stepped import, field grouping/XMind field choice and full recycle filters missing |
+| V01 | Review filter/paging, column settings/widths and cross-page association selection exist | Personal advanced views and association drawer advanced filter/display settings missing |
+| V02 | `ReviewCaseTable.vue`: readonly current-page mind map; voting/re-review/history/rich reasons exist | Full review map and reason image upload/attachments/structured mentions missing (`ReviewResultForm` has no uploadImage) |
+| P01 | Plan/group/module CRUD, basic filtering/copy/archive/execute exist | Personal views, expanded group rows and complete table/drawer conditions missing |
+| P02 | Reports: real filtering/sort/rename/delete/PDF, metrics/category counts/details/summary/share exist | Personal views, configurable columns/cards and complete frozen-data analysis missing |
+| P03 | `plan_execution_config.py`: separate request environments and project node pools, inherited configuration, version checks/freeze/retry/failure-stop exist | Environment groups/cross-project mapping and independent resource-pool lifecycle missing |
+| P04 | Three planning layouts, navigator/zoom/drag/fullscreen, transactional drafts and default-collection projection exist | Fine theme/default-collection interaction comparison and acceptance remain open; retain blue UI |
+| A01–A02 | Extraction/variable assertions/request environments exist; standalone scripts belong to the reliable-script row | Persisted initial/environment variables, bounded SQL/global hooks/Mock/advanced reports stay lower priority; full Groovy/Java-expression compatibility excluded |
+| Q01 | Existing permission and request-lifecycle protections | Verify every changed workflow’s errors, readonly states, retries, user/project isolation and narrow screens |
+
+## External boundaries
+
+- Deployment: Render card requirement declined; ClawCloud not selected; old Sites frontend lacks a backend connection. No new service, credential, paid resource or network/security change is authorized. Development continues independently.
+- PostgreSQL candidate preserves the existing MySQL controller. Only the new first-admin bootstrap supports PostgreSQL/SQLite and deliberately refuses MySQL; migrations retain their individual dialect boundaries.
+- Real browser, Windows process-tree, physical bench/driver/firmware and deployed-service acceptance must remain open until actually exercised. Software tests and CI are separate evidence.
+- No real user data or secrets belong in test fixtures, repository reports, logs or notifications. Archive policies default off and copy evidence; they must not silently clear source logs or unacknowledged Agent spool.
+
+The historical table below preserves original IDs and evidence. The audited table above corrects stale or overly broad statuses; later delivery records must name each changed subitem and its actual tests/commit/CI.
 
 ## Scope and evidence
 

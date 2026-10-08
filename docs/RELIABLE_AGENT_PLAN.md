@@ -1,6 +1,6 @@
 # Reliable controller–Agent script execution and bounded logs
 
-Scope reset: 2026-10-08, following the user's explicit priority: reliable cloud–Agent communication, user-authored scripts, live logs, and bounded/compressed browser presentation. Groovy/DSL and further advanced API-testing, review, report, and defect feature expansion are deferred. Existing implementations and branches are preserved.
+Priority update: 2026-10-08, following the user's explicit priority: reliable cloud–Agent communication, user-authored scripts, live logs, and bounded/compressed browser presentation. The user subsequently confirmed that earlier unfinished business features remain in scope. Their finite, source-audited list is in [ATS completion matrix](ATS_COMPLETION_MATRIX.md). Groovy/DSL is excluded; advanced API-testing remains lower priority. Existing implementations and branches are preserved. Reliability priority does not cancel confirmed review, report, defect, file-library or plan work.
 
 ## Architecture references
 
