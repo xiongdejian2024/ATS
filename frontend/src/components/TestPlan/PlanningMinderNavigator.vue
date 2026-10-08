@@ -43,7 +43,10 @@
           ><div class="shortcut-help">
             <h4>快捷键</h4>
             <div class="shortcut-list">
-              <div v-for="shortcut in shortcuts" :key="shortcut[0]">
+              <div
+                v-for="shortcut in shortcuts || defaultShortcuts"
+                :key="shortcut[0]"
+              >
                 <span>{{ shortcut[0] }}</span
                 ><kbd>{{ shortcut[1] }}</kbd>
               </div>
@@ -117,6 +120,7 @@ defineProps<{
   preview: boolean;
   geometry?: MinderGeometry;
   visible: MinderBox;
+  shortcuts?: [string, string][];
 }>();
 const emit = defineEmits<{
   zoom: [value: number];
@@ -131,7 +135,7 @@ function zoomLabel(value: number | undefined) {
 function setZoom(value: number | number[]) {
   if (typeof value === "number") emit("zoom", (value + 50) / 100);
 }
-const shortcuts = [
+const defaultShortcuts = [
   ["展开/收起节点", "/"],
   ["添加同级测试集", "Enter"],
   ["添加子测试集", "Tab"],

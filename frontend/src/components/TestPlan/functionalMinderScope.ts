@@ -33,3 +33,46 @@ export function functionalMinderScope(
     condition: { ...base, folder: "all", folderIds, entryIds },
   };
 }
+
+/** Capture request identity before any prompt/cleanup can yield to navigation. */
+export async function prepareFunctionalMinderPreview<T>(
+  selection: FunctionalMinderSelection,
+  planId: string,
+  actions: {
+    isCurrent: () => boolean;
+    confirm: () => Promise<boolean>;
+    cleanup: () => Promise<void>;
+    preview: (id: string, scope: FunctionalMinderSelection) => Promise<T>;
+  },
+): Promise<{ selection: FunctionalMinderSelection; preview: T } | undefined> {
+  const frozen = JSON.parse(
+    JSON.stringify(selection),
+  ) as FunctionalMinderSelection;
+  if (
+    !actions.isCurrent() ||
+    !(await actions.confirm()) ||
+    !actions.isCurrent()
+  )
+    return;
+  await actions.cleanup();
+  if (!actions.isCurrent()) return;
+  const preview = await actions.preview(planId, frozen);
+  if (!actions.isCurrent()) return;
+  return { selection: frozen, preview };
+}
+
+export function functionalExecutionDraftChanged(draft: {
+  description: string;
+  dialogDirty: boolean;
+  steps: string;
+  initialSteps: string;
+  result: string;
+  initialResult: string;
+}) {
+  return (
+    draft.description.trim() !== "" ||
+    draft.dialogDirty ||
+    draft.steps !== draft.initialSteps ||
+    draft.result !== draft.initialResult
+  );
+}

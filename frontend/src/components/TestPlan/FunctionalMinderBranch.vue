@@ -8,12 +8,27 @@
         :aria-pressed="selected.has(node.id)"
         @click="emit('select', node, $event)"
       >
+        <span v-if="node.caseCode" class="case-code">{{ node.caseCode }}</span>
+        <span
+          v-if="node.priority"
+          class="case-priority"
+          :class="node.priority"
+          :aria-label="`优先级 ${node.priority}`"
+          >{{ node.priority }}</span
+        >
         <span v-if="node.result" class="status" :class="node.result">{{
           resultLabel(node)
         }}</span>
         <span v-if="functionalMinderTags[node.kind]" class="node-tag">{{
           functionalMinderTags[node.kind]
         }}</span>
+        <span
+          v-if="node.bugCount"
+          class="case-defects"
+          :aria-label="`${node.bugCount} 个关联缺陷`"
+          :title="`${node.bugCount} 个关联缺陷`"
+          >缺陷 {{ node.bugCount }}</span
+        >
         <span class="node-text">{{ node.name }}</span
         ><span
           v-if="node.kind === 'folder' || node.kind === 'root'"
@@ -98,6 +113,7 @@ const position = computed(() =>
 }
 .minder-node {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 7px;
   border: 1px solid #bfbfbf;
@@ -121,6 +137,31 @@ const position = computed(() =>
   outline: 2px solid #c689de;
   background: #f9f0ff;
   color: #1d2129;
+}
+.case-code {
+  font-size: 11px;
+  color: #86909c;
+  overflow-wrap: anywhere;
+}
+.case-priority {
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #f2f3f5;
+  white-space: nowrap;
+}
+.case-priority.P0 {
+  color: #f53f3f;
+  background: #ffece8;
+}
+.case-priority.P1 {
+  color: #ff7d00;
+  background: #fff7e8;
+}
+.case-defects {
+  color: #f53f3f;
+  font-size: 11px;
+  white-space: nowrap;
 }
 .node-text {
   max-width: 230px;

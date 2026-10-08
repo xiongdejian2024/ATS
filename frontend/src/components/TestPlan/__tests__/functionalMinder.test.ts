@@ -159,3 +159,61 @@ describe("脑图批量节点范围", () => {
     ).toBeUndefined();
   });
 });
+
+import {
+  functionalFolderPath,
+  functionalCameraScroll,
+} from "../functionalMinder";
+describe("功能脑图目录导航与实例标识", () => {
+  it("保留每个实例自己的编号、等级及缺陷计数", () => {
+    const a = functionalCaseNode(
+      row("a", { caseCode: "F-1", priority: "P0", bugCount: 2 }),
+      undefined,
+      text,
+    );
+    const b = functionalCaseNode(
+      row("b", { caseCode: "F-1", priority: "P2", bugCount: 0 }),
+      undefined,
+      text,
+    );
+    expect([a.caseCode, a.priority, a.bugCount]).toEqual(["F-1", "P0", 2]);
+    expect([b.caseCode, b.priority, b.bugCount]).toEqual(["F-1", "P2", 0]);
+  });
+  it("目录路径支持任意祖先返回，并排除其他分支", () => {
+    const folders = [
+      { id: "p", name: "父", count: 5 },
+      { id: "c", name: "子", parentId: "p", count: 2 },
+      { id: "other", name: "其他", count: 0 },
+    ];
+    expect(functionalFolderPath(folders, "c").map((x) => x.id)).toEqual([
+      "all",
+      "p",
+      "c",
+    ]);
+    expect(functionalFolderPath(folders, "p").map((x) => x.id)).toEqual([
+      "all",
+      "p",
+    ]);
+    expect(functionalFolderPath(folders, "all")).toEqual([
+      { id: "all", name: "功能用例" },
+    ]);
+  });
+  it("删除或循环目录不会产生无效链接或无限循环", () => {
+    expect(functionalFolderPath([], "missing").map((x) => x.id)).toEqual([
+      "all",
+    ]);
+    const values = functionalFolderPath(
+      [
+        { id: "a", name: "甲", parentId: "b", count: 0 },
+        { id: "b", name: "乙", parentId: "a", count: 0 },
+      ],
+      "a",
+    );
+    expect(values.map((x) => x.id)).toEqual(["all", "b", "a"]);
+  });
+  it("缩略图定位与画布40px边距和实际视口一致", () => {
+    expect(functionalCameraScroll(200, 1, 200)).toBe(140);
+    expect(functionalCameraScroll(200, 2, 200)).toBe(340);
+    expect(functionalCameraScroll(0, 0.5, 600)).toBe(0);
+  });
+});

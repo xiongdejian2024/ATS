@@ -25,6 +25,9 @@ export interface FunctionalMinderNode {
   entryId?: string;
   stepIndex?: number;
   result?: string;
+  caseCode?: string;
+  priority?: string;
+  bugCount?: number;
   children?: FunctionalMinderNode[];
 }
 export interface FunctionalMinderPage {
@@ -44,6 +47,9 @@ export function functionalCaseNode(
     entryId: row.id,
     count: 1,
     result: row.result,
+    caseCode: row.caseCode,
+    priority: row.priority,
+    bugCount: row.bugCount,
     children: [],
   };
   const child = (
@@ -197,3 +203,27 @@ export const functionalMinderTags: Record<FunctionalMinderKind, string> = {
 };
 export const resultLabel = (node: FunctionalMinderNode) =>
   node.result ? functionalResultLabels[node.result] || node.result : "";
+
+/** Directory breadcrumbs never invent a parent or recurse through corrupt cycles. */
+export function functionalFolderPath(folders: CaseFolder[], current: string) {
+  const root = { id: "all", name: "功能用例" };
+  if (current === "all") return [root];
+  const byId = new Map(folders.map((folder) => [folder.id, folder]));
+  const path: { id: string; name: string }[] = [];
+  const seen = new Set<string>();
+  let id: string | undefined = current;
+  while (id && byId.has(id) && !seen.has(id)) {
+    seen.add(id);
+    const item: CaseFolder = byId.get(id)!;
+    path.unshift({ id: item.id, name: item.name });
+    id = item.parentId;
+  }
+  return [root, ...path];
+}
+export function functionalCameraScroll(
+  center: number,
+  zoom: number,
+  viewport: number,
+) {
+  return Math.max(0, 40 + center * zoom - viewport / 2);
+}

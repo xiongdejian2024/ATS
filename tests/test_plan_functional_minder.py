@@ -93,3 +93,37 @@ async def test_folder_and_advanced_filters_intersect_and_descendants(workspace_h
         assert response.status_code==200,response.text
         assert response.json()['data']['updated']==1
         assert db.query(PlanCaseExecution).one().case_id=='case-1' and db.query(TaskQueue).count()==0
+
+@pytest.mark.asyncio
+async def test_multiselect_folder_union_executes_unloaded_instances_once(workspace_http):
+    from models import Module
+    db, app, _ = workspace_http
+    db.add(Module(id='minder-parent', project_id='project', name='父目录'))
+    db.flush()
+    db.add(Module(id='minder-child', project_id='project', parent_id='minder-parent', name='子目录'))
+    db.flush()
+    for index in range(102):
+        db.add(Case(id=f'union-{index}', project_id='project', name=f'脑图并集{index}',
+                    case_code=f'UNION{index}', type='functional', priority='P1', steps=[],
+                    module_id='minder-child' if index < 101 else None,
+                    is_automated=False, created_by='owner'))
+    db.flush()
+    db.add_all([PlanCaseRelation(plan_id='plan', case_id=f'union-{index}') for index in range(102)])
+    db.commit()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
+        data=(await client.get(BASE,params=dict(search='脑图并集101'))).json()['data']
+        extra=data['items'][0]['id']
+        condition=dict(tree_type='MODULE', folder='all', include_descendants=True,
+                       folderIds=['minder-parent','minder-child'], entryIds=[extra], search='脑图并集')
+        selected=dict(selectAll=True, condition=condition)
+        preview=await client.post(BASE+'/minder-preview',json=selected)
+        assert preview.status_code==200,preview.text
+        assert preview.json()['data']['count']==102
+        body=dict(**selected, requestId=str(uuid4()), result='passed', description='跨目录完整多选回填')
+        response=await client.post(BASE+'/minder-execute',json=body)
+        assert response.status_code==200,response.text
+        assert response.json()['data']['updated']==102
+        replay=await client.post(BASE+'/minder-execute',json=body)
+        assert replay.status_code==200 and replay.json()['data']['replayed']
+        assert db.query(PlanCaseExecution).count()==102
+        assert db.query(TaskQueue).count()==0

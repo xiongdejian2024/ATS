@@ -30,10 +30,27 @@
         <a-button @click="toggle">{{
           isFullscreen ? "退出全屏" : "全屏"
         }}</a-button>
-        <a-button :loading="loading" @click="refresh">刷新</a-button>
+        <a-button
+          :loading="loading"
+          :disabled="saving || uploading"
+          @click="refreshSafely"
+          >刷新</a-button
+        >
       </a-space>
       <span class="shortcut-hint">选择用例后：S 通过 / E 失败 / B 阻塞</span>
     </div>
+    <nav class="minder-breadcrumb" aria-label="脑图目录路径">
+      <template v-for="(item, index) in folderPath" :key="item.id">
+        <span v-if="index" aria-hidden="true"> / </span>
+        <a-button
+          type="link"
+          size="small"
+          :disabled="item.id === folder || saving || uploading"
+          @click="emit('navigate', item.id)"
+          >{{ item.name }}</a-button
+        >
+      </template>
+    </nav>
     <FunctionalMinderOperations
       ref="operations"
       :plan-id="plan.id"
@@ -45,8 +62,19 @@
       @changed="operationsChanged"
     />
     <a-space v-if="selected.size > 1" class="multi-selection"
-      ><span>已选择 {{ selected.size }} 个节点</span
-      ><a-button size="small" @click="selected = new Set()"
+      ><span>已选择 {{ selected.size }} 个节点</span>
+      <a-button
+        v-if="listing.canExecute"
+        size="small"
+        type="primary"
+        :loading="previewLoading"
+        :disabled="!operationScope || saving || uploading"
+        @click="openSelection()"
+        >批量执行</a-button
+      ><a-button
+        size="small"
+        :disabled="saving || uploading || formOpen"
+        @click="clearSelection"
         >取消选择</a-button
       ></a-space
     >
@@ -115,45 +143,20 @@
                       v-if="['root', 'folder', 'case'].includes(node.kind)"
                       class="node-menu"
                     >
-                      <a-popover
-                        :open="formOpen && operationNode?.id === node.id"
-                        placement="bottomLeft"
-                        overlay-class-name="functional-minder-popup"
+                      <a-button
+                        v-if="listing.canExecute && !isRecycled(node)"
+                        size="small"
+                        :disabled="saving || uploading || previewLoading"
+                        @click="openForm(node)"
+                        >执行</a-button
                       >
-                        <template #content>
-                          <div class="execute-popup">
-                            <strong>执行 {{ previewCount }} 条功能用例</strong>
-                            <PlanCaseExecutionSubmit
-                              v-model:result="result"
-                              v-model:description="description"
-                              :plan-id="plan.id"
-                              :disabled="saving || previewLoading"
-                              v-model:uploading="uploading"
-                              v-model:dialog-dirty="dialogDirty"
-                              :on-submit="submitRange"
-                              default-active
-                              @image-uploaded="
-                                (plan, media) =>
-                                  mediaDraft.track(plan, media.id)
-                              "
-                              @discard-images="mediaDraft.cleanup()"
-                            >
-                              <a-button
-                                :disabled="saving || uploading"
-                                @click="closeForm"
-                                >取消</a-button
-                              >
-                            </PlanCaseExecutionSubmit>
-                          </div>
-                        </template>
-                        <a-button
-                          v-if="listing.canExecute && !isRecycled(node)"
-                          size="small"
-                          :disabled="saving"
-                          @click="openForm(node)"
-                          >执行</a-button
-                        >
-                      </a-popover>
+                      <a-button
+                        v-if="node.kind === 'folder'"
+                        size="small"
+                        :disabled="saving || uploading"
+                        @click="emit('navigate', node.folderId!)"
+                        >进入目录</a-button
+                      >
                       <a-dropdown
                         v-if="listing.canExecute && !isRecycled(node)"
                         :trigger="['click']"
@@ -193,6 +196,19 @@
             </div>
           </div>
         </a-spin>
+        <PlanningMinderNavigator
+          :zoom="zoom"
+          :hand="hand"
+          :preview="preview"
+          :geometry="geometry"
+          :visible="visibleBox"
+          :shortcuts="executionShortcuts"
+          @zoom="changeZoom"
+          @hand="hand = $event"
+          @preview="preview = $event"
+          @camera="locateRoot"
+          @locate="locatePoint"
+        />
       </div>
       <aside v-if="selectedRow" class="minder-sidebar">
         <a-space
@@ -286,6 +302,39 @@
       </aside>
     </div>
     <a-modal
+      :open="formOpen"
+      :title="`执行 ${previewCount} 条功能用例`"
+      width="min(680px,calc(100vw - 32px))"
+      :footer="null"
+      :closable="!saving && !uploading"
+      :mask-closable="false"
+      destroy-on-close
+      @cancel="closeForm"
+    >
+      <a-alert
+        type="info"
+        show-icon
+        message="按当前筛选和所选目录的完整范围回填，每个计划关联实例独立保存。"
+      />
+      <PlanCaseExecutionSubmit
+        v-if="formOpen"
+        v-model:result="result"
+        v-model:description="description"
+        :plan-id="plan.id"
+        :disabled="saving || previewLoading"
+        v-model:uploading="uploading"
+        v-model:dialog-dirty="dialogDirty"
+        :on-submit="submitRange"
+        default-active
+        @image-uploaded="(plan, media) => mediaDraft.track(plan, media.id)"
+        @discard-images="mediaDraft.cleanup()"
+      >
+        <a-button :disabled="saving || uploading" @click="closeForm"
+          >取消</a-button
+        >
+      </PlanCaseExecutionSubmit>
+    </a-modal>
+    <a-modal
       :open="stepOpen"
       title="执行结果"
       width="min(800px,100vw)"
@@ -352,7 +401,7 @@ import {
   nextTick,
 } from "vue";
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
-import { useFullscreen } from "@vueuse/core";
+import { useFullscreen, useElementSize, useScroll } from "@vueuse/core";
 import { message, Modal } from "ant-design-vue";
 import dayjs from "dayjs";
 import type { TestPlan } from "@/types";
@@ -370,13 +419,20 @@ import { planCaseMediaApi } from "@/api/planCaseMedia";
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
 import CaseAttachments from "@/components/TestCase/CaseAttachments.vue";
 import FunctionalMinderOperations from "./FunctionalMinderOperations.vue";
-import { functionalMinderScope } from "./functionalMinderScope";
+import {
+  functionalMinderScope,
+  prepareFunctionalMinderPreview,
+  functionalExecutionDraftChanged,
+} from "./functionalMinderScope";
 import { useMinderMarquee } from "./useMinderMarquee";
 import PlanDefects from "./PlanDefects.vue";
 import PlanCaseExecutionSubmit from "./PlanCaseExecutionSubmit.vue";
 import FunctionalMinderBranch from "./FunctionalMinderBranch.vue";
+import PlanningMinderNavigator from "./PlanningMinderNavigator.vue";
 import {
   buildFunctionalMinder,
+  functionalFolderPath,
+  functionalCameraScroll,
   flattenFunctionalMinder,
   type FunctionalMinderNode,
   type FunctionalMinderPage,
@@ -397,14 +453,35 @@ const props = defineProps<{
   condition: FunctionalMinderSelection["condition"];
   canEdit: boolean;
 }>();
-const emit = defineEmits<{ changed: []; open: [row: PlanCaseEntry] }>();
+const emit = defineEmits<{
+  changed: [];
+  open: [row: PlanCaseEntry];
+  navigate: [folder: string];
+}>();
 const host = ref<HTMLElement>(),
   stage = ref<HTMLElement>(),
   viewport = ref<HTMLElement>();
 const { isFullscreen, toggle } = useFullscreen(host);
 const mode = ref<MinderMode>("right"),
   hand = ref(false),
+  preview = ref(false),
   zoom = ref(1);
+const { width: viewportWidth, height: viewportHeight } =
+  useElementSize(viewport);
+const { x: scrollLeft, y: scrollTop } = useScroll(viewport);
+const visibleBox = computed(() => ({
+  x: (scrollLeft.value - 40) / zoom.value,
+  y: (scrollTop.value - 40) / zoom.value,
+  width: viewportWidth.value / zoom.value,
+  height: viewportHeight.value / zoom.value,
+}));
+const executionShortcuts: [string, string][] = [
+  ["通过", "S"],
+  ["失败", "E"],
+  ["阻塞", "B"],
+  ["多选节点", "Ctrl / Command + 单击"],
+  ["框选", "空白区域拖动"],
+];
 useMinderPan(viewport, hand);
 const pages = shallowRef(new Map<string, FunctionalMinderPage>()),
   histories = shallowRef(new Map<string, PlanCaseExecutionRecord>()),
@@ -419,7 +496,6 @@ const loading = ref(false),
   sideTab = ref("history");
 const formOpen = ref(false),
   stepOpen = ref(false),
-  operationNode = ref<FunctionalMinderNode>(),
   scope = ref<FunctionalMinderSelection>(),
   previewCount = ref(0),
   previewLoading = ref(false),
@@ -433,6 +509,7 @@ const mediaDraft = new ExecutionMediaDraft(planCaseMediaApi.cleanup);
 let contextSequence = 0,
   detailSequence = 0,
   operationSequence = 0,
+  previewSequence = 0,
   pendingRequest: { body: string; id: string } | undefined,
   disposed = false;
 const folders = computed(() => {
@@ -450,6 +527,9 @@ const folders = computed(() => {
     });
   return values;
 });
+const folderPath = computed(() =>
+  functionalFolderPath(folders.value, props.folder),
+);
 const text = (value: string) =>
   new DOMParser().parseFromString(value, "text/html").body.textContent || "";
 const tree = computed(() => {
@@ -488,12 +568,17 @@ const selectedRow = computed(() =>
       )
     : undefined,
 );
-let initialSteps = "[]";
-const dirty = computed(
-  () =>
-    description.value.trim() !== "" ||
-    dialogDirty.value ||
-    JSON.stringify(steps.value) !== initialSteps,
+let initialSteps = "[]",
+  initialResult = "passed";
+const dirty = computed(() =>
+  functionalExecutionDraftChanged({
+    description: description.value,
+    dialogDirty: dialogDirty.value,
+    steps: JSON.stringify(steps.value),
+    initialSteps,
+    result: result.value,
+    initialResult,
+  }),
 );
 const formatTime = (value: string) =>
   dayjs(value).format("YYYY-MM-DD HH:mm:ss");
@@ -506,6 +591,32 @@ function resetView() {
     viewport.value.scrollLeft = 0;
     viewport.value.scrollTop = 0;
   }
+}
+function locatePoint(point: { x: number; y: number }) {
+  viewport.value?.scrollTo({
+    left: functionalCameraScroll(point.x, zoom.value, viewportWidth.value),
+    top: functionalCameraScroll(point.y, zoom.value, viewportHeight.value),
+  });
+}
+function locateRoot() {
+  const root = geometry.value?.nodes["minder-root"];
+  if (root)
+    locatePoint({ x: root.x + root.width / 2, y: root.y + root.height / 2 });
+}
+async function changeZoom(value: number) {
+  const next = Math.min(2, Math.max(0.5, value));
+  const point = {
+    x: (scrollLeft.value + viewportWidth.value / 2 - 40) / zoom.value,
+    y: (scrollTop.value + viewportHeight.value / 2 - 40) / zoom.value,
+  };
+  zoom.value = next;
+  await nextTick();
+  locatePoint(point);
+}
+async function refreshSafely() {
+  if (!(await confirmDiscard())) return;
+  await clearDraft();
+  await refresh();
 }
 function collapseAll() {
   collapsed.value = new Set(
@@ -654,8 +765,10 @@ async function confirmExecutionDiscard() {
     }),
   );
 }
-async function clearDraft() {
+async function clearDraft(preservePreview = false) {
+  if (!preservePreview) previewSequence++;
   operationSequence++;
+  scope.value = undefined;
   previewLoading.value = false;
   formOpen.value = false;
   stepOpen.value = false;
@@ -663,6 +776,7 @@ async function clearDraft() {
   result.value = "passed";
   steps.value = [];
   initialSteps = "[]";
+  initialResult = "passed";
   dialogDirty.value = false;
   pendingRequest = undefined;
   await mediaDraft.cleanup();
@@ -738,6 +852,7 @@ async function selectNode(node: FunctionalMinderNode, event: MouseEvent) {
         detail.value.entry.result === "pending"
           ? "passed"
           : detail.value.entry.result;
+      initialResult = result.value;
       stepOpen.value = true;
     }
   }
@@ -788,29 +903,43 @@ function scopeFor(node: FunctionalMinderNode): FunctionalMinderSelection {
   )!;
 }
 async function openForm(node: FunctionalMinderNode) {
-  if (!(await confirmDiscard())) return;
-  await clearDraft();
-  operationNode.value = node;
-  scope.value = scopeFor(node);
+  await openSelection(scopeFor(node));
+}
+async function openSelection(selection = operationScope.value) {
+  if (!selection || previewLoading.value || saving.value || uploading.value)
+    return;
+  const intent = ++previewSequence;
+  const context = contextSequence;
+  const planId = props.plan.id;
+  const isCurrent = () =>
+    !disposed &&
+    intent === previewSequence &&
+    context === contextSequence &&
+    planId === props.plan.id;
   previewLoading.value = true;
-  const current = ++operationSequence;
   try {
-    const preview = await functionalMinderApi.preview(
-      props.plan.id,
-      scope.value,
-    );
-    if (current !== operationSequence) return;
-    previewCount.value = preview.count;
-    if (!preview.canExecute) {
+    const prepared = await prepareFunctionalMinderPreview(selection, planId, {
+      isCurrent,
+      confirm: confirmDiscard,
+      cleanup: () => clearDraft(true),
+      preview: (id, frozen) => {
+        previewLoading.value = true;
+        return functionalMinderApi.preview(id, frozen);
+      },
+    });
+    if (!prepared || !isCurrent()) return;
+    previewCount.value = prepared.preview.count;
+    if (!prepared.preview.canExecute) {
       message.warning("当前范围没有可执行的功能用例或计划正在执行");
       return;
     }
+    scope.value = prepared.selection;
     formOpen.value = true;
   } catch (cause) {
     console.error("预览脑图执行范围失败", cause);
-    message.error("执行范围加载失败，请重试");
+    if (isCurrent()) message.error("执行范围加载失败，请重试");
   } finally {
-    if (current === operationSequence) previewLoading.value = false;
+    if (isCurrent()) previewLoading.value = false;
   }
 }
 function requestId(body: unknown) {
@@ -966,6 +1095,11 @@ watch(
   },
   { immediate: true },
 );
+async function clearSelection() {
+  if (!(await confirmDiscard())) return;
+  await clearDraft();
+  selected.value = new Set();
+}
 async function closeSidebar() {
   if (await confirmDiscard()) {
     await clearDraft();
@@ -1017,6 +1151,7 @@ onBeforeUnmount(() => {
   height: 650px;
 }
 .canvas-host {
+  position: relative;
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -1114,6 +1249,19 @@ onBeforeUnmount(() => {
   background: #811fa318;
 }
 .multi-selection {
-  margin: 8px 0;
+  margin: 8px;
+  display: flex;
+  flex-wrap: wrap;
+}
+.minder-breadcrumb {
+  padding: 4px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.minder-breadcrumb :deep(.ant-btn) {
+  max-width: 240px;
+  white-space: normal;
+  height: auto;
 }
 </style>

@@ -121,6 +121,7 @@
           :condition="minderCondition"
           :can-edit="canEdit"
           @open="openExecution"
+          @navigate="chooseFolder"
           @changed="
             load();
             emit('changed');
