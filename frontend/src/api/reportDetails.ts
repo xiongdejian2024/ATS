@@ -4,6 +4,8 @@ export interface FrozenTestSet {
   path: { id: string; name: string }[];
 }
 export interface FrozenPolicy {
+  testResourcePoolScope?: "project" | "global";
+  testResourcePoolRevision?: number;
   key: string;
   planRunId?: string;
   planName?: string;

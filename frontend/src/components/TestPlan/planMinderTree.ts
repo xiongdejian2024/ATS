@@ -63,9 +63,11 @@ export function buildPlanMinder(
     const poolName = ms
       ? ms.testResourcePoolId === "DEFAULT"
         ? "默认资源池"
-        : options.executionCatalog?.pools.find(
-            (item) => item.id === ms.testResourcePoolId,
-          )?.name || "已指定资源池"
+        : ms.testResourcePoolScope === "global"
+          ? `独立池：${options.executionCatalog?.globalPools?.find((item) => item.id === ms.testResourcePoolId)?.name || "已指定独立资源池"}`
+          : options.executionCatalog?.pools.find(
+              (item) => item.id === ms.testResourcePoolId,
+            )?.name || "已指定资源池"
       : pool.length
         ? pool
             .map((id) => options.environmentNames?.[id] || "已指定节点")

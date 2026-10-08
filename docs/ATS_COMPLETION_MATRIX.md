@@ -25,8 +25,8 @@ Status vocabulary: **implemented** means code exists, **pending development** id
 | V01 | Review filter/paging, column settings/widths and cross-page association selection exist | Association drawer and review-home advanced AND/OR filters, private personal views and scoped display settings now implemented. Exact-final-head and merged-main CI passed; browser acceptance remains open |
 | V02 | `ReviewCaseTable.vue` and review_case_workspace: readonly full filtered mind map (bounded at 10000); voting/re-review/history/rich reasons exist | Reason image upload/file attachments implemented with immutable event references; structured reason mentions implemented; full review map exists; browser/blue-UI comparison acceptance remains pending |
 | P01 | Plan/group/module CRUD, basic filtering/copy/archive/execute exist | Personal advanced views and bounded on-demand right-hand group-member expansion merged with exact-final-head CI passed; merged-main CI passed; browser acceptance pending. Tree group members already expand; other table/drawer interaction acceptance needs concrete comparison |
-| P02 | Reports: real filtering/sort/rename/delete/PDF, metrics/category counts/details/summary/share exist | Personal advanced views and configurable columns merged with exact-head and main CI passed. Configurable detail cards, frozen configuration and separate test-set/defect analysis implemented/reviewed; exact-head CI rerunning after a PostgreSQL fixture insertion-order fix. Group and single-plan report summary refresh/navigation draft guards exist; browser acceptance remains open |
-| P03 | Separate request environments and project node pools, inherited configuration/freeze/retry/failure-stop exist; project environment-group CRUD and cross-project mapping now implemented with current permissions, revisions, safe create retry and frozen execution | Environment-group exact-head database CI/browser acceptance pending. Independent/global resource-pool lifecycle remains pending development |
+| P02 | Reports: real filtering/sort/rename/delete/PDF, metrics/category counts/details/summary/share exist | Personal advanced views and configurable columns merged with exact-head and main CI passed. Configurable detail cards, frozen configuration and separate test-set/defect analysis merged with exact-head and main CI passed. Group and single-plan report summary refresh/navigation draft guards exist; browser acceptance remains open |
+| P03 | Separate request environments and project node pools, inherited configuration/freeze/retry/failure-stop exist; project environment-group CRUD and cross-project mapping now implemented with current permissions, revisions, safe create retry and frozen execution | Environment-group exact-head database CI passed and merged; merged-main CI running, browser acceptance pending. Independent Node resource-pool lifecycle implemented and independently reviewed; exact-head CI pending |
 | P04 | Three planning layouts, navigator/zoom/drag/fullscreen, transactional drafts and default-collection projection exist | Fine theme/default-collection interaction comparison and acceptance remain open; retain blue UI |
 | A01–A02 | Extraction/variable assertions/request environments exist; standalone scripts belong to the reliable-script row | Persisted initial/environment variables, bounded SQL/global hooks/Mock/advanced reports stay lower priority; full Groovy/Java-expression compatibility excluded |
 | Q01 | Existing permission and request-lifecycle protections | Verify every changed workflow’s errors, readonly states, retries, user/project isolation and narrow screens |
@@ -81,8 +81,8 @@ type check and production build passed locally.
 | V01 | Review advanced personal views and association-window display settings | Merged with exact-commit and main CI passed; browser acceptance pending | Current review permissions/archiving/selection/re-review continue to pass. Parts 38–39 + top matrix. |
 | V02 | Review full mind-map and image/mention/attachment reasons | Pending | Independent effective votes/history, no stale draft sharing, linked-file access controls. Top matrix. |
 | P01 | Plan home views, table expansion/operations and create/edit drawer details | Advanced personal views and group expansion merged with exact-head CI passed; browser acceptance pending | Check existing plan/group management, not reimplement working workflows. Top matrix. |
-| P02 | Plan report personal views, columns, configuration cards and analysis | Personal views/columns merged with exact-head and main CI passed; detail cards/frozen configuration/test-set defect analysis implemented and reviewed, exact-head CI rerunning after PG fixture fix; browser acceptance pending | Accurate frozen report data and scoped export/share; top matrix. |
-| P03 | Project environment groups, cross-project mapping and resource-pool management | Environment-group implementation and local regressions complete; CI/browser acceptance pending. Independent/global resource-pool lifecycle still pending development | Request targets and Agent execution pools remain separate; no new infrastructure provisioned. Part 56. |
+| P02 | Plan report personal views, columns, configuration cards and analysis | Personal views/columns merged with exact-head and main CI passed; detail cards/frozen configuration/test-set defect analysis merged with exact-head and main CI passed; browser acceptance pending | Accurate frozen report data and scoped export/share; top matrix. |
+| P03 | Project environment groups, cross-project mapping and resource-pool management | Environment-group merged with exact-head CI passed; main CI/browser acceptance pending. Independent Node pool lifecycle implemented/reviewed, local regressions passed; exact-head CI pending | Request targets and Agent execution pools remain separate; no new infrastructure provisioned. Part 56. |
 | P04 | Remaining planning-map themes/default-collection projection | Audit pending | Existing layouts, draft transactions, APIs and selection preserved. Parts 61–64. |
 | A01 | Advanced HTTP environment/initial variables and full expression compatibility | Deferred priority, not declared done | Existing extraction/variable assertion scope stays isolated; part 71 and priority note in part 72. |
 | A02 | Scripts/SQL/global hooks/Mock and advanced HTTP reports | Deferred priority; requires bounded design | No arbitrary production execution, credentials or external sharing implied. Parts 55/71. |
@@ -303,3 +303,25 @@ regressions passed. No failed candidate was merged.
 
 Independent/global resource-pool lifecycle remains the next P03 development item;
 this environment-group delivery does not close that separate scope.
+
+
+## 2026-10-08 report details, environment groups and independent pools
+
+- PR12 final `c4bda08fff4e2448efc86951d07592299f0e73a7`: exact runs
+  37841011888/37841018696 passed; merged main `b4f32bfb917b8d36cfd0292a83ef12585f0d1b21`,
+  run 37843038651 passed. The initial failure was synthetic PostgreSQL FK fixture
+  insertion order; explicit parent flush repaired it before merge.
+- PR13 final `d8ca351da562cb8d6ca6098a96d475578c272894`: exact runs
+  37843674211/37843684209 passed, including actual MySQL8 group migration and
+  production-remove RR interleaving. Merged main
+  `d0dec0fc725db5e052bd801d4b5d176b578fca5a`, run 37845362743 in progress.
+  A stale real initializer's literal table count was replaced with complete
+  registered-model count before merge.
+- Independent/global pool implementation: [behavior and migration](GLOBAL_RESOURCE_POOLS.md).
+  Local backend integration 141 passed, new authority tests promoted from
+  independent audit; whole-plan, selected-suite and native-range targets frozen.
+  Existing project pools retain compatibility. Final exact-head CI is pending
+  publication; real browser acceptance remains open.
+- Remaining independent development: D02 defect templates/custom fields/detail
+  attachments/mentions/distinct permission; bounded A01/A02 variable, SQL/hook/Mock
+  and report items. Do not stop merely because a delivery slice merged.

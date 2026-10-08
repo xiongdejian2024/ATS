@@ -262,6 +262,7 @@
               :inherited="inheritedConfiguration"
               :root="selectedScope.startsWith('root:')"
               :catalog="executionCatalog"
+              :category="selectedScope.split(':')[1]"
               :disabled="!canEdit || saving || loading"
               @manage-pool="openPool"
             />
@@ -383,7 +384,11 @@ import PlanningMinderTagMenu from "./PlanningMinderTagMenu.vue";
 import PlanningMinderBatchMenu from "./PlanningMinderBatchMenu.vue";
 import { minderDeletionTargets } from "./planMinderSelection";
 import { useMinderMarquee } from "./useMinderMarquee";
-import { planMinderTag, selectExecutionEnvironment } from "./planMinderTag";
+import {
+  planMinderTag,
+  selectExecutionEnvironment,
+  selectExecutionPool,
+} from "./planMinderTag";
 import { planMinderActions, type MinderAction } from "./planMinderActions";
 import {
   buildPlanMinder,
@@ -631,7 +636,7 @@ async function saveTag(value: string) {
       tag.scope,
       tag.field === "requestEnvironmentId"
         ? selectExecutionEnvironment(tag.config, value)
-        : { ...tag.config, [tag.field]: value },
+        : selectExecutionPool(tag.config, value),
     );
     selected.value = flatNodes.value.find((n) => n.id === id);
     resetPoint();
@@ -771,6 +776,7 @@ function resetPool() {
 }
 function openPool() {
   poolSelection.value =
+    executionDraft.value?.testResourcePoolScope !== "global" &&
     executionDraft.value?.testResourcePoolId !== "DEFAULT"
       ? executionDraft.value?.testResourcePoolId || "new"
       : "new";

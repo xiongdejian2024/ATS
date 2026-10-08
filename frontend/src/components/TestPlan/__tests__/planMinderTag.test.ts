@@ -3,6 +3,8 @@ import {
   planMinderTag,
   executionEnvironmentOptions,
   executionPoolOptions,
+  executionPoolValue,
+  selectExecutionPool,
 } from "../planMinderTag";
 import type {
   ExecutionCatalog,
@@ -86,4 +88,43 @@ describe("脑图环境和资源池标签真实作用域", () => {
     expect(result.field).toBe("testResourcePoolId");
     expect(catalog.configurations["node:api:a"].config.extended).toBe(true);
   });
+});
+
+it("independent pool ids do not collide with project pools and category choices are exact", () => {
+  const both = {
+    ...catalog,
+    globalPools: [
+      {
+        id: "pool",
+        name: "Global API",
+        applications: ["api"] as ("api" | "scenario")[],
+      },
+      {
+        id: "scene",
+        name: "Global scene",
+        applications: ["scenario"] as ("api" | "scenario")[],
+      },
+    ],
+  };
+  expect(executionPoolOptions(both, "api")).toEqual([
+    { value: "DEFAULT", label: "默认资源池" },
+    { value: "pool", label: "独立执行池" },
+    { value: "GLOBAL:pool", label: "独立池：Global API" },
+  ]);
+  expect(executionPoolOptions(both, "scenario")).toContainEqual({
+    value: "GLOBAL:scene",
+    label: "独立池：Global scene",
+  });
+  const global = selectExecutionPool(config, "GLOBAL:pool");
+  expect(global.testResourcePoolScope).toBe("global");
+  expect(global.testResourcePoolId).toBe("pool");
+  expect(executionPoolValue(global)).toBe("GLOBAL:pool");
+  const project = selectExecutionPool(global, "pool");
+  expect(project.testResourcePoolScope).toBe("project");
+  expect(executionPoolValue(project)).toBe("pool");
+  expect(selectExecutionPool(global, "DEFAULT").testResourcePoolScope).toBe(
+    "project",
+  );
+  expect(global.retryTimes).toBe(3);
+  expect(config.testResourcePoolScope).undefined;
 });

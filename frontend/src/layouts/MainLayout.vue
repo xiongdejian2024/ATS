@@ -176,6 +176,7 @@ const menuItems = [
   { key: 'task-center', title: '测试任务', icon: ScheduleOutlined, path: '/task-center' },
   { key: 'script-jobs', title: '脚本作业', icon: CodeOutlined, path: '/script-jobs' },
   { key: 'request-environment-groups', title: '请求环境组', icon: SettingOutlined, path: '/request-environment-groups' },
+  { key: 'resource-pools', title: '独立资源池', icon: SettingOutlined, path: '/resource-pools' },
   { key: 'ai-assistant', title: 'AI 辅助', icon: ExperimentOutlined, path: '/ai-assistant' },
   {
     key: 'executions', title: '执行记录', icon: ScheduleOutlined, path: '/executions'

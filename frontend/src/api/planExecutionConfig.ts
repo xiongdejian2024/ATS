@@ -3,6 +3,7 @@ export interface ExecutionConfig {
   extended: boolean;
   executionMode: "serial" | "parallel";
   testResourcePoolId: string;
+  testResourcePoolScope?: "project" | "global";
   requestEnvironmentId: string;
   requestEnvironmentGroupId?: string;
   stopOnFailure: boolean;
@@ -25,6 +26,11 @@ export interface ExecutionCatalog {
     revision: number;
   }[];
   requestEnvironmentGroups?: { id: string; name: string }[];
+  globalPools?: {
+    id: string;
+    name: string;
+    applications: ("api" | "scenario")[];
+  }[];
   requestEnvironments: { id: string; name: string }[];
   resources: { id: string; name: string; enabled: boolean }[];
 }

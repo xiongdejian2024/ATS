@@ -8,6 +8,8 @@ from schemas.environment import EnvironmentCreate, EnvironmentUpdate
 from utils.serializer import serialize_model, serialize_list
 import uuid
 import secrets
+from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 
 
 class EnvironmentService:
@@ -196,11 +198,25 @@ class EnvironmentService:
     @staticmethod
     def delete_environment(db: Session, environment_id: str) -> bool:
         """删除环境"""
-        environment = db.query(Environment).filter(Environment.id == environment_id).first()
+        environment = (db.query(Environment).filter(Environment.id == environment_id)
+                       .populate_existing().with_for_update().first())
         if not environment:
             return False
+        from models.global_resource_pool import GlobalResourcePoolMember
+        # Save locks the node before adding members. A current member read after
+        # the node lock also protects MySQL RR and databases without FK checks.
+        referenced = (db.query(GlobalResourcePoolMember.pool_id)
+                      .filter_by(environment_id=environment_id)
+                      .with_for_update().first())
+        if referenced:
+            db.rollback()
+            raise HTTPException(409, "节点仍被独立资源池引用，请先调整池成员")
         db.delete(environment)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(409, "节点仍被引用，无法删除") from None
         return True
     
     @staticmethod
