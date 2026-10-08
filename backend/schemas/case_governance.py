@@ -100,6 +100,7 @@ class ReviewCreate(ReviewHeader):
 
 
 class ReviewVote(StrictRequest):
+    fileIds: list[str] = Field(default_factory=list, max_length=50)
     decision: Literal["approved", "rejected", "suggestion"]
     comment: str = Field(default="", max_length=10000)
 

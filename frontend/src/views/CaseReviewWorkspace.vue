@@ -138,7 +138,8 @@
       @update:open="associateOpen = $event"
     />
     <a-modal
-      v-model:open="batchVisible"
+      :open="batchVisible"
+      @cancel="closeBatch"
       title="批量评审"
       :width="680"
       :footer="null"
@@ -152,6 +153,8 @@
         type="info"
       />
       <ReviewResultForm
+        ref="resultForm"
+        :project-id="projectId"
         v-if="batchVisible"
         inline-reason
         :disabled="associateSaving || resultSaving"
@@ -217,6 +220,7 @@ const projectId = ref(""),
 const activeId = ref<string>(),
   selectedItems = ref<string[]>([]),
   followed = ref(false);
+const resultForm=ref<InstanceType<typeof ReviewResultForm>>();
 const batchVisible = ref(false);
 const selectionSummary = ref<ReviewSelectionSummary>({
   count: 0,
@@ -299,6 +303,7 @@ async function loadOptions() {
   }
 }
 async function selectReview(id: string) {
+  if(!(await canLeaveAssociation()))return;
   activeId.value = id;
   selectedItems.value = [];
   await router.replace({
@@ -336,7 +341,7 @@ async function associateCases(data: {
     associateSaving.value = false;
   }
 }
-function canLeaveAssociation() {
+async function canLeaveAssociation() {
   if (
     associateSaving.value ||
     managementSaving.value ||
@@ -346,7 +351,7 @@ function canLeaveAssociation() {
     message.info("正在保存评审，请稍候");
     return false;
   }
-  return true;
+  return await resultForm.value?.beforeClose() ?? true;
 }
 onBeforeRouteLeave(canLeaveAssociation);
 onBeforeRouteUpdate(canLeaveAssociation);
@@ -367,7 +372,8 @@ function replace(review: CaseReview, refresh = true) {
   else reviews.value[index] = compact;
   if (refresh) ++tableRevision.value;
 }
-async function batchVote(decision: ReviewDecision, reason: string) {
+async function closeBatch(){if(await canLeaveAssociation())batchVisible.value=false}
+async function batchVote(decision: ReviewDecision, reason: string, fileIds: string[] = []) {
   const p = projectId.value,
     review = active.value;
   if (
@@ -388,6 +394,7 @@ async function batchVote(decision: ReviewDecision, reason: string) {
       ...selection,
       decision,
       comment: reason,
+      fileIds,
     });
     if (p !== projectId.value || review.id !== activeId.value)
       throw new Error("项目或评审已切换，请重新加载详情");

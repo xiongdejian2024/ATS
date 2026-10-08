@@ -34,9 +34,9 @@ export const planCaseMediaApi = {
 };
 /** 图片节点只向明确的本机图片路由发送登录凭据。 */
 export function privateImagePath(source: string): string | undefined {
-  return /^\/api\/v1\/plan-orchestration\/plans\/[a-zA-Z0-9-]+\/execution-media\/[a-f0-9-]{36}\/preview$/.test(
+  return (/^\/api\/v1\/plan-orchestration\/plans\/[a-zA-Z0-9-]+\/execution-media\/[a-f0-9-]{36}\/preview$/.test(
     source,
-  )
+  ) || /^\/api\/v1\/projects\/[a-zA-Z0-9-]+\/file-library\/files\/[a-f0-9-]{36}\/preview$/.test(source))
     ? source.slice("/api/v1".length)
     : undefined;
 }

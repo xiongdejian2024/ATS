@@ -32,6 +32,7 @@
           >图片</a-button
         ></a-upload
       >
+      <a-button v-if="selectImage" size="small" :disabled="disabled || uploading" @click="insertLibraryImage">文件库图片</a-button>
     </div>
     <EditorContent :editor="editor" />
   </div>
@@ -48,6 +49,7 @@ const props = defineProps<{
   readonly?: boolean;
   disabled?: boolean;
   label?: string;
+  selectImage?: () => Promise<{src:string;fileName:string} | undefined>;
   uploadImage?: (file: File) => Promise<{ src: string; fileName: string }>;
 }>();
 const emit = defineEmits<{
@@ -91,6 +93,7 @@ const uploading = ref(false);
 let closed = false;
 onBeforeUnmount(() => {
   closed = true;
+  if(uploading.value)emit('uploading',false);
 });
 async function insertImage(file: File) {
   if (!props.uploadImage || props.disabled || uploading.value) return false;
@@ -112,6 +115,13 @@ async function insertImage(file: File) {
     if (!closed) emit("uploading", false);
   }
   return false;
+}
+async function insertLibraryImage() {
+  if (!props.selectImage || props.disabled || uploading.value) return;
+  uploading.value=true;emit('uploading',true);
+  try { const image=await props.selectImage();if(image&&!closed&&editor.value&&!editor.value.isDestroyed)editor.value.chain().focus().setImage({src:image.src,alt:image.fileName}).run() }
+  catch(error){message.error('选择文件库图片失败，请重试')}
+  finally{uploading.value=false;if(!closed)emit('uploading',false)}
 }
 const actions = [
   {

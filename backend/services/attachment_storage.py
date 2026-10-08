@@ -11,6 +11,7 @@ from urllib.parse import quote
 from fastapi import HTTPException, Response
 from fastapi.responses import FileResponse
 from models.attachment_blob import AttachmentBlob
+from sqlalchemy import func
 from config import settings
 
 
@@ -83,12 +84,14 @@ def download(db, row):
     headers = {"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store",
                "Content-Disposition": "attachment; filename*=UTF-8''" + quote(row.file_name, safe="")}
     if row.file_path.startswith("db:"):
-        blob = db.get(AttachmentBlob, row.file_path)
-        if blob is None:
+        # Limit bytes in SQL, before the driver materializes historical blobs.
+        found = db.query(func.substr(AttachmentBlob.content, 1, settings.MAX_FILE_SIZE + 1)).filter(AttachmentBlob.key == row.file_path).first()
+        if found is None:
             raise HTTPException(404, "附件文件不存在")
-        if len(blob.content) > settings.MAX_FILE_SIZE:
+        raw = bytes(found[0])
+        if len(raw) > settings.MAX_FILE_SIZE:
             raise HTTPException(413, "附件超过当前下载限制")
-        return Response(blob.content, media_type="application/octet-stream", headers=headers)
+        return Response(raw, media_type="application/octet-stream", headers=headers)
     if row.file_path.startswith("s3:"):
         client, bucket = s3_client()
         try:

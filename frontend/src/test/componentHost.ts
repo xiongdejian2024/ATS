@@ -1,0 +1,4 @@
+import {createRenderer,ssrContextKey,nextTick,h,reactive,type Component} from 'vue'
+const renderer=createRenderer<any,any>({createElement:()=>({children:[]}),createText:()=>({}),createComment:()=>({}),insert(child,parent){parent.children?.push(child);child.parent=parent},remove(){},setText(){},setElementText(){},patchProp(){},parentNode:n=>n.parent,nextSibling:()=>null})
+export function componentHost(component:Component,initial:Record<string,unknown>){const props=reactive({...initial});const app=renderer.createApp({render:()=>h(component,props)});app.provide(ssrContextKey,{modules:new Set()});app.config.warnHandler=()=>{};const root=app.mount({children:[]});return {state:(root as any).$.subTree.component.setupState,props,stop:()=>app.unmount()}}
+export async function flushComponent(){for(let i=0;i<8;i++)await Promise.resolve();await nextTick()}

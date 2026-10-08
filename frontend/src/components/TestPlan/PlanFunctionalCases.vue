@@ -275,6 +275,7 @@
       v-model:description="executeDescription"
       :disabled="executeSaving"
       :plan-id="plan.id"
+        :project-id="plan.projectId"
       v-model:uploading="executeMediaUploading"
       @image-uploaded="(plan, image) => mediaDraft.track(plan, image.id)"
   /></a-modal>
@@ -309,6 +310,7 @@
       ref="defectPanel"
       v-if="current && defectsOpen"
       :plan-id="plan.id"
+        :project-id="plan.projectId"
       :association-key="current.id"
       :editable="canEdit"
       @changed="load"

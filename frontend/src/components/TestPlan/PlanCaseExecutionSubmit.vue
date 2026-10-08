@@ -4,6 +4,7 @@
     :result="result"
     :description="description"
     :plan-id="planId"
+    :project-id="projectId"
     :disabled="disabled || expanded"
     :uploading="uploading"
     compact
@@ -43,6 +44,7 @@
       v-model:result="dialogResult"
       v-model:description="dialogDescription"
       :plan-id="planId"
+      :project-id="projectId"
       :disabled="disabled"
       :uploading="uploading"
       @update:uploading="(value) => emit('update:uploading', value)"
@@ -57,6 +59,7 @@ const props = defineProps<{
   result: string;
   description: string;
   planId: string;
+  projectId?: string;
   disabled: boolean;
   uploading: boolean;
   onSubmit: () => Promise<boolean>;

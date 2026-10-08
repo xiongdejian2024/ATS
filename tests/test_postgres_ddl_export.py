@@ -24,7 +24,7 @@ def test_checked_in_export_is_deterministic_and_independent_of_database_settings
                  "ENVIRONMENT": "production"},
             capture_output=True, text=True, check=True,
         )
-        assert "84 model tables" in result.stdout
+        assert "87 model tables" in result.stdout
         assert destination.read_bytes() == expected
 
 
@@ -43,14 +43,14 @@ def test_export_never_imports_settings_or_opens_a_socket(tmp_path):
             "assert not hasattr(sys.modules['database'], 'engine')",
         ])], capture_output=True, text=True, check=True,
     )
-    assert "84 model tables" in result.stdout
+    assert "87 model tables" in result.stdout
 
 
 def test_model_count_and_source_schema_changes_require_review():
     with pytest.raises(ValueError, match="model count changed"):
         exporter.render_schema(MetaData())
     metadata = MetaData()
-    for number in range(84):
+    for number in range(87):
         Table(f"example_{number}", metadata, Column("id", Integer, primary_key=True), schema="public")
     with pytest.raises(ValueError, match="another schema"):
         exporter.render_schema(metadata)

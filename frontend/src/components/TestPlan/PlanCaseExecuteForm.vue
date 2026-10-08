@@ -35,6 +35,7 @@
           :model-value="description"
           :disabled="disabled || uploading"
           label="执行描述"
+          :select-image="projectId ? selectImage : undefined"
           :upload-image="planId ? uploadImage : undefined"
           @uploading="imageUploading"
           @update:model-value="
@@ -43,16 +44,19 @@
         /></div></a-form-item
     ><slot
   /></a-form>
+  <FileLibraryPicker v-if="projectId" ref="picker" :project-id="projectId" />
 </template>
 <script setup lang="ts">
 import CaseRichText from "@/components/TestCase/CaseRichText.vue";
 import { functionalResults } from "./functionalExecution";
+import FileLibraryPicker from '@/components/TestCase/FileLibraryPicker.vue';
 import { ref } from "vue";
 const props = defineProps<{
   result: string;
   description: string;
   disabled?: boolean;
   planId?: string;
+  projectId?: string;
   uploading?: boolean;
   compact?: boolean;
   active?: boolean;
@@ -68,6 +72,8 @@ const emit = defineEmits<{
     media: import("@/api/planCaseMedia").PlanCaseMedia,
   ];
 }>();
+const picker=ref<InstanceType<typeof FileLibraryPicker>>()
+async function selectImage(){const rows=await picker.value?.pick({imagesOnly:true,limit:1});const row=rows?.[0];return row?.src?{src:row.src,fileName:row.fileName}:undefined}
 const richText = ref<InstanceType<typeof CaseRichText>>();
 function isDescription(event: MouseEvent) {
   const target = event.target as Element;
