@@ -325,7 +325,7 @@ def instance_defects(plan_id: str, associationKey: str = Query(pattern=r'^(legac
 @router.get('/plans/{plan_id}/case-workspace/defects/candidates')
 def instance_defect_candidates(plan_id: str, page: int = Query(1, ge=1), size: int = Query(10, ge=1, le=100), search: str = Query('', max_length=255), db: Session = Depends(get_db), user=Depends(get_current_user)):
     from services.plan_case_defect import candidates
-    return ok(candidates(db, view_access(db, user, plan_id), page, size, search))
+    return ok(candidates(db, view_access(db, user, plan_id), page, size, search, user=user))
 
 
 @router.post('/plans/{plan_id}/case-workspace/defects')
@@ -363,6 +363,8 @@ def functional_minder_batch_preview(plan_id: str, data: FunctionalMinderBatch, d
 def aggregate_instance_defects(plan_id: str, page: int = Query(1, ge=1), size: int = Query(20, ge=1, le=100), search: str = Query('', max_length=255), db: Session = Depends(get_db), user=Depends(get_current_user)):
     from services.plan_detail import defects
     plan = view_access(db, user, plan_id)
+    from services.defect_workspace import authority
+    authority(db,user,plan.project_id,'read')
     payload = defects(db, plan)
     items = [item for item in payload['items'] if search.strip().casefold() in item['title'].casefold()]
     items.sort(key=lambda item: (str(item.get('createdAt', '')), item['id']), reverse=True)

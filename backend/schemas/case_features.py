@@ -1,7 +1,7 @@
 """用例扩展输入契约；未知字段拒绝，避免假保存。"""
 
 from typing import Any, Literal
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, StrictInt
 from schemas.case_governance import StrictRequest
 
 
@@ -48,6 +48,7 @@ class TemplateWrite(StrictRequest):
 
 
 class IssueWrite(StrictRequest):
+    expectedRevision: StrictInt | None = Field(None, ge=0)
     kind: Literal["requirement", "defect"]
     title: str = Field(min_length=1, max_length=300)
     description: str = Field(default="", max_length=30000)

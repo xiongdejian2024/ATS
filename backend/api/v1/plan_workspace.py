@@ -80,10 +80,11 @@ def plan_defects(plan_id: str, db: Session = Depends(get_db), user=Depends(get_c
     from services.plan_detail import defects
     from core.project_access import project_allows
     plan = plan_access(db, user, plan_id)
-    project = require_project_access(db, user, plan.project_id, "test_case:read")
+    from services.defect_workspace import authority
+    user,project = authority(db,user,plan.project_id,'read')
     payload = defects(db, plan)
     workspace = db.get(PlanWorkspace, plan_id)
-    payload["canEdit"] = not (workspace and workspace.archived) and project_allows(db, user, project, "test_plan:update") and project_allows(db, user, project, "test_case:update")
+    payload["canEdit"] = not (workspace and workspace.archived) and project_allows(db, user, project, "test_plan:update", current_read=True) and project_allows(db, user, project, "defect:create", current_read=True)
     return ok(payload)
 
 
@@ -105,6 +106,16 @@ def create_plan_defect(plan_id: str, data: PlanDefectWrite, db: Session = Depend
         raise HTTPException(422, "缺陷标题不能为空")
     current = service.find_case(db, user, plan.project_id, data.caseId, "update")
     def operation():
+        from services.defect_workspace import authority
+        actor,_ = authority(db,user,plan.project_id,'read')
+        require_project_access(db,actor,plan.project_id,'test_plan:update',current_read=True)
+        require_project_access(db,actor,plan.project_id,'test_case:update',current_read=True)
+        state = db.query(PlanWorkspace).filter_by(plan_id=plan.id).populate_existing().with_for_update().one_or_none()
+        if state and state.archived:
+            raise HTTPException(409, "归档计划不可新建缺陷")
+        if data.caseId not in plan_case_ids(db,plan.id,current_read=True):
+            raise HTTPException(422, "只能关联此计划中的当前用例")
+        service.find_case(db,actor,plan.project_id,data.caseId,'update',lock=True)
         issue = service.write_issue(db, user, plan.project_id, IssueWrite(kind="defect", title=data.title.strip(), description=data.description, status="open"))
         db.add(CaseIssueLink(case_id=data.caseId, issue_id=issue.id, created_by=str(user.id)))
         service.change(db, current, user.id, "关联计划缺陷", {"planId": plan.id, "issueId": issue.id})

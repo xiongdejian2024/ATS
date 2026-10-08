@@ -32,6 +32,10 @@ async def test_legacy_detail_project_scope_and_readonly_capabilities(workspace_h
         assert not any(data['capabilities'].values())
         assert (await client.put('/orchestration/plans/plan/follow',json={'followed':True})).status_code == 200
         assert (await client.get('/orchestration/plans/plan/workspace')).json()['data']['followed']
+        assert (await client.get('/orchestration/plans/plan/defects')).status_code == 403
+        from models import Permission, ProjectPermission
+        db.add(Permission(id='defect-reader',code='defect:read',name='Read',resource='defect',action='read'));db.flush()
+        db.add(ProjectPermission(project_id='project',user_id='stranger',permission_id='defect-reader'));db.commit()
         assert (await client.get('/orchestration/plans/plan/defects')).json()['data']['canEdit'] is False
         assert (await client.post('/orchestration/plans/plan/defects',json={'caseId':'case-0','title':'只读禁止'})).status_code == 403
     assert db.query(TaskQueue).count() == 0

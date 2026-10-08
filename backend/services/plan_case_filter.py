@@ -29,6 +29,11 @@ def parse_plan_filters(raw, category=None):
 
 def filter_entries(db, plan, items, raw, user_id, category='functional', *, current_read=False):
     conditions, logic = parse_plan_filters(raw, category)
+    if any(c['field'] in {'bugCount','caseBugCount'} for c in conditions):
+        from models import User
+        from services.defect_workspace import authority
+        if not user_id:raise HTTPException(403,'缺陷筛选需要当前用户上下文')
+        authority(db,db.get(User,user_id),plan.project_id,'read')
     if not conditions:
         return items
     ids = {item["caseId"] for item in items}

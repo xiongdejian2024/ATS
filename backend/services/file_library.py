@@ -20,6 +20,18 @@ IMAGE_TYPES = {'PNG': 'image/png', 'JPEG': 'image/jpeg', 'GIF': 'image/gif', 'WE
 URL = re.compile(r'^/api/v1/projects/([^/]+)/file-library/files/([a-f0-9-]{36})/preview$')
 
 
+def require_library_read(db,user,project_id):
+    from models import Project
+    from core.project_access import project_allows
+    project=db.get(Project,project_id)
+    if project and project_allows(db,user,project,'test_case:read'):
+        return require_project_access(db,user,project_id,'test_case:read')
+    # A defect-only grant can use the existing project-shared library. It does
+    # not grant case CRUD or make published files private defect attachments.
+    from services.defect_workspace import authority
+    return authority(db,user,project_id,'read')[1]
+
+
 def folder(db, project_id, identifier):
     if not identifier:
         return None
@@ -98,7 +110,7 @@ def find(db, project_id, identifier, lock=False):
 
 
 def upload(db, user, project_id, file, folder_id=None, image=False, published=False):
-    require_project_access(db, user, project_id, 'test_case:read')
+    require_library_read(db, user, project_id)
     folder(db, project_id, folder_id)
     name = secure_filename(file.filename or '')
     if not name.strip() or '\x00' in name or len(name) > 255: raise HTTPException(422, '文件名不合法')

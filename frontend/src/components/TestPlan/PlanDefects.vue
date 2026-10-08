@@ -91,7 +91,8 @@
         <p class="description">{{ view.description || "无描述" }}</p>
         <p>
           关联用例：{{ view.cases.map((item) => item.name).join("、") }}
-        </p></template
+        </p>
+        <router-link v-if="view.projectId" :to="{ path: '/defects', query: { projectId: view.projectId, defectId: view.id } }">打开完整缺陷工作区</router-link></template
       ></a-drawer
     >
   </template>

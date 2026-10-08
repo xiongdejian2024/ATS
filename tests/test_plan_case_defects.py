@@ -63,7 +63,8 @@ async def test_execute_permission_can_associate_without_plan_update_or_issue_cre
     db, app, identity = workspace_http
     db.add(ProjectMember(project_id='project', user_id='stranger', role='member'))
     db.add(Permission(id='execute-grant', code='test_plan:execute', resource='test_plan', action='execute', name='计划执行'))
-    db.flush(); db.add(ProjectPermission(project_id='project', user_id='stranger', permission_id='execute-grant'))
+    db.add(Permission(id='defect-read-grant', code='defect:read', resource='defect', action='read', name='独立缺陷读取'))
+    db.flush(); db.add(ProjectPermission(project_id='project', user_id='stranger', permission_id='execute-grant'));db.add(ProjectPermission(project_id='project', user_id='stranger', permission_id='defect-read-grant'))
     db.add(CaseIssue(id='bug', project_id='project', kind='defect', title='既有缺陷', created_by='owner', updated_by='owner')); db.commit()
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as client:
         row = (await client.get(BASE)).json()['data']['items'][0]; selection = dict(selectIds=[row['id']]); identity['id'] = 'stranger'

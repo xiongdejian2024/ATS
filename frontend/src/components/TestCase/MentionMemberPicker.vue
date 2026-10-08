@@ -10,7 +10,7 @@
 import {ref,watch,onBeforeUnmount} from 'vue'
 import {mentionsApi as api,type MentionMember} from '@/api/mentions'
 import {useUserStore} from '@/stores/user'
-const props=defineProps<{projectId:string;context:'case'|'plan'}>(),user=useUserStore()
+const props=defineProps<{projectId:string;context:'case'|'plan'|'defect'}>(),user=useUserStore()
 const open=ref(false),loading=ref(false),search=ref(''),page=ref(1),total=ref(0),members=ref<MentionMember[]>([]),error=ref('')
 let sequence=0,finish:((member:MentionMember|undefined)=>void)|undefined
 async function load(){const current=++sequence,project=props.projectId,context=props.context;loading.value=true;error.value='';members.value=[];try{const data=await api.members(project,{context,search:search.value,page:page.value});if(current===sequence&&open.value){members.value=data.items;total.value=data.total}}catch(failure){if(current===sequence){error.value='读取成员失败，请重试';total.value=0}}finally{if(current===sequence)loading.value=false}}

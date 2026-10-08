@@ -35,6 +35,7 @@ const routes = [
       { path: 'script-jobs', name: 'ScriptJobs', component: () => import('@views/ScriptJobs.vue'), meta: { title: '脚本作业' } },
       { path: 'request-environment-groups', name: 'RequestEnvironmentGroups', component: () => import('@views/RequestEnvironmentGroups.vue'), meta: { title: '请求环境组' } },
       { path: 'resource-pools', name: 'GlobalResourcePools', component: () => import('@views/GlobalResourcePools.vue'), meta: { title: '独立资源池' } },
+      { path: 'defects', name: 'Defects', component: () => import('@views/Defects.vue'), meta: { title: '缺陷' } },
       { path: 'ai-assistant', name: 'AIAssistant', component: () => import('@views/AIAssistant.vue'), meta: { title: 'AI 辅助' } },
       {
         path: 'dashboard',

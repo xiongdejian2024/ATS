@@ -54,7 +54,7 @@ const props = defineProps<{
   disabled?: boolean;
   label?: string;
   projectId?: string;
-  mentionContext?: 'case'|'plan';
+  mentionContext?: 'case'|'plan'|'defect';
   selectImage?: () => Promise<{src:string;fileName:string} | undefined>;
   uploadImage?: (file: File) => Promise<{ src: string; fileName: string }>;
 }>();

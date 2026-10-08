@@ -15,7 +15,7 @@ Status vocabulary: **implemented** means code exists, **pending development** id
 | R04 / logs | `agent_log_ingest.py`, spool, `raw_log_export.py`, browser bounded viewer: durable sequence ACK/replay, per-run quota, paged download | Global capacity/policy/safe copy-only gzip archival implemented; no automatic permanent deletion authorized |
 | Script jobs | `script_jobs.py`, `ScriptJobs.vue`, `script_runtime.py`: standalone Python/Shell/argv, frozen runs, idempotent trigger retry, unknown manual closure | Browser and Windows acceptance open; no Groovy/DSL, Cron, auto-upgrade, untrusted-code sandbox or multi-controller scope |
 | D01 | `plan_case_defects.py`, `PlanDefects.vue`: instance-specific create/bind/unbind, aggregate pagination and basic detail | Aggregate create/bind entry implemented with paged instance selection and draft protections; browser acceptance open |
-| D02 | Existing defect state/entity/relations | Defect template/custom fields/files/mentions/distinct permissions and detail remain pending development; do not count case templates as defect templates |
+| D02 | Versioned independent defect detail, typed templates/custom fields, file evidence, rich mentions, comments/history and distinct permissions implemented | Local SQLite/PostgreSQL and independent review passed; full integrated checks and exact-head CI pending. Browser acceptance open; no outgoing notification service |
 | E01 / storage | Case disk attachments, DB execution images and immutable media references; explicit draft cleanup | Persistent local/database/explicit-S3 adapter implemented; shared file-library directories/picker, case/comment/review-event/execution references and expired-known-evidence inventory/copy archive now implemented. Browser acceptance and untracked external-object reconciliation pending. Permanent deletion requires separate authorization |
 | E02 | `PlanFunctionalExecution.vue`: source-case editing and immutable independent histories. `plan_collaboration.py`: active batches already support steps/attachments/comments | Active frozen batch entrance implemented with duplicate-instance matching, paging and report draft protection; structured mentions and exact saved-content notification sources implemented; browser acceptance pending; preserve ambiguity/409 safety |
 | C01 | Case template/custom-field CRUD and validation, table settings and inline edits exist | Dynamic custom-field columns now use stable field keys, safe typed values and existing table settings; preferences survive late metadata and temporarily unavailable fields. Template/menu interaction comparison acceptance remains open |
@@ -26,7 +26,7 @@ Status vocabulary: **implemented** means code exists, **pending development** id
 | V02 | `ReviewCaseTable.vue` and review_case_workspace: readonly full filtered mind map (bounded at 10000); voting/re-review/history/rich reasons exist | Reason image upload/file attachments implemented with immutable event references; structured reason mentions implemented; full review map exists; browser/blue-UI comparison acceptance remains pending |
 | P01 | Plan/group/module CRUD, basic filtering/copy/archive/execute exist | Personal advanced views and bounded on-demand right-hand group-member expansion merged with exact-final-head CI passed; merged-main CI passed; browser acceptance pending. Tree group members already expand; other table/drawer interaction acceptance needs concrete comparison |
 | P02 | Reports: real filtering/sort/rename/delete/PDF, metrics/category counts/details/summary/share exist | Personal advanced views and configurable columns merged with exact-head and main CI passed. Configurable detail cards, frozen configuration and separate test-set/defect analysis merged with exact-head and main CI passed. Group and single-plan report summary refresh/navigation draft guards exist; browser acceptance remains open |
-| P03 | Separate request environments and project node pools, inherited configuration/freeze/retry/failure-stop exist; project environment-group CRUD and cross-project mapping now implemented with current permissions, revisions, safe create retry and frozen execution | Environment-group exact-head database CI passed and merged; merged-main CI running, browser acceptance pending. Independent Node resource-pool lifecycle implemented and independently reviewed; exact-head CI pending |
+| P03 | Separate request environments and project node pools, inherited configuration/freeze/retry/failure-stop exist; project environment-group CRUD and cross-project mapping now implemented with current permissions, revisions, safe create retry and frozen execution | Environment-group exact-head and merged-main CI passed; browser acceptance pending. Independent Node resource-pool lifecycle implemented and independently reviewed; repaired exact-head CI running |
 | P04 | Three planning layouts, navigator/zoom/drag/fullscreen, transactional drafts and default-collection projection exist | Fine theme/default-collection interaction comparison and acceptance remain open; retain blue UI |
 | A01–A02 | Extraction/variable assertions/request environments exist; standalone scripts belong to the reliable-script row | Persisted initial/environment variables, bounded SQL/global hooks/Mock/advanced reports stay lower priority; full Groovy/Java-expression compatibility excluded |
 | Q01 | Existing permission and request-lifecycle protections | Verify every changed workflow’s errors, readonly states, retries, user/project isolation and narrow screens |
@@ -71,7 +71,7 @@ type check and production build passed locally.
 | R03 | Controller/Agent capacity, capability admission and concurrent dispatch | In development and independent review | Inspect existing queue protections before editing; simultaneous dispatch/cancel/reconnect, exact slot accounting. Part 75. |
 | R04 | Large persistent logs, aggregation cost and remaining static-log routes | Audit pending | Complete stored output, bounded UI/API reads, no whole-file rewrite per chunk; retained historical routes. Part 72. |
 | D01 | Aggregate defect page create/associate entry and detail workflow | Pending | Existing per-instance links and independent repeated instances remain correct. Part 75. |
-| D02 | Defect template/custom fields, files/mentions and distinct defect permissions | Pending scope decomposition | Map current CaseIssue capabilities to recorded requirements; no new external notification recipient assumed. Part 75. |
+| D02 | Defect template/custom fields, files/mentions and distinct defect permissions | Implemented; integrated/exact-head checks pending, browser acceptance open | Existing CaseIssue identities retained; no external notification recipient or new service. [Workflow and migration](DEFECT_WORKSPACE.md). Part 75. |
 | E01 | Functional execution file-library association and expired orphan-image cleanup | Pending | Referenced media never deleted; preview/submit/cancel/retry and crash-refresh leftovers covered. Parts 19–22, 73. |
 | E02 | Functional execution mentions, separate master detail and active-run association | Implemented; browser acceptance pending | Immutable history snapshots and active batch ownership remain distinct. Parts 73/75. |
 | C01 | Case templates, custom fields and remaining table/menu conditions | Merged with exact-commit CI passed; browser acceptance pending | Current fields, permissions, archived/recycled and cross-project cases; top matrix. |
@@ -82,7 +82,7 @@ type check and production build passed locally.
 | V02 | Review full mind-map and image/mention/attachment reasons | Pending | Independent effective votes/history, no stale draft sharing, linked-file access controls. Top matrix. |
 | P01 | Plan home views, table expansion/operations and create/edit drawer details | Advanced personal views and group expansion merged with exact-head CI passed; browser acceptance pending | Check existing plan/group management, not reimplement working workflows. Top matrix. |
 | P02 | Plan report personal views, columns, configuration cards and analysis | Personal views/columns merged with exact-head and main CI passed; detail cards/frozen configuration/test-set defect analysis merged with exact-head and main CI passed; browser acceptance pending | Accurate frozen report data and scoped export/share; top matrix. |
-| P03 | Project environment groups, cross-project mapping and resource-pool management | Environment-group merged with exact-head CI passed; main CI/browser acceptance pending. Independent Node pool lifecycle implemented/reviewed, local regressions passed; exact-head CI pending | Request targets and Agent execution pools remain separate; no new infrastructure provisioned. Part 56. |
+| P03 | Project environment groups, cross-project mapping and resource-pool management | Environment-group exact-head and main CI passed; browser acceptance pending. Independent Node pool lifecycle implemented/reviewed, SQLite and actual PostgreSQL regressions passed; repaired exact-head CI running | Request targets and Agent execution pools remain separate; no new infrastructure provisioned. Part 56. |
 | P04 | Remaining planning-map themes/default-collection projection | Audit pending | Existing layouts, draft transactions, APIs and selection preserved. Parts 61–64. |
 | A01 | Advanced HTTP environment/initial variables and full expression compatibility | Deferred priority, not declared done | Existing extraction/variable assertion scope stays isolated; part 71 and priority note in part 72. |
 | A02 | Scripts/SQL/global hooks/Mock and advanced HTTP reports | Deferred priority; requires bounded design | No arbitrary production execution, credentials or external sharing implied. Parts 55/71. |
@@ -314,7 +314,7 @@ this environment-group delivery does not close that separate scope.
 - PR13 final `d8ca351da562cb8d6ca6098a96d475578c272894`: exact runs
   37843674211/37843684209 passed, including actual MySQL8 group migration and
   production-remove RR interleaving. Merged main
-  `d0dec0fc725db5e052bd801d4b5d176b578fca5a`, run 37845362743 in progress.
+  `d0dec0fc725db5e052bd801d4b5d176b578fca5a`, run 37845362743 passed.
   A stale real initializer's literal table count was replaced with complete
   registered-model count before merge.
 - Independent/global pool implementation: [behavior and migration](GLOBAL_RESOURCE_POOLS.md).
@@ -325,3 +325,39 @@ this environment-group delivery does not close that separate scope.
 - Remaining independent development: D02 defect templates/custom fields/detail
   attachments/mentions/distinct permission; bounded A01/A02 variable, SQL/hook/Mock
   and report items. Do not stop merely because a delivery slice merged.
+
+
+## D02 independent defect workspace, 2026-10-08
+
+Existing CaseIssue IDs, case/plan associations and frozen report history remain
+compatible. Four additive sidecars provide typed template fields/defaults, explicit
+plain/rich description format, optimistic revisions, soft archive/restore, keyed
+create/comment receipts and immutable history/file references. Structured defect
+mentions use the existing in-app notification system and recheck current source
+authority. Ordinary case access no longer substitutes for independent defect
+read/write permission; owners/managers and explicit existing grants retain their
+recorded authority. No actual grants or user data were changed.
+
+The original blue interface now includes a project-scoped Defects entry, bounded
+list/comment/history pagination, template management and full detail from plan
+links. Submitted snapshots establish saved baselines while later drafts survive
+ACKs; actor/project/identity/unmount changes fence old reads, writes and confirms.
+Plain legacy descriptions remain literal until explicit conversion.
+
+Local SQLite/schema/compatibility combination: **78 passed**. Actual loopback
+PostgreSQL workflow/authority/mentions/legacy combination: **51 passed**. Additive
+migration preview/apply/idempotence/legacy refusal: **2 passed**, optional actual
+MySQL skipped locally and included in the dedicated CI service. Formal front
+interaction **16 passed**, independent reviewer **9 passed**. Integrated full
+backend/frontend/build and exact published-head CI remain required before merge.
+Real browser, Windows, hardware and production deployment remain open.
+
+Independent pool candidate's PostgreSQL job initially timed out: its test kept
+a catalog authority transaction open before deleting that grant on a second
+connection. The test now ends the simulated read request first, leaving production
+locking intact. Actual PostgreSQL pool regressions **27 passed in 24.14 seconds**;
+repair source `0b0a45272a9f40f2b6ba4b544ad2c18954215da0` runs
+37849235383/37849240554 are pending. A timeout is not counted as acceptance.
+
+Remaining independent development is the finite bounded A01/A02 initial/environment
+variable, SQL/hook/Mock and report work. Do not stop because a slice merged.

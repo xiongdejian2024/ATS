@@ -207,7 +207,13 @@ def issues(
     user=Depends(get_current_user),
 ):
     require_project_access(db, user, project_id, "test_case:read")
+    from services.defect_workspace import allows, authority
+    if kind == 'defect':
+        authority(db,user,project_id,'read')
+        can_read_defect=True
+    else:can_read_defect=allows(db,user,project_id,'read',current_read=True)
     query = db.query(CaseIssue).filter_by(project_id=project_id)
+    if not can_read_defect:query=query.filter(CaseIssue.kind != 'defect')
     if kind:
         query = query.filter_by(kind=kind)
     if search:
@@ -259,8 +265,11 @@ def delete_issue(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    require_project_access(db, user, project_id, "test_case:delete")
     row = service.issue_for_project(db, project_id, identifier)
+    if row.kind == 'defect':
+        from services.defect_workspace import authority
+        authority(db,user,project_id,'delete')
+    else:require_project_access(db, user, project_id, "test_case:delete")
     if db.query(CaseIssueLink).filter_by(issue_id=identifier).first():
         raise HTTPException(409, "需求或缺陷仍有关联用例，不能删除")
     from models.plan_orchestration import PlanRun
@@ -269,7 +278,12 @@ def delete_issue(
         for entry in (run.manual_results or {}).values():
             if any(identifier in step.get("defectIds",[]) for step in entry.get("stepResults",[])):
                 raise HTTPException(409,"缺陷已被执行记录引用，请保留历史证据")
-    transact(db, lambda: db.delete(row))
+    if row.kind == 'defect':
+        from services.defect_workspace import set_archived,profile
+        from schemas.defect_workspace import ArchiveInput
+        meta=profile(db,row)
+        transact(db,lambda:set_archived(db,user,project_id,identifier,ArchiveInput(archived=True,expectedRevision=meta.revision if meta else 0)))
+    else:transact(db, lambda: db.delete(row))
     return result()
 
 
@@ -281,6 +295,8 @@ def case_issues(
     user=Depends(get_current_user),
 ):
     service.find_case(db, user, project_id, case_id)
+    from services.defect_workspace import allows
+    can_read_defect=allows(db,user,project_id,'read',current_read=True)
     rows = (
         db.query(CaseIssueLink, CaseIssue)
         .join(CaseIssue, CaseIssue.id == CaseIssueLink.issue_id)
@@ -291,6 +307,7 @@ def case_issues(
         [
             {**serialize_model(issue, camel_case=True), "linkId": link.id}
             for link, issue in rows
+            if issue.kind != 'defect' or can_read_defect
         ]
     )
 
@@ -304,9 +321,13 @@ def link_issue(
     user=Depends(get_current_user),
 ):
     case = service.find_case(db, user, project_id, case_id, "update")
-    service.issue_for_project(db, project_id, body.issueId)
+    linked=service.issue_for_project(db, project_id, body.issueId)
 
     def operation():
+        if linked.kind == 'defect':
+            from services.defect_workspace import require_associable
+            current_issue=require_associable(db,user,project_id,body.issueId)
+            require_project_access(db,user,project_id,'test_case:update',current_read=True)
         row = CaseIssueLink(
             case_id=case_id, issue_id=body.issueId, created_by=str(user.id)
         )
@@ -332,6 +353,11 @@ def unlink_issue(
         raise HTTPException(404, "关联不存在")
 
     def operation():
+        issue=service.issue_for_project(db,project_id,row.issue_id)
+        if issue.kind == 'defect':
+            from services.defect_workspace import authority
+            current,_=authority(db,user,project_id,'read')
+            require_project_access(db,current,project_id,'test_case:update',current_read=True)
         service.change(db, case, user.id, "取消需求缺陷关联", {"issueId": row.issue_id})
         db.delete(row)
 

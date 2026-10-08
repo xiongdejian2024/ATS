@@ -27,6 +27,8 @@ def project_allows(db: Session, user: User, project: Project, permission: str, *
         return True
     query = db.query(ProjectMember).filter_by(project_id=project.id, user_id=user.id)
     member = (query.populate_existing().with_for_update() if current_read else query).first()
-    if member and (action == "read" or member.role in {"admin", "owner", "manager", "maintainer"}):
+    if resource == "defect" and has_global_permission(db, user.id, "system", "manage", current_read=current_read):
+        return True
+    if member and ((action == "read" and resource != "defect") or member.role in {"admin", "owner", "manager", "maintainer"}):
         return True
     return False

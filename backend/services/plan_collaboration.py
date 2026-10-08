@@ -16,7 +16,7 @@ def require_association(run, association_id):
     return snapshot
 
 
-def validate_steps(db, run, case, steps):
+def validate_steps(db, run, case, steps, user_id=None):
     from models.case_features import CaseIssue
     frozen = case.get("snapshot", {})
     size = 0 if frozen.get("case_edit_type") == "TEXT" else len(frozen.get("steps") or [])
@@ -36,7 +36,10 @@ def validate_steps(db, run, case, steps):
             raise ValueError("缺陷和附件必须使用列表")
         frozen_defects = []
         for defect_id in defect_ids:
-            defect = db.get(CaseIssue, defect_id)
+            from models import User
+            from services.defect_workspace import require_associable
+            if not user_id or not db.get(User,user_id):raise HTTPException(403,"缺陷关联需要当前用户上下文")
+            defect = require_associable(db,db.get(User,user_id),project_id,defect_id)
             if not defect or defect.project_id != project_id or defect.kind != "defect":
                 raise ValueError("缺陷不属于当前项目")
             frozen_defects.append(dict(id=defect.id, title=defect.title, description=defect.description, status=defect.status))
