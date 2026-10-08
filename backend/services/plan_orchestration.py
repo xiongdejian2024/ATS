@@ -558,9 +558,10 @@ def run_data(db, run, include_report=True):
 
 
 def run_logs(db, run):
-    ids = [item.execution_id for item in _items(db, run.id)]
-    logs = db.query(TestSuiteLog).filter(TestSuiteLog.execution_id.in_(ids)).order_by(TestSuiteLog.timestamp, TestSuiteLog.sequence_number).all()
-    return "\n".join(f"[{row.timestamp}] {row.message}" for row in logs)
+    from services.raw_log_export import legacy_log_rows, run_log_query
+    query = run_log_query(db, run.id).order_by(TestSuiteLog.timestamp, TestSuiteLog.sequence_number)
+    logs = legacy_log_rows(query)
+    return "\n".join(f"[{row['timestamp']}] {row['message']}" for row in logs)
 
 
 def resolve_uncertain_run(db, run_id, user_id):

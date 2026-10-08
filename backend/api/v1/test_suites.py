@@ -13,6 +13,7 @@ from typing import Optional
 from datetime import timedelta
 from core.logger import logger
 from services.suite_dispatch import is_xat_command
+from services.raw_log_export import LogExportRequest, export_log_chunk
 
 router = APIRouter()
 
@@ -525,6 +526,16 @@ async def get_suite_executions(
         )
 
 
+@router.post("/suites/{suite_id}/logs/export", response_model=APIResponse)
+def export_suite_logs(suite_id: str, request: LogExportRequest,
+                      db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    require_suite_access(db, current_user, suite_id, "read")
+    from models.test_suite import TestSuiteLog
+    query = db.query(TestSuiteLog).filter(TestSuiteLog.suite_id == suite_id)
+    return APIResponse(status=ResponseStatus.SUCCESS, message="原始日志快照分段",
+        data=export_log_chunk(query, f"suite:{suite_id}", current_user.id, request))
+
+
 @router.get("/suites/{suite_id}/logs", response_model=APIResponse)
 async def get_suite_logs(
     suite_id: str,
@@ -562,6 +573,8 @@ async def get_suite_logs(
         data = log_window(query, skip, limit, tail_chars, latest)
         logger.info("获取日志视窗完成: suite_id={} 条数={} 尾部字符数={}", suite_id, len(data['items']), tail_chars)
         return APIResponse(status=ResponseStatus.SUCCESS, message="获取成功", data=data)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("获取测试套日志失败: suite_id={}", suite_id)
         raise HTTPException(

@@ -385,6 +385,7 @@
       :footer="null"
     >
       <a-button size="small" :loading="executionLogLoading" @click="executionLogStream.refresh()">刷新日志</a-button>
+      <RawLogDownload v-if="executionLogModalVisible" :target="executionDownloadTarget" />
       <a-spin :spinning="executionLogLoading">
         <a-alert v-if="executionLogStatus" :type="executionLogStatus.type" :message="executionLogStatus.message" show-icon />
         <BoundedLogViewer :records="executionLogs" height="min(60vh, 600px)" />
@@ -613,6 +614,8 @@ import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined, ReloadOutlined, CopyOutlined, UploadOutlined, FolderAddOutlined, FolderOutlined, FileOutlined, DesktopOutlined, DashboardOutlined } from '@ant-design/icons-vue';
 import { environmentApi } from '@/api/environment';
 import BoundedLogViewer from '@/components/ExecutionLogs/BoundedLogViewer.vue';
+import RawLogDownload from '@/components/ExecutionLogs/RawLogDownload.vue'
+import type { RawLogTarget } from '@/components/ExecutionLogs/useRawLogDownload'
 import { useSuiteLogStream } from '@/components/ExecutionLogs/useSuiteLogStream';
 
 import type { Environment } from '@/types';
@@ -638,6 +641,7 @@ const startCommandData = ref<{
 const executionHistoryDrawerVisible = ref(false)
 const executionHistoryLoading = ref(false)
 const executionLogStream = useSuiteLogStream()
+const executionDownloadTarget = ref<RawLogTarget | null>(null)
 const { records: executionLogs, loading: executionLogLoading, status: executionLogStatus } = executionLogStream
 const currentEnvironmentId = ref<string>('')
 const executionHistory = ref<Array<{
@@ -1399,6 +1403,8 @@ const formatExecutionDuration = (duration: string | number | undefined | null): 
 }
 
 const viewExecutionLogs = (record: any) => {
+  executionDownloadTarget.value = { endpoint: `/test-plans/suites/${record.suiteId}/logs/export`, filename: `suite-${record.suiteId}`,
+    executionId: record.executionId || undefined, logId: record.logId || undefined }
   executionLogModalVisible.value = true
   executionLogStream.open({ suiteId: record.suiteId, logId: record.logId || undefined,
     executionId: record.executionId || undefined, live: false })

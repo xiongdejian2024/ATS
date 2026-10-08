@@ -56,7 +56,7 @@ Agent spool 路径是启动配置工作目录下的 `log-spool.sqlite3`。它不
 - 新控制端仍接受旧 `test_suite_log`。旧协议没有序号或持久 ACK，无法提供补传去重；旧 handler 的历史 LONGTEXT 追加行为保持兼容。
 - 支持 session v2 但没有 `log_batch_v1` capability 的控制端，新 Agent 明确警告后使用旧日志消息，socket send 成功即回收。完全不支持 session v2 的旧控制端会被新版 Agent 拒绝连接，不会进入此降级路径。该模式是 best-effort，不能将 send 成功解释为控制端入库成功。升级回 durable 模式时，保留的剩余数据原子变成新的 stream，避免将旧 socket-send 序号当成控制端游标；旧发送过的部分无法追溯保证。
 - 新版 ingestion 用数据库端 append 和长度投影，不把完整历史载入 Python；底层仍是 LONGTEXT，数据库可能复制整段内容。它不是分块对象存储，也没有全局跨执行 retention。单执行配额不等于控制端总磁盘配额。
-- 原 `GET /suites/{suite_id}/logs`（不带 tailChars）完整 JSON/下载行为保留；前端若请求整份 JSON 再合并 Blob，下载仍会增加浏览器内存。带授权请求头的流式 attachment 下载、控制端分块存储/全局保留策略是后续工作，本提交不声称已解决。
+- 原日志小 JSON 请求保持兼容；超预算请求明确返回 413。浏览器现在使用带授权的冻结快照/有界分段导出，直接逐段写文件或逐次下载编号片段，不在内存合并整份日志；见[原始日志有界下载](原始日志有界下载.md)。控制端底层分块存储/全局保留策略仍是独立后续工作。
 - direct-task 日志有独立持久表；现有产品没有相应日志浏览 UI。本提交不新增通用 API 测试功能或报告系统。
 - 只在隔离 SQLite、loopback HTTP/WS 和软件子进程中验证；未动生产、硬件、网络/安全设置，未宣称 MySQL 故障恢复/多控制端 HA 或磁盘断电实测。
 

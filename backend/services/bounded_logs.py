@@ -2,21 +2,24 @@
 from datetime import date, datetime
 from sqlalchemy import func
 from models.test_suite import TestSuiteLog
-from utils.serializer import serialize_model, to_camel_case
+from utils.serializer import to_camel_case
 
 MAX_LOG_RECORDS = 20
 MAX_LOG_CHARS = 32768
 
 
 def log_window(query, skip, limit, tail_chars=None, latest=False):
-    total = query.count()
+    total = query.with_entities(func.count(TestSuiteLog.id)).scalar()
     if tail_chars is not None:
         limit = min(limit, MAX_LOG_RECORDS)
     order = [TestSuiteLog.timestamp.desc(), TestSuiteLog.id.desc()] if latest else [TestSuiteLog.timestamp.asc(), TestSuiteLog.id.asc()]
-    query = query.order_by(*order).offset(skip).limit(limit)
+    query = query.order_by(*order)
     if tail_chars is None:
-        items = [serialize_model(row) for row in query.all()]
+        from services.raw_log_export import legacy_log_rows
+        items = [{to_camel_case(key): value.isoformat() if isinstance(value, (date, datetime)) else value
+                  for key, value in row.items()} for row in legacy_log_rows(query, skip, limit)]
     else:
+        query = query.offset(skip).limit(limit)
         # 避免ORM序列化触发完整message的惰性加载；SQLite/MySQL均支持substr和char_length。
         length = func.length(TestSuiteLog.message) if query.session.bind.dialect.name == 'sqlite' else func.char_length(TestSuiteLog.message)
         columns = [c for c in TestSuiteLog.__table__.columns if c.name != 'message']

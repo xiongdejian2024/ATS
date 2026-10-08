@@ -16,6 +16,7 @@
     </a-page-header>
 
     <div class="log-container">
+      <RawLogDownload v-if="downloadTarget" :target="downloadTarget" />
       <a-alert v-if="logStatus" :type="logStatus.type" :message="logStatus.message" show-icon class="log-status" />
       <a-spin :spinning="loading" class="log-spin">
         <BoundedLogViewer :records="suiteLogs" height="100%" />
@@ -25,12 +26,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, watch } from 'vue';
+import { computed, ref, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { ReloadOutlined } from '@ant-design/icons-vue';
 import { testSuiteApi } from '@/api/testSuite';
 import BoundedLogViewer from '@/components/ExecutionLogs/BoundedLogViewer.vue'
+import RawLogDownload from '@/components/ExecutionLogs/RawLogDownload.vue'
 import { useSuiteLogStream } from '@/components/ExecutionLogs/useSuiteLogStream'
 
 const route = useRoute()
@@ -41,6 +43,11 @@ const { records: suiteLogs, loading, status: logStatus, clear: clearLogs, refres
 let suiteRequest = 0
 const handleBack = () => router.back()
 const queryString = (value: unknown) => typeof value === 'string' ? value : undefined
+const downloadTarget = computed(() => {
+  const suiteId = queryString(route.query.suiteId)
+  return suiteId ? { endpoint: `/test-plans/suites/${suiteId}/logs/export`, filename: `suite-${suiteId}`,
+    executionId: queryString(route.query.executionId), logId: queryString(route.query.logId) } : null
+})
 
 // Query-only navigation can reuse this component; isolate every selection and request.
 watch(() => [route.query.suiteId, route.query.logId, route.query.executionId, route.query.isRunning], () => {

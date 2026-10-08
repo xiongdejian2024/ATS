@@ -327,6 +327,7 @@
         </a-space>
       </div>
       <div class="log-container">
+        <RawLogDownload v-if="executionLogModalVisible && currentLogSuite" :target="{ endpoint: `/test-plans/suites/${currentLogSuite.id}/logs/export`, filename: `suite-${currentLogSuite.id}` }" />
         <a-alert v-if="logStatus" :type="logStatus.type" :message="logStatus.message" show-icon class="log-status" />
         <a-spin :spinning="executionLogLoading">
           <BoundedLogViewer :records="suiteLogs" />
@@ -347,6 +348,7 @@ import { environmentApi } from '@/api/environment';
 import { useProjectStore } from '@/stores/project';
 import TestSuiteEdit from '@/components/TestPlan/TestSuiteEdit.vue'
 import BoundedLogViewer from '@/components/ExecutionLogs/BoundedLogViewer.vue';
+import RawLogDownload from '@/components/ExecutionLogs/RawLogDownload.vue'
 import { useSuiteLogStream } from '@/components/ExecutionLogs/useSuiteLogStream';
 import type { TestPlan, Project } from '@/types';
 import dayjs from 'dayjs'

@@ -12,6 +12,8 @@ from schemas.plan_orchestration import GroupInput, PlanPolicy, ManualResultInput
 from services.plan_orchestration import get_policy, save_policy, run_data, run_logs, record_manual_result, cancel_plan_run, resolve_uncertain_run
 from utils.serializer import serialize_model
 from services.plan_workspace import group_metadata, update_group_metadata, clone_group
+from services.raw_log_export import LogExportRequest, export_log_chunk, run_log_query
+from services.bounded_logs import log_window
 
 router = APIRouter()
 
@@ -28,8 +30,9 @@ def require_plan(db, user, plan_id, action="read"):
     return plan
 
 
-def require_run(db, user, run_id, action="read"):
-    run = db.get(PlanRun, run_id)
+def require_run(db, user, run_id, action="read", *, metadata_only=False):
+    run = (db.query(PlanRun.id, PlanRun.plan_id).filter(PlanRun.id == run_id).first()
+           if metadata_only else db.get(PlanRun, run_id))
     if not run:
         raise HTTPException(404, "执行批次不存在")
     require_plan(db, user, run.plan_id, action)
@@ -118,8 +121,17 @@ def report(run_id: str, db: Session = Depends(get_db), user=Depends(get_current_
 
 
 @router.get("/runs/{run_id}/logs", response_model=APIResponse)
-def logs(run_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return ok({"executionLog": run_logs(db, require_run(db, user, run_id))})
+def logs(run_id: str, db: Session = Depends(get_db), user=Depends(get_current_user),
+         tail_chars: int | None = Query(None, alias="tailChars", ge=1, le=32768)):
+    run = require_run(db, user, run_id, metadata_only=True)
+    return ok(log_window(run_log_query(db, run.id), 0, 20, tail_chars, True) if tail_chars is not None
+              else {"executionLog": run_logs(db, run)})
+
+
+@router.post("/runs/{run_id}/logs/export", response_model=APIResponse)
+def export_logs(run_id: str, request: LogExportRequest, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    run = require_run(db, user, run_id, metadata_only=True)
+    return ok(export_log_chunk(run_log_query(db, run.id), f"run:{run.id}", user.id, request))
 
 
 @router.post("/runs/{run_id}/cancel", response_model=APIResponse)

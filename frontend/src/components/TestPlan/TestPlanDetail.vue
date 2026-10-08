@@ -40,7 +40,7 @@
           <a-button type="primary" :loading="saving" @click="save">保存执行配置</a-button>
         </a-form>
     </a-drawer>
-    <a-modal v-model:open="logsOpen" title="批次执行日志" width="min(850px,96vw)" :footer="null"><pre class="execution-log">{{ logs || '暂无执行日志' }}</pre></a-modal>
+    <a-modal v-model:open="logsOpen" title="批次执行日志" width="min(850px,96vw)" :footer="null"><PlanRunLogs v-if="logsOpen && logRunId" :plan-id="plan.id" :run-id="logRunId" /></a-modal>
   </div>
 </template>
 
@@ -50,6 +50,7 @@ import { message } from 'ant-design-vue'
 import PlanPlanningMinder from './PlanPlanningMinder.vue'
 import PlanCategoryWorkspace from './PlanCategoryWorkspace.vue'
 import PlanDefects from './PlanDefects.vue'
+import PlanRunLogs from '@/components/ExecutionLogs/PlanRunLogs.vue'
 import {useRouter,useRoute} from 'vue-router'
 import type { TestPlan } from '@/types'
 import { testPlanApi } from '@/api/testPlan'
@@ -62,7 +63,7 @@ const tab=computed(()=>{const key=String(route.query.tab||'plan');const allowed=
 function changeTab(key:string|number){void router.replace({query:{...route.query,tab:String(key)}})}
 const runs = ref<PlanRun[]>([]), groups = ref<PlanGroup[]>([]), suites = ref<TestSuite[]>([])
 const policy = ref<PlanPolicy>({ groupId: null, executionMode: 'serial', stopOnFailure: false, passThreshold: 100, suiteOrder: [] })
-const logs = ref('')
+const logRunId = ref('')
 const pagination = ref({ current: 1, pageSize: 10, total: 0 })
 const orderedSuites = computed(() => [...suites.value].sort((a, b) => {
   const index = (id: string) => { const i = policy.value.suiteOrder.indexOf(id); return i < 0 ? 99999 : i }
@@ -88,13 +89,13 @@ async function load() {
 function move(index: number, delta: number) { const ids = orderedSuites.value.map(s => s.id); [ids[index], ids[index + delta]] = [ids[index + delta], ids[index]]; policy.value.suiteOrder = ids }
 async function save() { if(!props.canEdit)return;saving.value = true; try { policy.value = await planOrchestrationApi.saveSettings(props.plan.id, { ...policy.value, groupId: policy.value.groupId || null }); message.success('执行配置已保存');emit('changed') } catch (error) { console.error('保存计划策略失败', error); message.error('保存失败') } finally { saving.value = false } }
 async function openReport(id: string) { await router.push({name:'TestPlanReportDetail',params:{runId:id},query:{projectId:props.plan.projectId,kind:'PLAN'}}) }
-async function openLogs(id: string) { try { const data = await testPlanApi.getPlanExecutionLogs(props.plan.id, id); logs.value = data.executionLog; logsOpen.value = true } catch (error) { console.error('加载批次日志失败', error); message.error('加载日志失败') } }
+function openLogs(id: string) { logRunId.value = id; logsOpen.value = true }
 async function resolveRun(id: string) { try { await planOrchestrationApi.resolve(id); message.success('已按核对结果终止批次'); await loadRuns() } catch (error) { console.error('确认执行状态失败', error); message.error('确认失败') } }
 async function cancel(id: string) { try { await planOrchestrationApi.cancel(id); message.success('已请求取消'); await loadRuns() } catch (error) { console.error('取消计划批次失败', error); message.error('取消失败') } }
 function onPage(p: any) { pagination.value.current = p.current; pagination.value.pageSize = p.pageSize; loadRuns() }
 watch(tab, key => { if (key === 'executeHistory') void loadRuns() })
 onMounted(load)
-watch(() => props.plan.id, () => { pagination.value.current = 1; load() })
+watch(() => props.plan.id, () => { logsOpen.value = false; logRunId.value = ''; pagination.value.current = 1; load() })
 defineExpose({ refresh: loadRuns,openSettings:()=>{if(props.canEdit)policyOpen.value=true} })
 </script>
 

@@ -3,7 +3,7 @@
 from typing import Optional, List
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -22,6 +22,8 @@ from schemas.plan_orchestration import ManualResultInput
 from services.plan_orchestration import record_manual_result
 from services.plan_workspace import apply_tree_statistics
 from services.plan_orchestration import start_plan_run, cancel_plan_run, run_data, run_logs, get_policy, ACTIVE
+from services.raw_log_export import LogExportRequest, export_log_chunk, run_log_query
+from services.bounded_logs import log_window
 
 
 router = APIRouter()
@@ -549,12 +551,26 @@ async def get_plan_executions(
 
 
 @router.get("/{plan_id}/executions/{run_id}/logs", response_model=APIResponse)
-async def get_plan_run_logs(plan_id: str, run_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def get_plan_run_logs(plan_id: str, run_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user),
+                            tail_chars: int | None = Query(None, alias="tailChars", ge=1, le=32768)):
     require_plan(db, current_user, plan_id)
-    run = db.get(PlanRun, run_id)
+    run = db.query(PlanRun.id, PlanRun.plan_id).filter(PlanRun.id == run_id).first()
     if not run or run.plan_id != plan_id:
         raise HTTPException(404, "执行批次不存在")
-    return APIResponse(status=ResponseStatus.SUCCESS, message="获取成功", data={"executionLog": run_logs(db, run)})
+    data = (log_window(run_log_query(db, run.id), 0, 20, tail_chars, True) if tail_chars is not None
+            else {"executionLog": run_logs(db, run)})
+    return APIResponse(status=ResponseStatus.SUCCESS, message="获取成功", data=data)
+
+
+@router.post("/{plan_id}/executions/{run_id}/logs/export", response_model=APIResponse)
+def export_plan_run_logs(plan_id: str, run_id: str, request: LogExportRequest,
+                         db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    require_plan(db, current_user, plan_id)
+    run = db.query(PlanRun.id, PlanRun.plan_id).filter(PlanRun.id == run_id).first()
+    if not run or run.plan_id != plan_id:
+        raise HTTPException(404, "执行批次不存在")
+    return APIResponse(status=ResponseStatus.SUCCESS, message="原始日志快照分段",
+        data=export_log_chunk(run_log_query(db, run.id), f"run:{run.id}", current_user.id, request))
 
 
 @router.post("/{plan_id}/clone", response_model=APIResponse)
