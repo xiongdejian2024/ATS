@@ -696,25 +696,21 @@ def recycle_bin(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=200),
     search: str = "",
+    filters: str = "",
+    sort_by: str = "deletedAt",
+    sort_order: str = "desc",
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
     require_project_access(db, user, project_id, "test_case:read")
-    query = db.query(TestCase).filter(
-        TestCase.project_id == project_id, TestCase.deleted_at.is_not(None)
-    )
-    if search:
-        query = query.filter(TestCase.name.contains(search))
+    from services.case_query import query_cases
+    data = query_cases(db, project_id, recycled=True, page=page, size=size,
+                       search=search, filters=filters, sort_by=sort_by,
+                       sort_order=sort_order, user_id=user.id)
     return result(
         {
-            "items": serialize_list(
-                query.order_by(TestCase.deleted_at.desc())
-                .offset((page - 1) * size)
-                .limit(size)
-                .all(),
-                camel_case=True,
-            ),
-            "total": query.count(),
+            "items": serialize_list(data['items'], camel_case=True),
+            "total": data['total'],
             "page": page,
             "size": size,
         }

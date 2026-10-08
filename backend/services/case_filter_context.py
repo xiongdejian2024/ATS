@@ -98,7 +98,7 @@ class CaseFilterContext:
                     for t in self.template_types.values()
                     if field.startswith("customFields.") and field.split(".", 1)[1] in t
                 }
-                if field in {"createdAt", "updatedAt"} or kinds == {"date"}:
+                if field in {"createdAt", "updatedAt", "deletedAt"} or kinds == {"date"}:
                     condition["value"] = date_expected(condition)
 
         if conditions:
